@@ -1,6 +1,5 @@
-
 import Header from "@/components/shared/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,62 +7,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Clock, MessageCircle, CheckCircle2, X, MapPin, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-
-interface Reserva {
-  id: number;
-  itemId: number;
-  itemTitulo: string;
-  itemImagem: string;
-  itemGirinhas: number;
-  outraMae: string;
-  outraMaeAvatar: string;
-  tipo: 'reservada' | 'recebida'; // reservada = eu reservei, recebida = reservaram de mim
-  status: 'pendente' | 'confirmada' | 'expirada' | 'cancelada';
-  dataReserva: Date;
-  prazoExpiracao: Date;
-  confirmedByMe: boolean;
-  confirmedByOther: boolean;
-  localizacao: string;
-}
+import { useReservas, Reserva } from "@/hooks/useReservas";
+import ChatModal from "@/components/chat/ChatModal";
 
 const MinhasReservas = () => {
-  const { toast } = useToast();
-  const [reservas] = useState<Reserva[]>([
-    {
-      id: 1,
-      itemId: 2,
-      itemTitulo: "Tênis All Star Baby",
-      itemImagem: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300",
-      itemGirinhas: 20,
-      outraMae: "Carla Silva",
-      outraMaeAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
-      tipo: 'reservada',
-      status: 'pendente',
-      dataReserva: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 horas atrás
-      prazoExpiracao: new Date(Date.now() + 46 * 60 * 60 * 1000), // 46 horas restantes
-      confirmedByMe: false,
-      confirmedByOther: false,
-      localizacao: "Pinheiros"
-    },
-    {
-      id: 2,
-      itemId: 1,
-      itemTitulo: "Kit Body Carter's",
-      itemImagem: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300",
-      itemGirinhas: 15,
-      outraMae: "Fernanda Costa",
-      outraMaeAvatar: "https://images.unsplash.com/photo-1494790108755-2616b612b96c?w=150",
-      tipo: 'recebida',
-      status: 'confirmada',
-      dataReserva: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      prazoExpiracao: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      confirmedByMe: true,
-      confirmedByOther: true,
-      localizacao: "Vila Madalena"
-    }
-  ]);
+  const { reservas, confirmarEntrega, cancelarReserva } = useReservas();
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [activeChatReserva, setActiveChatReserva] = useState<Reserva | null>(null);
 
+  const handleAbrirChat = (reserva: Reserva) => {
+    setActiveChatReserva(reserva);
+    setIsChatOpen(true);
+  };
+  
   const useCountdown = (targetDate: Date) => {
     const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
 
@@ -72,13 +28,12 @@ const MinhasReservas = () => {
       let timeLeft = {};
 
       if (difference > 0) {
-        timeLeft = {
-          horas: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutos: Math.floor((difference / 1000 / 60) % 60),
-          segundos: Math.floor((difference / 1000) % 60)
-        };
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        
+        timeLeft = { days, hours, minutes };
       }
-
       return timeLeft;
     }
 
@@ -94,47 +49,27 @@ const MinhasReservas = () => {
   };
 
   const CountdownTimer = ({ expirationDate }: { expirationDate: Date }) => {
-    const timeLeft = useCountdown(expirationDate);
+    const timeLeft = useCountdown(expirationDate) as { days?: number, hours?: number, minutes?: number};
 
     if (Object.keys(timeLeft).length === 0) {
       return <span className="text-red-500 font-medium">Expirado</span>;
     }
 
+    const { days, hours, minutes } = timeLeft;
+
     return (
       <div className="flex items-center gap-1 text-orange-600 font-medium">
         <Clock className="w-4 h-4" />
-        <span>{(timeLeft as any).horas}h {(timeLeft as any).minutos}m restantes</span>
+        <span>{days > 0 ? `${days}d ` : ''}{hours}h {minutes}m restantes</span>
       </div>
     );
-  };
-
-  const handleConfirmarEntrega = (reservaId: number) => {
-    toast({
-      title: "Entrega confirmada! ✅",
-      description: "Aguardando confirmação da outra mãe para finalizar a troca.",
-    });
-  };
-
-  const handleCancelarReserva = (reservaId: number) => {
-    toast({
-      title: "Reserva cancelada",
-      description: "As Girinhas foram desbloqueadas e o item voltou ao feed.",
-      variant: "destructive"
-    });
-  };
-
-  const handleAbrirChat = (outraMae: string) => {
-    toast({
-      title: `Chat aberto com ${outraMae}`,
-      description: "Sistema de mensagens em desenvolvimento.",
-    });
   };
 
   const reservasPendentes = reservas.filter(r => r.status === 'pendente');
   const reservasConcluidas = reservas.filter(r => r.status === 'confirmada');
   const reservasExpiradas = reservas.filter(r => r.status === 'expirada' || r.status === 'cancelada');
 
-  const ReservaCard = ({ reserva }: { reserva: Reserva }) => (
+  const ReservaCard = ({ reserva, onConfirm, onCancel, onChat }: { reserva: Reserva, onConfirm: (id: number) => void, onCancel: (id: number) => void, onChat: (reserva: Reserva) => void }) => (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
       <CardContent className="p-4">
         <div className="flex gap-4">
@@ -179,12 +114,20 @@ const MinhasReservas = () => {
             {reserva.status === 'pendente' && (
               <CountdownTimer expirationDate={reserva.prazoExpiracao} />
             )}
+            
+            {reserva.status === 'pendente' && (
+                <div className="border-t pt-2 space-y-1 text-xs text-gray-500">
+                    {reserva.confirmedByMe && <p className="text-green-600 flex items-center gap-1"><CheckCircle2 size={14}/>Você confirmou a entrega.</p>}
+                    {reserva.confirmedByOther && <p className="text-blue-600 flex items-center gap-1"><CheckCircle2 size={14}/>A outra mãe confirmou a entrega.</p>}
+                </div>
+            )}
+
 
             <div className="flex gap-2 pt-2">
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => handleAbrirChat(reserva.outraMae)}
+                onClick={() => onChat(reserva)}
                 className="flex-1"
               >
                 <MessageCircle className="w-4 h-4 mr-1" />
@@ -195,16 +138,17 @@ const MinhasReservas = () => {
                 <>
                   <Button 
                     size="sm"
-                    onClick={() => handleConfirmarEntrega(reserva.id)}
+                    onClick={() => onConfirm(reserva.id)}
                     className="flex-1 bg-green-600 hover:bg-green-700"
+                    disabled={reserva.confirmedByMe}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
-                    Confirmar Entrega
+                    {reserva.confirmedByMe ? "Confirmado" : "Confirmar Entrega"}
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => handleCancelarReserva(reserva.id)}
+                    onClick={() => onCancel(reserva.id)}
                     className="text-red-600 border-red-200 hover:bg-red-50"
                   >
                     <X className="w-4 h-4" />
@@ -214,7 +158,7 @@ const MinhasReservas = () => {
             </div>
 
             {reserva.status === 'confirmada' && (
-              <div className="flex items-center gap-2 text-green-600 text-sm">
+              <div className="flex items-center gap-2 text-green-600 text-sm font-medium pt-2">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Troca realizada com sucesso!</span>
               </div>
@@ -252,7 +196,13 @@ const MinhasReservas = () => {
           <TabsContent value="pendentes" className="mt-6 space-y-4">
             {reservasPendentes.length > 0 ? (
               reservasPendentes.map(reserva => (
-                <ReservaCard key={reserva.id} reserva={reserva} />
+                <ReservaCard 
+                  key={reserva.id} 
+                  reserva={reserva}
+                  onConfirm={confirmarEntrega}
+                  onCancel={cancelarReserva}
+                  onChat={handleAbrirChat}
+                />
               ))
             ) : (
               <Card className="text-center py-8 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -273,7 +223,13 @@ const MinhasReservas = () => {
           <TabsContent value="concluidas" className="mt-6 space-y-4">
             {reservasConcluidas.length > 0 ? (
               reservasConcluidas.map(reserva => (
-                <ReservaCard key={reserva.id} reserva={reserva} />
+                 <ReservaCard 
+                  key={reserva.id} 
+                  reserva={reserva}
+                  onConfirm={() => {}}
+                  onCancel={() => {}}
+                  onChat={handleAbrirChat}
+                />
               ))
             ) : (
               <Card className="text-center py-8 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -291,7 +247,13 @@ const MinhasReservas = () => {
           <TabsContent value="expiradas" className="mt-6 space-y-4">
             {reservasExpiradas.length > 0 ? (
               reservasExpiradas.map(reserva => (
-                <ReservaCard key={reserva.id} reserva={reserva} />
+                 <ReservaCard 
+                  key={reserva.id} 
+                  reserva={reserva}
+                  onConfirm={() => {}}
+                  onCancel={() => {}}
+                  onChat={handleAbrirChat}
+                />
               ))
             ) : (
               <Card className="text-center py-8 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -307,6 +269,15 @@ const MinhasReservas = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {isChatOpen && activeChatReserva && (
+        <ChatModal 
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          outraMae={{ nome: activeChatReserva.outraMae, avatar: activeChatReserva.outraMaeAvatar }}
+          item={{ titulo: activeChatReserva.itemTitulo, imagem: activeChatReserva.itemImagem }}
+        />
+      )}
     </div>
   );
 };

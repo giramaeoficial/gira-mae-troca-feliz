@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, MapPin, Sparkles, Star, Heart, Share2, Flag, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useReservas } from "@/hooks/useReservas";
 
 // Dados simulados - em uma aplicação real viria de uma API
 const itemsData = {
@@ -38,11 +38,13 @@ const itemsData = {
 const DetalhesItem = () => {
     const { id } = useParams();
     const { toast } = useToast();
+    const { criarReserva, reservas } = useReservas();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorite, setIsFavorite] = useState(false);
-
-    // Corrigir aqui: converter id para number antes de acessar itemsData
+    
     const item = itemsData[Number(id)];
+    
+    const isReserved = reservas.some(r => r.itemId === item?.id && r.status !== 'cancelada' && r.status !== 'expirada');
 
     if (!item) {
         return (
@@ -64,10 +66,15 @@ const DetalhesItem = () => {
     }
 
     const handleReservar = () => {
-        toast({
-            title: "Item reservado! 🎉",
-            description: `${item.title} foi reservado. Entre em contato com ${item.maeNome} para combinar a troca.`,
-        });
+        if (isReserved || !item.disponivel) {
+            toast({
+                title: "Item indisponível",
+                description: "Este item já foi reservado ou não está mais disponível.",
+                variant: "destructive",
+            });
+            return;
+        }
+        criarReserva(item.id, item, item.maeNome);
     };
 
     const handleToggleFavorite = () => {
@@ -120,8 +127,8 @@ const DetalhesItem = () => {
                                     className="w-full h-96 object-cover"
                                 />
                                 <div className="absolute top-4 right-4">
-                                    <Badge className={`${item.disponivel ? 'bg-green-500' : 'bg-gray-500'} text-white`}>
-                                        {item.disponivel ? 'Disponível' : 'Reservado'}
+                                    <Badge className={`${(isReserved || !item.disponivel) ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
+                                        {(isReserved || !item.disponivel) ? 'Reservado' : 'Disponível'}
                                     </Badge>
                                 </div>
                                 <div className="absolute top-4 left-4">
@@ -211,15 +218,14 @@ const DetalhesItem = () => {
                                     </div>
                                 </div>
 
-                                {item.disponivel && (
-                                    <Button 
-                                        className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
-                                        size="lg"
-                                        onClick={handleReservar}
-                                    >
-                                        Reservar com Pix da Mãe
-                                    </Button>
-                                )}
+                                <Button 
+                                    className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 disabled:opacity-50"
+                                    size="lg"
+                                    onClick={handleReservar}
+                                    disabled={isReserved || !item.disponivel}
+                                >
+                                    {(isReserved || !item.disponivel) ? 'Item Reservado' : 'Reservar com Pix da Mãe'}
+                                </Button>
                             </CardContent>
                         </Card>
 
