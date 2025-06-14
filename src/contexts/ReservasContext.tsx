@@ -1,4 +1,5 @@
-import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
+
+import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Reserva {
@@ -118,29 +119,37 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
   const confirmarEntrega = (reservaId: number) => {
     let reservaFinalizada = false;
     
-    setReservas(prev => prev.map((reserva): Reserva => {
-      if (reserva.id === reservaId) {
-        const updatedReserva = { ...reserva, confirmedByMe: true };
-        if (updatedReserva.confirmedByOther) {
-          reservaFinalizada = true;
-          return { ...updatedReserva, status: 'confirmada' };
+    setReservas(prev => {
+      const updatedReservas = prev.map((reserva): Reserva => {
+        if (reserva.id === reservaId) {
+          // Explicitly typing updatedReserva ensures it conforms to the Reserva interface, fixing the TS error.
+          const updatedReserva: Reserva = { ...reserva, confirmedByMe: true };
+          
+          if (updatedReserva.confirmedByOther) {
+            reservaFinalizada = true;
+            // The exchange is complete, so we update the status.
+            updatedReserva.status = 'confirmada';
+          }
+          return updatedReserva;
         }
-        return updatedReserva;
-      }
-      return reserva;
-    }));
+        return reserva;
+      });
 
-    if (reservaFinalizada) {
-      toast({
-        title: "Troca Finalizada! 🤝",
-        description: "Ambas confirmaram a entrega. As Girinhas foram transferidas!",
-      });
-    } else {
-      toast({
-        title: "Entrega confirmada! ✅",
-        description: "Aguardando a confirmação da outra mãe para finalizar a troca.",
-      });
-    }
+      // By placing toast logic inside the updater, we ensure it runs after the state is calculated.
+      if (reservaFinalizada) {
+        toast({
+          title: "Troca Finalizada! 🤝",
+          description: "Ambas confirmaram a entrega. As Girinhas foram transferidas!",
+        });
+      } else {
+        toast({
+          title: "Entrega confirmada! ✅",
+          description: "Aguardando a confirmação da outra mãe para finalizar a troca.",
+        });
+      }
+
+      return updatedReservas;
+    });
   };
 
   const cancelarReserva = (reservaId: number) => {
