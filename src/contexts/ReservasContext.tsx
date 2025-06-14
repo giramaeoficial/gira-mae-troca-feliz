@@ -1,3 +1,4 @@
+
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -120,18 +121,21 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
     
     setReservas(prev => {
       const updatedReservas = prev.map((reserva): Reserva => {
-        if (reserva.id === reservaId) {
-          const withMyConfirmation = { ...reserva, confirmedByMe: true };
-          
-          if (withMyConfirmation.confirmedByOther) {
-            reservaFinalizada = true;
-            // Both confirmed, so status changes.
-            return { ...withMyConfirmation, status: 'confirmada' };
-          }
-          // Only I confirmed, status remains 'pendente'.
-          return withMyConfirmation;
+        if (reserva.id !== reservaId) {
+          return reserva;
         }
-        return reserva;
+
+        // Create a mutable, correctly typed copy.
+        const updatedReserva: Reserva = { ...reserva, confirmedByMe: true };
+        
+        // If the other person also confirmed, finalize the transaction.
+        if (updatedReserva.confirmedByOther) {
+          reservaFinalizada = true;
+          updatedReserva.status = 'confirmada';
+        }
+        
+        // Return the modified object.
+        return updatedReserva;
       });
 
       // By placing toast logic inside the updater, we ensure it runs after the state is calculated.
@@ -152,7 +156,7 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const cancelarReserva = (reservaId: number) => {
-    setReservas(prev => prev.map(reserva => 
+    setReservas(prev => prev.map((reserva): Reserva => 
       reserva.id === reservaId 
         ? { ...reserva, status: 'cancelada' }
         : reserva
