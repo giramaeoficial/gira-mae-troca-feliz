@@ -1,4 +1,5 @@
 
+
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -73,10 +74,10 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const interval = setInterval(() => {
       let changed = false;
-      const updatedReservas = reservas.map(reserva => {
+      const updatedReservas = reservas.map((reserva): Reserva => {
         if (reserva.status === 'pendente' && new Date() > reserva.prazoExpiracao) {
           changed = true;
-          return { ...reserva, status: 'expirada' };
+          return { ...reserva, status: 'expirada' as const };
         }
         return reserva;
       });
@@ -131,7 +132,7 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
         // If the other person also confirmed, finalize the transaction.
         if (updatedReserva.confirmedByOther) {
           reservaFinalizada = true;
-          updatedReserva.status = 'confirmada';
+          updatedReserva.status = 'confirmada' as const;
         }
         
         // Return the modified object.
@@ -158,7 +159,7 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
   const cancelarReserva = (reservaId: number) => {
     setReservas(prev => prev.map((reserva): Reserva => 
       reserva.id === reservaId 
-        ? { ...reserva, status: 'cancelada' }
+        ? { ...reserva, status: 'cancelada' as const }
         : reserva
     ));
 
@@ -175,3 +176,4 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
     </ReservasContext.Provider>
   );
 };
+
