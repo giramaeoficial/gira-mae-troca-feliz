@@ -1,4 +1,3 @@
-
 import { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -119,13 +118,11 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
   const confirmarEntrega = (reservaId: number) => {
     let reservaFinalizada = false;
     
-    setReservas(prev => prev.map(reserva => {
+    setReservas(prev => prev.map((reserva): Reserva => {
       if (reserva.id === reservaId) {
         const updatedReserva = { ...reserva, confirmedByMe: true };
         if (updatedReserva.confirmedByOther) {
           reservaFinalizada = true;
-          // The fix is to return a new object here instead of mutating the temporary one.
-          // This helps TypeScript correctly infer the type of the 'status' property.
           return { ...updatedReserva, status: 'confirmada' };
         }
         return updatedReserva;
