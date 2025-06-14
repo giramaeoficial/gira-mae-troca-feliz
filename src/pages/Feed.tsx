@@ -1,4 +1,3 @@
-
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { useReservas } from "@/hooks/useReservas";
 
 const placeholderItems = [
   { 
@@ -80,6 +80,7 @@ const placeholderItems = [
 
 const Feed = () => {
     const { toast } = useToast();
+    const { criarReserva } = useReservas();
     const [reservedItems, setReservedItems] = useState<number[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -93,12 +94,9 @@ const Feed = () => {
             return;
         }
 
+        // Criar reserva usando o hook
+        criarReserva(item.id, item, item.maeName);
         setReservedItems(prev => [...prev, item.id]);
-        
-        toast({
-            title: "Item reservado! 🎉",
-            description: `${item.title} foi reservado. Entre em contato com ${item.maeName} para combinar a troca.`,
-        });
     };
 
     const filteredItems = placeholderItems.filter(item =>
