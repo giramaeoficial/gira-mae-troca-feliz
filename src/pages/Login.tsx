@@ -42,7 +42,7 @@ const Login = () => {
             </div>
             <div className="mt-4 text-center text-sm">
               Não tem uma conta?{" "}
-              <Link to="#" className="underline text-primary">
+              <Link to="/cadastro" className="underline text-primary">
                 Cadastre-se aqui
               </Link>
             </div>
