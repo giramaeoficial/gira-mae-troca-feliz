@@ -1,4 +1,3 @@
-
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -122,15 +121,15 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
     setReservas(prev => {
       const updatedReservas = prev.map((reserva): Reserva => {
         if (reserva.id === reservaId) {
-          // Explicitly typing updatedReserva ensures it conforms to the Reserva interface, fixing the TS error.
-          const updatedReserva: Reserva = { ...reserva, confirmedByMe: true };
+          const withMyConfirmation = { ...reserva, confirmedByMe: true };
           
-          if (updatedReserva.confirmedByOther) {
+          if (withMyConfirmation.confirmedByOther) {
             reservaFinalizada = true;
-            // The exchange is complete, so we update the status.
-            updatedReserva.status = 'confirmada';
+            // Both confirmed, so status changes.
+            return { ...withMyConfirmation, status: 'confirmada' };
           }
-          return updatedReserva;
+          // Only I confirmed, status remains 'pendente'.
+          return withMyConfirmation;
         }
         return reserva;
       });
