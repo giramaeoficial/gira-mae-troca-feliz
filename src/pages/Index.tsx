@@ -1,24 +1,14 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PackagePlus, HandCoins, Users, CheckCircle, Heart, Sparkles, Gift } from "lucide-react";
 import { Link } from "react-router-dom";
+import Header from "@/components/shared/Header";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-bold text-primary flex items-center">
-          <Sparkles className="h-6 w-6 mr-2" />
-          GiraMãe
-        </Link>
-        <nav className="flex items-center gap-4">
-          <a href="#como-funciona" className="text-muted-foreground hover:text-primary transition-colors">Como Funciona</a>
-          <Link to="/comprar-girinhas" className="text-muted-foreground hover:text-primary transition-colors">Comprar Girinhas</Link>
-          <Button variant="outline">Entrar</Button>
-        </nav>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 text-center mt-16 mb-24 animate-fade-in-up">
