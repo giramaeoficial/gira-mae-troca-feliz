@@ -40,10 +40,10 @@ const DetalhesItem = () => {
     const { toast } = useToast();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorite, setIsFavorite] = useState(false);
-    
-    // Em uma aplicação real, buscaria os dados da API
-    const item = itemsData[id as keyof typeof itemsData];
-    
+
+    // Corrigir aqui: converter id para number antes de acessar itemsData
+    const item = itemsData[Number(id)];
+
     if (!item) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
