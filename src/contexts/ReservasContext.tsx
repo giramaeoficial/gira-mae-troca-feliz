@@ -123,8 +123,10 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
       if (reserva.id === reservaId) {
         const updatedReserva = { ...reserva, confirmedByMe: true };
         if (updatedReserva.confirmedByOther) {
-          updatedReserva.status = 'confirmada';
           reservaFinalizada = true;
+          // The fix is to return a new object here instead of mutating the temporary one.
+          // This helps TypeScript correctly infer the type of the 'status' property.
+          return { ...updatedReserva, status: 'confirmada' };
         }
         return updatedReserva;
       }
