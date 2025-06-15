@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -14,12 +13,20 @@ import { useSeguidores } from "@/hooks/useSeguidores";
 import BotaoSeguir from "@/components/perfil/BotaoSeguir";
 import { Tables } from "@/integrations/supabase/types";
 import { Link } from "react-router-dom";
+import { supabase } from '@/integrations/supabase/client';
 
 type Item = Tables<'itens'>;
+type Profile = Tables<'profiles'>;
+type Filho = Tables<'filhos'>;
 
 const PerfilPublico = () => {
     const { nome } = useParams<{ nome: string }>();
-    const { profile, filhos, loading, fetchProfileByName } = useProfile();
+    // Estados LOCAIS para evitar loops
+    const [profile, setProfile] = useState<Profile | null>(null);
+    const [filhos, setFilhos] = useState<Filho[]>([]);
+    const [isProfileLoading, setIsProfileLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
     const { buscarItensDoUsuario } = useItens();
     const { buscarEstatisticas } = useSeguidores();
     const [itensUsuario, setItensUsuario] = useState<Item[]>([]);
@@ -27,35 +34,61 @@ const PerfilPublico = () => {
     const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
 
     const carregarDadosCompletos = useCallback(async (nomeUsuario: string) => {
-        console.log('Carregando dados para:', nomeUsuario);
-        setLoadingItens(true);
-        
-        const perfilCarregado = await fetchProfileByName(nomeUsuario);
-        
-        if (perfilCarregado) {
-            console.log('Perfil carregado, buscando itens e estatísticas...');
-            
-            // Carregar itens e estatísticas em paralelo
+        setIsProfileLoading(true);
+        setError(null);
+
+        try {
+            // Buscar perfil por nome
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('nome', decodeURIComponent(nomeUsuario))
+                .maybeSingle();
+
+            if (profileError) throw profileError;
+            if (!profileData) {
+                setProfile(null);
+                setIsProfileLoading(false);
+                setError("Perfil não encontrado");
+                return;
+            }
+            setProfile(profileData);
+
+            // Buscar filhos
+            const { data: filhosData, error: filhosError } = await supabase
+                .from('filhos')
+                .select('*')
+                .eq('mae_id', profileData.id)
+                .order('created_at', { ascending: true });
+
+            if (filhosError) throw filhosError;
+            setFilhos(filhosData || []);
+
+            // Buscar itens e estatísticas em paralelo
+            setLoadingItens(true);
             const [itens, stats] = await Promise.all([
-                buscarItensDoUsuario(perfilCarregado.id),
-                buscarEstatisticas(perfilCarregado.id)
+                buscarItensDoUsuario(profileData.id),
+                buscarEstatisticas(profileData.id)
             ]);
-            
             setItensUsuario(itens);
             setEstatisticas(stats);
+            setLoadingItens(false);
+
+        } catch (err: any) {
+            setError(err?.message || "Erro ao carregar perfil.");
+            setProfile(null);
+        } finally {
+            setIsProfileLoading(false);
         }
-        
-        setLoadingItens(false);
-    }, [fetchProfileByName, buscarItensDoUsuario, buscarEstatisticas]);
+    }, [buscarItensDoUsuario, buscarEstatisticas]);
 
     useEffect(() => {
         if (nome) {
-            console.log('Nome do parâmetro mudou:', nome);
             carregarDadosCompletos(nome);
         }
     }, [nome, carregarDadosCompletos]);
 
-    if (loading) {
+    if (isProfileLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
                 <div className="text-center">
@@ -66,11 +99,11 @@ const PerfilPublico = () => {
         );
     }
 
-    if (!profile) {
+    if (error || !profile) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-600">Perfil não encontrado</p>
+                    <p className="text-gray-600">{error || "Perfil não encontrado"}</p>
                 </div>
             </div>
         );
