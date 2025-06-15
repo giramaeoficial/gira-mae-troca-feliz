@@ -39,6 +39,35 @@ export type Database = {
         }
         Relationships: []
       }
+      favoritos: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favoritos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fila_espera: {
         Row: {
           created_at: string

@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { useReservas } from "@/hooks/useReservas";
 import { useItens } from "@/hooks/useItens";
 import { useAuth } from "@/hooks/useAuth";
 import { useCarteira } from "@/hooks/useCarteira";
+import { useFavoritos } from "@/hooks/useFavoritos";
 import { Tables } from "@/integrations/supabase/types";
 
 type ItemComPerfil = Tables<'itens'> & {
@@ -31,8 +31,8 @@ const DetalhesItem = () => {
     const { criarReserva, isItemReservado } = useReservas();
     const { saldo } = useCarteira();
     const { buscarItemPorId, loading } = useItens();
+    const { verificarSeFavorito, toggleFavorito } = useFavoritos();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [isFavorite, setIsFavorite] = useState(false);
     const [item, setItem] = useState<ItemComPerfil | null>(null);
     
     useEffect(() => {
@@ -93,6 +93,7 @@ const DetalhesItem = () => {
     const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
     const semSaldo = saldo < Number(item.valor_girinhas);
     const isProprio = item.publicado_por === user?.id;
+    const isFavorite = verificarSeFavorito(item.id);
 
     const handleReservar = async () => {
         if (isProprio) {
@@ -129,14 +130,8 @@ const DetalhesItem = () => {
         }
     };
 
-    const handleToggleFavorite = () => {
-        setIsFavorite(!isFavorite);
-        toast({
-            title: isFavorite ? "Removido dos favoritos" : "Adicionado aos favoritos! ❤️",
-            description: isFavorite 
-                ? "Item removido da sua lista de desejos." 
-                : "Item adicionado à sua lista de desejos.",
-        });
+    const handleToggleFavorite = async () => {
+        await toggleFavorito(item.id);
     };
 
     const handleShare = () => {
