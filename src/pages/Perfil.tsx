@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/shared/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,56 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Gift, Trophy, MessageCircle, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
+import { useItens } from "@/hooks/useItens";
 import EditarPerfil from "@/components/perfil/EditarPerfil";
 
 const Perfil = () => {
     const { profile, filhos, loading } = useProfile();
+    const { buscarMeusItens } = useItens();
     const [showEditModal, setShowEditModal] = useState(false);
+    const [meusItens, setMeusItens] = useState<any[]>([]);
+    const [loadingItens, setLoadingItens] = useState(true);
 
-    const mockItens = [
-        { id: 1, title: "Kit Body Carter's", girinhas: 15, image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300", size: "3-6M", status: "Disponível" },
-        { id: 2, title: "Vestido Festa Lilás", girinhas: 30, image: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300", size: "2 anos", status: "Reservado" },
-        { id: 3, title: "Tênis All Star Baby", girinhas: 25, image: "https://images.unsplash.com/photo-1582562124811-c09040d0901?w=300", size: "18", status: "Disponível" },
-    ];
+    useEffect(() => {
+        const carregarItens = async () => {
+            setLoadingItens(true);
+            const itens = await buscarMeusItens();
+            setMeusItens(itens);
+            setLoadingItens(false);
+        };
+
+        carregarItens();
+    }, []);
+
+    const getStatusBadgeColor = (status: string) => {
+        switch (status) {
+            case 'disponivel':
+                return 'bg-green-500';
+            case 'reservado':
+                return 'bg-yellow-500';
+            case 'entregue':
+                return 'bg-blue-500';
+            case 'cancelado':
+                return 'bg-red-500';
+            default:
+                return 'bg-gray-500';
+        }
+    };
+
+    const getStatusText = (status: string) => {
+        switch (status) {
+            case 'disponivel':
+                return 'Disponível';
+            case 'reservado':
+                return 'Reservado';
+            case 'entregue':
+                return 'Entregue';
+            case 'cancelado':
+                return 'Cancelado';
+            default:
+                return status;
+        }
+    };
 
     if (loading) {
         return (
@@ -158,7 +197,7 @@ const Perfil = () => {
                         <Tabs defaultValue="meus-itens" className="w-full">
                             <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm">
                                 <TabsTrigger value="meus-itens" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                                    Meus Itens ({mockItens.length})
+                                    Meus Itens ({meusItens.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="trocas" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                                     Minhas Trocas (0)
@@ -169,49 +208,63 @@ const Perfil = () => {
                             </TabsList>
                             
                             <TabsContent value="meus-itens" className="mt-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                    {mockItens.map(item => (
-                                        <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/80 backdrop-blur-sm">
-                                            <div className="relative">
-                                                <img src={item.image} alt={item.title} className="w-full h-48 object-cover" />
-                                                <Badge 
-                                                    className={`absolute top-2 right-2 ${
-                                                        item.status === 'Disponível' ? 'bg-green-500' : 'bg-yellow-500'
-                                                    } text-white`}
-                                                >
-                                                    {item.status}
-                                                </Badge>
-                                            </div>
-                                            <CardContent className="p-4">
-                                                <h3 className="font-semibold text-gray-800 mb-1">{item.title}</h3>
-                                                <p className="text-sm text-gray-600 mb-2">Tamanho: {item.size}</p>
-                                                <div className="flex justify-between items-center">
-                                                    <p className="font-bold text-primary flex items-center gap-1">
-                                                        <Sparkles className="w-4 h-4" />
-                                                        {item.girinhas}
-                                                    </p>
-                                                    <Button size="sm" variant="outline">
-                                                        Editar
-                                                    </Button>
+                                {loadingItens ? (
+                                    <div className="flex items-center justify-center py-12">
+                                        <Sparkles className="h-8 w-8 text-primary animate-spin" />
+                                        <span className="ml-2 text-gray-600">Carregando itens...</span>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                        {meusItens.map(item => (
+                                            <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/80 backdrop-blur-sm">
+                                                <div className="relative">
+                                                    {item.fotos && item.fotos.length > 0 ? (
+                                                        <img src={item.fotos[0]} alt={item.titulo} className="w-full h-48 object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                                            <span className="text-gray-500">Sem foto</span>
+                                                        </div>
+                                                    )}
+                                                    <Badge 
+                                                        className={`absolute top-2 right-2 ${getStatusBadgeColor(item.status)} text-white`}
+                                                    >
+                                                        {getStatusText(item.status)}
+                                                    </Badge>
                                                 </div>
+                                                <CardContent className="p-4">
+                                                    <h3 className="font-semibold text-gray-800 mb-1">{item.titulo}</h3>
+                                                    {item.tamanho && (
+                                                        <p className="text-sm text-gray-600 mb-2">Tamanho: {item.tamanho}</p>
+                                                    )}
+                                                    <p className="text-xs text-gray-500 mb-2 line-clamp-2">{item.descricao}</p>
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="font-bold text-primary flex items-center gap-1">
+                                                            <Sparkles className="w-4 h-4" />
+                                                            {item.valor_girinhas}
+                                                        </p>
+                                                        <Button size="sm" variant="outline">
+                                                            Editar
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                        
+                                        {/* Add new item card */}
+                                        <Card className="border-2 border-dashed border-primary/30 hover:border-primary/60 transition-colors duration-300 bg-white/40 backdrop-blur-sm">
+                                            <CardContent className="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
+                                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                                                    <Sparkles className="w-6 h-6 text-primary" />
+                                                </div>
+                                                <h3 className="font-semibold text-gray-800 mb-2 text-center">Publicar novo item</h3>
+                                                <p className="text-sm text-gray-600 text-center mb-4">Adicione mais itens para trocar</p>
+                                                <Button asChild className="bg-gradient-to-r from-primary to-pink-500">
+                                                    <Link to="/publicar-item">Publicar Item</Link>
+                                                </Button>
                                             </CardContent>
                                         </Card>
-                                    ))}
-                                    
-                                    {/* Add new item card */}
-                                    <Card className="border-2 border-dashed border-primary/30 hover:border-primary/60 transition-colors duration-300 bg-white/40 backdrop-blur-sm">
-                                        <CardContent className="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
-                                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                                                <Sparkles className="w-6 h-6 text-primary" />
-                                            </div>
-                                            <h3 className="font-semibold text-gray-800 mb-2 text-center">Publicar novo item</h3>
-                                            <p className="text-sm text-gray-600 text-center mb-4">Adicione mais itens para trocar</p>
-                                            <Button asChild className="bg-gradient-to-r from-primary to-pink-500">
-                                                <Link to="/publicar-item">Publicar Item</Link>
-                                            </Button>
-                                        </CardContent>
-                                    </Card>
-                                </div>
+                                    </div>
+                                )}
                             </TabsContent>
                             
                             <TabsContent value="trocas" className="mt-6">
