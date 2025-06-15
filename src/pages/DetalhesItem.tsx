@@ -1,3 +1,4 @@
+
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,7 @@ const DetalhesItem = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
             <Header />
-            <main className="flex-grow container mx-auto px-4 py-8">
+            <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
                 <div className="mb-6">
                     <Button variant="ghost" asChild className="gap-2">
                         <Link to="/feed">
