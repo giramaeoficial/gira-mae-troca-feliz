@@ -25,14 +25,22 @@ type Item = Tables<'itens'> & {
 
 const Favoritos = () => {
   const { user } = useAuth();
-  const { favoritos, loading: favoritosLoading } = useFavoritos();
+  const { favoritos, loading: favoritosLoading, refetch } = useFavoritos();
   const { buscarItemPorId } = useItens();
   const [itens, setItens] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Favoritos - useEffect inicial:', { user: user?.id, favoritosLoading });
+    
+    if (user && !favoritosLoading) {
+      refetch();
+    }
+  }, [user, refetch, favoritosLoading]);
+
+  useEffect(() => {
     const carregarItensFavoritos = async () => {
-      console.log('Carregando itens favoritos. User:', user?.id, 'Favoritos:', favoritos);
+      console.log('Carregando itens favoritos. User:', user?.id, 'Favoritos count:', favoritos.length);
       
       if (!user) {
         console.log('Usuário não logado');
@@ -56,6 +64,7 @@ const Favoritos = () => {
           console.log('Buscando item:', fav.item_id);
           try {
             const item = await buscarItemPorId(fav.item_id);
+            console.log('Item encontrado:', item);
             return item;
           } catch (error) {
             console.error(`Erro ao buscar item ${fav.item_id}:`, error);
@@ -64,10 +73,10 @@ const Favoritos = () => {
         });
         
         const itensCarregados = await Promise.all(itensPromises);
-        console.log('Itens carregados:', itensCarregados);
+        console.log('Todos os itens carregados:', itensCarregados);
         
         const itensValidos = itensCarregados.filter(item => item !== null) as Item[];
-        console.log('Itens válidos:', itensValidos);
+        console.log('Itens válidos filtrados:', itensValidos);
         
         setItens(itensValidos);
       } catch (error) {
@@ -78,7 +87,6 @@ const Favoritos = () => {
       }
     };
 
-    // Só carregar se não estiver carregando favoritos
     if (!favoritosLoading) {
       carregarItensFavoritos();
     }
@@ -88,21 +96,22 @@ const Favoritos = () => {
     return `${valor.toFixed(0)} Girinhas`;
   };
 
-  console.log('Estado atual - user:', user?.id, 'favoritosLoading:', favoritosLoading, 'loading:', loading, 'favoritos:', favoritos.length, 'itens:', itens.length);
+  console.log('Estado atual da página Favoritos:', { 
+    userLogado: !!user, 
+    favoritosLoading, 
+    loading, 
+    favoritosCount: favoritos.length, 
+    itensCount: itens.length 
+  });
 
-  // Se o usuário não estiver logado, mostrar mensagem para fazer login
+  // Se o usuário não estiver logado
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center gap-4 mb-8">
-            <Button
-              variant="outline"
-              size="icon"
-              asChild
-              className="shrink-0"
-            >
+            <Button variant="outline" size="icon" asChild className="shrink-0">
               <Link to="/feed">
                 <ArrowLeft className="h-4 w-4" />
               </Link>
@@ -122,9 +131,7 @@ const Favoritos = () => {
               Você precisa estar logado para visualizar sua lista de favoritos
             </p>
             <Button asChild>
-              <Link to="/auth">
-                Fazer Login
-              </Link>
+              <Link to="/auth">Fazer Login</Link>
             </Button>
           </div>
         </div>
@@ -132,6 +139,7 @@ const Favoritos = () => {
     );
   }
 
+  // Carregando
   if (favoritosLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
@@ -158,17 +166,13 @@ const Favoritos = () => {
     );
   }
 
+  // Página principal
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
-          <Button
-            variant="outline"
-            size="icon"
-            asChild
-            className="shrink-0"
-          >
+          <Button variant="outline" size="icon" asChild className="shrink-0">
             <Link to="/feed">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -191,12 +195,10 @@ const Favoritos = () => {
               Nenhum item favoritado ainda
             </h3>
             <p className="text-gray-600 mb-6">
-              Quando você favoritar itens, eles aparecerão aqui
+              Quando você favoritar itens, eles aparecerão aqui. Vá ao feed e clique no coração dos itens que você gosta!
             </p>
             <Button asChild>
-              <Link to="/feed">
-                Explorar Itens
-              </Link>
+              <Link to="/feed">Explorar Itens</Link>
             </Button>
           </div>
         ) : (
@@ -245,14 +247,8 @@ const Favoritos = () => {
                     <span className="text-xl font-bold text-primary">
                       {formatarPreco(item.valor_girinhas)}
                     </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                    >
-                      <Link to={`/item/${item.id}`}>
-                        Ver Detalhes
-                      </Link>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/item/${item.id}`}>Ver Detalhes</Link>
                     </Button>
                   </div>
                 </CardContent>

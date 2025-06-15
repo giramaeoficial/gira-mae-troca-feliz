@@ -65,7 +65,6 @@ export const useFavoritos = () => {
       return false;
     }
 
-    // Verificar se já é favorito antes de tentar adicionar
     if (verificarSeFavorito(itemId)) {
       console.log('Item já é favorito, não adicionando novamente');
       return true;
@@ -157,15 +156,11 @@ export const useFavoritos = () => {
     }
   };
 
-  // Buscar favoritos quando o usuário mudar
+  // Buscar favoritos quando o componente montar e quando o usuário mudar
   useEffect(() => {
     console.log('useEffect useFavoritos - user:', user?.id);
-    if (user) {
-      buscarFavoritos();
-    } else {
-      setFavoritos([]);
-    }
-  }, [user?.id]); // Usar user.id em vez de user para evitar re-renders desnecessários
+    buscarFavoritos();
+  }, [user?.id]);
 
   return {
     favoritos,
