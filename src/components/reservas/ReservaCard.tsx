@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -289,6 +290,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
         <ChatModal
           isOpen={showChat}
           onClose={() => setShowChat(false)}
+          reservaId={reserva.id}
           outraMae={{
             nome: outraPessoa.nome,
             avatar: outraPessoa.avatar_url || "https://images.unsplash.com/photo-1494790108755-2616b612b776?w=100"

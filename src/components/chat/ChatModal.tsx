@@ -1,15 +1,19 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, MapPin, Clock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Send, MessageCircle, Clock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useChat } from "@/hooks/useChat";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface ChatModalProps {
   isOpen: boolean;
   onClose: () => void;
+  reservaId: string;
   outraMae: {
     nome: string;
     avatar: string;
@@ -20,170 +24,185 @@ interface ChatModalProps {
   };
 }
 
-interface Mensagem {
-  id: number;
-  texto: string;
-  autor: 'eu' | 'outra';
-  timestamp: Date;
-  tipo?: 'sugestao' | 'normal';
-}
+const ChatModal = ({ isOpen, onClose, reservaId, outraMae, item }: ChatModalProps) => {
+  const { user } = useAuth();
+  const { mensagens, loading, enviandoMensagem, enviarMensagem } = useChat(reservaId);
+  const [novaMensagem, setNovaMensagem] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-const ChatModal = ({ isOpen, onClose, outraMae, item }: ChatModalProps) => {
-  const [mensagem, setMensagem] = useState("");
-  const [mensagens, setMensagens] = useState<Mensagem[]>([
-    {
-      id: 1,
-      texto: `Olá! Eu reservei o item "${item.titulo}". Quando e onde posso buscar?`,
-      autor: 'eu',
-      timestamp: new Date(),
-      tipo: 'normal'
+  // Auto scroll para última mensagem
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [mensagens]);
+
+  const handleEnviarMensagem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!novaMensagem.trim() || enviandoMensagem) return;
+
+    const sucesso = await enviarMensagem(novaMensagem);
+    if (sucesso) {
+      setNovaMensagem("");
     }
-  ]);
-
-  const sugestoesMensagens = [
-    "Olá! Eu reservei o item, quando e onde posso buscar?",
-    "Pode deixar na escola do(a) meu filho(a)?",
-    "Posso buscar hoje à tarde?",
-    "Tem algum ponto de encontro que funciona para você?"
-  ];
-
-  const pontosRetirada = [
-    "Shopping Vila Madalena",
-    "Praça Benedito Calixto",
-    "Escola Pinheiros",
-    "Portaria do prédio"
-  ];
-
-  const enviarMensagem = () => {
-    if (!mensagem.trim()) return;
-
-    const novaMensagem: Mensagem = {
-      id: Date.now(),
-      texto: mensagem,
-      autor: 'eu',
-      timestamp: new Date(),
-      tipo: 'normal'
-    };
-
-    setMensagens(prev => [...prev, novaMensagem]);
-    setMensagem("");
-
-    // Simular resposta automática
-    setTimeout(() => {
-      const respostasAutomaticas = [
-        "Oi! Que bom que você reservou. Podemos combinar para hoje à tarde na praça perto da escola.",
-        "Perfeito! Posso deixar na portaria do meu prédio se preferir.",
-        "Ótimo! Vou te enviar a localização exata em alguns minutos.",
-        "Combinado! Nos falamos mais tarde para acertar os detalhes."
-      ];
-      
-      const respostaAleatoria = respostasAutomaticas[Math.floor(Math.random() * respostasAutomaticas.length)];
-      
-      const respostaAutomatica: Mensagem = {
-        id: Date.now() + 1,
-        texto: respostaAleatoria,
-        autor: 'outra',
-        timestamp: new Date(),
-        tipo: 'normal'
-      };
-      setMensagens(prev => [...prev, respostaAutomatica]);
-    }, 1500);
   };
 
-  const usarSugestao = (sugestao: string) => {
-    setMensagem(sugestao);
+  const formatarHora = (dateString: string) => {
+    return format(new Date(dateString), "HH:mm", { locale: ptBR });
   };
+
+  const formatarData = (dateString: string) => {
+    const hoje = new Date();
+    const dataMensagem = new Date(dateString);
+    
+    if (dataMensagem.toDateString() === hoje.toDateString()) {
+      return "Hoje";
+    }
+    
+    const ontem = new Date(hoje);
+    ontem.setDate(hoje.getDate() - 1);
+    if (dataMensagem.toDateString() === ontem.toDateString()) {
+      return "Ontem";
+    }
+    
+    return format(dataMensagem, "dd/MM", { locale: ptBR });
+  };
+
+  // Agrupar mensagens por data
+  const mensagensAgrupadas = mensagens.reduce((grupos: any[], mensagem) => {
+    const data = formatarData(mensagem.created_at);
+    const ultimoGrupo = grupos[grupos.length - 1];
+    
+    if (ultimoGrupo && ultimoGrupo.data === data) {
+      ultimoGrupo.mensagens.push(mensagem);
+    } else {
+      grupos.push({
+        data,
+        mensagens: [mensagem]
+      });
+    }
+    
+    return grupos;
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md mx-auto h-[80vh] flex flex-col">
-        <DialogHeader className="border-b pb-4">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={outraMae.avatar} alt={outraMae.nome} />
-              <AvatarFallback>
-                {outraMae.nome.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
+      <DialogContent className="max-w-md h-[600px] flex flex-col p-0">
+        <DialogHeader className="p-4 pb-2 border-b">
+          <DialogTitle className="flex items-center gap-3">
+            <MessageCircle className="w-5 h-5 text-primary" />
             <div className="flex-grow">
-              <DialogTitle className="text-lg">{outraMae.nome}</DialogTitle>
-              <p className="text-sm text-gray-600">sobre: {item.titulo}</p>
-            </div>
-            <Badge className="bg-green-500 text-white">Online</Badge>
-          </div>
-        </DialogHeader>
-
-        {/* Área de mensagens */}
-        <div className="flex-grow overflow-y-auto space-y-3 py-4">
-          {mensagens.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.autor === 'eu' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-xs rounded-lg p-3 ${
-                  msg.autor === 'eu'
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                <p className="text-sm">{msg.texto}</p>
-                <p className={`text-xs mt-1 ${
-                  msg.autor === 'eu' ? 'text-primary-foreground/70' : 'text-gray-500'
-                }`}>
-                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+              <div className="flex items-center gap-2">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={outraMae.avatar} />
+                  <AvatarFallback className="text-xs">
+                    {outraMae.nome.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium text-gray-800">{outraMae.nome}</p>
+                  <p className="text-xs text-gray-500">sobre: {item.titulo}</p>
+                </div>
               </div>
             </div>
-          ))}
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Sugestões rápidas */}
-        <div className="border-t pt-3 space-y-2">
-          <p className="text-xs text-gray-600 font-medium">Sugestões rápidas:</p>
-          <div className="grid grid-cols-1 gap-1">
-            {sugestoesMensagens.slice(0, 2).map((sugestao, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                className="text-xs h-auto py-1 px-2 justify-start"
-                onClick={() => usarSugestao(sugestao)}
-              >
-                {sugestao}
-              </Button>
-            ))}
+        <div className="flex-grow flex flex-col overflow-hidden">
+          {/* Área de mensagens */}
+          <div className="flex-grow overflow-y-auto p-4 space-y-4">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Carregando conversa...</p>
+              </div>
+            ) : mensagensAgrupadas.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">Nenhuma mensagem ainda</p>
+                <p className="text-sm text-gray-500">
+                  Envie a primeira mensagem para iniciar a conversa!
+                </p>
+              </div>
+            ) : (
+              mensagensAgrupadas.map((grupo, grupoIndex) => (
+                <div key={grupoIndex}>
+                  {/* Separador de data */}
+                  <div className="flex items-center justify-center my-4">
+                    <div className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full">
+                      {grupo.data}
+                    </div>
+                  </div>
+                  
+                  {/* Mensagens do dia */}
+                  <div className="space-y-3">
+                    {grupo.mensagens.map((mensagem: any) => {
+                      const isMinhas = mensagem.remetente_id === user?.id;
+                      return (
+                        <div
+                          key={mensagem.id}
+                          className={`flex ${isMinhas ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div className={`max-w-[75%] ${isMinhas ? 'order-1' : 'order-2'}`}>
+                            <div
+                              className={`rounded-2xl px-3 py-2 ${
+                                isMinhas
+                                  ? 'bg-primary text-white'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              <p className="text-sm">{mensagem.conteudo}</p>
+                            </div>
+                            <div className={`flex items-center gap-1 mt-1 ${isMinhas ? 'justify-end' : 'justify-start'}`}>
+                              <Clock className="w-3 h-3 text-gray-400" />
+                              <span className="text-xs text-gray-400">
+                                {formatarHora(mensagem.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {!isMinhas && (
+                            <Avatar className="w-6 h-6 order-1 mr-2 mt-1">
+                              <AvatarImage src={mensagem.remetente?.avatar_url || outraMae.avatar} />
+                              <AvatarFallback className="text-xs">
+                                {mensagem.remetente?.nome?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
           </div>
-          
-          <p className="text-xs text-gray-600 font-medium mt-3">Pontos de retirada sugeridos:</p>
-          <div className="grid grid-cols-1 gap-1">
-            {pontosRetirada.slice(0, 2).map((ponto, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                className="text-xs h-auto py-1 px-2 justify-start"
-                onClick={() => usarSugestao(`Podemos nos encontrar no ${ponto}?`)}
-              >
-                <MapPin className="w-3 h-3 mr-1" />
-                {ponto}
-              </Button>
-            ))}
-          </div>
-        </div>
 
-        {/* Input de mensagem */}
-        <div className="flex gap-2 border-t pt-3">
-          <Input
-            value={mensagem}
-            onChange={(e) => setMensagem(e.target.value)}
-            placeholder="Digite sua mensagem..."
-            onKeyPress={(e) => e.key === 'Enter' && enviarMensagem()}
-            className="flex-grow"
-          />
-          <Button onClick={enviarMensagem} size="sm">
-            <Send className="w-4 h-4" />
-          </Button>
+          {/* Área de envio */}
+          <div className="border-t p-4">
+            <form onSubmit={handleEnviarMensagem} className="flex gap-2">
+              <Input
+                placeholder="Digite sua mensagem..."
+                value={novaMensagem}
+                onChange={(e) => setNovaMensagem(e.target.value)}
+                disabled={enviandoMensagem}
+                className="flex-grow"
+              />
+              <Button 
+                type="submit" 
+                size="icon"
+                disabled={!novaMensagem.trim() || enviandoMensagem}
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              💡 Combine local e horário para a troca do item
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -107,6 +107,55 @@ export type Database = {
         }
         Relationships: []
       }
+      conversas: {
+        Row: {
+          created_at: string
+          id: string
+          reserva_id: string
+          updated_at: string
+          usuario1_id: string
+          usuario2_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reserva_id: string
+          updated_at?: string
+          usuario1_id: string
+          usuario2_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reserva_id?: string
+          updated_at?: string
+          usuario1_id?: string
+          usuario2_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversas_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "reservas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_usuario1_id_fkey"
+            columns: ["usuario1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_usuario2_id_fkey"
+            columns: ["usuario2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favoritos: {
         Row: {
           created_at: string
@@ -269,6 +318,48 @@ export type Database = {
           {
             foreignKeyName: "itens_publicado_por_fkey"
             columns: ["publicado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensagens: {
+        Row: {
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          id: string
+          remetente_id: string
+          tipo: string
+        }
+        Insert: {
+          conteudo: string
+          conversa_id: string
+          created_at?: string
+          id?: string
+          remetente_id: string
+          tipo?: string
+        }
+        Update: {
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          id?: string
+          remetente_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "conversas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_remetente_id_fkey"
+            columns: ["remetente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -472,6 +563,10 @@ export type Database = {
           total_fila: number
           posicao_usuario: number
         }[]
+      }
+      obter_ou_criar_conversa: {
+        Args: { p_reserva_id: string }
+        Returns: string
       }
       processar_proximo_fila: {
         Args: { p_item_id: string }
