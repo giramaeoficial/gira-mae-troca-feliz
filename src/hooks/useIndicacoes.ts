@@ -65,7 +65,8 @@ export const useIndicacoes = () => {
         profiles: item.profiles && 
                  typeof item.profiles === 'object' && 
                  item.profiles !== null &&
-                 'nome' in item.profiles 
+                 typeof item.profiles === 'object' &&
+                 'nome' in (item.profiles as object)
           ? item.profiles as { nome: string; email: string }
           : null
       }));
@@ -75,7 +76,8 @@ export const useIndicacoes = () => {
         profiles: item.profiles && 
                  typeof item.profiles === 'object' && 
                  item.profiles !== null &&
-                 'nome' in item.profiles 
+                 typeof item.profiles === 'object' &&
+                 'nome' in (item.profiles as object)
           ? item.profiles as { nome: string; email: string }
           : null
       }));
