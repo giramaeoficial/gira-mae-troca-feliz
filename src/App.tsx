@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Feed from "./pages/Feed";
 import PublicarItem from "./pages/PublicarItem";
 import Perfil from "./pages/Perfil";
+import PerfilPublico from "./pages/PerfilPublico";
 import NotFound from "./pages/NotFound";
 import DetalhesItem from "./pages/DetalhesItem";
 import Cadastro from "./pages/Cadastro";
