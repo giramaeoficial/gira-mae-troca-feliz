@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Gift, Trophy, MessageCircle, Edit } from "lucide-react";
+import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Gift, Trophy, MessageCircle, Edit, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { useItens } from "@/hooks/useItens";
 import EditarPerfil from "@/components/perfil/EditarPerfil";
 import EditarItem from "@/components/perfil/EditarItem";
+import MinhasTrocas from "@/components/perfil/MinhasTrocas";
+import ListaSeguidores from "@/components/perfil/ListaSeguidores";
+import ItensDasSeguidas from "@/components/perfil/ItensDasSeguidas";
 import { Tables } from "@/integrations/supabase/types";
 
 type Item = Tables<'itens'>;
@@ -73,7 +76,7 @@ const Perfil = () => {
     };
 
     const handleSucessoEdicao = () => {
-        carregarItens(); // Recarregar itens após edição
+        carregarItens();
     };
 
     if (loading) {
@@ -212,15 +215,21 @@ const Perfil = () => {
                     {/* Profile Content */}
                     <div className="w-full lg:w-2/3">
                         <Tabs defaultValue="meus-itens" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm">
+                            <TabsList className="grid w-full grid-cols-5 bg-white/60 backdrop-blur-sm">
                                 <TabsTrigger value="meus-itens" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                                     Meus Itens ({meusItens.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="trocas" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                                     Minhas Trocas
                                 </TabsTrigger>
+                                <TabsTrigger value="seguidas" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                                    Das Seguidas
+                                </TabsTrigger>
+                                <TabsTrigger value="conexoes" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                                    Conexões
+                                </TabsTrigger>
                                 <TabsTrigger value="filhos" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                                    Meus Filhos ({filhos.length})
+                                    Filhos ({filhos.length})
                                 </TabsTrigger>
                             </TabsList>
                             
@@ -290,6 +299,14 @@ const Perfil = () => {
                             
                             <TabsContent value="trocas" className="mt-6">
                                 <MinhasTrocas />
+                            </TabsContent>
+
+                            <TabsContent value="seguidas" className="mt-6">
+                                <ItensDasSeguidas />
+                            </TabsContent>
+
+                            <TabsContent value="conexoes" className="mt-6">
+                                <ListaSeguidores />
                             </TabsContent>
                             
                             <TabsContent value="filhos" className="mt-6">

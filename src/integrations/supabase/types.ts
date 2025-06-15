@@ -491,6 +491,42 @@ export type Database = {
           },
         ]
       }
+      seguidores: {
+        Row: {
+          created_at: string
+          id: string
+          seguido_id: string
+          seguidor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          seguido_id: string
+          seguidor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          seguido_id?: string
+          seguidor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seguidores_seguido_id_fkey"
+            columns: ["seguido_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seguidores_seguidor_id_fkey"
+            columns: ["seguidor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transacoes: {
         Row: {
           created_at: string
@@ -556,6 +592,13 @@ export type Database = {
           p_valor_girinhas: number
         }
         Returns: Json
+      }
+      obter_estatisticas_seguidor: {
+        Args: { p_usuario_id: string }
+        Returns: {
+          total_seguindo: number
+          total_seguidores: number
+        }[]
       }
       obter_fila_espera: {
         Args: { p_item_id: string }

@@ -1,0 +1,189 @@
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
+
+type Profile = Tables<'profiles'>;
+type Seguidor = Tables<'seguidores'>;
+
+export const useSeguidores = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const seguirUsuario = async (seguidoId: string) => {
+    if (!user) return false;
+    
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from('seguidores')
+        .insert({
+          seguidor_id: user.id,
+          seguido_id: seguidoId
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Erro ao seguir usuário:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao seguir usuário');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deixarDeSeguir = async (seguidoId: string) => {
+    if (!user) return false;
+    
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { error } = await supabase
+        .from('seguidores')
+        .delete()
+        .eq('seguidor_id', user.id)
+        .eq('seguido_id', seguidoId);
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Erro ao deixar de seguir usuário:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao deixar de seguir usuário');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verificarSeSigo = async (seguidoId: string) => {
+    if (!user) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('seguidores')
+        .select('id')
+        .eq('seguidor_id', user.id)
+        .eq('seguido_id', seguidoId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return !!data;
+    } catch (err) {
+      console.error('Erro ao verificar seguimento:', err);
+      return false;
+    }
+  };
+
+  const buscarSeguindo = async () => {
+    if (!user) return [];
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('seguidores')
+        .select(`
+          *,
+          profiles!seguido_id(*)
+        `)
+        .eq('seguidor_id', user.id);
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar quem sigo:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar seguindo');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarSeguidores = async () => {
+    if (!user) return [];
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('seguidores')
+        .select(`
+          *,
+          profiles!seguidor_id(*)
+        `)
+        .eq('seguido_id', user.id);
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar seguidores:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar seguidores');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarEstatisticas = async (usuarioId?: string) => {
+    const targetId = usuarioId || user?.id;
+    if (!targetId) return { total_seguindo: 0, total_seguidores: 0 };
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('obter_estatisticas_seguidor', { p_usuario_id: targetId });
+
+      if (error) throw error;
+      return data?.[0] || { total_seguindo: 0, total_seguidores: 0 };
+    } catch (err) {
+      console.error('Erro ao buscar estatísticas:', err);
+      return { total_seguindo: 0, total_seguidores: 0 };
+    }
+  };
+
+  const buscarItensDasMinhasSeguidas = async () => {
+    if (!user) return [];
+    
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          profiles!publicado_por(*)
+        `)
+        .in('publicado_por', 
+          supabase
+            .from('seguidores')
+            .select('seguido_id')
+            .eq('seguidor_id', user.id)
+        )
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar itens das seguidas:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar itens das seguidas');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    seguirUsuario,
+    deixarDeSeguir,
+    verificarSeSigo,
+    buscarSeguindo,
+    buscarSeguidores,
+    buscarEstatisticas,
+    buscarItensDasMinhasSeguidas,
+    loading,
+    error
+  };
+};

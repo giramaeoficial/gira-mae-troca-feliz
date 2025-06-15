@@ -1,26 +1,33 @@
 
-import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
 
 type Item = Tables<'itens'>;
 
 export const useItens = () => {
+  const { user } = useAuth();
   const [itens, setItens] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const [error, setError] = useState<string | null>(null);
 
-  const buscarItens = async () => {
+  const buscarItens = async (filtros?: {
+    categoria?: string;
+    busca?: string;
+    tamanho?: string;
+    valorMin?: number;
+    valorMax?: number;
+  }) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+
+      let query = supabase
         .from('itens')
         .select(`
           *,
-          profiles:publicado_por (
+          profiles!publicado_por (
             id,
             nome,
             avatar_url,
@@ -29,39 +36,44 @@ export const useItens = () => {
             reputacao
           )
         `)
+        .eq('status', 'disponivel')
         .order('created_at', { ascending: false });
 
+      // Aplicar filtros
+      if (filtros?.categoria && filtros.categoria !== 'todos') {
+        query = query.eq('categoria', filtros.categoria);
+      }
+
+      if (filtros?.busca) {
+        query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
+      }
+
+      if (filtros?.tamanho) {
+        query = query.eq('tamanho', filtros.tamanho);
+      }
+
+      if (filtros?.valorMin !== undefined) {
+        query = query.gte('valor_girinhas', filtros.valorMin);
+      }
+
+      if (filtros?.valorMax !== undefined) {
+        query = query.lte('valor_girinhas', filtros.valorMax);
+      }
+
+      // Excluir itens do próprio usuário se estiver logado
+      if (user) {
+        query = query.neq('publicado_por', user.id);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
+
       setItens(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar itens:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buscarTodosItens = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('itens')
-        .select(`
-          *,
-          profiles:publicado_por (
-            id,
-            nome,
-            avatar_url,
-            bairro,
-            cidade,
-            reputacao
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
       return data || [];
-    } catch (error) {
-      console.error('Erro ao buscar todos os itens:', error);
+    } catch (err) {
+      console.error('Erro ao buscar itens:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar itens');
       return [];
     } finally {
       setLoading(false);
@@ -69,227 +81,173 @@ export const useItens = () => {
   };
 
   const buscarMeusItens = async () => {
-    if (!user?.id) return [];
-    
+    if (!user) return [];
+
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('itens')
-        .select(`
-          *,
-          profiles:publicado_por (
-            id,
-            nome,
-            avatar_url,
-            bairro,
-            cidade,
-            reputacao
-          )
-        `)
+        .select('*')
         .eq('publicado_por', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setItens(data || []);
+
       return data || [];
-    } catch (error) {
-      console.error('Erro ao buscar meus itens:', error);
+    } catch (err) {
+      console.error('Erro ao buscar meus itens:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar meus itens');
       return [];
     } finally {
       setLoading(false);
     }
   };
 
-  const publicarItem = async (itemData: any, fotos?: File[]) => {
+  const buscarItensDoUsuario = async (usuarioId: string) => {
     try {
       setLoading(true);
-      
-      let fotosUrls: string[] = [];
-      
-      // Upload das fotos se existirem
-      if (fotos && fotos.length > 0) {
-        for (const foto of fotos) {
-          const fileName = `${Date.now()}_${foto.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('item-photos')
-            .upload(fileName, foto);
-
-          if (uploadError) {
-            console.error('Erro no upload:', uploadError);
-            continue;
-          }
-
-          const { data: urlData } = supabase.storage
-            .from('item-photos')
-            .getPublicUrl(uploadData.path);
-          
-          fotosUrls.push(urlData.publicUrl);
-        }
-      }
-
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('itens')
-        .insert({
-          ...itemData,
-          fotos: fotosUrls.length > 0 ? fotosUrls : null,
-          publicado_por: user?.id
-        });
+        .select('*')
+        .eq('publicado_por', usuarioId)
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      toast({
-        title: "Sucesso",
-        description: "Item publicado com sucesso!",
-      });
-
-      await buscarItens();
-      return true;
-    } catch (error) {
-      console.error('Erro ao publicar item:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível publicar o item.",
-        variant: "destructive",
-      });
-      return false;
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar itens do usuário:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar itens do usuário');
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
-  const atualizarItem = async (itemData: any, novasFotos?: File[]) => {
-    try {
-      setLoading(true);
-      
-      let fotosUrls: string[] = [];
-      
-      // Upload das novas fotos se existirem
-      if (novasFotos && novasFotos.length > 0) {
-        for (const foto of novasFotos) {
-          const fileName = `${Date.now()}_${foto.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('item-photos')
-            .upload(fileName, foto);
-
-          if (uploadError) {
-            console.error('Erro no upload:', uploadError);
-            continue;
-          }
-
-          const { data: urlData } = supabase.storage
-            .from('item-photos')
-            .getPublicUrl(uploadData.path);
-          
-          fotosUrls.push(urlData.publicUrl);
-        }
-      }
-
-      // Buscar fotos existentes
-      const { data: itemAtual } = await supabase
-        .from('itens')
-        .select('fotos')
-        .eq('id', itemData.id)
-        .single();
-
-      const fotosExistentes = itemAtual?.fotos || [];
-      const todasFotos = [...fotosExistentes, ...fotosUrls];
-
-      const { error } = await supabase
-        .from('itens')
-        .update({
-          ...itemData,
-          fotos: todasFotos.length > 0 ? todasFotos : null
-        })
-        .eq('id', itemData.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Item atualizado com sucesso!",
-      });
-
-      await buscarItens();
-      return true;
-    } catch (error) {
-      console.error('Erro ao atualizar item:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar o item.",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const editarItem = async (item: Tables<'itens'>) => {
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from('itens')
-        .update(item)
-        .eq('id', item.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Item editado com sucesso!",
-      });
-
-      await buscarItens();
-    } catch (error) {
-      console.error('Erro ao editar item:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível editar o item.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buscarItemPorId = async (id: string) => {
+  const buscarItemPorId = async (itemId: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('itens')
         .select(`
           *,
-          profiles:publicado_por (
+          profiles!publicado_por (
             id,
             nome,
             avatar_url,
             bairro,
             cidade,
-            reputacao
+            reputacao,
+            telefone
           )
         `)
-        .eq('id', id)
+        .eq('id', itemId)
         .single();
 
       if (error) throw error;
       return data;
-    } catch (error) {
-      console.error('Erro ao buscar item:', error);
+    } catch (err) {
+      console.error('Erro ao buscar item:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar item');
       return null;
     } finally {
       setLoading(false);
     }
   };
 
+  const publicarItem = async (novoItem: {
+    titulo: string;
+    descricao: string;
+    categoria: string;
+    tamanho?: string;
+    estado_conservacao: string;
+    valor_girinhas: number;
+    fotos?: string[];
+  }) => {
+    if (!user) return false;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('itens')
+        .insert({
+          ...novoItem,
+          publicado_por: user.id
+        });
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Erro ao publicar item:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao publicar item');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const atualizarItem = async (itemId: string, updates: Partial<Item>) => {
+    if (!user) return false;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('itens')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', itemId)
+        .eq('publicado_por', user.id); // Garantir que só o dono pode editar
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Erro ao atualizar item:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar item');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deletarItem = async (itemId: string) => {
+    if (!user) return false;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('itens')
+        .delete()
+        .eq('id', itemId)
+        .eq('publicado_por', user.id); // Garantir que só o dono pode deletar
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Erro ao deletar item:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao deletar item');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    buscarItens();
+  }, [user]);
+
   return {
     itens,
     loading,
+    error,
     buscarItens,
-    buscarTodosItens,
     buscarMeusItens,
+    buscarItensDoUsuario,
+    buscarItemPorId,
     publicarItem,
     atualizarItem,
-    editarItem,
-    buscarItemPorId
+    deletarItem
   };
 };
