@@ -13,7 +13,9 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('AuthGuard - loading:', loading, 'user:', user);
     if (!loading && !user) {
+      console.log('Redirecting to auth page');
       navigate('/auth');
     }
   }, [user, loading, navigate]);
