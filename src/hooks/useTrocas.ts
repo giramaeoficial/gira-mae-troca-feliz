@@ -17,6 +17,9 @@ type Troca = Tables<'reservas'> & {
     nome: string;
     avatar_url: string | null;
   } | null;
+  avaliacoes?: Array<{
+    rating: number;
+  }>;
 };
 
 export const useTrocas = () => {
@@ -53,11 +56,12 @@ export const useTrocas = () => {
           )
         `)
         .or(`usuario_reservou.eq.${user.id},usuario_item.eq.${user.id}`)
+        .eq('status', 'confirmada')
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
 
-      setTrocas(data || []);
+      setTrocas(data as Troca[] || []);
     } catch (err) {
       console.error('Erro ao buscar trocas:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -112,6 +116,36 @@ export const useTrocas = () => {
     }
   };
 
+  // Funções de estatísticas
+  const getTotalTrocas = (): number => {
+    return trocas.length;
+  };
+
+  const getTotalGirinhasRecebidas = (): number => {
+    if (!user) return 0;
+    return trocas
+      .filter(troca => troca.usuario_item === user.id)
+      .reduce((total, troca) => total + troca.valor_girinhas, 0);
+  };
+
+  const getTotalGirinhasGastas = (): number => {
+    if (!user) return 0;
+    return trocas
+      .filter(troca => troca.usuario_reservou === user.id)
+      .reduce((total, troca) => total + troca.valor_girinhas, 0);
+  };
+
+  const getMediaAvaliacoes = (): number => {
+    const avaliacoes = trocas
+      .filter(troca => troca.avaliacoes && troca.avaliacoes.length > 0)
+      .flatMap(troca => troca.avaliacoes || []);
+    
+    if (avaliacoes.length === 0) return 0;
+    
+    const soma = avaliacoes.reduce((total, avaliacao) => total + avaliacao.rating, 0);
+    return soma / avaliacoes.length;
+  };
+
   useEffect(() => {
     fetchTrocas();
   }, [user]);
@@ -122,6 +156,10 @@ export const useTrocas = () => {
     error,
     refetch: fetchTrocas,
     marcarComoConfirmada,
-    cancelarTroca
+    cancelarTroca,
+    getTotalTrocas,
+    getTotalGirinhasRecebidas,
+    getTotalGirinhasGastas,
+    getMediaAvaliacoes
   };
 };

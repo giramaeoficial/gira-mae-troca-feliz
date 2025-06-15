@@ -1,52 +1,64 @@
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { QueryClient } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster"
 
-import Home from './pages/Home';
+import Index from './pages/Index';
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
-import EsqueciSenha from './pages/EsqueciSenha';
-import RedefinirSenha from './pages/RedefinirSenha';
-import Marketplace from './pages/Marketplace';
-import ItemDetail from './pages/ItemDetail';
-import Checkout from './pages/Checkout';
-import Dashboard from './pages/Dashboard';
+import Auth from './pages/Auth';
+import Feed from './pages/Feed';
+import Perfil from './pages/Perfil';
+import PublicarItem from './pages/PublicarItem';
+import DetalhesItem from './pages/DetalhesItem';
+import Carteira from './pages/Carteira';
 import SistemaGirinhas from './pages/SistemaGirinhas';
-import Reservas from './pages/Reservas';
-import Chat from './pages/Chat';
+import MinhasReservas from './pages/MinhasReservas';
 import { AuthProvider } from './hooks/useAuth';
 import { CarteiraProvider } from './contexts/CarteiraContext';
 import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
+import { useRecompensasAutomaticas } from './hooks/useRecompensasAutomaticas';
+import { useMonitorMetas } from './hooks/useMonitorMetas';
+
+const queryClient = new QueryClient();
+
+function AppContent() {
+  useRecompensasAutomaticas();
+  useMonitorMetas();
+  
+  return (
+    <div className="min-h-screen bg-background font-sans antialiased">
+      <Toaster />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/feed" element={<Feed />} />
+        <Route path="/perfil" element={<Perfil />} />
+        <Route path="/publicar" element={<PublicarItem />} />
+        <Route path="/item/:id" element={<DetalhesItem />} />
+        <Route path="/carteira" element={<Carteira />} />
+        <Route path="/sistema-girinhas" element={<SistemaGirinhas />} />
+        <Route path="/reservas" element={<MinhasReservas />} />
+      </Routes>
+    </div>
+  );
+}
 
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
           <RecompensasProvider>
             <CarteiraProvider>
-              <div className="min-h-screen bg-background font-sans antialiased">
-                <Toaster />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/cadastro" element={<Cadastro />} />
-                  <Route path="/esqueci-senha" element={<EsqueciSenha />} />
-                  <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-                  <Route path="/marketplace" element={<Marketplace />} />
-                  <Route path="/item/:itemId" element={<ItemDetail />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/sistema-girinhas" element={<SistemaGirinhas />} />
-                  <Route path="/reservas" element={<Reservas />} />
-                  <Route path="/chat/:reservaId" element={<Chat />} />
-                </Routes>
-              </div>
+              <AppContent />
             </CarteiraProvider>
           </RecompensasProvider>
         </AuthProvider>
       </BrowserRouter>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
