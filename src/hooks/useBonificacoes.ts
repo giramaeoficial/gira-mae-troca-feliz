@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 
 interface Bonificacao {
   id: string;
@@ -16,6 +17,7 @@ interface Bonificacao {
 export const useBonificacoes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { mostrarRecompensa } = useRecompensas();
   const [bonificacoesPendentes, setBonificacoesPendentes] = useState<Bonificacao[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -56,8 +58,16 @@ export const useBonificacoes = () => {
             });
 
           if (!bonusError) {
+            // Mostrar notificação visual
+            mostrarRecompensa({
+              tipo: 'troca',
+              valor: 1,
+              descricao: 'Troca concluída com sucesso! Continue trocando para ganhar mais.'
+            });
+
+            // Toast de backup
             toast({
-              title: "🎉 Bônus recebido!",
+              title: "🎉 Troca concluída!",
               description: "Você ganhou 1 Girinha por completar uma troca!",
             });
           }
@@ -105,6 +115,14 @@ export const useBonificacoes = () => {
               descricao: 'Bônus por fazer avaliação'
             });
 
+          // Mostrar notificação visual
+          mostrarRecompensa({
+            tipo: 'avaliacao',
+            valor: 0.5,
+            descricao: 'Obrigada por avaliar! Sua opinião ajuda nossa comunidade.'
+          });
+
+          // Toast de backup
           toast({
             title: "⭐ Bônus de avaliação!",
             description: "Você ganhou 0,5 Girinha por avaliar uma troca!",
@@ -147,6 +165,14 @@ export const useBonificacoes = () => {
               descricao: `Bônus por indicação - ${perfilIndicado.nome}`
             });
 
+          // Mostrar notificação visual
+          mostrarRecompensa({
+            tipo: 'indicacao',
+            valor: 2,
+            descricao: `${perfilIndicado.nome} se juntou à comunidade graças a você!`
+          });
+
+          // Toast de backup
           toast({
             title: "👥 Bônus de indicação!",
             description: "Você ganhou 2 Girinhas por indicar uma nova mãe!",
@@ -206,9 +232,18 @@ export const useBonificacoes = () => {
               descricao: `Meta conquistada: ${meta.tipo_meta.toUpperCase()}`
             });
 
+          // Mostrar notificação visual especial para metas
+          mostrarRecompensa({
+            tipo: 'meta',
+            valor: meta.girinhas_bonus,
+            descricao: `Parabéns! Você conquistou o distintivo ${meta.tipo_meta.toUpperCase()}!`,
+            meta: meta.tipo_meta
+          });
+
+          // Toast de celebração
           toast({
             title: `🏆 Meta ${meta.tipo_meta.toUpperCase()} conquistada!`,
-            description: `Parabéns! Você ganhou ${meta.girinhas_bonus} Girinhas!`,
+            description: `Incrível! Você ganhou ${meta.girinhas_bonus} Girinhas!`,
           });
         }
       }
@@ -240,9 +275,17 @@ export const useBonificacoes = () => {
             descricao: 'Bônus de boas-vindas'
           });
 
+        // Mostrar notificação visual especial de boas-vindas
+        mostrarRecompensa({
+          tipo: 'cadastro',
+          valor: 5,
+          descricao: 'Bem-vinda à comunidade GiraMãe! Aqui você faz parte de algo especial.'
+        });
+
+        // Toast de boas-vindas
         toast({
-          title: "🎁 Boas-vindas ao GiraMãe!",
-          description: "Você ganhou 5 Girinhas de boas-vindas!",
+          title: "🎁 Bem-vinda ao GiraMãe!",
+          description: "Você ganhou 5 Girinhas de boas-vindas! Explore e comece a trocar.",
         });
       }
     } catch (error) {
