@@ -61,7 +61,19 @@ export const useTrocas = () => {
 
       if (fetchError) throw fetchError;
 
-      setTrocas(data as Troca[] || []);
+      // Processar os dados para garantir que profiles são objetos únicos
+      const processedData: Troca[] = (data || []).map((item: any) => ({
+        ...item,
+        profiles_reservador: Array.isArray(item.profiles_reservador) 
+          ? item.profiles_reservador[0] || null 
+          : item.profiles_reservador,
+        profiles_vendedor: Array.isArray(item.profiles_vendedor) 
+          ? item.profiles_vendedor[0] || null 
+          : item.profiles_vendedor,
+        avaliacoes: [] // Por enquanto vazio, pode ser implementado depois
+      }));
+
+      setTrocas(processedData);
     } catch (err) {
       console.error('Erro ao buscar trocas:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
