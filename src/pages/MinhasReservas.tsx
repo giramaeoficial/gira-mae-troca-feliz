@@ -107,50 +107,62 @@ const MinhasReservas = () => {
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
       <CardContent className="p-4">
         <div className="flex gap-4">
-          <img 
-            src={reserva.itemImagem} 
-            alt={reserva.itemTitulo} 
-            className="w-20 h-20 rounded-lg object-cover"
-          />
-          <div className="flex-grow space-y-2">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold text-gray-800">{reserva.itemTitulo}</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="w-3 h-3" />
-                  {reserva.localizacao}
+          {/* Imagem do item */}
+          <div className="flex-shrink-0">
+            <img 
+              src={reserva.itemImagem} 
+              alt={reserva.itemTitulo} 
+              className="w-20 h-20 rounded-lg object-cover"
+            />
+          </div>
+          
+          {/* Conteúdo principal */}
+          <div className="flex-grow min-w-0">
+            {/* Header com título e badge */}
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex-grow min-w-0">
+                <h3 className="font-semibold text-gray-800 truncate">{reserva.itemTitulo}</h3>
+                <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span>{reserva.localizacao}</span>
                 </div>
               </div>
-              {getStatusBadge(reserva)}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={reserva.outraMaeAvatar} alt={reserva.outraMae} />
-                <AvatarFallback className="text-xs">
-                  {reserva.outraMae.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-gray-600">{reserva.outraMae}</span>
-              <div className="flex items-center gap-1 text-primary font-medium">
-                <Sparkles className="w-4 h-4" />
-                {reserva.itemGirinhas}
+              <div className="flex-shrink-0 ml-2">
+                {getStatusBadge(reserva)}
               </div>
             </div>
 
+            {/* Informações da outra mãe e valor */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarImage src={reserva.outraMaeAvatar} alt={reserva.outraMae} />
+                  <AvatarFallback className="text-xs">
+                    {reserva.outraMae.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-gray-600 truncate">{reserva.outraMae}</span>
+              </div>
+              <div className="flex items-center gap-1 text-primary font-medium flex-shrink-0">
+                <Sparkles className="w-4 h-4" />
+                <span>{reserva.itemGirinhas}</span>
+              </div>
+            </div>
+
+            {/* Status de confirmação (apenas para pendentes) */}
             {reserva.status === 'pendente' && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
                 <CountdownTimer expirationDate={reserva.prazoExpiracao} />
-                <div className="mt-2 space-y-1 text-xs text-gray-600">
+                <div className="mt-2 space-y-1 text-xs">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${reserva.confirmedByMe ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <span className={reserva.confirmedByMe ? 'text-green-600 font-medium' : ''}>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${reserva.confirmedByMe ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <span className={`${reserva.confirmedByMe ? 'text-green-600 font-medium' : 'text-gray-600'} truncate`}>
                       Você {reserva.confirmedByMe ? 'confirmou' : 'ainda não confirmou'} a entrega
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${reserva.confirmedByOther ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <span className={reserva.confirmedByOther ? 'text-green-600 font-medium' : ''}>
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${reserva.confirmedByOther ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <span className={`${reserva.confirmedByOther ? 'text-green-600 font-medium' : 'text-gray-600'} truncate`}>
                       {reserva.outraMae} {reserva.confirmedByOther ? 'confirmou' : 'ainda não confirmou'} a entrega
                     </span>
                   </div>
@@ -158,15 +170,33 @@ const MinhasReservas = () => {
               </div>
             )}
 
-            <div className="flex gap-2 pt-2">
+            {/* Status de sucesso/erro */}
+            {reserva.status === 'confirmada' && (
+              <div className="flex items-center gap-2 text-green-600 text-sm font-medium mb-3 bg-green-50 border border-green-200 rounded-lg p-2">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                <span>Troca realizada com sucesso! 🎉</span>
+              </div>
+            )}
+
+            {(reserva.status === 'expirada' || reserva.status === 'cancelada') && (
+              <div className="flex items-center gap-2 text-gray-600 text-sm mb-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                <X className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  {reserva.status === 'expirada' ? 'Reserva expirou - Girinhas reembolsadas' : 'Reserva cancelada'}
+                </span>
+              </div>
+            )}
+
+            {/* Botões de ação */}
+            <div className="flex gap-2">
               <Button 
                 size="sm" 
                 variant="outline"
                 onClick={() => onChat(reserva)}
-                className="flex-1"
+                className="flex items-center gap-1 flex-1"
               >
-                <MessageCircle className="w-4 h-4 mr-1" />
-                Chat
+                <MessageCircle className="w-4 h-4" />
+                <span>Chat</span>
               </Button>
               
               {reserva.status === 'pendente' && (
@@ -174,39 +204,25 @@ const MinhasReservas = () => {
                   <Button 
                     size="sm"
                     onClick={() => onConfirm(reserva.id)}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    className="flex items-center gap-1 flex-1 bg-green-600 hover:bg-green-700 text-white"
                     disabled={reserva.confirmedByMe}
                   >
-                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                    {reserva.confirmedByMe ? "✓ Confirmado" : "Confirmar Entrega"}
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="truncate">
+                      {reserva.confirmedByMe ? "✓ Confirmado" : "Confirmar Entrega"}
+                    </span>
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
                     onClick={() => onCancel(reserva.id)}
-                    className="text-red-600 border-red-200 hover:bg-red-50"
+                    className="text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </Button>
                 </>
               )}
             </div>
-
-            {reserva.status === 'confirmada' && (
-              <div className="flex items-center gap-2 text-green-600 text-sm font-medium pt-2 bg-green-50 border border-green-200 rounded-lg p-2">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Troca realizada com sucesso! 🎉</span>
-              </div>
-            )}
-
-            {(reserva.status === 'expirada' || reserva.status === 'cancelada') && (
-              <div className="flex items-center gap-2 text-gray-600 text-sm pt-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
-                <X className="w-4 h-4" />
-                <span>
-                  {reserva.status === 'expirada' ? 'Reserva expirou - Girinhas reembolsadas' : 'Reserva cancelada'}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
