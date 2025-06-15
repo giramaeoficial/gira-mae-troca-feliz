@@ -259,11 +259,44 @@ export const useItens = () => {
     }
   };
 
+  const buscarItemPorId = async (id: string): Promise<Item | null> => {
+    try {
+      console.log('Buscando item por ID:', id);
+      
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          profiles!itens_publicado_por_fkey (
+            nome,
+            bairro,
+            cidade,
+            avatar_url,
+            reputacao
+          )
+        `)
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao buscar item por ID:', error);
+        throw error;
+      }
+
+      console.log('Item encontrado:', data);
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar item por ID:', error);
+      return null;
+    }
+  };
+
   return {
     publicarItem,
     atualizarItem,
     buscarMeusItens,
     buscarTodosItens,
+    buscarItemPorId,
     loading
   };
 };
