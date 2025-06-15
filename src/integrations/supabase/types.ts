@@ -107,6 +107,50 @@ export type Database = {
         }
         Relationships: []
       }
+      compras_girinhas: {
+        Row: {
+          created_at: string
+          girinhas_recebidas: number
+          id: string
+          pacote_id: string
+          payment_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          valor_pago: number
+        }
+        Insert: {
+          created_at?: string
+          girinhas_recebidas: number
+          id?: string
+          pacote_id: string
+          payment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          valor_pago: number
+        }
+        Update: {
+          created_at?: string
+          girinhas_recebidas?: number
+          id?: string
+          pacote_id?: string
+          payment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          valor_pago?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_girinhas_pacote_id_fkey"
+            columns: ["pacote_id"]
+            isOneToOne: false
+            referencedRelation: "pacotes_girinhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversas: {
         Row: {
           created_at: string
@@ -271,6 +315,30 @@ export type Database = {
           },
         ]
       }
+      indicacoes: {
+        Row: {
+          bonus_pago: boolean | null
+          created_at: string
+          id: string
+          indicado_id: string
+          indicador_id: string
+        }
+        Insert: {
+          bonus_pago?: boolean | null
+          created_at?: string
+          id?: string
+          indicado_id: string
+          indicador_id: string
+        }
+        Update: {
+          bonus_pago?: boolean | null
+          created_at?: string
+          id?: string
+          indicado_id?: string
+          indicador_id?: string
+        }
+        Relationships: []
+      }
       itens: {
         Row: {
           categoria: string
@@ -365,6 +433,78 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      metas_usuarios: {
+        Row: {
+          conquistado: boolean | null
+          created_at: string
+          data_conquista: string | null
+          girinhas_bonus: number
+          id: string
+          tipo_meta: string
+          trocas_necessarias: number
+          trocas_realizadas: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conquistado?: boolean | null
+          created_at?: string
+          data_conquista?: string | null
+          girinhas_bonus: number
+          id?: string
+          tipo_meta: string
+          trocas_necessarias: number
+          trocas_realizadas?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conquistado?: boolean | null
+          created_at?: string
+          data_conquista?: string | null
+          girinhas_bonus?: number
+          id?: string
+          tipo_meta?: string
+          trocas_necessarias?: number
+          trocas_realizadas?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pacotes_girinhas: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          desconto_percentual: number | null
+          id: string
+          nome: string
+          updated_at: string
+          valor_girinhas: number
+          valor_real: number
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          desconto_percentual?: number | null
+          id?: string
+          nome: string
+          updated_at?: string
+          valor_girinhas: number
+          valor_real: number
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          desconto_percentual?: number | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          valor_girinhas?: number
+          valor_real?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -611,6 +751,10 @@ export type Database = {
         Args: { p_reserva_id: string }
         Returns: string
       }
+      processar_compra_girinhas: {
+        Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
+        Returns: string
+      }
       processar_proximo_fila: {
         Args: { p_item_id: string }
         Returns: undefined
@@ -622,6 +766,10 @@ export type Database = {
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
+      }
+      verificar_metas_usuario: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
