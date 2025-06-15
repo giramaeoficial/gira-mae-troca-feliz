@@ -6,7 +6,14 @@ import { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
 type Item = Tables<'itens'>;
-type NovoItem = Omit<TablesInsert<'itens'>, 'publicado_por' | 'id' | 'created_at' | 'updated_at'>;
+type NovoItem = {
+  titulo: string;
+  descricao: string;
+  categoria: string;
+  estado_conservacao: string;
+  tamanho?: string | null;
+  valor_girinhas: number;
+};
 
 export const useItens = () => {
   const { user } = useAuth();

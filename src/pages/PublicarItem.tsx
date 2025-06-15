@@ -1,4 +1,3 @@
-
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,8 +17,12 @@ import { useItens } from "@/hooks/useItens";
 const itemSchema = z.object({
   titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
   descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
-  categoria: z.string().min(1, "Selecione uma categoria"),
-  estado_conservacao: z.string().min(1, "Selecione o estado de conservação"),
+  categoria: z.enum(["roupa", "brinquedo", "calcado", "acessorio", "kit", "outro"], {
+    required_error: "Selecione uma categoria"
+  }),
+  estado_conservacao: z.enum(["novo", "otimo", "bom", "razoavel"], {
+    required_error: "Selecione o estado de conservação"
+  }),
   tamanho: z.string().optional(),
   valor_girinhas: z.number().min(1, "Valor deve ser maior que 0").max(500, "Valor máximo de 500 Girinhas")
 });
@@ -37,8 +40,8 @@ const PublicarItem = () => {
         defaultValues: {
             titulo: "",
             descricao: "",
-            categoria: "",
-            estado_conservacao: "",
+            categoria: undefined,
+            estado_conservacao: undefined,
             tamanho: "",
             valor_girinhas: 0
         }
@@ -81,7 +84,17 @@ const PublicarItem = () => {
     };
 
     const onSubmit = async (data: ItemFormData) => {
-        const sucesso = await publicarItem(data, selectedFiles);
+        // Garantir que todas as propriedades obrigatórias estão presentes
+        const itemData = {
+            titulo: data.titulo,
+            descricao: data.descricao,
+            categoria: data.categoria!,
+            estado_conservacao: data.estado_conservacao!,
+            tamanho: data.tamanho || null,
+            valor_girinhas: data.valor_girinhas
+        };
+        
+        const sucesso = await publicarItem(itemData, selectedFiles);
         
         if (sucesso) {
             setTimeout(() => {
