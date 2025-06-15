@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Sparkles, Trophy, History, TrendingUp, Heart, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/shared/Header";
