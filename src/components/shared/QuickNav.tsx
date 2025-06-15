@@ -1,13 +1,12 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, Plus, User, Clock } from "lucide-react";
+import { Search, Plus, User, Clock } from "lucide-react";
 
 const QuickNav = () => {
   const location = useLocation();
   
   const navItems = [
-    { icon: Home, label: "Início", path: "/feed", id: "nav-feed" },
-    { icon: Search, label: "Explorar", path: "/explorar", id: "nav-explorar" },
+    { icon: Search, label: "Explorar", path: "/feed", id: "nav-explorar" },
     { icon: Plus, label: "Publicar", path: "/publicar-item", id: "nav-publicar" },
     { icon: Clock, label: "Reservas", path: "/minhas-reservas", id: "nav-reservas" },
     { icon: User, label: "Perfil", path: "/perfil", id: "nav-perfil" },
