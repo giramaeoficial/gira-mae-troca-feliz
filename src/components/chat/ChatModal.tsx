@@ -70,15 +70,24 @@ const ChatModal = ({ isOpen, onClose, outraMae, item }: ChatModalProps) => {
 
     // Simular resposta automática
     setTimeout(() => {
+      const respostasAutomaticas = [
+        "Oi! Que bom que você reservou. Podemos combinar para hoje à tarde na praça perto da escola.",
+        "Perfeito! Posso deixar na portaria do meu prédio se preferir.",
+        "Ótimo! Vou te enviar a localização exata em alguns minutos.",
+        "Combinado! Nos falamos mais tarde para acertar os detalhes."
+      ];
+      
+      const respostaAleatoria = respostasAutomaticas[Math.floor(Math.random() * respostasAutomaticas.length)];
+      
       const respostaAutomatica: Mensagem = {
         id: Date.now() + 1,
-        texto: "Oi! Que bom que você reservou. Podemos combinar para hoje à tarde na praça perto da escola. Te mando a localização exata em alguns minutos!",
+        texto: respostaAleatoria,
         autor: 'outra',
         timestamp: new Date(),
         tipo: 'normal'
       };
       setMensagens(prev => [...prev, respostaAutomatica]);
-    }, 2000);
+    }, 1500);
   };
 
   const usarSugestao = (sugestao: string) => {

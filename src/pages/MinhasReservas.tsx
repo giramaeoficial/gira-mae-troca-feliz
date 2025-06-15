@@ -1,10 +1,11 @@
+
 import Header from "@/components/shared/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MessageCircle, CheckCircle2, X, MapPin, Sparkles } from "lucide-react";
+import { Clock, MessageCircle, CheckCircle2, X, MapPin, Sparkles, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useReservas, Reserva } from "@/hooks/useReservas";
@@ -52,24 +53,57 @@ const MinhasReservas = () => {
     const timeLeft = useCountdown(expirationDate) as { days?: number, hours?: number, minutes?: number};
 
     if (Object.keys(timeLeft).length === 0) {
-      return <span className="text-red-500 font-medium">Expirado</span>;
+      return (
+        <div className="flex items-center gap-1 text-red-500 font-medium">
+          <AlertTriangle className="w-4 h-4" />
+          <span>Expirado</span>
+        </div>
+      );
     }
 
     const { days, hours, minutes } = timeLeft;
+    const isUrgent = (days || 0) === 0 && (hours || 0) < 6;
 
     return (
-      <div className="flex items-center gap-1 text-orange-600 font-medium">
+      <div className={`flex items-center gap-1 font-medium ${isUrgent ? 'text-red-600' : 'text-orange-600'}`}>
         <Clock className="w-4 h-4" />
-        <span>{days > 0 ? `${days}d ` : ''}{hours}h {minutes}m restantes</span>
+        <span>
+          {days > 0 ? `${days}d ` : ''}
+          {hours}h {minutes}m restantes
+        </span>
       </div>
     );
+  };
+
+  const getStatusBadge = (reserva: Reserva) => {
+    switch (reserva.status) {
+      case 'pendente':
+        return (
+          <Badge className="bg-orange-500 text-white">
+            {reserva.tipo === 'reservada' ? 'Você reservou' : 'Reservaram de você'}
+          </Badge>
+        );
+      case 'confirmada':
+        return <Badge className="bg-green-500 text-white">Troca Realizada</Badge>;
+      case 'expirada':
+        return <Badge className="bg-red-500 text-white">Expirada</Badge>;
+      case 'cancelada':
+        return <Badge className="bg-gray-500 text-white">Cancelada</Badge>;
+      default:
+        return <Badge variant="secondary">Desconhecido</Badge>;
+    }
   };
 
   const reservasPendentes = reservas.filter(r => r.status === 'pendente');
   const reservasConcluidas = reservas.filter(r => r.status === 'confirmada');
   const reservasExpiradas = reservas.filter(r => r.status === 'expirada' || r.status === 'cancelada');
 
-  const ReservaCard = ({ reserva, onConfirm, onCancel, onChat }: { reserva: Reserva, onConfirm: (id: number) => void, onCancel: (id: number) => void, onChat: (reserva: Reserva) => void }) => (
+  const ReservaCard = ({ reserva, onConfirm, onCancel, onChat }: { 
+    reserva: Reserva, 
+    onConfirm: (id: number) => void, 
+    onCancel: (id: number) => void, 
+    onChat: (reserva: Reserva) => void 
+  }) => (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
       <CardContent className="p-4">
         <div className="flex gap-4">
@@ -87,14 +121,7 @@ const MinhasReservas = () => {
                   {reserva.localizacao}
                 </div>
               </div>
-              <Badge 
-                className={`${
-                  reserva.status === 'pendente' ? 'bg-orange-500' :
-                  reserva.status === 'confirmada' ? 'bg-green-500' : 'bg-gray-500'
-                } text-white`}
-              >
-                {reserva.tipo === 'reservada' ? 'Você reservou' : 'Reservaram de você'}
-              </Badge>
+              {getStatusBadge(reserva)}
             </div>
 
             <div className="flex items-center gap-3">
@@ -112,16 +139,24 @@ const MinhasReservas = () => {
             </div>
 
             {reserva.status === 'pendente' && (
-              <CountdownTimer expirationDate={reserva.prazoExpiracao} />
-            )}
-            
-            {reserva.status === 'pendente' && (
-                <div className="border-t pt-2 space-y-1 text-xs text-gray-500">
-                    {reserva.confirmedByMe && <p className="text-green-600 flex items-center gap-1"><CheckCircle2 size={14}/>Você confirmou a entrega.</p>}
-                    {reserva.confirmedByOther && <p className="text-blue-600 flex items-center gap-1"><CheckCircle2 size={14}/>A outra mãe confirmou a entrega.</p>}
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <CountdownTimer expirationDate={reserva.prazoExpiracao} />
+                <div className="mt-2 space-y-1 text-xs text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${reserva.confirmedByMe ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <span className={reserva.confirmedByMe ? 'text-green-600 font-medium' : ''}>
+                      Você {reserva.confirmedByMe ? 'confirmou' : 'ainda não confirmou'} a entrega
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${reserva.confirmedByOther ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <span className={reserva.confirmedByOther ? 'text-green-600 font-medium' : ''}>
+                      {reserva.outraMae} {reserva.confirmedByOther ? 'confirmou' : 'ainda não confirmou'} a entrega
+                    </span>
+                  </div>
                 </div>
+              </div>
             )}
-
 
             <div className="flex gap-2 pt-2">
               <Button 
@@ -143,7 +178,7 @@ const MinhasReservas = () => {
                     disabled={reserva.confirmedByMe}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
-                    {reserva.confirmedByMe ? "Confirmado" : "Confirmar Entrega"}
+                    {reserva.confirmedByMe ? "✓ Confirmado" : "Confirmar Entrega"}
                   </Button>
                   <Button 
                     size="sm" 
@@ -158,9 +193,18 @@ const MinhasReservas = () => {
             </div>
 
             {reserva.status === 'confirmada' && (
-              <div className="flex items-center gap-2 text-green-600 text-sm font-medium pt-2">
+              <div className="flex items-center gap-2 text-green-600 text-sm font-medium pt-2 bg-green-50 border border-green-200 rounded-lg p-2">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Troca realizada com sucesso!</span>
+                <span>Troca realizada com sucesso! 🎉</span>
+              </div>
+            )}
+
+            {(reserva.status === 'expirada' || reserva.status === 'cancelada') && (
+              <div className="flex items-center gap-2 text-gray-600 text-sm pt-2 bg-gray-50 border border-gray-200 rounded-lg p-2">
+                <X className="w-4 h-4" />
+                <span>
+                  {reserva.status === 'expirada' ? 'Reserva expirou - Girinhas reembolsadas' : 'Reserva cancelada'}
+                </span>
               </div>
             )}
           </div>
