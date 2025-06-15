@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +19,8 @@ type ReservaComRelacionamentos = Tables<'reservas'> & {
     nome: string;
     avatar_url: string | null;
   } | null;
+  posicao_fila?: number;
+  tempo_restante?: number;
 };
 
 export const useReservas = () => {
@@ -52,7 +55,7 @@ export const useReservas = () => {
 
       if (error) throw error;
 
-      // Para cada reserva, buscar os perfis separadamente
+      // Para cada reserva, buscar os perfis e calcular posição na fila
       const reservasComPerfis = await Promise.all(
         (data || []).map(async (reserva) => {
           // Buscar perfil do reservador
@@ -69,10 +72,33 @@ export const useReservas = () => {
             .eq('id', reserva.usuario_item)
             .single();
 
+          // Calcular posição na fila para reservas em espera
+          let posicao_fila = undefined;
+          if (reserva.status === 'fila_espera') {
+            const { count } = await supabase
+              .from('reservas')
+              .select('*', { count: 'exact', head: true })
+              .eq('item_id', reserva.item_id)
+              .in('status', ['pendente', 'fila_espera'])
+              .lt('created_at', reserva.created_at);
+            
+            posicao_fila = (count || 0) + 1;
+          }
+
+          // Calcular tempo restante para reservas ativas
+          let tempo_restante = undefined;
+          if (reserva.status === 'pendente') {
+            const agora = new Date();
+            const expiracao = new Date(reserva.prazo_expiracao);
+            tempo_restante = Math.max(0, expiracao.getTime() - agora.getTime());
+          }
+
           return {
             ...reserva,
             profiles_reservador: perfilReservador,
-            profiles_vendedor: perfilVendedor
+            profiles_vendedor: perfilVendedor,
+            posicao_fila,
+            tempo_restante
           };
         })
       );
@@ -83,6 +109,61 @@ export const useReservas = () => {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const entrarNaFila = async (itemId: string, valorGirinhas: number): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para entrar na fila.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      // Verificar se já existe reserva ativa para este item
+      const { data: reservaAtiva } = await supabase
+        .from('reservas')
+        .select('*')
+        .eq('item_id', itemId)
+        .eq('status', 'pendente')
+        .single();
+
+      if (reservaAtiva) {
+        // Item já reservado, adicionar à fila de espera
+        const { error } = await supabase
+          .from('reservas')
+          .insert({
+            item_id: itemId,
+            usuario_reservou: user.id,
+            usuario_item: reservaAtiva.usuario_item,
+            valor_girinhas: valorGirinhas,
+            status: 'fila_espera'
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Adicionado à fila! 📋",
+          description: "Você foi adicionado à lista de espera. Te avisaremos quando for sua vez!",
+        });
+      } else {
+        // Item disponível, fazer reserva normal
+        return await criarReserva(itemId, valorGirinhas);
+      }
+
+      await fetchReservas();
+      return true;
+    } catch (err) {
+      console.error('Erro ao entrar na fila:', err);
+      toast({
+        title: "Erro ao entrar na fila",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -134,7 +215,6 @@ export const useReservas = () => {
         description: "As Girinhas foram bloqueadas. Você tem 48h para combinar a entrega.",
       });
 
-      // Recarregar reservas
       await fetchReservas();
       return true;
     } catch (err) {
@@ -142,6 +222,43 @@ export const useReservas = () => {
       toast({
         title: "Erro ao reservar item",
         description: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const removerDaReserva = async (reservaId: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { data, error } = await supabase
+        .rpc('cancelar_reserva', {
+          p_reserva_id: reservaId,
+          p_usuario_id: user.id
+        });
+
+      if (error) throw error;
+
+      if (data) {
+        toast({
+          title: "Reserva cancelada",
+          description: "As Girinhas foram reembolsadas e o próximo da fila foi notificado.",
+        });
+      } else {
+        toast({
+          title: "Reserva cancelada",
+          description: "Cancelamento realizado. O próximo da fila foi notificado.",
+        });
+      }
+
+      await fetchReservas();
+      return true;
+    } catch (err) {
+      console.error('Erro ao cancelar reserva:', err);
+      toast({
+        title: "Erro ao cancelar reserva",
+        description: err instanceof Error ? err.message : "Tente novamente.",
         variant: "destructive",
       });
       return false;
@@ -172,7 +289,6 @@ export const useReservas = () => {
         });
       }
 
-      // Recarregar reservas
       await fetchReservas();
       return true;
     } catch (err) {
@@ -187,42 +303,7 @@ export const useReservas = () => {
   };
 
   const cancelarReserva = async (reservaId: string): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      const { data, error } = await supabase
-        .rpc('cancelar_reserva', {
-          p_reserva_id: reservaId,
-          p_usuario_id: user.id
-        });
-
-      if (error) throw error;
-
-      if (data) {
-        toast({
-          title: "Reserva cancelada",
-          description: "As Girinhas foram reembolsadas.",
-        });
-      } else {
-        toast({
-          title: "Reserva cancelada",
-          description: "Cancelamento realizado sem reembolso conforme política.",
-          variant: "destructive"
-        });
-      }
-
-      // Recarregar reservas
-      await fetchReservas();
-      return true;
-    } catch (err) {
-      console.error('Erro ao cancelar reserva:', err);
-      toast({
-        title: "Erro ao cancelar reserva",
-        description: err instanceof Error ? err.message : "Tente novamente.",
-        variant: "destructive",
-      });
-      return false;
-    }
+    return await removerDaReserva(reservaId);
   };
 
   const isItemReservado = (itemId: string): boolean => {
@@ -230,6 +311,13 @@ export const useReservas = () => {
       r.item_id === itemId && 
       r.status === 'pendente'
     );
+  };
+
+  const getFilaEspera = (itemId: string): number => {
+    return reservas.filter(r => 
+      r.item_id === itemId && 
+      r.status === 'fila_espera'
+    ).length;
   };
 
   useEffect(() => {
@@ -241,9 +329,12 @@ export const useReservas = () => {
     loading,
     error,
     criarReserva,
+    entrarNaFila,
+    removerDaReserva,
     confirmarEntrega,
     cancelarReserva,
     isItemReservado,
+    getFilaEspera,
     refetch: fetchReservas
   };
 };

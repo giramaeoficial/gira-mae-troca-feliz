@@ -1,9 +1,8 @@
-
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, MapPin, Baby, Shirt, Car, Gamepad2, BookOpen, Heart } from "lucide-react";
+import { Search, Sparkles, MapPin, Baby, Shirt, Car, Gamepad2, BookOpen, Heart, Users, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +35,7 @@ const categorias = [
 const Feed = () => {
     const { toast } = useToast();
     const { user } = useAuth();
-    const { criarReserva, isItemReservado } = useReservas();
+    const { entrarNaFila, isItemReservado, getFilaEspera } = useReservas();
     const { saldo } = useCarteira();
     const { buscarTodosItens, loading } = useItens();
     const [searchTerm, setSearchTerm] = useState("");
@@ -63,37 +62,16 @@ const Feed = () => {
             return;
         }
 
-        // Verificar se já está reservado
-        if (isItemReservado(item.id)) {
-            toast({
-                title: "Item já reservado",
-                description: "Este item já foi reservado por outra mãe.",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        // Verificar saldo
-        if (saldo < Number(item.valor_girinhas)) {
-            toast({
-                title: "Saldo insuficiente! 😔",
-                description: `Você precisa de ${item.valor_girinhas} Girinhas, mas tem apenas ${saldo} disponíveis.`,
-                variant: "destructive"
-            });
-            return;
-        }
-
-        const sucesso = await criarReserva(item.id, Number(item.valor_girinhas));
+        // Usar a nova função que lida com fila de espera
+        const sucesso = await entrarNaFila(item.id, Number(item.valor_girinhas));
         if (sucesso) {
             // Recarregar itens para atualizar status
             await carregarItens();
         }
     };
 
-    // Filtrar itens removendo os do próprio usuário
-    const itensDisponiveis = itens.filter(item => item.publicado_por !== user?.id);
-
-    const filteredItems = itensDisponiveis.filter(item => {
+    // Não filtrar itens do próprio usuário - eles devem aparecer mas não podem ser reservados
+    const filteredItems = itens.filter(item => {
         const matchesSearch = item.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (item.tamanho && item.tamanho.toLowerCase().includes(searchTerm.toLowerCase())) ||
                             (item.profiles?.bairro && item.profiles.bairro.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -202,6 +180,8 @@ const Feed = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredItems.map(item => {
                         const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
+                        const filaEspera = getFilaEspera(item.id);
+                        const isProprio = item.publicado_por === user?.id;
                         const semSaldo = saldo < Number(item.valor_girinhas);
                         const CategoryIcon = getCategoryIcon(item.categoria);
                         const imagemPrincipal = item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300";
@@ -212,10 +192,21 @@ const Feed = () => {
                             <Card key={item.id} className="overflow-hidden shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex flex-col border-0 bg-white/80 backdrop-blur-sm">
                                 <CardHeader className="p-0 relative">
                                     <img src={imagemPrincipal} alt={item.titulo} className="w-full h-48 object-cover" />
-                                    <div className="absolute top-2 right-2">
-                                        <Badge className={`${isReserved ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
+                                    <div className="absolute top-2 right-2 flex flex-col gap-1">
+                                        <Badge className={`${isReserved ? 'bg-orange-500' : 'bg-green-500'} text-white`}>
                                             {isReserved ? 'Reservado' : 'Disponível'}
                                         </Badge>
+                                        {filaEspera > 0 && (
+                                            <Badge className="bg-blue-500 text-white text-xs flex items-center gap-1">
+                                                <Users className="w-3 h-3" />
+                                                {filaEspera} na fila
+                                            </Badge>
+                                        )}
+                                        {isProprio && (
+                                            <Badge className="bg-purple-500 text-white text-xs">
+                                                Seu item
+                                            </Badge>
+                                        )}
                                     </div>
                                     <div className="absolute top-2 left-2 flex flex-col gap-1">
                                         <Badge variant="secondary" className="bg-primary/10 text-primary">
@@ -241,7 +232,7 @@ const Feed = () => {
                                 </CardContent>
                                 <CardFooter className="p-4 bg-muted/20">
                                     <div className="flex justify-between items-center w-full">
-                                        <p className={`font-bold flex items-center gap-1 ${semSaldo && !isReserved ? 'text-red-500' : 'text-primary'}`}>
+                                        <p className={`font-bold flex items-center gap-1 ${semSaldo && !isProprio ? 'text-red-500' : 'text-primary'}`}>
                                             <Sparkles className="w-4 h-4" />
                                             {item.valor_girinhas}
                                         </p>
@@ -256,14 +247,16 @@ const Feed = () => {
                                             <Button 
                                                 size="sm"
                                                 onClick={() => handleReservar(item)}
-                                                disabled={isReserved || semSaldo}
+                                                disabled={isProprio}
                                                 className={`
-                                                    ${isReserved ? "opacity-50 cursor-not-allowed" : ""}
-                                                    ${semSaldo && !isReserved ? "bg-red-500 hover:bg-red-600" : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"}
+                                                    ${isProprio ? "opacity-50 cursor-not-allowed" : ""}
+                                                    ${semSaldo && !isProprio ? "bg-red-500 hover:bg-red-600" : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"}
                                                 `}
-                                                title={semSaldo && !isReserved ? "Saldo insuficiente" : ""}
+                                                title={isProprio ? "Seu próprio item" : semSaldo ? "Saldo insuficiente" : ""}
                                             >
-                                                {isReserved ? 'Reservado' : semSaldo ? 'Sem saldo' : 'Reservar'}
+                                                {isProprio ? 'Seu item' : 
+                                                 isReserved ? (filaEspera > 0 ? `Entrar na fila (${filaEspera + 1}º)` : 'Entrar na fila') : 
+                                                 semSaldo ? 'Sem saldo' : 'Reservar'}
                                             </Button>
                                         </div>
                                     </div>
@@ -280,8 +273,8 @@ const Feed = () => {
                         </div>
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhum item encontrado</h3>
                         <p className="text-gray-600">
-                            {itensDisponiveis.length === 0 
-                                ? "Ainda não há itens publicados por outras mães. Seja a primeira a compartilhar!" 
+                            {itens.length === 0 
+                                ? "Ainda não há itens publicados. Seja a primeira a compartilhar!" 
                                 : "Tente ajustar sua busca ou explorar outras categorias."
                             }
                         </p>
