@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,8 @@ import { useMetas } from "@/hooks/useMetas";
 import { useComprasGirinhas } from "@/hooks/useComprasGirinhas";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useTrocas } from "@/hooks/useTrocas";
+import { useMonitorMetas } from "@/hooks/useMonitorMetas";
+import { useRecompensasAutomaticas } from "@/hooks/useRecompensasAutomaticas";
 
 const SistemaGirinhas = () => {
   const { toast } = useToast();
@@ -26,6 +27,9 @@ const SistemaGirinhas = () => {
   const { compras, loading: loadingCompras, simularCompra } = useComprasGirinhas();
   const { saldo } = useCarteira();
   const { trocas } = useTrocas();
+
+  useRecompensasAutomaticas();
+  useMonitorMetas();
 
   const trocasConfirmadas = trocas.filter(t => t.status === 'confirmada').length;
   const proximaMeta = getProximaMeta(trocasConfirmadas);

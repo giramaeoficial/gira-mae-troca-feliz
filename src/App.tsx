@@ -1,62 +1,52 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient } from 'react-query';
+import { Toaster } from "@/components/ui/toaster"
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { CarteiraProvider } from "@/contexts/CarteiraContext";
-import AuthGuard from "@/components/auth/AuthGuard";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Login from "./pages/Login";
-import Cadastro from "./pages/Cadastro";
-import Feed from "./pages/Feed";
-import PublicarItem from "./pages/PublicarItem";
-import DetalhesItem from "./pages/DetalhesItem";
-import Perfil from "./pages/Perfil";
-import PerfilPublico from "./pages/PerfilPublico";
-import MinhasReservas from "./pages/MinhasReservas";
-import Carteira from "./pages/Carteira";
-import ComprarGirinhas from "./pages/ComprarGirinhas";
-import SistemaGirinhas from "./pages/SistemaGirinhas";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Cadastro from './pages/Cadastro';
+import EsqueciSenha from './pages/EsqueciSenha';
+import RedefinirSenha from './pages/RedefinirSenha';
+import Marketplace from './pages/Marketplace';
+import ItemDetail from './pages/ItemDetail';
+import Checkout from './pages/Checkout';
+import Dashboard from './pages/Dashboard';
+import SistemaGirinhas from './pages/SistemaGirinhas';
+import Reservas from './pages/Reservas';
+import Chat from './pages/Chat';
+import { AuthProvider } from './hooks/useAuth';
+import { CarteiraProvider } from './contexts/CarteiraContext';
+import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
+    <QueryClient>
+      <BrowserRouter>
+        <AuthProvider>
+          <RecompensasProvider>
             <CarteiraProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/cadastro" element={<Cadastro />} />
-                
-                {/* Rotas protegidas */}
-                <Route path="/feed" element={<AuthGuard><Feed /></AuthGuard>} />
-                <Route path="/publicar-item" element={<AuthGuard><PublicarItem /></AuthGuard>} />
-                <Route path="/item/:id" element={<AuthGuard><DetalhesItem /></AuthGuard>} />
-                <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} />
-                <Route path="/perfil/:nome" element={<AuthGuard><PerfilPublico /></AuthGuard>} />
-                <Route path="/minhas-reservas" element={<AuthGuard><MinhasReservas /></AuthGuard>} />
-                <Route path="/carteira" element={<AuthGuard><Carteira /></AuthGuard>} />
-                <Route path="/comprar-girinhas" element={<AuthGuard><ComprarGirinhas /></AuthGuard>} />
-                <Route path="/sistema-girinhas" element={<AuthGuard><SistemaGirinhas /></AuthGuard>} />
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <div className="min-h-screen bg-background font-sans antialiased">
+                <Toaster />
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/cadastro" element={<Cadastro />} />
+                  <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+                  <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/item/:itemId" element={<ItemDetail />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/sistema-girinhas" element={<SistemaGirinhas />} />
+                  <Route path="/reservas" element={<Reservas />} />
+                  <Route path="/chat/:reservaId" element={<Chat />} />
+                </Routes>
+              </div>
             </CarteiraProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+          </RecompensasProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </QueryClient>
   );
 }
 
