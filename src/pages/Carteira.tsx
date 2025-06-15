@@ -6,21 +6,99 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sparkles, TrendingUp, TrendingDown, Gift, History, Plus, Minus } from "lucide-react";
+import { useCarteira } from "@/hooks/useCarteira";
+import { useAuth } from "@/hooks/useAuth";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Carteira = () => {
-    const transacoes = [
-        { id: 1, tipo: "recebido", valor: 22, descricao: "Venda: Kit Bodies Carter's", data: "há 2 horas", usuario: "Fernanda S." },
-        { id: 2, tipo: "gasto", valor: 18, descricao: "Compra: Macacão Tip Top", data: "há 1 dia", usuario: "Carla M." },
-        { id: 3, tipo: "recebido", valor: 15, descricao: "Venda: Sapatilha Rosa", data: "há 3 dias", usuario: "Juliana L." },
-        { id: 4, tipo: "bonus", valor: 50, descricao: "Bônus de boas-vindas", data: "há 1 semana", usuario: "Sistema" },
-        { id: 5, tipo: "gasto", valor: 30, descricao: "Compra: Lote de brinquedos", data: "há 1 semana", usuario: "Patricia R." },
-        { id: 6, tipo: "recebido", valor: 25, descricao: "Venda: Vestido de festa", data: "há 2 semanas", usuario: "Ana C." },
-    ];
+    const { user } = useAuth();
+    const { carteira, transacoes, loading, error, saldo, totalRecebido, totalGasto } = useCarteira();
 
-    const saldoAtual = 84;
-    const totalRecebido = 112;
-    const totalGasto = 48;
-    const ganhoEsteMes = 37;
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <Card className="max-w-md mx-auto text-center">
+                        <CardContent className="p-8">
+                            <h2 className="text-2xl font-bold mb-4">Acesso Restrito</h2>
+                            <p className="text-gray-600 mb-6">Você precisa estar logado para acessar sua carteira.</p>
+                            <Button asChild>
+                                <Link to="/auth">Fazer Login</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
+        );
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-gray-600">Carregando sua carteira...</p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <Card className="max-w-md mx-auto text-center">
+                        <CardContent className="p-8">
+                            <h2 className="text-2xl font-bold mb-4">Erro ao Carregar</h2>
+                            <p className="text-gray-600 mb-6">{error}</p>
+                            <Button onClick={() => window.location.reload()}>
+                                Tentar Novamente
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
+        );
+    }
+
+    // Calcular ganho do mês (últimos 30 dias)
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() - 30);
+    
+    const ganhoEsteMes = transacoes
+        .filter(t => 
+            (t.tipo === 'recebido' || t.tipo === 'bonus') && 
+            new Date(t.created_at) >= dataLimite
+        )
+        .reduce((total, t) => total + Number(t.valor), 0);
+
+    // Calcular categorias mais vendidas (simulação baseada nas transações)
+    const totalTransacoes = transacoes.filter(t => t.tipo === 'recebido').length;
+
+    const formatarTempo = (data: string) => {
+        try {
+            const agora = new Date();
+            const dataTransacao = new Date(data);
+            const diferencaMs = agora.getTime() - dataTransacao.getTime();
+            const diferencaHoras = Math.floor(diferencaMs / (1000 * 60 * 60));
+            const diferencaDias = Math.floor(diferencaHoras / 24);
+
+            if (diferencaHoras < 1) return 'há poucos minutos';
+            if (diferencaHoras < 24) return `há ${diferencaHoras}h`;
+            if (diferencaDias === 1) return 'há 1 dia';
+            if (diferencaDias < 7) return `há ${diferencaDias} dias`;
+            if (diferencaDias < 14) return 'há 1 semana';
+            return format(dataTransacao, "dd/MM/yyyy", { locale: ptBR });
+        } catch {
+            return 'Data inválida';
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24 md:pb-8">
@@ -41,7 +119,7 @@ const Carteira = () => {
                                     <p className="text-primary-foreground/80 text-sm">Saldo Atual</p>
                                     <div className="flex items-center gap-2">
                                         <Sparkles className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">{saldoAtual}</span>
+                                        <span className="text-2xl font-bold">{Number(saldo).toFixed(0)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -55,7 +133,7 @@ const Carteira = () => {
                                     <p className="text-green-100 text-sm">Total Recebido</p>
                                     <div className="flex items-center gap-2">
                                         <TrendingUp className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">{totalRecebido}</span>
+                                        <span className="text-2xl font-bold">{Number(totalRecebido).toFixed(0)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -69,7 +147,7 @@ const Carteira = () => {
                                     <p className="text-blue-100 text-sm">Total Gasto</p>
                                     <div className="flex items-center gap-2">
                                         <TrendingDown className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">{totalGasto}</span>
+                                        <span className="text-2xl font-bold">{Number(totalGasto).toFixed(0)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -83,7 +161,7 @@ const Carteira = () => {
                                     <p className="text-purple-100 text-sm">Ganho Este Mês</p>
                                     <div className="flex items-center gap-2">
                                         <Gift className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">+{ganhoEsteMes}</span>
+                                        <span className="text-2xl font-bold">+{ganhoEsteMes.toFixed(0)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -114,33 +192,42 @@ const Carteira = () => {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
-                                    {transacoes.map((transacao) => (
-                                        <div key={transacao.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                                    transacao.tipo === 'recebido' ? 'bg-green-100 text-green-600' :
-                                                    transacao.tipo === 'gasto' ? 'bg-red-100 text-red-600' :
-                                                    'bg-purple-100 text-purple-600'
-                                                }`}>
-                                                    {transacao.tipo === 'recebido' ? <Plus className="w-5 h-5" /> :
-                                                     transacao.tipo === 'gasto' ? <Minus className="w-5 h-5" /> :
-                                                     <Gift className="w-5 h-5" />}
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-gray-800">{transacao.descricao}</p>
-                                                    <p className="text-sm text-gray-600">{transacao.usuario} • {transacao.data}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className={`font-bold text-lg ${
-                                                    transacao.tipo === 'recebido' || transacao.tipo === 'bonus' ? 'text-green-600' : 'text-red-600'
-                                                }`}>
-                                                    {transacao.tipo === 'recebido' || transacao.tipo === 'bonus' ? '+' : '-'}{transacao.valor}
-                                                </p>
-                                                <p className="text-sm text-gray-500">Girinhas</p>
-                                            </div>
+                                    {transacoes.length === 0 ? (
+                                        <div className="text-center py-8">
+                                            <p className="text-gray-600">Nenhuma transação encontrada</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        transacoes.map((transacao) => (
+                                            <div key={transacao.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                                        transacao.tipo === 'recebido' ? 'bg-green-100 text-green-600' :
+                                                        transacao.tipo === 'gasto' ? 'bg-red-100 text-red-600' :
+                                                        'bg-purple-100 text-purple-600'
+                                                    }`}>
+                                                        {transacao.tipo === 'recebido' ? <Plus className="w-5 h-5" /> :
+                                                         transacao.tipo === 'gasto' ? <Minus className="w-5 h-5" /> :
+                                                         <Gift className="w-5 h-5" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium text-gray-800">{transacao.descricao}</p>
+                                                        <p className="text-sm text-gray-600">
+                                                            {transacao.usuario_origem && `${transacao.usuario_origem} • `}
+                                                            {formatarTempo(transacao.created_at)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={`font-bold text-lg ${
+                                                        transacao.tipo === 'recebido' || transacao.tipo === 'bonus' ? 'text-green-600' : 'text-red-600'
+                                                    }`}>
+                                                        {transacao.tipo === 'recebido' || transacao.tipo === 'bonus' ? '+' : '-'}{Number(transacao.valor).toFixed(0)}
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">Girinhas</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -155,35 +242,35 @@ const Carteira = () => {
                                 <CardContent className="space-y-4">
                                     <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                                         <span className="text-green-700">Girinhas Recebidas</span>
-                                        <span className="font-bold text-green-600">+37</span>
+                                        <span className="font-bold text-green-600">+{ganhoEsteMes.toFixed(0)}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                                         <span className="text-red-700">Girinhas Gastas</span>
-                                        <span className="font-bold text-red-600">-18</span>
+                                        <span className="font-bold text-red-600">-{Number(totalGasto).toFixed(0)}</span>
                                     </div>
                                     <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg">
                                         <span className="text-primary">Saldo Líquido</span>
-                                        <span className="font-bold text-primary">+19</span>
+                                        <span className="font-bold text-primary">+{(ganhoEsteMes - Number(totalGasto)).toFixed(0)}</span>
                                     </div>
                                 </CardContent>
                             </Card>
 
                             <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                                 <CardHeader>
-                                    <CardTitle>Categorias Mais Vendidas</CardTitle>
+                                    <CardTitle>Atividade</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <span>Roupas</span>
-                                        <Badge variant="secondary">65%</Badge>
+                                        <span>Total de Transações</span>
+                                        <Badge variant="secondary">{transacoes.length}</Badge>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span>Calçados</span>
-                                        <Badge variant="secondary">20%</Badge>
+                                        <span>Transações de Recebimento</span>
+                                        <Badge variant="secondary">{transacoes.filter(t => t.tipo === 'recebido').length}</Badge>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                        <span>Brinquedos</span>
-                                        <Badge variant="secondary">15%</Badge>
+                                        <span>Bônus Recebidos</span>
+                                        <Badge variant="secondary">{transacoes.filter(t => t.tipo === 'bonus').length}</Badge>
                                     </div>
                                 </CardContent>
                             </Card>

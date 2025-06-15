@@ -12,15 +12,13 @@ import { useItens } from "@/hooks/useItens";
 import { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<'profiles'>;
-type ItemComPerfil = Tables<'itens'> & {
-  profiles?: Profile | null;
-};
+type Item = Tables<'itens'>;
 
 const PerfilPublico = () => {
     const { nome } = useParams();
     const { fetchProfileByName, profile, filhos, loading: profileLoading } = useProfile();
     const { buscarTodosItens, loading: itensLoading } = useItens();
-    const [itensDoUsuario, setItensDoUsuario] = useState<ItemComPerfil[]>([]);
+    const [itensDoUsuario, setItensDoUsuario] = useState<Item[]>([]);
 
     useEffect(() => {
         if (nome) {
@@ -35,10 +33,10 @@ const PerfilPublico = () => {
         const perfilEncontrado = await fetchProfileByName(nome);
         
         if (perfilEncontrado) {
-            // Buscar itens do usuário
+            // Buscar itens do usuário diretamente pelo ID
             const todosItens = await buscarTodosItens();
             const itensFiltrados = todosItens.filter(item => 
-                item.profiles?.nome === decodeURIComponent(nome)
+                item.publicado_por === perfilEncontrado.id
             );
             setItensDoUsuario(itensFiltrados);
         }

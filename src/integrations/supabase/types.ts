@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      carteiras: {
+        Row: {
+          created_at: string
+          id: string
+          saldo_atual: number
+          total_gasto: number
+          total_recebido: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          saldo_atual?: number
+          total_gasto?: number
+          total_recebido?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          saldo_atual?: number
+          total_gasto?: number
+          total_recebido?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       filhos: {
         Row: {
           created_at: string
@@ -174,6 +204,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      transacoes: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          item_id: string | null
+          tipo: string
+          user_id: string
+          usuario_origem: string | null
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          item_id?: string | null
+          tipo: string
+          user_id: string
+          usuario_origem?: string | null
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          item_id?: string | null
+          tipo?: string
+          user_id?: string
+          usuario_origem?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
