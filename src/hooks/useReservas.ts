@@ -123,35 +123,48 @@ export const useReservas = () => {
     }
 
     try {
-      // Verificar se já existe reserva ativa para este item
-      const { data: reservaAtiva } = await supabase
-        .from('reservas')
-        .select('*')
-        .eq('item_id', itemId)
-        .eq('status', 'pendente')
-        .single();
+      const { data, error } = await supabase
+        .rpc('entrar_fila_espera', {
+          p_item_id: itemId,
+          p_usuario_id: user.id,
+          p_valor_girinhas: valorGirinhas
+        });
 
-      if (reservaAtiva) {
-        // Item já reservado, adicionar à fila de espera
-        const { error } = await supabase
-          .from('reservas')
-          .insert({
-            item_id: itemId,
-            usuario_reservou: user.id,
-            usuario_item: reservaAtiva.usuario_item,
-            valor_girinhas: valorGirinhas,
-            status: 'fila_espera'
+      if (error) {
+        if (error.message.includes('Saldo insuficiente')) {
+          toast({
+            title: "Saldo insuficiente! 😔",
+            description: `Você não tem Girinhas suficientes para esta reserva.`,
+            variant: "destructive"
           });
+        } else if (error.message.includes('já está na fila')) {
+          toast({
+            title: "Você já está na fila",
+            description: "Você já está na fila de espera para este item.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes('já foi vendido')) {
+          toast({
+            title: "Item vendido",
+            description: "Este item já foi vendido.",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+        return false;
+      }
 
-        if (error) throw error;
-
+      if (data?.tipo === 'reserva_direta') {
+        toast({
+          title: "Item reservado! 🎉",
+          description: "As Girinhas foram bloqueadas. Você tem 48h para combinar a entrega.",
+        });
+      } else if (data?.tipo === 'fila_espera') {
         toast({
           title: "Adicionado à fila! 📋",
-          description: "Você foi adicionado à lista de espera. Te avisaremos quando for sua vez!",
+          description: `Você é o ${data.posicao}º na fila. Te avisaremos quando for sua vez!`,
         });
-      } else {
-        // Item disponível, fazer reserva normal
-        return await criarReserva(itemId, valorGirinhas);
       }
 
       await fetchReservas();
@@ -168,64 +181,8 @@ export const useReservas = () => {
   };
 
   const criarReserva = async (itemId: string, valorGirinhas: number): Promise<boolean> => {
-    if (!user) {
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para fazer uma reserva.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .rpc('processar_reserva', {
-          p_item_id: itemId,
-          p_usuario_reservou: user.id,
-          p_valor: valorGirinhas
-        });
-
-      if (error) {
-        if (error.message.includes('Saldo insuficiente')) {
-          toast({
-            title: "Saldo insuficiente! 😔",
-            description: `Você não tem Girinhas suficientes para esta reserva.`,
-            variant: "destructive"
-          });
-        } else if (error.message.includes('Item já reservado')) {
-          toast({
-            title: "Item já reservado",
-            description: "Este item já foi reservado por outra mãe.",
-            variant: "destructive"
-          });
-        } else if (error.message.includes('Item não disponível')) {
-          toast({
-            title: "Item indisponível",
-            description: "Este item não está mais disponível.",
-            variant: "destructive"
-          });
-        } else {
-          throw error;
-        }
-        return false;
-      }
-
-      toast({
-        title: "Item reservado! 🎉",
-        description: "As Girinhas foram bloqueadas. Você tem 48h para combinar a entrega.",
-      });
-
-      await fetchReservas();
-      return true;
-    } catch (err) {
-      console.error('Erro ao criar reserva:', err);
-      toast({
-        title: "Erro ao reservar item",
-        description: err instanceof Error ? err.message : "Tente novamente em alguns instantes.",
-        variant: "destructive",
-      });
-      return false;
-    }
+    // Usar a nova função entrarNaFila que faz reserva direta se disponível
+    return await entrarNaFila(itemId, valorGirinhas);
   };
 
   const removerDaReserva = async (reservaId: string): Promise<boolean> => {

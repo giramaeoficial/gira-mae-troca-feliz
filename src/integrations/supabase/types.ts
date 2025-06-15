@@ -39,6 +39,48 @@ export type Database = {
         }
         Relationships: []
       }
+      fila_espera: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          posicao: number
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          posicao: number
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          posicao?: number
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fila_espera_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fila_espera_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       filhos: {
         Row: {
           created_at: string
@@ -314,6 +356,25 @@ export type Database = {
       confirmar_entrega: {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
+      }
+      entrar_fila_espera: {
+        Args: {
+          p_item_id: string
+          p_usuario_id: string
+          p_valor_girinhas: number
+        }
+        Returns: Json
+      }
+      obter_fila_espera: {
+        Args: { p_item_id: string }
+        Returns: {
+          total_fila: number
+          posicao_usuario: number
+        }[]
+      }
+      processar_proximo_fila: {
+        Args: { p_item_id: string }
+        Returns: undefined
       }
       processar_reserva: {
         Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }

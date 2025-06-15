@@ -1,4 +1,3 @@
-
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { useReservas } from "@/hooks/useReservas";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useItens } from "@/hooks/useItens";
 import { useAuth } from "@/hooks/useAuth";
+import { useFilaEspera } from "@/hooks/useFilaEspera";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -36,9 +36,10 @@ const categorias = [
 const Feed = () => {
     const { toast } = useToast();
     const { user } = useAuth();
-    const { entrarNaFila, isItemReservado, getFilaEspera } = useReservas();
+    const { entrarNaFila, isItemReservado } = useReservas();
     const { saldo } = useCarteira();
     const { buscarTodosItens, loading } = useItens();
+    const { obterFilasMultiplos, getFilaInfo } = useFilaEspera();
     const [searchTerm, setSearchTerm] = useState("");
     const [categoriaFiltro, setCategoriaFiltro] = useState("todas");
     const [itens, setItens] = useState<ItemComPerfil[]>([]);
@@ -51,6 +52,10 @@ const Feed = () => {
         const itensData = await buscarTodosItens();
         console.log('Itens carregados no Feed:', itensData);
         setItens(itensData as ItemComPerfil[]);
+        
+        // Carregar informações de fila para todos os itens
+        const itemIds = itensData.map(item => item.id);
+        await obterFilasMultiplos(itemIds);
     };
 
     const handleReservar = async (item: ItemComPerfil) => {
@@ -187,7 +192,7 @@ const Feed = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredItems.map(item => {
                         const isReserved = item.status === 'reservado';
-                        const filaEspera = getFilaEspera(item.id);
+                        const filaInfo = getFilaInfo(item.id);
                         const isProprio = item.publicado_por === user?.id;
                         const semSaldo = saldo < Number(item.valor_girinhas);
                         const CategoryIcon = getCategoryIcon(item.categoria);
@@ -203,10 +208,15 @@ const Feed = () => {
                                         <Badge className={`${isReserved ? 'bg-orange-500' : 'bg-green-500'} text-white`}>
                                             {isReserved ? 'Reservado' : 'Disponível'}
                                         </Badge>
-                                        {filaEspera > 0 && (
+                                        {filaInfo.total_fila > 0 && (
                                             <Badge className="bg-blue-500 text-white text-xs flex items-center gap-1">
                                                 <Users className="w-3 h-3" />
-                                                {filaEspera} na fila
+                                                {filaInfo.total_fila} na fila
+                                            </Badge>
+                                        )}
+                                        {filaInfo.posicao_usuario > 0 && (
+                                            <Badge className="bg-purple-500 text-white text-xs">
+                                                Você: {filaInfo.posicao_usuario}º
                                             </Badge>
                                         )}
                                         {isProprio && (
@@ -262,7 +272,8 @@ const Feed = () => {
                                                 title={isProprio ? "Seu próprio item" : semSaldo ? "Saldo insuficiente" : ""}
                                             >
                                                 {isProprio ? 'Seu item' : 
-                                                 isReserved ? (filaEspera > 0 ? `Entrar na fila (${filaEspera + 1}º)` : 'Entrar na fila') : 
+                                                 filaInfo.posicao_usuario > 0 ? `Na fila (${filaInfo.posicao_usuario}º)` :
+                                                 isReserved ? (filaInfo.total_fila > 0 ? `Entrar na fila (${filaInfo.total_fila + 1}º)` : 'Entrar na fila') : 
                                                  semSaldo ? 'Sem saldo' : 'Reservar'}
                                             </Button>
                                         </div>
