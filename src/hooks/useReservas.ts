@@ -61,7 +61,7 @@ export const useReservas = () => {
 
       if (error) throw error;
 
-      setReservas(data as Reserva[] || []);
+      setReservas(data || []);
     } catch (err) {
       console.error('Erro ao buscar reservas:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
