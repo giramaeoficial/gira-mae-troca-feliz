@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,14 +45,6 @@ export const useReservas = () => {
             titulo,
             fotos,
             valor_girinhas
-          ),
-          profiles!reservas_usuario_reservou_fkey (
-            nome,
-            avatar_url
-          ),
-          profiles!reservas_usuario_item_fkey (
-            nome,
-            avatar_url
           )
         `)
         .or(`usuario_reservou.eq.${user.id},usuario_item.eq.${user.id}`)
@@ -61,20 +52,32 @@ export const useReservas = () => {
 
       if (error) throw error;
 
-      // Transformar os dados para o formato esperado
-      const reservasFormatadas = (data || []).map(reserva => ({
-        ...reserva,
-        profiles_reservador: reserva.profiles ? {
-          nome: reserva.profiles.nome,
-          avatar_url: reserva.profiles.avatar_url
-        } : null,
-        profiles_vendedor: reserva.profiles ? {
-          nome: reserva.profiles.nome,
-          avatar_url: reserva.profiles.avatar_url
-        } : null
-      }));
+      // Para cada reserva, buscar os perfis separadamente
+      const reservasComPerfis = await Promise.all(
+        (data || []).map(async (reserva) => {
+          // Buscar perfil do reservador
+          const { data: perfilReservador } = await supabase
+            .from('profiles')
+            .select('nome, avatar_url')
+            .eq('id', reserva.usuario_reservou)
+            .single();
 
-      setReservas(reservasFormatadas);
+          // Buscar perfil do vendedor
+          const { data: perfilVendedor } = await supabase
+            .from('profiles')
+            .select('nome, avatar_url')
+            .eq('id', reserva.usuario_item)
+            .single();
+
+          return {
+            ...reserva,
+            profiles_reservador: perfilReservador,
+            profiles_vendedor: perfilVendedor
+          };
+        })
+      );
+
+      setReservas(reservasComPerfis);
     } catch (err) {
       console.error('Erro ao buscar reservas:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
