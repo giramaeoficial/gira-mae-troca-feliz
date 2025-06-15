@@ -11,7 +11,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/shared/Header";
 import { Tables } from "@/integrations/supabase/types";
 
-type Item = Tables<'itens'>;
+type Item = Tables<'itens'> & {
+  profiles?: {
+    id: string;
+    nome: string | null;
+    avatar_url: string | null;
+    bairro: string | null;
+    cidade: string | null;
+    reputacao: number | null;
+  } | null;
+};
 
 const Favoritos = () => {
   const { favoritos, loading: favoritosLoading, refetch } = useFavoritos();
@@ -21,6 +30,8 @@ const Favoritos = () => {
 
   useEffect(() => {
     const carregarItensFavoritos = async () => {
+      console.log('Carregando itens favoritos. Favoritos:', favoritos);
+      
       if (favoritos.length === 0) {
         setItens([]);
         setLoading(false);
@@ -29,12 +40,21 @@ const Favoritos = () => {
 
       try {
         setLoading(true);
-        const itensPromises = favoritos.map(fav => buscarItemPorId(fav.item_id));
+        const itensPromises = favoritos.map(fav => {
+          console.log('Buscando item:', fav.item_id);
+          return buscarItemPorId(fav.item_id);
+        });
+        
         const itensCarregados = await Promise.all(itensPromises);
+        console.log('Itens carregados:', itensCarregados);
+        
         const itensValidos = itensCarregados.filter(item => item !== null) as Item[];
+        console.log('Itens válidos:', itensValidos);
+        
         setItens(itensValidos);
       } catch (error) {
         console.error('Erro ao carregar itens favoritos:', error);
+        setItens([]);
       } finally {
         setLoading(false);
       }
@@ -48,6 +68,8 @@ const Favoritos = () => {
   const formatarPreco = (valor: number) => {
     return `${valor.toFixed(0)} Girinhas`;
   };
+
+  console.log('Estado atual - favoritosLoading:', favoritosLoading, 'loading:', loading, 'favoritos:', favoritos, 'itens:', itens);
 
   if (favoritosLoading || loading) {
     return (

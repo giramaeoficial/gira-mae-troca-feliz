@@ -14,19 +14,30 @@ export const useFavoritos = () => {
   const [loading, setLoading] = useState(false);
 
   const buscarFavoritos = async () => {
-    if (!user) return;
+    if (!user) {
+      setFavoritos([]);
+      return;
+    }
 
     try {
       setLoading(true);
+      console.log('Buscando favoritos para usuário:', user.id);
+      
       const { data, error } = await supabase
         .from('favoritos')
         .select('*')
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar favoritos:', error);
+        throw error;
+      }
+      
+      console.log('Favoritos encontrados:', data);
       setFavoritos(data || []);
     } catch (error) {
       console.error('Erro ao buscar favoritos:', error);
+      setFavoritos([]);
     } finally {
       setLoading(false);
     }
@@ -119,6 +130,8 @@ export const useFavoritos = () => {
   useEffect(() => {
     if (user) {
       buscarFavoritos();
+    } else {
+      setFavoritos([]);
     }
   }, [user]);
 
