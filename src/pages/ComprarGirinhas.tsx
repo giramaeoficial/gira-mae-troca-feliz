@@ -13,7 +13,7 @@ const packages = [
 
 const ComprarGirinhas = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 md:pb-8">
       {/* Header */}
       <Header activePage="comprar-girinhas" />
       

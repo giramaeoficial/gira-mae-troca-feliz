@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,7 @@ const Carteira = () => {
     const ganhoEsteMes = 37;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24 md:pb-8">
             <Header />
             <main className="container mx-auto px-4 py-8 max-w-4xl">
                 {/* Header da Carteira */}

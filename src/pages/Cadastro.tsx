@@ -11,7 +11,7 @@ import { Heart, Sparkles, Baby } from "lucide-react";
 
 const Cadastro = () => {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24 md:pb-8">
             <Header />
             <main className="flex-grow flex items-center justify-center py-12 px-4">
                 <Card className="w-full max-w-2xl mx-auto shadow-xl border-0 bg-white/80 backdrop-blur-sm">

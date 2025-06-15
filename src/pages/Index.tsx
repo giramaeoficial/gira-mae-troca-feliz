@@ -6,7 +6,7 @@ import Header from "@/components/shared/Header";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground pb-24 md:pb-8">
       {/* Header */}
       <Header />
 
