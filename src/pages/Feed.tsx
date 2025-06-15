@@ -78,7 +78,11 @@ const Feed = () => {
             descricao: item.descricao
         };
 
-        const resultado = criarReserva(item.id, itemFormatado, item.profiles?.nome || "Usuário");
+        // Converter o UUID para um número usando hash simples
+        const itemIdNumber = item.id.split('-').join('').slice(0, 10);
+        const numericId = parseInt(itemIdNumber, 16) || Math.abs(item.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
+        
+        const resultado = criarReserva(numericId, itemFormatado, item.profiles?.nome || "Usuário");
     };
 
     // Filtrar itens removendo os do próprio usuário
@@ -192,7 +196,11 @@ const Feed = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredItems.map(item => {
-                        const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
+                        // Converter UUID para número da mesma forma
+                        const itemIdNumber = item.id.split('-').join('').slice(0, 10);
+                        const numericId = parseInt(itemIdNumber, 16) || Math.abs(item.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
+                        
+                        const isReserved = isItemReservado(numericId) || item.status !== 'disponivel';
                         const semSaldo = saldo < Number(item.valor_girinhas);
                         const CategoryIcon = getCategoryIcon(item.categoria);
                         const imagemPrincipal = item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300";
