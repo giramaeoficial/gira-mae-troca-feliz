@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -163,8 +162,8 @@ export const useReservas = () => {
         return false;
       }
 
-      // Fazer cast do tipo Json para nossa interface
-      const resultado = data as FilaEsperaResponse;
+      // Fazer cast seguro do tipo Json para nossa interface
+      const resultado = data as unknown as FilaEsperaResponse;
 
       if (resultado?.tipo === 'reserva_direta') {
         toast({
