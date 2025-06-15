@@ -7,8 +7,8 @@ const QuickNav = () => {
   
   const navItems = [
     { icon: Search, label: "Explorar", path: "/feed", id: "nav-explorar" },
-    { icon: Plus, label: "Publicar", path: "/publicar-item", id: "nav-publicar" },
-    { icon: Clock, label: "Reservas", path: "/minhas-reservas", id: "nav-reservas" },
+    { icon: Plus, label: "Publicar", path: "/publicar", id: "nav-publicar" },
+    { icon: Clock, label: "Reservas", path: "/reservas", id: "nav-reservas" },
     { icon: User, label: "Perfil", path: "/perfil", id: "nav-perfil" },
   ];
 

@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
@@ -9,13 +9,20 @@ export const useMonitorMetas = () => {
   const { user } = useAuth();
   const { mostrarRecompensa } = useRecompensas();
   const { toast } = useToast();
+  const channelsRef = useRef<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
 
+    // Limpar canais anteriores
+    channelsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    channelsRef.current = [];
+
     // Monitorar mudanças nas metas
     const metasChannel = supabase
-      .channel('metas-changes')
+      .channel(`metas-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -26,10 +33,10 @@ export const useMonitorMetas = () => {
         },
         (payload) => {
           const metaAtualizada = payload.new as any;
+          const metaAnterior = payload.old as any;
           
-          // Se a meta foi conquistada agora
-          if (metaAtualizada.conquistado && !payload.old.conquistado) {
-            // Pequeno delay para garantir que outras transações sejam processadas
+          // Se a meta foi conquistada agora (evitar duplicatas)
+          if (metaAtualizada.conquistado && !metaAnterior.conquistado) {
             setTimeout(() => {
               mostrarRecompensa({
                 tipo: 'meta',
@@ -38,7 +45,6 @@ export const useMonitorMetas = () => {
                 meta: metaAtualizada.tipo_meta
               });
 
-              // Toast adicional para reforçar
               toast({
                 title: `🎯 Meta ${metaAtualizada.tipo_meta.toUpperCase()} alcançada!`,
                 description: `Fantástico! +${metaAtualizada.girinhas_bonus} Girinhas de bônus!`,
@@ -49,37 +55,13 @@ export const useMonitorMetas = () => {
       )
       .subscribe();
 
-    // Monitorar novas transações de bônus para celebrar
-    const transacoesChannel = supabase
-      .channel('transacoes-bonus')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'transacoes',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          const transacao = payload.new as any;
-          
-          // Celebrar bônus especiais que não são capturados em outros lugares
-          if (transacao.tipo === 'bonus' && transacao.descricao?.includes('promocional')) {
-            setTimeout(() => {
-              mostrarRecompensa({
-                tipo: 'cadastro',
-                valor: transacao.valor,
-                descricao: 'Surpresa! Você recebeu Girinhas promocionais!'
-              });
-            }, 500);
-          }
-        }
-      )
-      .subscribe();
+    channelsRef.current.push(metasChannel);
 
     return () => {
-      supabase.removeChannel(metasChannel);
-      supabase.removeChannel(transacoesChannel);
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      channelsRef.current = [];
     };
-  }, [user, mostrarRecompensa, toast]);
+  }, [user?.id]); // Dependência apenas do user.id para evitar loops
 };

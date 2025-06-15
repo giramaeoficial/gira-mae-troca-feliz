@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +33,8 @@ export const useIndicacoes = () => {
   const [indicados, setIndicados] = useState<Indicacao[]>([]);
   const [loading, setLoading] = useState(true);
   const [bonusAnimacao, setBonusAnimacao] = useState<BonusAnimacao | null>(null);
+  const channelRef = useRef<any>(null);
+  const processedBonusRef = useRef(new Set<string>());
 
   const fetchIndicacoes = async () => {
     if (!user) return;
@@ -181,8 +183,13 @@ export const useIndicacoes = () => {
   useEffect(() => {
     if (!user) return;
 
+    // Limpar canal anterior
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
     const transacoesChannel = supabase
-      .channel('indicacoes-bonus')
+      .channel(`indicacoes-bonus-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -193,8 +200,14 @@ export const useIndicacoes = () => {
         },
         (payload) => {
           const transacao = payload.new as any;
+          const bonusKey = `bonus-${transacao.id}`;
           
-          if (transacao.tipo === 'bonus' && transacao.descricao?.includes('indicação')) {
+          if (transacao.tipo === 'bonus' && 
+              transacao.descricao?.includes('indicação') &&
+              !processedBonusRef.current.has(bonusKey)) {
+            
+            processedBonusRef.current.add(bonusKey);
+            
             setTimeout(() => {
               if (transacao.descricao.includes('Novo cadastro')) {
                 setBonusAnimacao({
@@ -218,14 +231,19 @@ export const useIndicacoes = () => {
       )
       .subscribe();
 
+    channelRef.current = transacoesChannel;
+
     return () => {
-      supabase.removeChannel(transacoesChannel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [user]);
+  }, [user?.id]); // Dependência apenas do user.id
 
   useEffect(() => {
     fetchIndicacoes();
-  }, [user]);
+  }, [user?.id]); // Dependência apenas do user.id
 
   return {
     indicacoes,

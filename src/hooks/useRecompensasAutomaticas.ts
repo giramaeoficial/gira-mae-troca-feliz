@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBonificacoes } from '@/hooks/useBonificacoes';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,18 +12,28 @@ export const useRecompensasAutomaticas = () => {
     processarBonusCadastro,
     verificarEProcessarMetas
   } = useBonificacoes();
+  
+  const channelsRef = useRef<any[]>([]);
+  const processedRef = useRef(new Set<string>());
 
   useEffect(() => {
     if (!user) return;
 
-    // Processar bônus de cadastro se for novo usuário
+    // Limpar canais anteriores
+    channelsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    channelsRef.current = [];
+
+    // Processar bônus de cadastro se for novo usuário (apenas uma vez)
     const verificarNovoCadastro = async () => {
       const userCreatedAt = new Date(user.created_at);
       const agora = new Date();
       const diferencaMinutos = (agora.getTime() - userCreatedAt.getTime()) / (1000 * 60);
       
       // Se foi criado há menos de 10 minutos, considerar novo usuário
-      if (diferencaMinutos < 10) {
+      if (diferencaMinutos < 10 && !processedRef.current.has(`cadastro-${user.id}`)) {
+        processedRef.current.add(`cadastro-${user.id}`);
         await processarBonusCadastro();
       }
     };
@@ -32,7 +42,7 @@ export const useRecompensasAutomaticas = () => {
 
     // Configurar listener para mudanças em reservas (trocas concluídas)
     const reservasChannel = supabase
-      .channel('reservas-changes')
+      .channel(`reservas-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -43,9 +53,18 @@ export const useRecompensasAutomaticas = () => {
         },
         (payload) => {
           const novaReserva = payload.new as any;
+          const reservaAnterior = payload.old as any;
+          
+          // Evitar processamento duplicado
+          const reservaKey = `reserva-${novaReserva.id}-${novaReserva.status}`;
+          if (processedRef.current.has(reservaKey)) return;
+          
           if (novaReserva.confirmado_por_reservador && 
               novaReserva.confirmado_por_vendedor && 
-              novaReserva.status === 'confirmada') {
+              novaReserva.status === 'confirmada' &&
+              reservaAnterior.status !== 'confirmada') {
+            
+            processedRef.current.add(reservaKey);
             processarBonusTrocaConcluida(novaReserva.id);
             verificarEProcessarMetas();
           }
@@ -61,9 +80,18 @@ export const useRecompensasAutomaticas = () => {
         },
         (payload) => {
           const novaReserva = payload.new as any;
+          const reservaAnterior = payload.old as any;
+          
+          // Evitar processamento duplicado
+          const reservaKey = `reserva-${novaReserva.id}-${novaReserva.status}`;
+          if (processedRef.current.has(reservaKey)) return;
+          
           if (novaReserva.confirmado_por_reservador && 
               novaReserva.confirmado_por_vendedor && 
-              novaReserva.status === 'confirmada') {
+              novaReserva.status === 'confirmada' &&
+              reservaAnterior.status !== 'confirmada') {
+            
+            processedRef.current.add(reservaKey);
             processarBonusTrocaConcluida(novaReserva.id);
             verificarEProcessarMetas();
           }
@@ -71,9 +99,11 @@ export const useRecompensasAutomaticas = () => {
       )
       .subscribe();
 
+    channelsRef.current.push(reservasChannel);
+
     // Configurar listener para avaliações
     const avaliacoesChannel = supabase
-      .channel('avaliacoes-changes')
+      .channel(`avaliacoes-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -82,22 +112,29 @@ export const useRecompensasAutomaticas = () => {
           table: 'avaliacoes',
           filter: `avaliador_id=eq.${user.id}`
         },
-        () => {
-          // Dar um pequeno delay para garantir que a transação seja processada
-          setTimeout(() => {
-            processarBonusAvaliacao();
-          }, 1000);
+        (payload) => {
+          const avaliacao = payload.new as any;
+          const avaliacaoKey = `avaliacao-${avaliacao.id}`;
+          
+          if (!processedRef.current.has(avaliacaoKey)) {
+            processedRef.current.add(avaliacaoKey);
+            setTimeout(() => {
+              processarBonusAvaliacao();
+            }, 1000);
+          }
         }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(reservasChannel);
-      supabase.removeChannel(avaliacoesChannel);
-    };
-  }, [user]);
+    channelsRef.current.push(avaliacoesChannel);
 
-  return {
-    // Hook de monitoramento automático, não retorna nada específico
-  };
+    return () => {
+      channelsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      channelsRef.current = [];
+    };
+  }, [user?.id]); // Dependência apenas do user.id
+
+  return {};
 };
