@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,19 @@ type ReservaComRelacionamentos = Tables<'reservas'> & {
   tempo_restante?: number;
 };
 
+type FilaEsperaComRelacionamentos = Tables<'fila_espera'> & {
+  itens?: {
+    titulo: string;
+    fotos: string[] | null;
+    valor_girinhas: number;
+    publicado_por: string;
+  } | null;
+  profiles_vendedor?: {
+    nome: string;
+    avatar_url: string | null;
+  } | null;
+};
+
 // Interface para o retorno da função entrar_fila_espera
 interface FilaEsperaResponse {
   tipo: 'reserva_direta' | 'fila_espera';
@@ -34,6 +48,7 @@ export const useReservas = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [reservas, setReservas] = useState<ReservaComRelacionamentos[]>([]);
+  const [filasEspera, setFilasEspera] = useState<FilaEsperaComRelacionamentos[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,7 +62,8 @@ export const useReservas = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
+      // Buscar reservas
+      const { data: reservasData, error: reservasError } = await supabase
         .from('reservas')
         .select(`
           *,
@@ -60,11 +76,28 @@ export const useReservas = () => {
         .or(`usuario_reservou.eq.${user.id},usuario_item.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (reservasError) throw reservasError;
+
+      // Buscar filas de espera do usuário
+      const { data: filasData, error: filasError } = await supabase
+        .from('fila_espera')
+        .select(`
+          *,
+          itens (
+            titulo,
+            fotos,
+            valor_girinhas,
+            publicado_por
+          )
+        `)
+        .eq('usuario_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (filasError) throw filasError;
 
       // Para cada reserva, buscar os perfis e calcular posição na fila
       const reservasComPerfis = await Promise.all(
-        (data || []).map(async (reserva) => {
+        (reservasData || []).map(async (reserva) => {
           // Buscar perfil do reservador
           const { data: perfilReservador } = await supabase
             .from('profiles')
@@ -79,19 +112,6 @@ export const useReservas = () => {
             .eq('id', reserva.usuario_item)
             .single();
 
-          // Calcular posição na fila para reservas em espera
-          let posicao_fila = undefined;
-          if (reserva.status === 'fila_espera') {
-            const { count } = await supabase
-              .from('reservas')
-              .select('*', { count: 'exact', head: true })
-              .eq('item_id', reserva.item_id)
-              .in('status', ['pendente', 'fila_espera'])
-              .lt('created_at', reserva.created_at);
-            
-            posicao_fila = (count || 0) + 1;
-          }
-
           // Calcular tempo restante para reservas ativas
           let tempo_restante = undefined;
           if (reserva.status === 'pendente') {
@@ -104,13 +124,34 @@ export const useReservas = () => {
             ...reserva,
             profiles_reservador: perfilReservador,
             profiles_vendedor: perfilVendedor,
-            posicao_fila,
             tempo_restante
           };
         })
       );
 
+      // Para cada fila de espera, buscar perfil do vendedor
+      const filasComPerfis = await Promise.all(
+        (filasData || []).map(async (fila) => {
+          let perfilVendedor = null;
+          
+          if (fila.itens?.publicado_por) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('nome, avatar_url')
+              .eq('id', fila.itens.publicado_por)
+              .single();
+            perfilVendedor = data;
+          }
+
+          return {
+            ...fila,
+            profiles_vendedor: perfilVendedor
+          };
+        })
+      );
+
       setReservas(reservasComPerfis);
+      setFilasEspera(filasComPerfis);
     } catch (err) {
       console.error('Erro ao buscar reservas:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -183,6 +224,47 @@ export const useReservas = () => {
       console.error('Erro ao entrar na fila:', err);
       toast({
         title: "Erro ao entrar na fila",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const sairDaFila = async (itemId: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .rpc('sair_fila_espera', {
+          p_item_id: itemId,
+          p_usuario_id: user.id
+        });
+
+      if (error) {
+        if (error.message.includes('não está na fila')) {
+          toast({
+            title: "Erro",
+            description: "Você não está na fila para este item.",
+            variant: "destructive"
+          });
+        } else {
+          throw error;
+        }
+        return false;
+      }
+
+      toast({
+        title: "Saiu da fila! 👋",
+        description: "Você foi removido da fila de espera.",
+      });
+
+      await fetchReservas();
+      return true;
+    } catch (err) {
+      console.error('Erro ao sair da fila:', err);
+      toast({
+        title: "Erro ao sair da fila",
         description: err instanceof Error ? err.message : "Tente novamente.",
         variant: "destructive",
       });
@@ -293,10 +375,12 @@ export const useReservas = () => {
 
   return {
     reservas,
+    filasEspera,
     loading,
     error,
     criarReserva,
     entrarNaFila,
+    sairDaFila,
     removerDaReserva,
     confirmarEntrega,
     cancelarReserva,

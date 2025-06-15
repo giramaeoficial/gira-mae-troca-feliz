@@ -380,6 +380,10 @@ export type Database = {
         Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }
         Returns: string
       }
+      sair_fila_espera: {
+        Args: { p_item_id: string; p_usuario_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

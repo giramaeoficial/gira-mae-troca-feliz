@@ -5,20 +5,21 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Package, CheckCircle } from "lucide-react";
 import { useReservas } from "@/hooks/useReservas";
 import ReservaCard from "@/components/reservas/ReservaCard";
+import FilaEsperaCard from "@/components/reservas/FilaEsperaCard";
 import { useAuth } from "@/hooks/useAuth";
 
 const MinhasReservas = () => {
   const { user } = useAuth();
-  const { reservas, loading, confirmarEntrega, cancelarReserva } = useReservas();
+  const { reservas, filasEspera, loading, confirmarEntrega, cancelarReserva, sairDaFila } = useReservas();
 
   const minhasReservasAtivas = reservas.filter(r => 
     r.usuario_reservou === user?.id && 
-    ['pendente', 'fila_espera'].includes(r.status)
+    ['pendente'].includes(r.status)
   );
 
   const meusItensReservados = reservas.filter(r => 
     r.usuario_item === user?.id && 
-    ['pendente', 'fila_espera'].includes(r.status)
+    ['pendente'].includes(r.status)
   );
 
   const reservasConcluidas = reservas.filter(r => 
@@ -28,7 +29,7 @@ const MinhasReservas = () => {
 
   const getEstatisticas = () => {
     const totalAtivas = minhasReservasAtivas.length;
-    const totalFilaEspera = minhasReservasAtivas.filter(r => r.status === 'fila_espera').length;
+    const totalFilaEspera = filasEspera.length;
     const totalVendas = meusItensReservados.length;
     const totalConcluidas = reservasConcluidas.length;
 
@@ -119,6 +120,26 @@ const MinhasReservas = () => {
             </section>
           )}
 
+          {/* Filas de Espera */}
+          {filasEspera.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-blue-500" />
+                <h2 className="text-xl font-semibold text-gray-800">Suas Filas de Espera</h2>
+                <Badge variant="secondary">{filasEspera.length}</Badge>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filasEspera.map(fila => (
+                  <FilaEsperaCard
+                    key={fila.id}
+                    fila={fila}
+                    onSairDaFila={sairDaFila}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Seus Itens Reservados */}
           {meusItensReservados.length > 0 && (
             <section>
@@ -162,7 +183,7 @@ const MinhasReservas = () => {
           )}
 
           {/* Estado vazio */}
-          {reservas.length === 0 && (
+          {reservas.length === 0 && filasEspera.length === 0 && (
             <div className="text-center py-12">
               <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Package className="w-12 h-12 text-primary" />
