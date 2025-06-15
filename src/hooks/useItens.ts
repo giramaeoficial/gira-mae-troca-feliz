@@ -9,11 +9,13 @@ type Item = Tables<'itens'>;
 type NovoItem = {
   titulo: string;
   descricao: string;
-  categoria: string;
-  estado_conservacao: string;
+  categoria: 'roupa' | 'brinquedo' | 'calcado' | 'acessorio' | 'kit' | 'outro';
+  estado_conservacao: 'novo' | 'otimo' | 'bom' | 'razoavel';
   tamanho?: string | null;
   valor_girinhas: number;
 };
+
+type AtualizarItem = Partial<NovoItem> & { id: string };
 
 export const useItens = () => {
   const { user } = useAuth();
@@ -120,6 +122,75 @@ export const useItens = () => {
     }
   };
 
+  const atualizarItem = async (itemData: AtualizarItem, novasImagens?: File[]): Promise<boolean> => {
+    if (!user) {
+      console.error('Usuário não autenticado');
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para editar um item.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      setLoading(true);
+      console.log('Iniciando atualização do item:', itemData.id);
+
+      // Upload de novas imagens se fornecidas
+      let novasFotosUrls: string[] = [];
+      if (novasImagens && novasImagens.length > 0) {
+        for (const imagem of novasImagens) {
+          const url = await uploadImage(imagem);
+          if (url) novasFotosUrls.push(url);
+        }
+      }
+
+      // Preparar dados para atualização (removendo o id dos dados)
+      const { id, ...dadosParaAtualizacao } = itemData;
+      
+      // Se há novas fotos, adicionar às existentes
+      if (novasFotosUrls.length > 0) {
+        dadosParaAtualizacao.fotos = novasFotosUrls;
+      }
+
+      console.log('Dados para atualização:', dadosParaAtualizacao);
+
+      // Atualizar item no banco
+      const { data, error } = await supabase
+        .from('itens')
+        .update(dadosParaAtualizacao)
+        .eq('id', id)
+        .eq('publicado_por', user.id) // Garantir que só pode editar próprios itens
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro detalhado na atualização:', error);
+        throw error;
+      }
+
+      console.log('Item atualizado com sucesso:', data);
+
+      toast({
+        title: "Item atualizado com sucesso! ✨",
+        description: `As alterações foram salvas.`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar item:', error);
+      toast({
+        title: "Erro ao atualizar item",
+        description: error instanceof Error ? error.message : "Tente novamente em alguns instantes.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const buscarMeusItens = async (): Promise<Item[]> => {
     if (!user) {
       console.log('Usuário não autenticado para buscar itens');
@@ -150,6 +221,7 @@ export const useItens = () => {
 
   return {
     publicarItem,
+    atualizarItem,
     buscarMeusItens,
     loading
   };

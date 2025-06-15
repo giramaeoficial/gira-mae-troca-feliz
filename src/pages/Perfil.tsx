@@ -10,22 +10,27 @@ import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { useItens } from "@/hooks/useItens";
 import EditarPerfil from "@/components/perfil/EditarPerfil";
+import EditarItem from "@/components/perfil/EditarItem";
+import { Tables } from "@/integrations/supabase/types";
+
+type Item = Tables<'itens'>;
 
 const Perfil = () => {
     const { profile, filhos, loading } = useProfile();
     const { buscarMeusItens } = useItens();
     const [showEditModal, setShowEditModal] = useState(false);
-    const [meusItens, setMeusItens] = useState<any[]>([]);
+    const [meusItens, setMeusItens] = useState<Item[]>([]);
     const [loadingItens, setLoadingItens] = useState(true);
+    const [itemParaEditar, setItemParaEditar] = useState<Item | null>(null);
+
+    const carregarItens = async () => {
+        setLoadingItens(true);
+        const itens = await buscarMeusItens();
+        setMeusItens(itens);
+        setLoadingItens(false);
+    };
 
     useEffect(() => {
-        const carregarItens = async () => {
-            setLoadingItens(true);
-            const itens = await buscarMeusItens();
-            setMeusItens(itens);
-            setLoadingItens(false);
-        };
-
         carregarItens();
     }, []);
 
@@ -57,6 +62,18 @@ const Perfil = () => {
             default:
                 return status;
         }
+    };
+
+    const handleEditarItem = (item: Item) => {
+        setItemParaEditar(item);
+    };
+
+    const handleFecharEdicao = () => {
+        setItemParaEditar(null);
+    };
+
+    const handleSucessoEdicao = () => {
+        carregarItens(); // Recarregar itens após edição
     };
 
     if (loading) {
@@ -242,7 +259,11 @@ const Perfil = () => {
                                                             <Sparkles className="w-4 h-4" />
                                                             {item.valor_girinhas}
                                                         </p>
-                                                        <Button size="sm" variant="outline">
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline"
+                                                            onClick={() => handleEditarItem(item)}
+                                                        >
                                                             Editar
                                                         </Button>
                                                     </div>
@@ -358,6 +379,15 @@ const Perfil = () => {
 
             {showEditModal && (
                 <EditarPerfil onClose={() => setShowEditModal(false)} />
+            )}
+
+            {itemParaEditar && (
+                <EditarItem 
+                    item={itemParaEditar}
+                    isOpen={!!itemParaEditar}
+                    onClose={handleFecharEdicao}
+                    onSuccess={handleSucessoEdicao}
+                />
             )}
         </div>
     );
