@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useBonificacoes } from '@/hooks/useBonificacoes';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,15 +15,22 @@ export const useRecompensasAutomaticas = () => {
   
   const channelsRef = useRef<any[]>([]);
   const processedRef = useRef(new Set<string>());
+  const isInitializedRef = useRef(false);
 
-  useEffect(() => {
-    if (!user) return;
-
-    // Limpar canais anteriores
+  const cleanupChannels = useCallback(() => {
     channelsRef.current.forEach(channel => {
       supabase.removeChannel(channel);
     });
     channelsRef.current = [];
+  }, []);
+
+  useEffect(() => {
+    if (!user || isInitializedRef.current) return;
+    
+    isInitializedRef.current = true;
+
+    // Limpar canais anteriores
+    cleanupChannels();
 
     // Processar bônus de cadastro se for novo usuário (apenas uma vez)
     const verificarNovoCadastro = async () => {
@@ -129,12 +136,10 @@ export const useRecompensasAutomaticas = () => {
     channelsRef.current.push(avaliacoesChannel);
 
     return () => {
-      channelsRef.current.forEach(channel => {
-        supabase.removeChannel(channel);
-      });
-      channelsRef.current = [];
+      cleanupChannels();
+      isInitializedRef.current = false;
     };
-  }, [user?.id]); // Dependência apenas do user.id
+  }, [user?.id]);
 
   return {};
 };

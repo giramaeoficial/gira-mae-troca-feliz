@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
@@ -10,15 +10,22 @@ export const useMonitorMetas = () => {
   const { mostrarRecompensa } = useRecompensas();
   const { toast } = useToast();
   const channelsRef = useRef<any[]>([]);
+  const isInitializedRef = useRef(false);
 
-  useEffect(() => {
-    if (!user) return;
-
-    // Limpar canais anteriores
+  const cleanupChannels = useCallback(() => {
     channelsRef.current.forEach(channel => {
       supabase.removeChannel(channel);
     });
     channelsRef.current = [];
+  }, []);
+
+  useEffect(() => {
+    if (!user || isInitializedRef.current) return;
+    
+    isInitializedRef.current = true;
+
+    // Limpar canais anteriores
+    cleanupChannels();
 
     // Monitorar mudanças nas metas
     const metasChannel = supabase
@@ -58,10 +65,8 @@ export const useMonitorMetas = () => {
     channelsRef.current.push(metasChannel);
 
     return () => {
-      channelsRef.current.forEach(channel => {
-        supabase.removeChannel(channel);
-      });
-      channelsRef.current = [];
+      cleanupChannels();
+      isInitializedRef.current = false;
     };
-  }, [user?.id]); // Dependência apenas do user.id para evitar loops
+  }, [user?.id]);
 };

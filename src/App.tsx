@@ -1,3 +1,4 @@
+
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster"
@@ -20,10 +21,18 @@ import { CarteiraProvider } from './contexts/CarteiraContext';
 import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
 import { useRecompensasAutomaticas } from './hooks/useRecompensasAutomaticas';
 import { useMonitorMetas } from './hooks/useMonitorMetas';
+import { memo } from 'react';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      gcTime: 10 * 60 * 1000, // 10 minutos
+    },
+  },
+});
 
-function AppContent() {
+const AppContent = memo(() => {
   useRecompensasAutomaticas();
   useMonitorMetas();
   
@@ -47,7 +56,9 @@ function AppContent() {
       </Routes>
     </div>
   );
-}
+});
+
+AppContent.displayName = 'AppContent';
 
 function App() {
   return (
