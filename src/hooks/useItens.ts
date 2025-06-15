@@ -80,6 +80,39 @@ export const useItens = () => {
     }
   };
 
+  const buscarTodosItens = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          profiles!publicado_por (
+            id,
+            nome,
+            avatar_url,
+            bairro,
+            cidade,
+            reputacao
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setItens(data || []);
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar todos os itens:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar itens');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const buscarMeusItens = async () => {
     if (!user) return [];
 
@@ -243,6 +276,7 @@ export const useItens = () => {
     loading,
     error,
     buscarItens,
+    buscarTodosItens,
     buscarMeusItens,
     buscarItensDoUsuario,
     buscarItemPorId,

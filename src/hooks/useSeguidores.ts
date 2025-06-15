@@ -149,18 +149,27 @@ export const useSeguidores = () => {
     
     try {
       setLoading(true);
+      
+      // Primeiro buscar os IDs das usuárias que sigo
+      const { data: seguidas, error: seguidasError } = await supabase
+        .from('seguidores')
+        .select('seguido_id')
+        .eq('seguidor_id', user.id);
+
+      if (seguidasError) throw seguidasError;
+
+      if (!seguidas || seguidas.length === 0) return [];
+
+      const seguidas_ids = seguidas.map(s => s.seguido_id);
+
+      // Buscar itens das usuárias seguidas
       const { data, error } = await supabase
         .from('itens')
         .select(`
           *,
           profiles!publicado_por(*)
         `)
-        .in('publicado_por', 
-          supabase
-            .from('seguidores')
-            .select('seguido_id')
-            .eq('seguidor_id', user.id)
-        )
+        .in('publicado_por', seguidas_ids)
         .eq('status', 'disponivel')
         .order('created_at', { ascending: false });
 

@@ -91,10 +91,11 @@ const PublicarItem = () => {
             categoria: data.categoria!,
             estado_conservacao: data.estado_conservacao!,
             tamanho: data.tamanho || null,
-            valor_girinhas: data.valor_girinhas
+            valor_girinhas: data.valor_girinhas,
+            fotos: selectedFiles.length > 0 ? ['placeholder-image-url'] : undefined // Simplificado por enquanto
         };
         
-        const sucesso = await publicarItem(itemData, selectedFiles);
+        const sucesso = await publicarItem(itemData);
         
         if (sucesso) {
             setTimeout(() => {

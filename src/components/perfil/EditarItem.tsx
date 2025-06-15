@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -105,8 +104,7 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
   };
 
   const onSubmit = async (data: ItemFormData) => {
-    const itemData = {
-      id: item.id,
+    const itemUpdates = {
       titulo: data.titulo,
       descricao: data.descricao,
       categoria: data.categoria,
@@ -115,7 +113,7 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
       valor_girinhas: data.valor_girinhas
     };
     
-    const sucesso = await atualizarItem(itemData, selectedFiles);
+    const sucesso = await atualizarItem(item.id, itemUpdates);
     
     if (sucesso) {
       onSuccess();
