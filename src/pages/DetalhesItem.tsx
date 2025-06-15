@@ -9,43 +9,67 @@ import { ArrowLeft, MapPin, Sparkles, Star, Heart, Share2, Flag, Calendar } from
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useReservas } from "@/hooks/useReservas";
+import { useItens } from "@/hooks/useItens";
+import { useAuth } from "@/hooks/useAuth";
+import { useCarteira } from "@/contexts/CarteiraContext";
+import { Tables } from "@/integrations/supabase/types";
 
-// Dados simulados - em uma aplicação real viria de uma API
-const itemsData = {
-  1: {
-    id: 1,
-    title: "Kit Body Carter's",
-    girinhas: 15,
-    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600",
-    size: "3-6M",
-    estado: "Ótimo estado",
-    categoria: "Roupa",
-    descricao: "Kit com 5 bodies manga curta da Carter's, todos em ótimo estado. Foram pouco usados e sempre bem cuidados. Cores variadas: azul, branco, verde e rosa. Tecido 100% algodão, muito confortável para o bebê.",
-    localizacao: "Vila Madalena, São Paulo",
-    maeNome: "Ana Maria",
-    maeAvatar: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=150",
-    maeReputacao: 4.8,
-    maeTrocas: 23,
-    publicadoEm: "há 2 dias",
-    disponivel: true,
-    imagens: [
-      "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600",
-      "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=600",
-      "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=600"
-    ]
-  }
+type ItemComPerfil = Tables<'itens'> & {
+  profiles?: {
+    nome: string;
+    bairro: string | null;
+    cidade: string | null;
+    avatar_url: string | null;
+    reputacao: number | null;
+  } | null;
 };
 
 const DetalhesItem = () => {
     const { id } = useParams();
     const { toast } = useToast();
-    const { criarReserva, reservas } = useReservas();
+    const { user } = useAuth();
+    const { criarReserva, isItemReservado } = useReservas();
+    const { saldo } = useCarteira();
+    const { buscarItemPorId, loading } = useItens();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [item, setItem] = useState<ItemComPerfil | null>(null);
     
-    const item = itemsData[Number(id)];
-    
-    const isReserved = reservas.some(r => r.itemId === item?.id && r.status !== 'cancelada' && r.status !== 'expirada');
+    useEffect(() => {
+        if (id) {
+            carregarItem();
+        }
+    }, [id]);
+
+    const carregarItem = async () => {
+        if (!id) return;
+        
+        try {
+            const itemData = await buscarItemPorId(id);
+            setItem(itemData as ItemComPerfil);
+        } catch (error) {
+            console.error('Erro ao carregar item:', error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível carregar os detalhes do item.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-gray-600">Carregando detalhes do item...</p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     if (!item) {
         return (
@@ -66,8 +90,24 @@ const DetalhesItem = () => {
         );
     }
 
+    // Converter UUID para número para compatibilidade com o sistema de reservas
+    const itemIdNumber = item.id.split('-').join('').slice(0, 10);
+    const numericId = parseInt(itemIdNumber, 16) || Math.abs(item.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
+    const isReserved = isItemReservado(numericId) || item.status !== 'disponivel';
+    const semSaldo = saldo < Number(item.valor_girinhas);
+    const isProprio = item.publicado_por === user?.id;
+
     const handleReservar = () => {
-        if (isReserved || !item.disponivel) {
+        if (isProprio) {
+            toast({
+                title: "Não é possível reservar",
+                description: "Você não pode reservar seu próprio item.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (isReserved || item.status !== 'disponivel') {
             toast({
                 title: "Item indisponível",
                 description: "Este item já foi reservado ou não está mais disponível.",
@@ -75,7 +115,32 @@ const DetalhesItem = () => {
             });
             return;
         }
-        criarReserva(item.id, item, item.maeNome);
+
+        if (semSaldo) {
+            toast({
+                title: "Saldo insuficiente",
+                description: "Você não tem Girinhas suficientes para esta reserva.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const itemFormatado = {
+            id: numericId,
+            title: item.titulo,
+            girinhas: Number(item.valor_girinhas),
+            image: item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300",
+            size: item.tamanho || "Não informado",
+            categoria: item.categoria,
+            idade: "Não informado",
+            estado: item.estado_conservacao,
+            localizacao: item.profiles?.bairro || item.profiles?.cidade || "Não informado",
+            maeName: item.profiles?.nome || "Usuário",
+            disponivel: item.status === 'disponivel',
+            descricao: item.descricao
+        };
+
+        criarReserva(numericId, itemFormatado, item.profiles?.nome || "Usuário");
     };
 
     const handleToggleFavorite = () => {
@@ -91,8 +156,8 @@ const DetalhesItem = () => {
     const handleShare = () => {
         if (navigator.share) {
             navigator.share({
-                title: item.title,
-                text: `Confira este item no GiraMãe: ${item.title}`,
+                title: item.titulo,
+                text: `Confira este item no GiraMãe: ${item.titulo}`,
                 url: window.location.href,
             });
         } else {
@@ -103,6 +168,33 @@ const DetalhesItem = () => {
             });
         }
     };
+
+    const formatarEstado = (estado: string) => {
+        const estados = {
+            'novo': 'Novo',
+            'otimo': 'Ótimo estado',
+            'bom': 'Bom estado',
+            'razoavel': 'Estado razoável'
+        };
+        return estados[estado as keyof typeof estados] || estado;
+    };
+
+    const formatarCategoria = (categoria: string) => {
+        const categorias = {
+            'roupa': 'Roupas',
+            'brinquedo': 'Brinquedos',
+            'calcado': 'Calçados',
+            'acessorio': 'Acessórios',
+            'kit': 'Kits',
+            'outro': 'Outros'
+        };
+        return categorias[categoria as keyof typeof categorias] || categoria;
+    };
+
+    const imagens = item.fotos && item.fotos.length > 0 ? item.fotos : ["https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600"];
+    const localizacao = item.profiles?.bairro || item.profiles?.cidade || "Localização não informada";
+    const nomeMae = item.profiles?.nome || "Usuário";
+    const reputacao = item.profiles?.reputacao || 0;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
@@ -123,37 +215,39 @@ const DetalhesItem = () => {
                         <Card className="overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                             <div className="relative">
                                 <img 
-                                    src={item.imagens[currentImageIndex]} 
-                                    alt={item.title} 
+                                    src={imagens[currentImageIndex]} 
+                                    alt={item.titulo} 
                                     className="w-full h-96 object-cover"
                                 />
                                 <div className="absolute top-4 right-4">
-                                    <Badge className={`${(isReserved || !item.disponivel) ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
-                                        {(isReserved || !item.disponivel) ? 'Reservado' : 'Disponível'}
+                                    <Badge className={`${(isReserved || item.status !== 'disponivel') ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
+                                        {(isReserved || item.status !== 'disponivel') ? 'Reservado' : 'Disponível'}
                                     </Badge>
                                 </div>
                                 <div className="absolute top-4 left-4">
                                     <Badge variant="secondary" className="bg-primary/10 text-primary">
-                                        {item.estado}
+                                        {formatarEstado(item.estado_conservacao)}
                                     </Badge>
                                 </div>
                             </div>
                         </Card>
                         
                         {/* Miniaturas */}
-                        <div className="flex gap-2">
-                            {item.imagens.map((image, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setCurrentImageIndex(index)}
-                                    className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                                        currentImageIndex === index ? 'border-primary' : 'border-gray-200'
-                                    }`}
-                                >
-                                    <img src={image} alt={`${item.title} ${index + 1}`} className="w-full h-full object-cover" />
-                                </button>
-                            ))}
-                        </div>
+                        {imagens.length > 1 && (
+                            <div className="flex gap-2">
+                                {imagens.map((image, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setCurrentImageIndex(index)}
+                                        className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                                            currentImageIndex === index ? 'border-primary' : 'border-gray-200'
+                                        }`}
+                                    >
+                                        <img src={image} alt={`${item.titulo} ${index + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Detalhes do Item */}
@@ -162,15 +256,15 @@ const DetalhesItem = () => {
                             <CardHeader>
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <CardTitle className="text-2xl text-gray-800 mb-2">{item.title}</CardTitle>
+                                        <CardTitle className="text-2xl text-gray-800 mb-2">{item.titulo}</CardTitle>
                                         <div className="flex items-center gap-4 text-sm text-gray-600">
-                                            <span>Tamanho: {item.size}</span>
-                                            <span>•</span>
-                                            <span>{item.categoria}</span>
+                                            {item.tamanho && <span>Tamanho: {item.tamanho}</span>}
+                                            {item.tamanho && <span>•</span>}
+                                            <span>{formatarCategoria(item.categoria)}</span>
                                             <span>•</span>
                                             <div className="flex items-center gap-1">
                                                 <Calendar className="w-3 h-3" />
-                                                {item.publicadoEm}
+                                                {new Date(item.created_at).toLocaleDateString('pt-BR')}
                                             </div>
                                         </div>
                                     </div>
@@ -199,7 +293,7 @@ const DetalhesItem = () => {
                                     <h3 className="font-semibold text-gray-800 mb-2">Localização</h3>
                                     <div className="flex items-center gap-2 text-gray-600">
                                         <MapPin className="w-4 h-4 text-primary" />
-                                        {item.localizacao}
+                                        {localizacao}
                                     </div>
                                 </div>
 
@@ -209,7 +303,7 @@ const DetalhesItem = () => {
                                             <p className="text-sm text-gray-600 mb-1">Valor para troca</p>
                                             <p className="font-bold text-2xl text-primary flex items-center gap-2">
                                                 <Sparkles className="w-6 h-6" />
-                                                {item.girinhas}
+                                                {item.valor_girinhas}
                                             </p>
                                         </div>
                                         <div className="text-right">
@@ -223,9 +317,11 @@ const DetalhesItem = () => {
                                     className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 disabled:opacity-50"
                                     size="lg"
                                     onClick={handleReservar}
-                                    disabled={isReserved || !item.disponivel}
+                                    disabled={isReserved || item.status !== 'disponivel' || semSaldo || isProprio}
                                 >
-                                    {(isReserved || !item.disponivel) ? 'Item Reservado' : 'Reservar com Pix da Mãe'}
+                                    {isProprio ? 'Seu próprio item' : 
+                                     (isReserved || item.status !== 'disponivel') ? 'Item Reservado' : 
+                                     semSaldo ? 'Saldo insuficiente' : 'Reservar com Pix da Mãe'}
                                 </Button>
                             </CardContent>
                         </Card>
@@ -238,25 +334,25 @@ const DetalhesItem = () => {
                             <CardContent>
                                 <div className="flex items-center gap-4">
                                     <Avatar className="w-16 h-16">
-                                        <AvatarImage src={item.maeAvatar} alt={item.maeNome} />
+                                        <AvatarImage src={item.profiles?.avatar_url || undefined} alt={nomeMae} />
                                         <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
-                                            {item.maeNome.split(' ').map(n => n[0]).join('')}
+                                            {nomeMae.split(' ').map(n => n[0]).join('')}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-grow">
-                                        <h3 className="font-semibold text-gray-800">{item.maeNome}</h3>
+                                        <h3 className="font-semibold text-gray-800">{nomeMae}</h3>
                                         <div className="flex items-center gap-1 mt-1">
                                             {[1,2,3,4,5].map((star) => (
-                                                <Star key={star} className={`w-4 h-4 ${star <= Math.floor(item.maeReputacao) ? 'fill-current text-yellow-500' : 'text-gray-300'}`} />
+                                                <Star key={star} className={`w-4 h-4 ${star <= Math.floor(reputacao) ? 'fill-current text-yellow-500' : 'text-gray-300'}`} />
                                             ))}
                                             <span className="text-sm text-gray-600 ml-1">
-                                                ({item.maeReputacao}) • {item.maeTrocas} trocas
+                                                ({reputacao.toFixed(1)})
                                             </span>
                                         </div>
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <Button asChild size="sm">
-                                            <Link to={`/perfil/${item.maeNome}`}>Ver Perfil</Link>
+                                            <Link to={`/perfil/${nomeMae}`}>Ver Perfil</Link>
                                         </Button>
                                         <Button variant="outline" size="sm">
                                             <Flag className="w-3 h-3 mr-1" />
