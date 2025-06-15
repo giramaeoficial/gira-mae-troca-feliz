@@ -1,4 +1,3 @@
-
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster"
@@ -9,6 +8,7 @@ import Cadastro from './pages/Cadastro';
 import Auth from './pages/Auth';
 import Feed from './pages/Feed';
 import Perfil from './pages/Perfil';
+import PerfilPublico from './pages/PerfilPublico';
 import PublicarItem from './pages/PublicarItem';
 import DetalhesItem from './pages/DetalhesItem';
 import Carteira from './pages/Carteira';
@@ -37,6 +37,7 @@ function AppContent() {
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/feed" element={<Feed />} />
         <Route path="/perfil" element={<Perfil />} />
+        <Route path="/perfil/:nome" element={<PerfilPublico />} />
         <Route path="/publicar" element={<PublicarItem />} />
         <Route path="/item/:id" element={<DetalhesItem />} />
         <Route path="/carteira" element={<Carteira />} />
