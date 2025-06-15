@@ -9,6 +9,7 @@ import Header from "@/components/shared/Header";
 import PacoteCard from "@/components/girinhas/PacoteCard";
 import MetaCard from "@/components/girinhas/MetaCard";
 import CompraHistoricoCard from "@/components/girinhas/CompraHistoricoCard";
+import PromocaoEspecial from "@/components/girinhas/PromocaoEspecial";
 import { usePacotesGirinhas } from "@/hooks/usePacotesGirinhas";
 import { useMetas } from "@/hooks/useMetas";
 import { useComprasGirinhas } from "@/hooks/useComprasGirinhas";
@@ -18,6 +19,7 @@ import { useTrocas } from "@/hooks/useTrocas";
 const SistemaGirinhas = () => {
   const { toast } = useToast();
   const [loadingCompra, setLoadingCompra] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("comprar");
   
   const { pacotes, loading: loadingPacotes } = usePacotesGirinhas();
   const { metas, loading: loadingMetas, getProgressoMeta, getProximaMeta, getMetasConquistadas, getTotalBonusRecebido } = useMetas();
@@ -52,6 +54,10 @@ const SistemaGirinhas = () => {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header activePage="sistema-girinhas" />
@@ -66,6 +72,9 @@ const SistemaGirinhas = () => {
             Ganhe e use Girinhas para trocar itens, conquistar metas e fazer parte da comunidade GiraMãe!
           </p>
         </div>
+
+        {/* Promoções Especiais */}
+        <PromocaoEspecial />
 
         {/* Resumo da Carteira */}
         <Card className="mb-8 bg-gradient-to-r from-primary/10 to-secondary/10">
@@ -93,7 +102,7 @@ const SistemaGirinhas = () => {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="comprar" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="comprar" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
@@ -187,7 +196,7 @@ const SistemaGirinhas = () => {
                   <CardContent className="text-center py-8">
                     <History className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">Você ainda não fez nenhuma compra de Girinhas.</p>
-                    <Button className="mt-4" onClick={() => document.querySelector('[value="comprar"]')?.click()}>
+                    <Button className="mt-4" onClick={() => handleTabChange("comprar")}>
                       Comprar Girinhas
                     </Button>
                   </CardContent>
