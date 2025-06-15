@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,25 +26,34 @@ const PerfilPublico = () => {
     const [loadingItens, setLoadingItens] = useState(true);
     const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
 
-    useEffect(() => {
-        const carregarPerfil = async () => {
-            if (nome) {
-                const perfilCarregado = await fetchProfileByName(nome);
-                if (perfilCarregado) {
-                    // Carregar itens do usuário
-                    const itens = await buscarItensDoUsuario(perfilCarregado.id);
-                    setItensUsuario(itens);
-                    
-                    // Carregar estatísticas de seguidores
-                    const stats = await buscarEstatisticas(perfilCarregado.id);
-                    setEstatisticas(stats);
-                }
-                setLoadingItens(false);
-            }
-        };
+    const carregarDadosCompletos = useCallback(async (nomeUsuario: string) => {
+        console.log('Carregando dados para:', nomeUsuario);
+        setLoadingItens(true);
+        
+        const perfilCarregado = await fetchProfileByName(nomeUsuario);
+        
+        if (perfilCarregado) {
+            console.log('Perfil carregado, buscando itens e estatísticas...');
+            
+            // Carregar itens e estatísticas em paralelo
+            const [itens, stats] = await Promise.all([
+                buscarItensDoUsuario(perfilCarregado.id),
+                buscarEstatisticas(perfilCarregado.id)
+            ]);
+            
+            setItensUsuario(itens);
+            setEstatisticas(stats);
+        }
+        
+        setLoadingItens(false);
+    }, [fetchProfileByName, buscarItensDoUsuario, buscarEstatisticas]);
 
-        carregarPerfil();
-    }, [nome, fetchProfileByName, buscarItensDoUsuario, buscarEstatisticas]);
+    useEffect(() => {
+        if (nome) {
+            console.log('Nome do parâmetro mudou:', nome);
+            carregarDadosCompletos(nome);
+        }
+    }, [nome, carregarDadosCompletos]);
 
     if (loading) {
         return (

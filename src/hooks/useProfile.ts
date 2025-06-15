@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -14,7 +14,7 @@ export const useProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!user) {
       setLoading(false);
       return;
@@ -51,9 +51,9 @@ export const useProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const fetchProfileByName = async (nome: string) => {
+  const fetchProfileByName = useCallback(async (nome: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -93,9 +93,9 @@ export const useProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user) return false;
 
     try {
@@ -117,9 +117,9 @@ export const useProfile = () => {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar perfil');
       return false;
     }
-  };
+  }, [user]);
 
-  const deleteFilho = async (filhoId: string) => {
+  const deleteFilho = useCallback(async (filhoId: string) => {
     try {
       const { error } = await supabase
         .from('filhos')
@@ -136,11 +136,11 @@ export const useProfile = () => {
       setError(err instanceof Error ? err.message : 'Erro ao deletar filho');
       return false;
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProfile();
-  }, [user]);
+  }, [fetchProfile]);
 
   return {
     profile,
