@@ -10,38 +10,37 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Camera, X } from "lucide-react";
 import { useState } from "react";
+import { useItens } from "@/hooks/useItens";
 
 const itemSchema = z.object({
-  title: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
-  description: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
-  category: z.string().min(1, "Selecione uma categoria"),
-  state: z.string().min(1, "Selecione o estado de conservação"),
-  size: z.string().optional(),
-  girinhas: z.number().min(1, "Valor deve ser maior que 0").max(500, "Valor máximo de 500 Girinhas"),
-  pictures: z.array(z.any()).max(3, "Máximo de 3 fotos").optional()
+  titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
+  descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
+  categoria: z.string().min(1, "Selecione uma categoria"),
+  estado_conservacao: z.string().min(1, "Selecione o estado de conservação"),
+  tamanho: z.string().optional(),
+  valor_girinhas: z.number().min(1, "Valor deve ser maior que 0").max(500, "Valor máximo de 500 Girinhas")
 });
 
 type ItemFormData = z.infer<typeof itemSchema>;
 
 const PublicarItem = () => {
-    const { toast } = useToast();
     const navigate = useNavigate();
-    const [selectedImages, setSelectedImages] = useState<string[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+    const { publicarItem, loading } = useItens();
 
     const form = useForm<ItemFormData>({
         resolver: zodResolver(itemSchema),
         defaultValues: {
-            title: "",
-            description: "",
-            category: "",
-            state: "",
-            size: "",
-            girinhas: 0,
-            pictures: []
+            titulo: "",
+            descricao: "",
+            categoria: "",
+            estado_conservacao: "",
+            tamanho: "",
+            valor_girinhas: 0
         }
     });
 
@@ -49,20 +48,23 @@ const PublicarItem = () => {
         const files = event.target.files;
         if (!files) return;
 
-        const newImages: string[] = [];
-        const remainingSlots = 3 - selectedImages.length;
+        const newFiles: File[] = [];
+        const newPreviews: string[] = [];
+        const remainingSlots = 3 - selectedFiles.length;
         const filesToProcess = Math.min(files.length, remainingSlots);
 
         for (let i = 0; i < filesToProcess; i++) {
             const file = files[i];
             if (file.type.startsWith('image/')) {
+                newFiles.push(file);
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const imageUrl = e.target?.result as string;
-                    newImages.push(imageUrl);
+                    newPreviews.push(imageUrl);
                     
-                    if (newImages.length === filesToProcess) {
-                        setSelectedImages(prev => [...prev, ...newImages]);
+                    if (newPreviews.length === filesToProcess) {
+                        setSelectedFiles(prev => [...prev, ...newFiles]);
+                        setPreviewUrls(prev => [...prev, ...newPreviews]);
                     }
                 };
                 reader.readAsDataURL(file);
@@ -74,25 +76,18 @@ const PublicarItem = () => {
     };
 
     const removeImage = (indexToRemove: number) => {
-        setSelectedImages(prev => prev.filter((_, index) => index !== indexToRemove));
+        setSelectedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+        setPreviewUrls(prev => prev.filter((_, index) => index !== indexToRemove));
     };
 
-    const onSubmit = (data: ItemFormData) => {
-        const itemData = {
-            ...data,
-            pictures: selectedImages
-        };
+    const onSubmit = async (data: ItemFormData) => {
+        const sucesso = await publicarItem(data, selectedFiles);
         
-        console.log("Item publicado:", itemData);
-        
-        toast({
-            title: "Item publicado com sucesso! 🎉",
-            description: `${data.title} foi adicionado à sua lista de itens.`,
-        });
-
-        setTimeout(() => {
-            navigate("/perfil");
-        }, 1500);
+        if (sucesso) {
+            setTimeout(() => {
+                navigate("/perfil");
+            }, 1500);
+        }
     };
 
     return (
@@ -117,9 +112,9 @@ const PublicarItem = () => {
                                     <Label>Fotos do item (até 3)</Label>
                                     
                                     {/* Preview das imagens */}
-                                    {selectedImages.length > 0 && (
+                                    {previewUrls.length > 0 && (
                                         <div className="grid grid-cols-3 gap-4">
-                                            {selectedImages.map((image, index) => (
+                                            {previewUrls.map((image, index) => (
                                                 <div key={index} className="relative">
                                                     <img 
                                                         src={image} 
@@ -139,7 +134,7 @@ const PublicarItem = () => {
                                     )}
 
                                     {/* Upload de novas imagens */}
-                                    {selectedImages.length < 3 && (
+                                    {selectedFiles.length < 3 && (
                                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                                             <input
                                                 type="file"
@@ -158,7 +153,7 @@ const PublicarItem = () => {
                                                     Clique para adicionar fotos
                                                 </span>
                                                 <span className="text-xs text-gray-500">
-                                                    {selectedImages.length}/3 fotos adicionadas
+                                                    {selectedFiles.length}/3 fotos adicionadas
                                                 </span>
                                             </label>
                                         </div>
@@ -167,7 +162,7 @@ const PublicarItem = () => {
 
                                 <FormField
                                     control={form.control}
-                                    name="title"
+                                    name="titulo"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Título do item</FormLabel>
@@ -181,7 +176,7 @@ const PublicarItem = () => {
 
                                 <FormField
                                     control={form.control}
-                                    name="description"
+                                    name="descricao"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Descrição</FormLabel>
@@ -196,7 +191,7 @@ const PublicarItem = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
                                         control={form.control}
-                                        name="category"
+                                        name="categoria"
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Categoria</FormLabel>
@@ -222,7 +217,7 @@ const PublicarItem = () => {
 
                                     <FormField
                                         control={form.control}
-                                        name="state"
+                                        name="estado_conservacao"
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Estado de conservação</FormLabel>
@@ -248,7 +243,7 @@ const PublicarItem = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
                                         control={form.control}
-                                        name="size"
+                                        name="tamanho"
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Tamanho (opcional)</FormLabel>
@@ -262,7 +257,7 @@ const PublicarItem = () => {
 
                                     <FormField
                                         control={form.control}
-                                        name="girinhas"
+                                        name="valor_girinhas"
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Valor em Girinhas</FormLabel>
@@ -284,9 +279,9 @@ const PublicarItem = () => {
                                     size="lg" 
                                     className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
                                     type="submit"
-                                    disabled={form.formState.isSubmitting}
+                                    disabled={loading}
                                 >
-                                    {form.formState.isSubmitting ? "Publicando..." : "Publicar Item"}
+                                    {loading ? "Publicando..." : "Publicar Item"}
                                 </Button>
                             </form>
                         </Form>

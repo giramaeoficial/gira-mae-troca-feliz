@@ -53,6 +53,59 @@ export type Database = {
           },
         ]
       }
+      itens: {
+        Row: {
+          categoria: string
+          created_at: string
+          descricao: string
+          estado_conservacao: string
+          fotos: string[] | null
+          id: string
+          publicado_por: string
+          status: string
+          tamanho: string | null
+          titulo: string
+          updated_at: string
+          valor_girinhas: number
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          descricao: string
+          estado_conservacao: string
+          fotos?: string[] | null
+          id?: string
+          publicado_por: string
+          status?: string
+          tamanho?: string | null
+          titulo: string
+          updated_at?: string
+          valor_girinhas: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          descricao?: string
+          estado_conservacao?: string
+          fotos?: string[] | null
+          id?: string
+          publicado_por?: string
+          status?: string
+          tamanho?: string | null
+          titulo?: string
+          updated_at?: string
+          valor_girinhas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["publicado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           aceita_entrega_domicilio: boolean | null
