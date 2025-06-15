@@ -125,7 +125,6 @@ const DetalhesItem = () => {
 
         const sucesso = await criarReserva(item.id, Number(item.valor_girinhas));
         if (sucesso) {
-            // Recarregar item para atualizar status
             await carregarItem();
         }
     };
@@ -333,7 +332,7 @@ const DetalhesItem = () => {
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <Button asChild size="sm">
-                                            <Link to={`/perfil/${encodeURIComponent(nomeMae)}`}>Ver Perfil</Link>
+                                            <Link to={`/perfil/${nomeMae}`}>Ver Perfil</Link>
                                         </Button>
                                         <Button variant="outline" size="sm">
                                             <Flag className="w-3 h-3 mr-1" />
