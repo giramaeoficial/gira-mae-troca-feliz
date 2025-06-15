@@ -24,6 +24,7 @@ export const useProfile = () => {
       setLoading(true);
       setError(null);
 
+      // Buscar perfil
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -34,6 +35,7 @@ export const useProfile = () => {
 
       setProfile(profileData);
 
+      // Buscar filhos
       const { data: filhosData, error: filhosError } = await supabase
         .from('filhos')
         .select('*')
@@ -49,28 +51,31 @@ export const useProfile = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user]);
 
   const fetchProfileByName = useCallback(async (nome: string) => {
     try {
       setLoading(true);
       setError(null);
 
+      console.log('Buscando perfil por nome:', nome);
+
+      // Buscar perfil por nome
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('nome', decodeURIComponent(nome))
-        .maybeSingle();
+        .single();
 
-      if (profileError) throw profileError;
-
-      if (!profileData) {
-        setError('Perfil não encontrado');
-        return null;
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        throw profileError;
       }
 
+      console.log('Perfil encontrado:', profileData);
       setProfile(profileData);
 
+      // Buscar filhos do perfil
       const { data: filhosData, error: filhosError } = await supabase
         .from('filhos')
         .select('*')
@@ -104,6 +109,7 @@ export const useProfile = () => {
 
       if (error) throw error;
 
+      // Atualizar estado local
       setProfile(prev => prev ? { ...prev, ...updates } : null);
       return true;
     } catch (err) {
@@ -111,7 +117,7 @@ export const useProfile = () => {
       setError(err instanceof Error ? err.message : 'Erro ao atualizar perfil');
       return false;
     }
-  }, [user?.id]);
+  }, [user]);
 
   const deleteFilho = useCallback(async (filhoId: string) => {
     try {
@@ -122,6 +128,7 @@ export const useProfile = () => {
 
       if (error) throw error;
 
+      // Atualizar estado local
       setFilhos(prev => prev.filter(filho => filho.id !== filhoId));
       return true;
     } catch (err) {
@@ -132,16 +139,8 @@ export const useProfile = () => {
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-    
-    if (user && mounted) {
-      fetchProfile();
-    }
-    
-    return () => {
-      mounted = false;
-    };
-  }, [user?.id, fetchProfile]);
+    fetchProfile();
+  }, [fetchProfile]);
 
   return {
     profile,

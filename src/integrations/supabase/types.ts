@@ -385,22 +385,7 @@ export type Database = {
           indicado_id?: string
           indicador_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "indicacoes_indicado_id_fkey"
-            columns: ["indicado_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "indicacoes_indicador_id_fkey"
-            columns: ["indicador_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       itens: {
         Row: {

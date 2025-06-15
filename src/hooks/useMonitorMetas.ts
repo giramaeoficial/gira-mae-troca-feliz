@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
@@ -9,63 +9,77 @@ export const useMonitorMetas = () => {
   const { user } = useAuth();
   const { mostrarRecompensa } = useRecompensas();
   const { toast } = useToast();
-  const channelsRef = useRef<any[]>([]);
-  const isInitializedRef = useRef(false);
-
-  const cleanupChannels = useCallback(() => {
-    channelsRef.current.forEach(channel => {
-      supabase.removeChannel(channel);
-    });
-    channelsRef.current = [];
-  }, []);
 
   useEffect(() => {
-    if (!user || isInitializedRef.current) return;
-    
-    isInitializedRef.current = true;
-    cleanupChannels();
+    if (!user) return;
 
-    // Apenas monitorar se tiver recompensas habilitadas
-    if (mostrarRecompensa && toast) {
-      const metasChannel = supabase
-        .channel(`metas-changes-${user.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'metas_usuarios',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            const metaAtualizada = payload.new as any;
-            const metaAnterior = payload.old as any;
-            
-            if (metaAtualizada.conquistado && !metaAnterior.conquistado) {
-              setTimeout(() => {
-                mostrarRecompensa({
-                  tipo: 'meta',
-                  valor: metaAtualizada.girinhas_bonus,
-                  descricao: `Incrível! Você conquistou o distintivo ${metaAtualizada.tipo_meta.toUpperCase()}!`,
-                  meta: metaAtualizada.tipo_meta
-                });
+    // Monitorar mudanças nas metas
+    const metasChannel = supabase
+      .channel('metas-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'metas_usuarios',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          const metaAtualizada = payload.new as any;
+          
+          // Se a meta foi conquistada agora
+          if (metaAtualizada.conquistado && !payload.old.conquistado) {
+            // Pequeno delay para garantir que outras transações sejam processadas
+            setTimeout(() => {
+              mostrarRecompensa({
+                tipo: 'meta',
+                valor: metaAtualizada.girinhas_bonus,
+                descricao: `Incrível! Você conquistou o distintivo ${metaAtualizada.tipo_meta.toUpperCase()}!`,
+                meta: metaAtualizada.tipo_meta
+              });
 
-                toast({
-                  title: `🎯 Meta ${metaAtualizada.tipo_meta.toUpperCase()} alcançada!`,
-                  description: `Fantástico! +${metaAtualizada.girinhas_bonus} Girinhas de bônus!`,
-                });
-              }, 1000);
-            }
+              // Toast adicional para reforçar
+              toast({
+                title: `🎯 Meta ${metaAtualizada.tipo_meta.toUpperCase()} alcançada!`,
+                description: `Fantástico! +${metaAtualizada.girinhas_bonus} Girinhas de bônus!`,
+              });
+            }, 1000);
           }
-        )
-        .subscribe();
+        }
+      )
+      .subscribe();
 
-      channelsRef.current.push(metasChannel);
-    }
+    // Monitorar novas transações de bônus para celebrar
+    const transacoesChannel = supabase
+      .channel('transacoes-bonus')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'transacoes',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          const transacao = payload.new as any;
+          
+          // Celebrar bônus especiais que não são capturados em outros lugares
+          if (transacao.tipo === 'bonus' && transacao.descricao?.includes('promocional')) {
+            setTimeout(() => {
+              mostrarRecompensa({
+                tipo: 'cadastro',
+                valor: transacao.valor,
+                descricao: 'Surpresa! Você recebeu Girinhas promocionais!'
+              });
+            }, 500);
+          }
+        }
+      )
+      .subscribe();
 
     return () => {
-      cleanupChannels();
-      isInitializedRef.current = false;
+      supabase.removeChannel(metasChannel);
+      supabase.removeChannel(transacoesChannel);
     };
-  }, [user?.id, cleanupChannels, mostrarRecompensa, toast]);
+  }, [user, mostrarRecompensa, toast]);
 };

@@ -1,13 +1,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useIndicacoes } from '@/hooks/useIndicacoes';
 import { Users, Gift, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import BotoesCompartilhamento from './BotoesCompartilhamento';
 
 const WidgetIndicacao = () => {
-  const { indicacoes, gerarLinkIndicacao, gerarTextoCompartilhamento } = useIndicacoes();
+  const { indicacoes, compartilharIndicacao } = useIndicacoes();
 
   const totalGanho = indicacoes.reduce((total, indicacao) => {
     let bonus = 0;
@@ -38,10 +38,14 @@ const WidgetIndicacao = () => {
         </div>
 
         <div className="space-y-2">
-          <BotoesCompartilhamento
-            linkIndicacao={gerarLinkIndicacao()}
-            texto={gerarTextoCompartilhamento()}
-          />
+          <Button 
+            onClick={compartilharIndicacao}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            size="sm"
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Compartilhar
+          </Button>
           
           <Link to="/indicacoes">
             <Button variant="outline" className="w-full" size="sm">

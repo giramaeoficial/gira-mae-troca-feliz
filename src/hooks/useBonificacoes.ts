@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -311,6 +311,13 @@ export const useBonificacoes = () => {
       console.error('Erro ao processar bônus de cadastro:', error);
     }
   };
+
+  // Verificar bonificações pendentes no carregamento
+  useEffect(() => {
+    if (user) {
+      verificarEProcessarMetas();
+    }
+  }, [user]);
 
   return {
     bonificacoesPendentes,

@@ -1,8 +1,8 @@
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 
 interface Indicacao {
   id: string;
@@ -21,20 +21,13 @@ interface Indicacao {
   } | null;
 }
 
-interface BonusAnimacao {
-  valor: number;
-  descricao: string;
-}
-
 export const useIndicacoes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { mostrarRecompensa } = useRecompensas();
   const [indicacoes, setIndicacoes] = useState<Indicacao[]>([]);
   const [indicados, setIndicados] = useState<Indicacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bonusAnimacao, setBonusAnimacao] = useState<BonusAnimacao | null>(null);
-  const channelRef = useRef<any>(null);
-  const processedBonusRef = useRef(new Set<string>());
 
   const fetchIndicacoes = async () => {
     if (!user) return;
@@ -72,8 +65,7 @@ export const useIndicacoes = () => {
         profiles: item.profiles && 
                  typeof item.profiles === 'object' && 
                  item.profiles !== null &&
-                 typeof item.profiles === 'object' &&
-                 'nome' in (item.profiles as object)
+                 'nome' in item.profiles 
           ? item.profiles as { nome: string; email: string }
           : null
       }));
@@ -83,8 +75,7 @@ export const useIndicacoes = () => {
         profiles: item.profiles && 
                  typeof item.profiles === 'object' && 
                  item.profiles !== null &&
-                 typeof item.profiles === 'object' &&
-                 'nome' in (item.profiles as object)
+                 'nome' in item.profiles 
           ? item.profiles as { nome: string; email: string }
           : null
       }));
@@ -174,22 +165,44 @@ export const useIndicacoes = () => {
     return `${baseUrl}/cadastro?ref=${user.id}`;
   };
 
-  const gerarTextoCompartilhamento = () => {
+  const compartilharIndicacao = async () => {
     const link = gerarLinkIndicacao();
-    return `🌟 Oi! Você precisa conhecer o GiraMãe! É uma plataforma incrível onde mães trocam roupas, brinquedos e itens infantis usando uma moeda virtual chamada Girinha. É sustentável, econômico e divertido! Use meu link e ganhe bônus para começar: ${link}`;
+    const texto = `🌟 Oi! Você precisa conhecer o GiraMãe! É uma plataforma incrível onde mães trocam roupas, brinquedos e itens infantis usando uma moeda virtual chamada Girinha. É sustentável, econômico e divertido! Use meu link e ganhe bônus para começar: ${link}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Venha para o GiraMãe!',
+          text: texto,
+          url: link
+        });
+      } catch (error) {
+        console.log('Compartilhamento cancelado');
+      }
+    } else {
+      // Fallback para copiar para clipboard
+      try {
+        await navigator.clipboard.writeText(texto);
+        toast({
+          title: "Link copiado!",
+          description: "O link de indicação foi copiado para sua área de transferência.",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível copiar o link.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   // Monitorar bônus de indicação em tempo real
   useEffect(() => {
     if (!user) return;
 
-    // Limpar canal anterior
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-    }
-
     const transacoesChannel = supabase
-      .channel(`indicacoes-bonus-${user.id}`)
+      .channel('indicacoes-bonus')
       .on(
         'postgres_changes',
         {
@@ -200,29 +213,26 @@ export const useIndicacoes = () => {
         },
         (payload) => {
           const transacao = payload.new as any;
-          const bonusKey = `bonus-${transacao.id}`;
           
-          if (transacao.tipo === 'bonus' && 
-              transacao.descricao?.includes('indicação') &&
-              !processedBonusRef.current.has(bonusKey)) {
-            
-            processedBonusRef.current.add(bonusKey);
-            
+          if (transacao.tipo === 'bonus' && transacao.descricao?.includes('indicação')) {
             setTimeout(() => {
               if (transacao.descricao.includes('Novo cadastro')) {
-                setBonusAnimacao({
+                mostrarRecompensa({
+                  tipo: 'indicacao',
                   valor: transacao.valor,
-                  descricao: 'Sua indicação se cadastrou na plataforma!'
+                  descricao: 'Parabéns! Sua indicação se cadastrou na plataforma!'
                 });
               } else if (transacao.descricao.includes('Primeiro item')) {
-                setBonusAnimacao({
+                mostrarRecompensa({
+                  tipo: 'indicacao',
                   valor: transacao.valor,
-                  descricao: 'Sua indicação publicou o primeiro item!'
+                  descricao: 'Incrível! Sua indicação publicou o primeiro item!'
                 });
               } else if (transacao.descricao.includes('Primeira compra')) {
-                setBonusAnimacao({
+                mostrarRecompensa({
+                  tipo: 'indicacao',
                   valor: transacao.valor,
-                  descricao: 'Sua indicação fez a primeira compra!'
+                  descricao: 'Fantástico! Sua indicação fez a primeira compra!'
                 });
               }
             }, 1000);
@@ -231,29 +241,22 @@ export const useIndicacoes = () => {
       )
       .subscribe();
 
-    channelRef.current = transacoesChannel;
-
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      supabase.removeChannel(transacoesChannel);
     };
-  }, [user?.id]); // Dependência apenas do user.id
+  }, [user, mostrarRecompensa]);
 
   useEffect(() => {
     fetchIndicacoes();
-  }, [user?.id]); // Dependência apenas do user.id
+  }, [user]);
 
   return {
     indicacoes,
     indicados,
     loading,
-    bonusAnimacao,
-    setBonusAnimacao,
     registrarIndicacao,
     gerarLinkIndicacao,
-    gerarTextoCompartilhamento,
+    compartilharIndicacao,
     refetch: fetchIndicacoes
   };
 };

@@ -58,16 +58,8 @@ export const useMetas = () => {
   };
 
   useEffect(() => {
-    let mounted = true;
-    
-    if (user && mounted) {
-      fetchMetas();
-    }
-    
-    return () => {
-      mounted = false;
-    };
-  }, [user?.id]); // Dependência apenas do user.id
+    fetchMetas();
+  }, [user]);
 
   return {
     metas,

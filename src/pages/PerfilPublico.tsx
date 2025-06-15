@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,111 +8,54 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Trophy, MessageCircle, Users } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
 import { useItens } from "@/hooks/useItens";
 import { useSeguidores } from "@/hooks/useSeguidores";
 import BotaoSeguir from "@/components/perfil/BotaoSeguir";
 import { Tables } from "@/integrations/supabase/types";
 import { Link } from "react-router-dom";
-import { supabase } from '@/integrations/supabase/client';
 
 type Item = Tables<'itens'>;
-type Profile = Tables<'profiles'>;
-type Filho = Tables<'filhos'>;
 
 const PerfilPublico = () => {
     const { nome } = useParams<{ nome: string }>();
-    const [profile, setProfile] = useState<Profile | null>(null);
-    const [filhos, setFilhos] = useState<Filho[]>([]);
-    const [isProfileLoading, setIsProfileLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
+    const { profile, filhos, loading, fetchProfileByName } = useProfile();
     const { buscarItensDoUsuario } = useItens();
     const { buscarEstatisticas } = useSeguidores();
     const [itensUsuario, setItensUsuario] = useState<Item[]>([]);
     const [loadingItens, setLoadingItens] = useState(true);
     const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
 
-    useEffect(() => {
-        let mounted = true;
-
-        const carregarDados = async () => {
-            if (!nome || !mounted) return;
+    const carregarDadosCompletos = useCallback(async (nomeUsuario: string) => {
+        console.log('Carregando dados para:', nomeUsuario);
+        setLoadingItens(true);
+        
+        const perfilCarregado = await fetchProfileByName(nomeUsuario);
+        
+        if (perfilCarregado) {
+            console.log('Perfil carregado, buscando itens e estatísticas...');
             
-            console.log('Carregando perfil para nome:', nome);
-            setIsProfileLoading(true);
-            setError(null);
+            // Carregar itens e estatísticas em paralelo
+            const [itens, stats] = await Promise.all([
+                buscarItensDoUsuario(perfilCarregado.id),
+                buscarEstatisticas(perfilCarregado.id)
+            ]);
+            
+            setItensUsuario(itens);
+            setEstatisticas(stats);
+        }
+        
+        setLoadingItens(false);
+    }, [fetchProfileByName, buscarItensDoUsuario, buscarEstatisticas]);
 
-            try {
-                // Buscar perfil por nome (sem decode)
-                const { data: profileData, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('nome', nome)
-                    .maybeSingle();
+    useEffect(() => {
+        if (nome) {
+            console.log('Nome do parâmetro mudou:', nome);
+            carregarDadosCompletos(nome);
+        }
+    }, [nome, carregarDadosCompletos]);
 
-                if (profileError) {
-                    console.error('Erro ao buscar perfil:', profileError);
-                    throw profileError;
-                }
-                
-                if (!profileData) {
-                    setError("Perfil não encontrado");
-                    setProfile(null);
-                    setIsProfileLoading(false);
-                    return;
-                }
-
-                if (!mounted) return;
-                setProfile(profileData);
-
-                // Buscar filhos
-                const { data: filhosData, error: filhosError } = await supabase
-                    .from('filhos')
-                    .select('*')
-                    .eq('mae_id', profileData.id)
-                    .order('created_at', { ascending: true });
-
-                if (filhosError) {
-                    console.error('Erro ao buscar filhos:', filhosError);
-                    throw filhosError;
-                }
-
-                if (!mounted) return;
-                setFilhos(filhosData || []);
-
-                // Buscar itens e estatísticas
-                setLoadingItens(true);
-                const [itens, stats] = await Promise.all([
-                    buscarItensDoUsuario(profileData.id),
-                    buscarEstatisticas(profileData.id)
-                ]);
-
-                if (!mounted) return;
-                setItensUsuario(itens);
-                setEstatisticas(stats);
-                setLoadingItens(false);
-
-            } catch (err: any) {
-                console.error('Erro geral:', err);
-                if (mounted) {
-                    setError(err?.message || "Erro ao carregar perfil.");
-                    setProfile(null);
-                }
-            } finally {
-                if (mounted) {
-                    setIsProfileLoading(false);
-                }
-            }
-        };
-
-        carregarDados();
-
-        return () => {
-            mounted = false;
-        };
-    }, [nome]); // Apenas nome como dependência
-
-    if (isProfileLoading) {
+    if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
                 <div className="text-center">
@@ -123,11 +66,11 @@ const PerfilPublico = () => {
         );
     }
 
-    if (error || !profile) {
+    if (!profile) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-600">{error || "Perfil não encontrado"}</p>
+                    <p className="text-gray-600">Perfil não encontrado</p>
                 </div>
             </div>
         );
@@ -145,6 +88,7 @@ const PerfilPublico = () => {
                     {/* Profile Sidebar */}
                     <Card className="w-full lg:w-1/3 sticky top-8 shadow-xl border-0 bg-white/80 backdrop-blur-sm">
                         <CardContent className="pt-6">
+                            {/* Profile Header */}
                             <div className="flex flex-col items-center text-center mb-6">
                                 <div className="relative">
                                     <Avatar className="w-28 h-28 mb-4 ring-4 ring-primary/20">
@@ -170,6 +114,7 @@ const PerfilPublico = () => {
                                 </div>
                             </div>
 
+                            {/* Estatísticas de Seguidores */}
                             <div className="grid grid-cols-2 gap-3 mb-6">
                                 <div className="text-center p-3 bg-gray-50 rounded-lg">
                                     <p className="text-lg font-bold text-gray-800">{estatisticas.total_seguindo}</p>
@@ -181,6 +126,7 @@ const PerfilPublico = () => {
                                 </div>
                             </div>
 
+                            {/* Quick Info */}
                             <div className="space-y-3 mb-6">
                                 {profile?.bairro && profile?.cidade && (
                                     <div className="flex items-center gap-2 text-gray-600">
@@ -198,6 +144,7 @@ const PerfilPublico = () => {
                                 </div>
                             </div>
 
+                            {/* Badges/Conquistas */}
                             <div className="mb-6">
                                 <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                                     <Trophy className="w-4 h-4 text-yellow-500" />
@@ -215,6 +162,7 @@ const PerfilPublico = () => {
                                 </div>
                             </div>
 
+                            {/* Bio */}
                             {profile?.bio && (
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
@@ -224,6 +172,7 @@ const PerfilPublico = () => {
                                 </div>
                             )}
 
+                            {/* Interesses */}
                             {profile?.interesses && profile.interesses.length > 0 && (
                                 <div className="mb-6">
                                     <h3 className="font-semibold text-gray-800 mb-2">Interesses</h3>
@@ -235,6 +184,7 @@ const PerfilPublico = () => {
                                 </div>
                             )}
 
+                            {/* Botão Seguir */}
                             <BotaoSeguir 
                                 usuarioId={profile.id}
                                 className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"

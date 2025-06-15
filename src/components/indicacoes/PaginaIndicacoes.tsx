@@ -5,22 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useIndicacoes } from '@/hooks/useIndicacoes';
 import { Users, Gift, Share2, Trophy, Mail, Check, Clock } from 'lucide-react';
-import TutorialIndicacoes from './TutorialIndicacoes';
-import BotoesCompartilhamento from './BotoesCompartilhamento';
-import AnimacaoBonus from './AnimacaoBonus';
 
 const PaginaIndicacoes = () => {
   const { 
     indicacoes, 
     indicados, 
-    loading,
-    bonusAnimacao,
-    setBonusAnimacao,
+    loading, 
     registrarIndicacao, 
-    gerarLinkIndicacao,
-    gerarTextoCompartilhamento
+    compartilharIndicacao 
   } = useIndicacoes();
   
   const [emailIndicacao, setEmailIndicacao] = useState('');
@@ -45,13 +40,6 @@ const PaginaIndicacoes = () => {
     return total;
   };
 
-  const getStatusIndicacao = (indicacao: any) => {
-    const total = calcularBonusTotal(indicacao);
-    if (total === 15) return { texto: 'Completa', cor: 'bg-green-100 text-green-700' };
-    if (total > 0) return { texto: 'Em andamento', cor: 'bg-blue-100 text-blue-700' };
-    return { texto: 'Aguardando', cor: 'bg-yellow-100 text-yellow-700' };
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -62,19 +50,8 @@ const PaginaIndicacoes = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
-      {/* Animação de bônus */}
-      <AnimacaoBonus
-        valor={bonusAnimacao?.valor || 0}
-        descricao={bonusAnimacao?.descricao || ''}
-        show={!!bonusAnimacao}
-        onComplete={() => setBonusAnimacao(null)}
-      />
-
       <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">💫 Sistema de Indicações</h1>
-          <TutorialIndicacoes />
-        </div>
+        <h1 className="text-3xl font-bold text-gray-900">💫 Sistema de Indicações</h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Convide suas amigas para o GiraMãe e ganhe Girinhas toda vez que elas se engajarem!
         </p>
@@ -110,10 +87,14 @@ const PaginaIndicacoes = () => {
             </div>
           </div>
           
-          <BotoesCompartilhamento
-            linkIndicacao={gerarLinkIndicacao()}
-            texto={gerarTextoCompartilhamento()}
-          />
+          <Button 
+            onClick={compartilharIndicacao}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            size="lg"
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Compartilhar Link de Indicação
+          </Button>
         </CardContent>
       </Card>
 
@@ -167,44 +148,34 @@ const PaginaIndicacoes = () => {
                 Você ainda não fez nenhuma indicação
               </p>
             ) : (
-              indicacoes.map((indicacao) => {
-                const status = getStatusIndicacao(indicacao);
-                const totalBonus = calcularBonusTotal(indicacao);
-                
-                return (
-                  <div key={indicacao.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{indicacao.profiles?.nome || 'Nome não disponível'}</p>
-                        <p className="text-sm text-gray-500">{indicacao.profiles?.email}</p>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <Badge variant="outline" className="bg-green-50 text-green-700">
-                          +{totalBonus} Girinhas
-                        </Badge>
-                        <Badge className={status.cor} variant="outline">
-                          {status.texto}
-                        </Badge>
-                      </div>
+              indicacoes.map((indicacao) => (
+                <div key={indicacao.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{indicacao.profiles?.nome || 'Nome não disponível'}</p>
+                      <p className="text-sm text-gray-500">{indicacao.profiles?.email}</p>
                     </div>
-                    
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className={`flex items-center gap-1 ${indicacao.bonus_cadastro_pago ? 'text-green-600' : 'text-gray-400'}`}>
-                        {indicacao.bonus_cadastro_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                        Cadastro
-                      </div>
-                      <div className={`flex items-center gap-1 ${indicacao.bonus_primeiro_item_pago ? 'text-green-600' : 'text-gray-400'}`}>
-                        {indicacao.bonus_primeiro_item_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                        1º Item
-                      </div>
-                      <div className={`flex items-center gap-1 ${indicacao.bonus_primeira_compra_pago ? 'text-green-600' : 'text-gray-400'}`}>
-                        {indicacao.bonus_primeira_compra_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                        1ª Compra
-                      </div>
+                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                      +{calcularBonusTotal(indicacao)} Girinhas
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className={`flex items-center gap-1 ${indicacao.bonus_cadastro_pago ? 'text-green-600' : 'text-gray-400'}`}>
+                      {indicacao.bonus_cadastro_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      Cadastro
+                    </div>
+                    <div className={`flex items-center gap-1 ${indicacao.bonus_primeiro_item_pago ? 'text-green-600' : 'text-gray-400'}`}>
+                      {indicacao.bonus_primeiro_item_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      1º Item
+                    </div>
+                    <div className={`flex items-center gap-1 ${indicacao.bonus_primeira_compra_pago ? 'text-green-600' : 'text-gray-400'}`}>
+                      {indicacao.bonus_primeira_compra_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      1ª Compra
                     </div>
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
           </CardContent>
         </Card>
