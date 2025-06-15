@@ -53,11 +53,69 @@ export const useCarteira = () => {
       if (transacoesError) throw transacoesError;
 
       setTransacoes(transacoesData || []);
+
+      // Verificar se os valores da carteira estão corretos
+      await verificarConsistenciaCarteira(carteiraData, transacoesData || []);
     } catch (err) {
       console.error('Erro ao carregar carteira:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const verificarConsistenciaCarteira = async (carteira: Carteira, transacoes: Transacao[]) => {
+    // Calcular valores corretos baseados nas transações
+    const totalRecebido = transacoes
+      .filter(t => t.tipo === 'recebido' || t.tipo === 'bonus')
+      .reduce((total, t) => total + Number(t.valor), 0);
+    
+    const totalGasto = transacoes
+      .filter(t => t.tipo === 'gasto')
+      .reduce((total, t) => total + Number(t.valor), 0);
+    
+    const saldoCalculado = totalRecebido - totalGasto;
+
+    // Verificar se há discrepância significativa (maior que 0.01)
+    const discrepanciaSaldo = Math.abs(Number(carteira.saldo_atual) - saldoCalculado) > 0.01;
+    const discrepanciaRecebido = Math.abs(Number(carteira.total_recebido) - totalRecebido) > 0.01;
+    const discrepanciaGasto = Math.abs(Number(carteira.total_gasto) - totalGasto) > 0.01;
+
+    if (discrepanciaSaldo || discrepanciaRecebido || discrepanciaGasto) {
+      console.log('Discrepância detectada na carteira, corrigindo...');
+      console.log('Valores da carteira:', {
+        saldo: Number(carteira.saldo_atual),
+        recebido: Number(carteira.total_recebido),
+        gasto: Number(carteira.total_gasto)
+      });
+      console.log('Valores calculados:', {
+        saldo: saldoCalculado,
+        recebido: totalRecebido,
+        gasto: totalGasto
+      });
+
+      // Corrigir os valores na carteira
+      const { error: updateError } = await supabase
+        .from('carteiras')
+        .update({
+          saldo_atual: saldoCalculado,
+          total_recebido: totalRecebido,
+          total_gasto: totalGasto,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user?.id);
+
+      if (updateError) {
+        console.error('Erro ao corrigir carteira:', updateError);
+      } else {
+        // Atualizar estado local com valores corretos
+        setCarteira(prev => prev ? {
+          ...prev,
+          saldo_atual: saldoCalculado,
+          total_recebido: totalRecebido,
+          total_gasto: totalGasto
+        } : null);
+      }
     }
   };
 
@@ -146,7 +204,7 @@ export const useCarteira = () => {
   };
 
   const verificarSaldo = (valor: number): boolean => {
-    return carteira ? carteira.saldo_atual >= valor : false;
+    return carteira ? Number(carteira.saldo_atual) >= valor : false;
   };
 
   useEffect(() => {
@@ -161,8 +219,8 @@ export const useCarteira = () => {
     refetch: fetchCarteira,
     adicionarTransacao,
     verificarSaldo,
-    saldo: carteira?.saldo_atual || 0,
-    totalRecebido: carteira?.total_recebido || 0,
-    totalGasto: carteira?.total_gasto || 0
+    saldo: carteira ? Number(carteira.saldo_atual) : 0,
+    totalRecebido: carteira ? Number(carteira.total_recebido) : 0,
+    totalGasto: carteira ? Number(carteira.total_gasto) : 0
   };
 };
