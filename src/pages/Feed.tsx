@@ -1,3 +1,4 @@
+
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { useCarteira } from "@/hooks/useCarteira";
 import { useItens } from "@/hooks/useItens";
 import { useAuth } from "@/hooks/useAuth";
 import { useFilaEspera } from "@/hooks/useFilaEspera";
+import { useFavoritos } from "@/hooks/useFavoritos";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -40,8 +42,10 @@ const Feed = () => {
     const { saldo } = useCarteira();
     const { buscarTodosItens, loading } = useItens();
     const { obterFilasMultiplos, getFilaInfo } = useFilaEspera();
+    const { verificarSeFavorito, toggleFavorito } = useFavoritos();
     const [searchTerm, setSearchTerm] = useState("");
     const [categoriaFiltro, setCategoriaFiltro] = useState("todas");
+    const [mostrarFavoritos, setMostrarFavoritos] = useState(false);
     const [itens, setItens] = useState<ItemComPerfil[]>([]);
 
     useEffect(() => {
@@ -77,10 +81,21 @@ const Feed = () => {
         }
     };
 
-    // Mostrar todos os itens exceto os vendidos (vendido é diferente de reservado)
+    const handleToggleFavorito = async (itemId: string, event: React.MouseEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        await toggleFavorito(itemId);
+    };
+
+    // Filtrar itens baseado nos filtros aplicados
     const filteredItems = itens.filter(item => {
         // Não mostrar itens vendidos
         if (item.status === 'vendido') {
+            return false;
+        }
+
+        // Filtro de favoritos
+        if (mostrarFavoritos && !verificarSeFavorito(item.id)) {
             return false;
         }
 
@@ -186,6 +201,14 @@ const Feed = () => {
                                 })}
                             </SelectContent>
                         </Select>
+                        <Button
+                            variant={mostrarFavoritos ? "default" : "outline"}
+                            onClick={() => setMostrarFavoritos(!mostrarFavoritos)}
+                            className="w-full md:w-auto bg-white/80 backdrop-blur-sm border-primary/20"
+                        >
+                            <Heart className={`w-4 h-4 mr-2 ${mostrarFavoritos ? 'fill-current' : ''}`} />
+                            {mostrarFavoritos ? 'Todos os itens' : 'Meus favoritos'}
+                        </Button>
                     </div>
                 </div>
 
@@ -199,6 +222,7 @@ const Feed = () => {
                         const imagemPrincipal = item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300";
                         const localizacao = item.profiles?.bairro || item.profiles?.cidade || "Localização não informada";
                         const nomeMae = item.profiles?.nome || "Usuário";
+                        const ehFavorito = verificarSeFavorito(item.id);
                         
                         return (
                             <Card key={item.id} className="overflow-hidden shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex flex-col border-0 bg-white/80 backdrop-blur-sm">
@@ -234,6 +258,14 @@ const Feed = () => {
                                             {formatarCategoria(item.categoria)}
                                         </Badge>
                                     </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute bottom-2 right-2 h-8 w-8 p-0 bg-white/90 hover:bg-white"
+                                        onClick={(e) => handleToggleFavorito(item.id, e)}
+                                    >
+                                        <Heart className={`h-4 w-4 ${ehFavorito ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} />
+                                    </Button>
                                 </CardHeader>
                                 <CardContent className="p-4 flex-grow">
                                     <CardTitle className="text-lg mb-2 text-gray-800 line-clamp-2">{item.titulo}</CardTitle>
@@ -287,13 +319,21 @@ const Feed = () => {
                 {!loading && filteredItems.length === 0 && (
                     <div className="text-center py-12">
                         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Search className="w-12 h-12 text-primary" />
+                            {mostrarFavoritos ? (
+                                <Heart className="w-12 h-12 text-primary" />
+                            ) : (
+                                <Search className="w-12 h-12 text-primary" />
+                            )}
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhum item encontrado</h3>
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                            {mostrarFavoritos ? "Nenhum favorito encontrado" : "Nenhum item encontrado"}
+                        </h3>
                         <p className="text-gray-600">
-                            {itens.length === 0 
-                                ? "Ainda não há itens publicados. Seja a primeira a compartilhar!" 
-                                : "Tente ajustar sua busca ou explorar outras categorias."
+                            {mostrarFavoritos 
+                                ? "Você ainda não favoritou nenhum item. Clique no coração dos itens que você gosta!"
+                                : itens.length === 0 
+                                    ? "Ainda não há itens publicados. Seja a primeira a compartilhar!" 
+                                    : "Tente ajustar sua busca ou explorar outras categorias."
                             }
                         </p>
                     </div>

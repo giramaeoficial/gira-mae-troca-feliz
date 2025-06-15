@@ -20,7 +20,6 @@ import DetalhesItem from "./pages/DetalhesItem";
 import Cadastro from "./pages/Cadastro";
 import Carteira from "./pages/Carteira";
 import MinhasReservas from "./pages/MinhasReservas";
-import Favoritos from "./pages/Favoritos";
 import { CarteiraProvider } from "./contexts/CarteiraContext";
 
 const queryClient = new QueryClient();
@@ -104,14 +103,6 @@ const App = () => (
                   element={
                     <AuthGuard>
                       <MinhasReservas />
-                    </AuthGuard>
-                  } 
-                />
-                <Route 
-                  path="/favoritos" 
-                  element={
-                    <AuthGuard>
-                      <Favoritos />
                     </AuthGuard>
                   } 
                 />
