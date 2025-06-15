@@ -15,6 +15,7 @@ export const useFavoritos = () => {
 
   const buscarFavoritos = async () => {
     if (!user) {
+      console.log('Usuário não logado, limpando favoritos');
       setFavoritos([]);
       return;
     }
@@ -37,6 +38,11 @@ export const useFavoritos = () => {
       setFavoritos(data || []);
     } catch (error) {
       console.error('Erro ao buscar favoritos:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar seus favoritos.",
+        variant: "destructive",
+      });
       setFavoritos([]);
     } finally {
       setLoading(false);
@@ -44,7 +50,9 @@ export const useFavoritos = () => {
   };
 
   const verificarSeFavorito = (itemId: string): boolean => {
-    return favoritos.some(fav => fav.item_id === itemId);
+    const ehFavorito = favoritos.some(fav => fav.item_id === itemId);
+    console.log(`Item ${itemId} é favorito:`, ehFavorito);
+    return ehFavorito;
   };
 
   const adicionarFavorito = async (itemId: string): Promise<boolean> => {
@@ -57,7 +65,14 @@ export const useFavoritos = () => {
       return false;
     }
 
+    // Verificar se já é favorito antes de tentar adicionar
+    if (verificarSeFavorito(itemId)) {
+      console.log('Item já é favorito, não adicionando novamente');
+      return true;
+    }
+
     try {
+      console.log('Adicionando favorito:', itemId);
       const { error } = await supabase
         .from('favoritos')
         .insert({
@@ -65,15 +80,24 @@ export const useFavoritos = () => {
           item_id: itemId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao adicionar favorito:', error);
+        throw error;
+      }
 
       toast({
         title: "Adicionado aos favoritos! ❤️",
         description: "Item adicionado à sua lista de desejos.",
       });
 
-      // Atualizar lista local
-      await buscarFavoritos();
+      // Atualizar lista local imediatamente
+      setFavoritos(prev => [...prev, { 
+        id: crypto.randomUUID(), 
+        user_id: user.id, 
+        item_id: itemId, 
+        created_at: new Date().toISOString() 
+      }]);
+
       return true;
     } catch (error) {
       console.error('Erro ao adicionar favorito:', error);
@@ -90,21 +114,26 @@ export const useFavoritos = () => {
     if (!user) return false;
 
     try {
+      console.log('Removendo favorito:', itemId);
       const { error } = await supabase
         .from('favoritos')
         .delete()
         .eq('user_id', user.id)
         .eq('item_id', itemId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao remover favorito:', error);
+        throw error;
+      }
 
       toast({
         title: "Removido dos favoritos",
         description: "Item removido da sua lista de desejos.",
       });
 
-      // Atualizar lista local
-      await buscarFavoritos();
+      // Atualizar lista local imediatamente
+      setFavoritos(prev => prev.filter(fav => fav.item_id !== itemId));
+
       return true;
     } catch (error) {
       console.error('Erro ao remover favorito:', error);
@@ -119,6 +148,7 @@ export const useFavoritos = () => {
 
   const toggleFavorito = async (itemId: string): Promise<boolean> => {
     const ehFavorito = verificarSeFavorito(itemId);
+    console.log(`Toggle favorito para item ${itemId}, é favorito: ${ehFavorito}`);
     
     if (ehFavorito) {
       return await removerFavorito(itemId);
@@ -127,13 +157,15 @@ export const useFavoritos = () => {
     }
   };
 
+  // Buscar favoritos quando o usuário mudar
   useEffect(() => {
+    console.log('useEffect useFavoritos - user:', user?.id);
     if (user) {
       buscarFavoritos();
     } else {
       setFavoritos([]);
     }
-  }, [user]);
+  }, [user?.id]); // Usar user.id em vez de user para evitar re-renders desnecessários
 
   return {
     favoritos,

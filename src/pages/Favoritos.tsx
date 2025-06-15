@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { useItens } from "@/hooks/useItens";
+import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/shared/Header";
 import { Tables } from "@/integrations/supabase/types";
@@ -23,16 +24,25 @@ type Item = Tables<'itens'> & {
 };
 
 const Favoritos = () => {
-  const { favoritos, loading: favoritosLoading, refetch } = useFavoritos();
+  const { user } = useAuth();
+  const { favoritos, loading: favoritosLoading } = useFavoritos();
   const { buscarItemPorId } = useItens();
   const [itens, setItens] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const carregarItensFavoritos = async () => {
-      console.log('Carregando itens favoritos. Favoritos:', favoritos);
+      console.log('Carregando itens favoritos. User:', user?.id, 'Favoritos:', favoritos);
       
+      if (!user) {
+        console.log('Usuário não logado');
+        setItens([]);
+        setLoading(false);
+        return;
+      }
+
       if (favoritos.length === 0) {
+        console.log('Nenhum favorito encontrado');
         setItens([]);
         setLoading(false);
         return;
@@ -40,9 +50,17 @@ const Favoritos = () => {
 
       try {
         setLoading(true);
-        const itensPromises = favoritos.map(fav => {
+        console.log('Buscando detalhes dos itens favoritos...');
+        
+        const itensPromises = favoritos.map(async (fav) => {
           console.log('Buscando item:', fav.item_id);
-          return buscarItemPorId(fav.item_id);
+          try {
+            const item = await buscarItemPorId(fav.item_id);
+            return item;
+          } catch (error) {
+            console.error(`Erro ao buscar item ${fav.item_id}:`, error);
+            return null;
+          }
         });
         
         const itensCarregados = await Promise.all(itensPromises);
@@ -60,16 +78,59 @@ const Favoritos = () => {
       }
     };
 
+    // Só carregar se não estiver carregando favoritos
     if (!favoritosLoading) {
       carregarItensFavoritos();
     }
-  }, [favoritos, favoritosLoading, buscarItemPorId]);
+  }, [favoritos, favoritosLoading, buscarItemPorId, user]);
 
   const formatarPreco = (valor: number) => {
     return `${valor.toFixed(0)} Girinhas`;
   };
 
-  console.log('Estado atual - favoritosLoading:', favoritosLoading, 'loading:', loading, 'favoritos:', favoritos, 'itens:', itens);
+  console.log('Estado atual - user:', user?.id, 'favoritosLoading:', favoritosLoading, 'loading:', loading, 'favoritos:', favoritos.length, 'itens:', itens.length);
+
+  // Se o usuário não estiver logado, mostrar mensagem para fazer login
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center gap-4 mb-8">
+            <Button
+              variant="outline"
+              size="icon"
+              asChild
+              className="shrink-0"
+            >
+              <Link to="/feed">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+            <div className="flex items-center gap-3">
+              <Heart className="h-8 w-8 text-red-500 fill-current" />
+              <h1 className="text-3xl font-bold text-gray-900">Meus Favoritos</h1>
+            </div>
+          </div>
+
+          <div className="text-center py-16">
+            <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Faça login para ver seus favoritos
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Você precisa estar logado para visualizar sua lista de favoritos
+            </p>
+            <Button asChild>
+              <Link to="/auth">
+                Fazer Login
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (favoritosLoading || loading) {
     return (
