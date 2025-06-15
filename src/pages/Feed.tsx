@@ -1,3 +1,4 @@
+
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ const Feed = () => {
 
     const carregarItens = async () => {
         const itensData = await buscarTodosItens();
+        console.log('Itens carregados no Feed:', itensData);
         setItens(itensData as ItemComPerfil[]);
     };
 
@@ -70,8 +72,13 @@ const Feed = () => {
         }
     };
 
-    // Não filtrar itens do próprio usuário - eles devem aparecer mas não podem ser reservados
+    // Mostrar todos os itens exceto os vendidos (vendido é diferente de reservado)
     const filteredItems = itens.filter(item => {
+        // Não mostrar itens vendidos
+        if (item.status === 'vendido') {
+            return false;
+        }
+
         const matchesSearch = item.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (item.tamanho && item.tamanho.toLowerCase().includes(searchTerm.toLowerCase())) ||
                             (item.profiles?.bairro && item.profiles.bairro.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -179,7 +186,7 @@ const Feed = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredItems.map(item => {
-                        const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
+                        const isReserved = item.status === 'reservado';
                         const filaEspera = getFilaEspera(item.id);
                         const isProprio = item.publicado_por === user?.id;
                         const semSaldo = saldo < Number(item.valor_girinhas);

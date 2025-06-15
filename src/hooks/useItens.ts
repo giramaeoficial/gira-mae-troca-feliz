@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -236,7 +237,7 @@ export const useItens = () => {
             cidade
           )
         `)
-        .eq('status', 'disponivel')
+        .neq('status', 'vendido') // Mostrar todos os itens exceto os vendidos
         .order('created_at', { ascending: false });
 
       if (error) {
