@@ -36,10 +36,14 @@ const App = () => (
             <BrowserRouter>
               <div className="relative">
                 <Routes>
+                  {/* Rotas públicas - acessíveis sem login */}
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/cadastro" element={<Cadastro />} />
+                  <Route path="*" element={<NotFound />} />
+                  
+                  {/* Rotas privadas - protegidas por AuthGuard */}
                   <Route 
                     path="/comprar-girinhas" 
                     element={
@@ -104,9 +108,10 @@ const App = () => (
                       </AuthGuard>
                     } 
                   />
-                  <Route path="*" element={<NotFound />} />
                 </Routes>
-                <QuickNav />
+                <AuthGuard>
+                  <QuickNav />
+                </AuthGuard>
               </div>
             </BrowserRouter>
           </ReservasProvider>
