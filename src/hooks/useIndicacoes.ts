@@ -62,14 +62,20 @@ export const useIndicacoes = () => {
       // Filtrar e mapear dados válidos
       const indicacoesValidas = (minhasIndicacoes || []).map(item => ({
         ...item,
-        profiles: item.profiles && typeof item.profiles === 'object' && 'nome' in item.profiles 
+        profiles: item.profiles && 
+                 typeof item.profiles === 'object' && 
+                 item.profiles !== null &&
+                 'nome' in item.profiles 
           ? item.profiles as { nome: string; email: string }
           : null
       }));
 
       const indicadosValidos = (meusIndicadores || []).map(item => ({
         ...item,
-        profiles: item.profiles && typeof item.profiles === 'object' && 'nome' in item.profiles 
+        profiles: item.profiles && 
+                 typeof item.profiles === 'object' && 
+                 item.profiles !== null &&
+                 'nome' in item.profiles 
           ? item.profiles as { nome: string; email: string }
           : null
       }));
