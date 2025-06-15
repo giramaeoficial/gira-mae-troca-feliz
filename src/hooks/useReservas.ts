@@ -23,6 +23,14 @@ type ReservaComRelacionamentos = Tables<'reservas'> & {
   tempo_restante?: number;
 };
 
+// Interface para o retorno da função entrar_fila_espera
+interface FilaEsperaResponse {
+  tipo: 'reserva_direta' | 'fila_espera';
+  reserva_id?: string;
+  posicao?: number;
+  total_fila?: number;
+}
+
 export const useReservas = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -155,15 +163,18 @@ export const useReservas = () => {
         return false;
       }
 
-      if (data?.tipo === 'reserva_direta') {
+      // Fazer cast do tipo Json para nossa interface
+      const resultado = data as FilaEsperaResponse;
+
+      if (resultado?.tipo === 'reserva_direta') {
         toast({
           title: "Item reservado! 🎉",
           description: "As Girinhas foram bloqueadas. Você tem 48h para combinar a entrega.",
         });
-      } else if (data?.tipo === 'fila_espera') {
+      } else if (resultado?.tipo === 'fila_espera') {
         toast({
           title: "Adicionado à fila! 📋",
-          description: `Você é o ${data.posicao}º na fila. Te avisaremos quando for sua vez!`,
+          description: `Você é o ${resultado.posicao}º na fila. Te avisaremos quando for sua vez!`,
         });
       }
 
