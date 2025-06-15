@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 
 interface Indicacao {
   id: string;
@@ -21,13 +21,18 @@ interface Indicacao {
   } | null;
 }
 
+interface BonusAnimacao {
+  valor: number;
+  descricao: string;
+}
+
 export const useIndicacoes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { mostrarRecompensa } = useRecompensas();
   const [indicacoes, setIndicacoes] = useState<Indicacao[]>([]);
   const [indicados, setIndicados] = useState<Indicacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [bonusAnimacao, setBonusAnimacao] = useState<BonusAnimacao | null>(null);
 
   const fetchIndicacoes = async () => {
     if (!user) return;
@@ -167,36 +172,9 @@ export const useIndicacoes = () => {
     return `${baseUrl}/cadastro?ref=${user.id}`;
   };
 
-  const compartilharIndicacao = async () => {
+  const gerarTextoCompartilhamento = () => {
     const link = gerarLinkIndicacao();
-    const texto = `🌟 Oi! Você precisa conhecer o GiraMãe! É uma plataforma incrível onde mães trocam roupas, brinquedos e itens infantis usando uma moeda virtual chamada Girinha. É sustentável, econômico e divertido! Use meu link e ganhe bônus para começar: ${link}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Venha para o GiraMãe!',
-          text: texto,
-          url: link
-        });
-      } catch (error) {
-        console.log('Compartilhamento cancelado');
-      }
-    } else {
-      // Fallback para copiar para clipboard
-      try {
-        await navigator.clipboard.writeText(texto);
-        toast({
-          title: "Link copiado!",
-          description: "O link de indicação foi copiado para sua área de transferência.",
-        });
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Não foi possível copiar o link.",
-          variant: "destructive",
-        });
-      }
-    }
+    return `🌟 Oi! Você precisa conhecer o GiraMãe! É uma plataforma incrível onde mães trocam roupas, brinquedos e itens infantis usando uma moeda virtual chamada Girinha. É sustentável, econômico e divertido! Use meu link e ganhe bônus para começar: ${link}`;
   };
 
   // Monitorar bônus de indicação em tempo real
@@ -219,22 +197,19 @@ export const useIndicacoes = () => {
           if (transacao.tipo === 'bonus' && transacao.descricao?.includes('indicação')) {
             setTimeout(() => {
               if (transacao.descricao.includes('Novo cadastro')) {
-                mostrarRecompensa({
-                  tipo: 'indicacao',
+                setBonusAnimacao({
                   valor: transacao.valor,
-                  descricao: 'Parabéns! Sua indicação se cadastrou na plataforma!'
+                  descricao: 'Sua indicação se cadastrou na plataforma!'
                 });
               } else if (transacao.descricao.includes('Primeiro item')) {
-                mostrarRecompensa({
-                  tipo: 'indicacao',
+                setBonusAnimacao({
                   valor: transacao.valor,
-                  descricao: 'Incrível! Sua indicação publicou o primeiro item!'
+                  descricao: 'Sua indicação publicou o primeiro item!'
                 });
               } else if (transacao.descricao.includes('Primeira compra')) {
-                mostrarRecompensa({
-                  tipo: 'indicacao',
+                setBonusAnimacao({
                   valor: transacao.valor,
-                  descricao: 'Fantástico! Sua indicação fez a primeira compra!'
+                  descricao: 'Sua indicação fez a primeira compra!'
                 });
               }
             }, 1000);
@@ -246,7 +221,7 @@ export const useIndicacoes = () => {
     return () => {
       supabase.removeChannel(transacoesChannel);
     };
-  }, [user, mostrarRecompensa]);
+  }, [user]);
 
   useEffect(() => {
     fetchIndicacoes();
@@ -256,9 +231,11 @@ export const useIndicacoes = () => {
     indicacoes,
     indicados,
     loading,
+    bonusAnimacao,
+    setBonusAnimacao,
     registrarIndicacao,
     gerarLinkIndicacao,
-    compartilharIndicacao,
+    gerarTextoCompartilhamento,
     refetch: fetchIndicacoes
   };
 };

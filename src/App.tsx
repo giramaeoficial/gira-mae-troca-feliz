@@ -14,6 +14,7 @@ import DetalhesItem from './pages/DetalhesItem';
 import Carteira from './pages/Carteira';
 import SistemaGirinhas from './pages/SistemaGirinhas';
 import MinhasReservas from './pages/MinhasReservas';
+import Indicacoes from './pages/Indicacoes';
 import { AuthProvider } from './hooks/useAuth';
 import { CarteiraProvider } from './contexts/CarteiraContext';
 import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
@@ -41,6 +42,7 @@ function AppContent() {
         <Route path="/carteira" element={<Carteira />} />
         <Route path="/sistema-girinhas" element={<SistemaGirinhas />} />
         <Route path="/reservas" element={<MinhasReservas />} />
+        <Route path="/indicacoes" element={<Indicacoes />} />
       </Routes>
     </div>
   );
