@@ -17,6 +17,7 @@ import Cadastro from "./pages/Cadastro";
 import Carteira from "./pages/Carteira";
 import MinhasReservas from "./pages/MinhasReservas";
 import { ReservasProvider } from "./contexts/ReservasContext";
+import { CarteiraProvider } from "./contexts/CarteiraContext";
 
 const queryClient = new QueryClient();
 
@@ -25,27 +26,29 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <ReservasProvider>
-        <BrowserRouter>
-          <div className="relative">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/comprar-girinhas" element={<ComprarGirinhas />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/cadastro" element={<Cadastro />} />
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/item/:id" element={<DetalhesItem />} />
-              <Route path="/publicar-item" element={<PublicarItem />} />
-              <Route path="/carteira" element={<Carteira />} />
-              <Route path="/perfil" element={<Perfil />} />
-              <Route path="/minhas-reservas" element={<MinhasReservas />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <QuickNav />
-          </div>
-        </BrowserRouter>
-      </ReservasProvider>
+      <CarteiraProvider>
+        <ReservasProvider>
+          <BrowserRouter>
+            <div className="relative">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/comprar-girinhas" element={<ComprarGirinhas />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/cadastro" element={<Cadastro />} />
+                <Route path="/feed" element={<Feed />} />
+                <Route path="/item/:id" element={<DetalhesItem />} />
+                <Route path="/publicar-item" element={<PublicarItem />} />
+                <Route path="/carteira" element={<Carteira />} />
+                <Route path="/perfil" element={<Perfil />} />
+                <Route path="/minhas-reservas" element={<MinhasReservas />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <QuickNav />
+            </div>
+          </BrowserRouter>
+        </ReservasProvider>
+      </CarteiraProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

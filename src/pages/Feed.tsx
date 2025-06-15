@@ -1,13 +1,15 @@
+
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Heart, MapPin } from "lucide-react";
+import { Search, Sparkles, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { useReservas } from "@/hooks/useReservas";
+import { useCarteira } from "@/contexts/CarteiraContext";
 
 const placeholderItems = [
   { 
@@ -80,23 +82,13 @@ const placeholderItems = [
 
 const Feed = () => {
     const { toast } = useToast();
-    const { criarReserva } = useReservas();
-    const [reservedItems, setReservedItems] = useState<number[]>([]);
+    const { criarReserva, isItemReservado } = useReservas();
+    const { saldo } = useCarteira();
     const [searchTerm, setSearchTerm] = useState("");
 
     const handleReservar = (item: typeof placeholderItems[0]) => {
-        if (!item.disponivel) {
-            toast({
-                title: "Item não disponível",
-                description: "Este item já foi reservado por outra mãe.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        // Criar reserva usando o hook
-        criarReserva(item.id, item, item.maeName);
-        setReservedItems(prev => [...prev, item.id]);
+        const resultado = criarReserva(item.id, item, item.maeName);
+        // O toast já é mostrado dentro da função criarReserva
     };
 
     const filteredItems = placeholderItems.filter(item =>
@@ -115,6 +107,13 @@ const Feed = () => {
                             Itens Disponíveis para Troca
                         </h1>
                         <p className="text-gray-600">Descubra itens incríveis compartilhados pela nossa comunidade de mães</p>
+                        <div className="flex items-center gap-2 mt-2">
+                            <span className="text-sm text-gray-500">Seu saldo:</span>
+                            <div className="flex items-center gap-1 text-primary font-bold">
+                                <Sparkles className="w-4 h-4" />
+                                <span>{saldo}</span>
+                            </div>
+                        </div>
                     </div>
                     <div className="relative w-full md:w-1/3">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -129,7 +128,8 @@ const Feed = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredItems.map(item => {
-                        const isReserved = reservedItems.includes(item.id) || !item.disponivel;
+                        const isReserved = isItemReservado(item.id) || !item.disponivel;
+                        const semSaldo = saldo < item.girinhas;
                         
                         return (
                             <Card key={item.id} className="overflow-hidden shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex flex-col border-0 bg-white/80 backdrop-blur-sm">
@@ -159,7 +159,7 @@ const Feed = () => {
                                 </CardContent>
                                 <CardFooter className="p-4 bg-muted/20">
                                     <div className="flex justify-between items-center w-full">
-                                        <p className="font-bold text-primary flex items-center gap-1">
+                                        <p className={`font-bold flex items-center gap-1 ${semSaldo && !isReserved ? 'text-red-500' : 'text-primary'}`}>
                                             <Sparkles className="w-4 h-4" />
                                             {item.girinhas}
                                         </p>
@@ -174,10 +174,14 @@ const Feed = () => {
                                             <Button 
                                                 size="sm"
                                                 onClick={() => handleReservar(item)}
-                                                disabled={isReserved}
-                                                className={isReserved ? "opacity-50 cursor-not-allowed" : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"}
+                                                disabled={isReserved || semSaldo}
+                                                className={`
+                                                    ${isReserved ? "opacity-50 cursor-not-allowed" : ""}
+                                                    ${semSaldo && !isReserved ? "bg-red-500 hover:bg-red-600" : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"}
+                                                `}
+                                                title={semSaldo && !isReserved ? "Saldo insuficiente" : ""}
                                             >
-                                                {isReserved ? 'Reservado' : 'Reservar'}
+                                                {isReserved ? 'Reservado' : semSaldo ? 'Sem saldo' : 'Reservar'}
                                             </Button>
                                         </div>
                                     </div>

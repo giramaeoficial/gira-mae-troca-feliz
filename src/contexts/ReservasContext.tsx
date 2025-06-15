@@ -1,7 +1,7 @@
 
-
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useCarteira } from './CarteiraContext';
 
 export interface Reserva {
   id: number;
@@ -22,15 +22,17 @@ export interface Reserva {
 
 interface ReservasContextType {
   reservas: Reserva[];
-  criarReserva: (itemId: number, itemData: any, outraMae: string) => Reserva;
+  criarReserva: (itemId: number, itemData: any, outraMae: string) => Reserva | null;
   confirmarEntrega: (reservaId: number) => void;
   cancelarReserva: (reservaId: number) => void;
+  isItemReservado: (itemId: number) => boolean;
 }
 
 export const ReservasContext = createContext<ReservasContextType | undefined>(undefined);
 
 export const ReservasProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
+  const { transferirGirinhas, receberGirinhas, verificarSaldo } = useCarteira();
   const [reservas, setReservas] = useState<Reserva[]>([]);
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
       },
       {
         id: 2,
-        itemId: 4, // Item Vestido de festa rosa, que está indisponível no feed
+        itemId: 4,
         itemTitulo: "Vestido de festa rosa",
         itemImagem: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300",
         itemGirinhas: 25,
@@ -64,32 +66,91 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
         dataReserva: new Date(Date.now() - 24 * 60 * 60 * 1000),
         prazoExpiracao: new Date(Date.now() + 24 * 60 * 60 * 1000),
         confirmedByMe: false,
-        confirmedByOther: true, // Simula que a outra mãe já confirmou
+        confirmedByOther: true,
         localizacao: "Jardins"
       }
     ];
     setReservas(mockReservas);
   }, []);
 
+  // Sistema de expiração automática
   useEffect(() => {
     const interval = setInterval(() => {
       let changed = false;
       const updatedReservas = reservas.map((reserva): Reserva => {
         if (reserva.status === 'pendente' && new Date() > reserva.prazoExpiracao) {
           changed = true;
+          // Reembolsar se foi uma reserva feita pelo usuário
+          if (reserva.tipo === 'reservada') {
+            receberGirinhas(
+              reserva.itemGirinhas,
+              reserva.outraMae,
+              reserva.itemId,
+              `Reembolso - ${reserva.itemTitulo} (expirada)`
+            );
+          }
           return { ...reserva, status: 'expirada' as const };
         }
         return reserva;
       });
       if (changed) {
         setReservas(updatedReservas);
+        toast({
+          title: "Reserva expirada",
+          description: "Uma reserva expirou. As Girinhas foram reembolsadas.",
+          variant: "destructive"
+        });
       }
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [reservas]);
+  }, [reservas, receberGirinhas, toast]);
 
-  const criarReserva = (itemId: number, itemData: any, outraMae: string) => {
+  const isItemReservado = (itemId: number): boolean => {
+    return reservas.some(r => 
+      r.itemId === itemId && 
+      (r.status === 'pendente' || r.status === 'confirmada')
+    );
+  };
+
+  const criarReserva = (itemId: number, itemData: any, outraMae: string): Reserva | null => {
+    // Verificar se tem saldo suficiente
+    if (!verificarSaldo(itemData.girinhas)) {
+      toast({
+        title: "Saldo insuficiente! 😔",
+        description: `Você precisa de ${itemData.girinhas} Girinhas, mas tem apenas ${verificarSaldo} disponíveis.`,
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    // Verificar se o item já está reservado
+    if (isItemReservado(itemId)) {
+      toast({
+        title: "Item já reservado",
+        description: "Este item já foi reservado por outra mãe.",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    // Transferir as Girinhas
+    const transferencia = transferirGirinhas(
+      itemData.girinhas,
+      outraMae,
+      itemId,
+      `Reserva - ${itemData.title}`
+    );
+
+    if (!transferencia) {
+      toast({
+        title: "Erro na transferência",
+        description: "Não foi possível processar a reserva.",
+        variant: "destructive"
+      });
+      return null;
+    }
+
     const novaReserva: Reserva = {
       id: Date.now(),
       itemId,
@@ -111,7 +172,7 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
     
     toast({
       title: "Item reservado! 🎉",
-      description: `"${itemData.title}" foi reservado. Combine a entrega com ${outraMae}.`,
+      description: `"${itemData.title}" foi reservado. ${itemData.girinhas} Girinhas foram transferidas.`,
     });
 
     return novaReserva;
@@ -119,6 +180,7 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
 
   const confirmarEntrega = (reservaId: number) => {
     let reservaFinalizada = false;
+    let reservaConfirmada: Reserva | null = null;
     
     setReservas(prev => {
       const updatedReservas = prev.map((reserva): Reserva => {
@@ -126,24 +188,31 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
           return reserva;
         }
 
-        // Create a mutable, correctly typed copy.
         const updatedReserva: Reserva = { ...reserva, confirmedByMe: true };
         
-        // If the other person also confirmed, finalize the transaction.
         if (updatedReserva.confirmedByOther) {
           reservaFinalizada = true;
+          reservaConfirmada = updatedReserva;
           updatedReserva.status = 'confirmada' as const;
+          
+          // Transferir as Girinhas para quem vendeu (se eu comprei)
+          if (updatedReserva.tipo === 'reservada') {
+            receberGirinhas(
+              0, // Valor já foi descontado na reserva
+              updatedReserva.outraMae,
+              updatedReserva.itemId,
+              `Troca finalizada - ${updatedReserva.itemTitulo}`
+            );
+          }
         }
         
-        // Return the modified object.
         return updatedReserva;
       });
 
-      // By placing toast logic inside the updater, we ensure it runs after the state is calculated.
-      if (reservaFinalizada) {
+      if (reservaFinalizada && reservaConfirmada) {
         toast({
           title: "Troca Finalizada! 🤝",
-          description: "Ambas confirmaram a entrega. As Girinhas foram transferidas!",
+          description: "Ambas confirmaram a entrega. A troca foi concluída com sucesso!",
         });
       } else {
         toast({
@@ -157,23 +226,52 @@ export const ReservasProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const cancelarReserva = (reservaId: number) => {
+    const reserva = reservas.find(r => r.id === reservaId);
+    
     setReservas(prev => prev.map((reserva): Reserva => 
       reserva.id === reservaId 
         ? { ...reserva, status: 'cancelada' as const }
         : reserva
     ));
 
-    toast({
-      title: "Reserva cancelada",
-      description: "A reserva foi cancelada. O item pode voltar a ficar disponível.",
-      variant: "destructive"
-    });
+    // Reembolsar se foi cancelamento dentro de 24h e era uma reserva feita pelo usuário
+    if (reserva && reserva.tipo === 'reservada') {
+      const horasPassadas = (Date.now() - reserva.dataReserva.getTime()) / (1000 * 60 * 60);
+      if (horasPassadas < 24) {
+        receberGirinhas(
+          reserva.itemGirinhas,
+          reserva.outraMae,
+          reserva.itemId,
+          `Reembolso - ${reserva.itemTitulo} (cancelada)`
+        );
+        toast({
+          title: "Reserva cancelada",
+          description: "As Girinhas foram reembolsadas (cancelamento em menos de 24h).",
+        });
+      } else {
+        toast({
+          title: "Reserva cancelada",
+          description: "Cancelamento após 24h - sem reembolso conforme política.",
+          variant: "destructive"
+        });
+      }
+    } else {
+      toast({
+        title: "Reserva cancelada",
+        description: "A reserva foi cancelada.",
+      });
+    }
   };
 
   return (
-    <ReservasContext.Provider value={{ reservas, criarReserva, confirmarEntrega, cancelarReserva }}>
+    <ReservasContext.Provider value={{ 
+      reservas, 
+      criarReserva, 
+      confirmarEntrega, 
+      cancelarReserva,
+      isItemReservado 
+    }}>
       {children}
     </ReservasContext.Provider>
   );
 };
-

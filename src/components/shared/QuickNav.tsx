@@ -6,11 +6,11 @@ const QuickNav = () => {
   const location = useLocation();
   
   const navItems = [
-    { icon: Home, label: "Início", path: "/feed" },
-    { icon: Search, label: "Explorar", path: "/feed" },
-    { icon: Plus, label: "Publicar", path: "/publicar-item" },
-    { icon: Clock, label: "Reservas", path: "/minhas-reservas" },
-    { icon: User, label: "Perfil", path: "/perfil" },
+    { icon: Home, label: "Início", path: "/feed", id: "nav-feed" },
+    { icon: Search, label: "Explorar", path: "/explorar", id: "nav-explorar" },
+    { icon: Plus, label: "Publicar", path: "/publicar-item", id: "nav-publicar" },
+    { icon: Clock, label: "Reservas", path: "/minhas-reservas", id: "nav-reservas" },
+    { icon: User, label: "Perfil", path: "/perfil", id: "nav-perfil" },
   ];
 
   return (
@@ -22,7 +22,7 @@ const QuickNav = () => {
           
           return (
             <Link
-              key={item.path}
+              key={item.id}
               to={item.path}
               className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${
                 isActive 
