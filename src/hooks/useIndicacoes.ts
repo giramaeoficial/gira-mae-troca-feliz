@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +18,7 @@ interface Indicacao {
   profiles?: {
     nome: string;
     email: string;
-  };
+  } | null;
 }
 
 export const useIndicacoes = () => {
@@ -60,8 +59,23 @@ export const useIndicacoes = () => {
 
       if (error2) throw error2;
 
-      setIndicacoes(minhasIndicacoes || []);
-      setIndicados(meusIndicadores || []);
+      // Filtrar e mapear dados válidos
+      const indicacoesValidas = (minhasIndicacoes || []).map(item => ({
+        ...item,
+        profiles: item.profiles && typeof item.profiles === 'object' && 'nome' in item.profiles 
+          ? item.profiles as { nome: string; email: string }
+          : null
+      }));
+
+      const indicadosValidos = (meusIndicadores || []).map(item => ({
+        ...item,
+        profiles: item.profiles && typeof item.profiles === 'object' && 'nome' in item.profiles 
+          ? item.profiles as { nome: string; email: string }
+          : null
+      }));
+
+      setIndicacoes(indicacoesValidas);
+      setIndicados(indicadosValidos);
     } catch (error) {
       console.error('Erro ao buscar indicações:', error);
       toast({
