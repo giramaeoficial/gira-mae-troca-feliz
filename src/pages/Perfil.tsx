@@ -1,19 +1,39 @@
-
+import { useState } from "react";
 import Header from "@/components/shared/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Gift, Trophy, MessageCircle } from "lucide-react";
+import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Gift, Trophy, MessageCircle, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useProfile } from "@/hooks/useProfile";
+import EditarPerfil from "@/components/perfil/EditarPerfil";
 
 const Perfil = () => {
+    const { profile, filhos, loading } = useProfile();
+    const [showEditModal, setShowEditModal] = useState(false);
+
     const mockItens = [
         { id: 1, title: "Kit Body Carter's", girinhas: 15, image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300", size: "3-6M", status: "Disponível" },
         { id: 2, title: "Vestido Festa Lilás", girinhas: 30, image: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300", size: "2 anos", status: "Reservado" },
-        { id: 3, title: "Tênis All Star Baby", girinhas: 25, image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300", size: "18", status: "Disponível" },
+        { id: 3, title: "Tênis All Star Baby", girinhas: 25, image: "https://images.unsplash.com/photo-1582562124811-c09040d0901?w=300", size: "18", status: "Disponível" },
     ];
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Sparkles className="h-8 w-8 text-primary animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Carregando perfil...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const primeiroFilho = filhos[0];
+    const nomeDisplay = profile?.nome || "Usuário";
+    const filhoDisplay = primeiroFilho ? `${primeiroFilho.nome}` : "filho(a)";
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24 md:pb-8">
@@ -27,8 +47,10 @@ const Perfil = () => {
                             <div className="flex flex-col items-center text-center mb-6">
                                 <div className="relative">
                                     <Avatar className="w-28 h-28 mb-4 ring-4 ring-primary/20">
-                                        <AvatarImage src="https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=150" alt="Foto da mãe" />
-                                        <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">AM</AvatarFallback>
+                                        <AvatarImage src={profile?.avatar_url || "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=150"} alt="Foto da mãe" />
+                                        <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                                            {nomeDisplay.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
                                         <Badge className="bg-green-500 text-white px-2 py-1">
@@ -37,29 +59,31 @@ const Perfil = () => {
                                         </Badge>
                                     </div>
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-800">Ana Maria</h2>
-                                <p className="text-primary font-medium">Mãe do Lorenzo (2 anos)</p>
+                                <h2 className="text-2xl font-bold text-gray-800">{nomeDisplay}</h2>
+                                <p className="text-primary font-medium">Mãe do {filhoDisplay}</p>
                                 <div className="flex items-center gap-1 mt-2 text-yellow-500">
                                     {[1,2,3,4,5].map((star) => (
-                                        <Star key={star} className={`w-5 h-5 ${star <= 4 ? 'fill-current' : 'opacity-30'}`} />
+                                        <Star key={star} className={`w-5 h-5 ${star <= (profile?.reputacao || 0) ? 'fill-current' : 'opacity-30'}`} />
                                     ))}
-                                    <span className="text-gray-600 text-sm ml-2">(4.8) • 23 trocas</span>
+                                    <span className="text-gray-600 text-sm ml-2">({(profile?.reputacao || 0)/20 || 0}) • 0 trocas</span>
                                 </div>
                             </div>
 
                             {/* Quick Info */}
                             <div className="space-y-3 mb-6">
-                                <div className="flex items-center gap-2 text-gray-600">
-                                    <MapPin className="w-4 h-4 text-primary" />
-                                    <span className="text-sm">Vila Madalena, São Paulo</span>
-                                </div>
+                                {profile?.bairro && profile?.cidade && (
+                                    <div className="flex items-center gap-2 text-gray-600">
+                                        <MapPin className="w-4 h-4 text-primary" />
+                                        <span className="text-sm">{profile.bairro}, {profile.cidade}</span>
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-2 text-gray-600">
                                     <Calendar className="w-4 h-4 text-primary" />
-                                    <span className="text-sm">Na comunidade desde Mar/2024</span>
+                                    <span className="text-sm">Na comunidade desde {new Date(profile?.created_at || '').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-gray-600">
                                     <Baby className="w-4 h-4 text-primary" />
-                                    <span className="text-sm">Mãe de 1 criança</span>
+                                    <span className="text-sm">Mãe de {filhos.length} criança{filhos.length !== 1 ? 's' : ''}</span>
                                 </div>
                             </div>
 
@@ -69,12 +93,11 @@ const Perfil = () => {
                                     <div>
                                         <p className="text-sm text-gray-600 mb-1">Saldo atual</p>
                                         <p className="font-bold text-2xl text-primary flex items-center gap-2">
-                                            <Sparkles className="w-6 h-6" /> 84
+                                            <Sparkles className="w-6 h-6" /> {profile?.saldo_girinhas || 0}
                                         </p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-xs text-gray-500">Girinhas para trocar</p>
-                                        <p className="text-xs text-green-600 font-medium">+12 esta semana</p>
                                     </div>
                                 </div>
                             </div>
@@ -90,36 +113,41 @@ const Perfil = () => {
                                         <Heart className="w-3 h-3 mr-1" />
                                         Mãe Querida
                                     </Badge>
-                                    <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                        <Gift className="w-3 h-3 mr-1" />
-                                        10+ Trocas
-                                    </Badge>
                                     <Badge variant="secondary" className="bg-purple-100 text-purple-700">
                                         <MessageCircle className="w-3 h-3 mr-1" />
-                                        Sempre Responde
+                                        Nova na Comunidade
                                     </Badge>
                                 </div>
                             </div>
 
                             {/* Bio */}
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-gray-800 mb-2">Sobre mim</h3>
-                                <p className="text-sm text-gray-600 leading-relaxed">
-                                    "Amo participar da comunidade GiraMãe! Lorenzo cresce rápido e adoro dar uma nova vida às roupinhas dele. Sempre cuido muito bem dos itens e espero encontrar mães que façam o mesmo! 💕"
-                                </p>
-                            </div>
+                            {profile?.bio && (
+                                <div className="mb-6">
+                                    <h3 className="font-semibold text-gray-800 mb-2">Sobre mim</h3>
+                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                        "{profile.bio}"
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Interesses */}
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-gray-800 mb-2">Interesses</h3>
-                                <div className="flex flex-wrap gap-2">
-                                    <Badge variant="outline" className="text-xs">Roupas Orgânicas</Badge>
-                                    <Badge variant="outline" className="text-xs">Brinquedos Educativos</Badge>
-                                    <Badge variant="outline" className="text-xs">Livros Infantis</Badge>
+                            {profile?.interesses && profile.interesses.length > 0 && (
+                                <div className="mb-6">
+                                    <h3 className="font-semibold text-gray-800 mb-2">Interesses</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {profile.interesses.map((interesse, index) => (
+                                            <Badge key={index} variant="outline" className="text-xs">{interesse}</Badge>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                            <Button className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" variant="default">
+                            <Button 
+                                onClick={() => setShowEditModal(true)}
+                                className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
+                                variant="default"
+                            >
+                                <Edit className="w-4 h-4 mr-2" />
                                 Editar Perfil
                             </Button>
                         </CardContent>
@@ -133,10 +161,10 @@ const Perfil = () => {
                                     Meus Itens ({mockItens.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="trocas" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                                    Minhas Trocas (23)
+                                    Minhas Trocas (0)
                                 </TabsTrigger>
-                                <TabsTrigger value="desejos" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                                    Desejos (5)
+                                <TabsTrigger value="filhos" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                                    Meus Filhos ({filhos.length})
                                 </TabsTrigger>
                             </TabsList>
                             
@@ -220,40 +248,64 @@ const Perfil = () => {
                                 </Card>
                             </TabsContent>
                             
-                            <TabsContent value="desejos" className="mt-6">
-                                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Heart className="w-5 h-5 text-primary" />
-                                            Lista de Desejos
-                                        </CardTitle>
-                                        <CardDescription>Itens que você gostaria de encontrar na comunidade.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3">
-                                            {[
-                                                { item: "Jaqueta de inverno", tamanho: "2-3 anos", preco: "até 40 Girinhas" },
-                                                { item: "Livros infantis", tamanho: "Qualquer", preco: "até 15 Girinhas" },
-                                                { item: "Brinquedos educativos", tamanho: "2+ anos", preco: "até 30 Girinhas" }
-                                            ].map((desejo, index) => (
-                                                <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
-                                                    <div>
-                                                        <p className="font-medium text-gray-800">{desejo.item}</p>
-                                                        <p className="text-sm text-gray-600">{desejo.tamanho} • {desejo.preco}</p>
+                            <TabsContent value="filhos" className="mt-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {filhos.map(filho => (
+                                        <Card key={filho.id} className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                                            <CardContent className="p-6">
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                                                        <Baby className="w-6 h-6 text-primary" />
                                                     </div>
-                                                    <Button size="sm" variant="ghost" className="text-primary hover:bg-primary/10">
-                                                        Remover
-                                                    </Button>
+                                                    <div>
+                                                        <h3 className="font-semibold text-gray-800">{filho.nome}</h3>
+                                                        <p className="text-sm text-gray-600">
+                                                            {new Date().getFullYear() - new Date(filho.data_nascimento).getFullYear()} anos
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                                <div className="space-y-2 text-sm">
+                                                    {filho.sexo && (
+                                                        <p><span className="font-medium">Sexo:</span> {filho.sexo}</p>
+                                                    )}
+                                                    {filho.tamanho_roupas && (
+                                                        <p><span className="font-medium">Roupas:</span> {filho.tamanho_roupas}</p>
+                                                    )}
+                                                    {filho.tamanho_calcados && (
+                                                        <p><span className="font-medium">Calçados:</span> {filho.tamanho_calcados}</p>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    
+                                    {filhos.length === 0 && (
+                                        <Card className="border-2 border-dashed border-primary/30 hover:border-primary/60 transition-colors duration-300 bg-white/40 backdrop-blur-sm">
+                                            <CardContent className="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
+                                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                                                    <Baby className="w-6 h-6 text-primary" />
+                                                </div>
+                                                <h3 className="font-semibold text-gray-800 mb-2 text-center">Adicionar informações dos filhos</h3>
+                                                <p className="text-sm text-gray-600 text-center mb-4">Para uma experiência mais personalizada</p>
+                                                <Button 
+                                                    onClick={() => setShowEditModal(true)}
+                                                    className="bg-gradient-to-r from-primary to-pink-500"
+                                                >
+                                                    Adicionar Filhos
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </div>
                             </TabsContent>
                         </Tabs>
                     </div>
                 </div>
             </main>
+
+            {showEditModal && (
+                <EditarPerfil onClose={() => setShowEditModal(false)} />
+            )}
         </div>
     );
 };

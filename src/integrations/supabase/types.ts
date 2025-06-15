@@ -9,44 +9,112 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      filhos: {
+        Row: {
+          created_at: string
+          data_nascimento: string
+          id: string
+          mae_id: string
+          nome: string
+          sexo: string | null
+          tamanho_calcados: string | null
+          tamanho_roupas: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_nascimento: string
+          id?: string
+          mae_id: string
+          nome: string
+          sexo?: string | null
+          tamanho_calcados?: string | null
+          tamanho_roupas?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_nascimento?: string
+          id?: string
+          mae_id?: string
+          nome?: string
+          sexo?: string | null
+          tamanho_calcados?: string | null
+          tamanho_roupas?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filhos_mae_id_fkey"
+            columns: ["mae_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          aceita_entrega_domicilio: boolean | null
           avatar_url: string | null
           bairro: string | null
+          bio: string | null
           cidade: string | null
           created_at: string | null
+          data_nascimento: string | null
           email: string | null
           endereco: string | null
           id: string
+          instagram: string | null
+          interesses: string[] | null
           nome: string | null
+          ponto_retirada_preferido: string | null
+          profissao: string | null
+          raio_entrega_km: number | null
           reputacao: number | null
           saldo_girinhas: number | null
           telefone: string | null
           updated_at: string | null
         }
         Insert: {
+          aceita_entrega_domicilio?: boolean | null
           avatar_url?: string | null
           bairro?: string | null
+          bio?: string | null
           cidade?: string | null
           created_at?: string | null
+          data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
           id: string
+          instagram?: string | null
+          interesses?: string[] | null
           nome?: string | null
+          ponto_retirada_preferido?: string | null
+          profissao?: string | null
+          raio_entrega_km?: number | null
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
           updated_at?: string | null
         }
         Update: {
+          aceita_entrega_domicilio?: boolean | null
           avatar_url?: string | null
           bairro?: string | null
+          bio?: string | null
           cidade?: string | null
           created_at?: string | null
+          data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
           id?: string
+          instagram?: string | null
+          interesses?: string[] | null
           nome?: string | null
+          ponto_retirada_preferido?: string | null
+          profissao?: string | null
+          raio_entrega_km?: number | null
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
