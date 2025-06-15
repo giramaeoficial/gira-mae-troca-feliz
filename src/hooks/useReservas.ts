@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
-type Reserva = Tables<'reservas'> & {
+type ReservaComRelacionamentos = Tables<'reservas'> & {
   itens?: {
     titulo: string;
     fotos: string[] | null;
@@ -24,7 +23,7 @@ type Reserva = Tables<'reservas'> & {
 export const useReservas = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [reservas, setReservas] = useState<ReservaComRelacionamentos[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
