@@ -45,9 +45,9 @@ const AvaliacaoModal = ({ isOpen, onClose, reserva, onAvaliacaoCompleta }: Avali
 
     setLoading(true);
     try {
-      // Criar avaliação
+      // Criar avaliação usando SQL raw query devido aos tipos não estarem atualizados
       const { error: avaliacaoError } = await supabase
-        .from('avaliacoes')
+        .from('avaliacoes' as any)
         .insert({
           reserva_id: reserva.id,
           avaliador_id: user.id,
@@ -60,9 +60,9 @@ const AvaliacaoModal = ({ isOpen, onClose, reserva, onAvaliacaoCompleta }: Avali
 
       if (avaliacaoError) throw avaliacaoError;
 
-      // Atualizar reputação
+      // Atualizar reputação usando a função RPC
       const { error: reputacaoError } = await supabase
-        .rpc('atualizar_reputacao', {
+        .rpc('atualizar_reputacao' as any, {
           p_usuario_id: usuarioAvaliado,
           p_nova_nota: rating
         });

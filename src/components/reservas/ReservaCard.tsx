@@ -60,14 +60,19 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
   const verificarSeJaAvaliou = async () => {
     if (!user) return;
     
-    const { data } = await supabase
-      .from('avaliacoes')
-      .select('id')
-      .eq('reserva_id', reserva.id)
-      .eq('avaliador_id', user.id)
-      .single();
-    
-    setJaAvaliou(!!data);
+    try {
+      const { data } = await supabase
+        .from('avaliacoes' as any)
+        .select('id')
+        .eq('reserva_id', reserva.id)
+        .eq('avaliador_id', user.id)
+        .single();
+      
+      setJaAvaliou(!!data);
+    } catch (error) {
+      // Se der erro, assumir que não avaliou ainda
+      setJaAvaliou(false);
+    }
   };
 
   const formatarTempo = (milliseconds: number) => {

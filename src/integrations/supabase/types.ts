@@ -9,6 +9,74 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      avaliacoes: {
+        Row: {
+          avaliado_id: string
+          avaliador_id: string
+          comentario: string | null
+          created_at: string
+          id: string
+          item_id: string
+          rating: number
+          reserva_id: string
+          tipo_avaliacao: string
+          updated_at: string
+        }
+        Insert: {
+          avaliado_id: string
+          avaliador_id: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          rating: number
+          reserva_id: string
+          tipo_avaliacao: string
+          updated_at?: string
+        }
+        Update: {
+          avaliado_id?: string
+          avaliador_id?: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          rating?: number
+          reserva_id?: string
+          tipo_avaliacao?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_avaliado_id_fkey"
+            columns: ["avaliado_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_avaliador_id_fkey"
+            columns: ["avaliador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "reservas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       carteiras: {
         Row: {
           created_at: string
@@ -378,6 +446,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      atualizar_reputacao: {
+        Args: { p_usuario_id: string; p_nova_nota: number }
+        Returns: undefined
+      }
       cancelar_reserva: {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
