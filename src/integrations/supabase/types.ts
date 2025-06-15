@@ -151,6 +151,36 @@ export type Database = {
           },
         ]
       }
+      configuracoes_bonus: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          id: string
+          tipo_bonus: string
+          updated_at: string
+          valor_girinhas: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          tipo_bonus: string
+          updated_at?: string
+          valor_girinhas: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          tipo_bonus?: string
+          updated_at?: string
+          valor_girinhas?: number
+        }
+        Relationships: []
+      }
       conversas: {
         Row: {
           created_at: string
@@ -317,22 +347,40 @@ export type Database = {
       }
       indicacoes: {
         Row: {
+          bonus_cadastro_pago: boolean | null
           bonus_pago: boolean | null
+          bonus_primeira_compra_pago: boolean | null
+          bonus_primeiro_item_pago: boolean | null
           created_at: string
+          data_cadastro_indicado: string | null
+          data_primeira_compra: string | null
+          data_primeiro_item: string | null
           id: string
           indicado_id: string
           indicador_id: string
         }
         Insert: {
+          bonus_cadastro_pago?: boolean | null
           bonus_pago?: boolean | null
+          bonus_primeira_compra_pago?: boolean | null
+          bonus_primeiro_item_pago?: boolean | null
           created_at?: string
+          data_cadastro_indicado?: string | null
+          data_primeira_compra?: string | null
+          data_primeiro_item?: string | null
           id?: string
           indicado_id: string
           indicador_id: string
         }
         Update: {
+          bonus_cadastro_pago?: boolean | null
           bonus_pago?: boolean | null
+          bonus_primeira_compra_pago?: boolean | null
+          bonus_primeiro_item_pago?: boolean | null
           created_at?: string
+          data_cadastro_indicado?: string | null
+          data_primeira_compra?: string | null
+          data_primeiro_item?: string | null
           id?: string
           indicado_id?: string
           indicador_id?: string
@@ -751,6 +799,10 @@ export type Database = {
         Args: { p_reserva_id: string }
         Returns: string
       }
+      obter_valor_bonus: {
+        Args: { p_tipo_bonus: string }
+        Returns: number
+      }
       processar_compra_girinhas: {
         Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
         Returns: string
@@ -762,6 +814,10 @@ export type Database = {
       processar_reserva: {
         Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }
         Returns: string
+      }
+      registrar_indicacao: {
+        Args: { p_indicador_id: string; p_indicado_id: string }
+        Returns: boolean
       }
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }

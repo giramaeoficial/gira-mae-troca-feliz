@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
+import { useConfiguracoesBonus } from '@/hooks/useConfiguracoesBonus';
 
 interface Bonificacao {
   id: string;
@@ -18,6 +19,7 @@ export const useBonificacoes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { mostrarRecompensa } = useRecompensas();
+  const { obterValorBonus } = useConfiguracoesBonus();
   const [bonificacoesPendentes, setBonificacoesPendentes] = useState<Bonificacao[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -46,30 +48,35 @@ export const useBonificacoes = () => {
           .eq('descricao', 'Bônus por troca concluída');
 
         if (!transacaoExistente || transacaoExistente.length === 0) {
-          // Dar bônus de 1 Girinha
-          const { error: bonusError } = await supabase
-            .from('transacoes')
-            .insert({
-              user_id: user.id,
-              tipo: 'bonus',
-              valor: 1.00,
-              descricao: 'Bônus por troca concluída',
-              item_id: reserva.item_id
-            });
+          // Obter valor parametrizado
+          const valorBonus = obterValorBonus('bonus_troca_concluida');
+          
+          if (valorBonus > 0) {
+            // Dar bônus
+            const { error: bonusError } = await supabase
+              .from('transacoes')
+              .insert({
+                user_id: user.id,
+                tipo: 'bonus',
+                valor: valorBonus,
+                descricao: 'Bônus por troca concluída',
+                item_id: reserva.item_id
+              });
 
-          if (!bonusError) {
-            // Mostrar notificação visual
-            mostrarRecompensa({
-              tipo: 'troca',
-              valor: 1,
-              descricao: 'Troca concluída com sucesso! Continue trocando para ganhar mais.'
-            });
+            if (!bonusError) {
+              // Mostrar notificação visual
+              mostrarRecompensa({
+                tipo: 'troca',
+                valor: valorBonus,
+                descricao: 'Troca concluída com sucesso! Continue trocando para ganhar mais.'
+              });
 
-            // Toast de backup
-            toast({
-              title: "🎉 Troca concluída!",
-              description: "Você ganhou 1 Girinha por completar uma troca!",
-            });
+              // Toast de backup
+              toast({
+                title: "🎉 Troca concluída!",
+                description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} por completar uma troca!`,
+              });
+            }
           }
         }
       }
@@ -106,27 +113,31 @@ export const useBonificacoes = () => {
           .gte('created_at', avaliacao.created_at);
 
         if (!bonusExistente || bonusExistente.length === 0) {
-          await supabase
-            .from('transacoes')
-            .insert({
-              user_id: user.id,
-              tipo: 'bonus',
-              valor: 0.50,
-              descricao: 'Bônus por fazer avaliação'
+          const valorBonus = obterValorBonus('bonus_avaliacao');
+          
+          if (valorBonus > 0) {
+            await supabase
+              .from('transacoes')
+              .insert({
+                user_id: user.id,
+                tipo: 'bonus',
+                valor: valorBonus,
+                descricao: 'Bônus por fazer avaliação'
+              });
+
+            // Mostrar notificação visual
+            mostrarRecompensa({
+              tipo: 'avaliacao',
+              valor: valorBonus,
+              descricao: 'Obrigada por avaliar! Sua opinião ajuda nossa comunidade.'
             });
 
-          // Mostrar notificação visual
-          mostrarRecompensa({
-            tipo: 'avaliacao',
-            valor: 0.5,
-            descricao: 'Obrigada por avaliar! Sua opinião ajuda nossa comunidade.'
-          });
-
-          // Toast de backup
-          toast({
-            title: "⭐ Bônus de avaliação!",
-            description: "Você ganhou 0,5 Girinha por avaliar uma troca!",
-          });
+            // Toast de backup
+            toast({
+              title: "⭐ Bônus de avaliação!",
+              description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} por avaliar uma troca!`,
+            });
+          }
         }
       }
     } catch (error) {
@@ -156,27 +167,31 @@ export const useBonificacoes = () => {
           .eq('descricao', `Bônus por indicação - ${perfilIndicado.nome}`);
 
         if (!bonusExistente || bonusExistente.length === 0) {
-          await supabase
-            .from('transacoes')
-            .insert({
-              user_id: user.id,
-              tipo: 'bonus',
-              valor: 2.00,
-              descricao: `Bônus por indicação - ${perfilIndicado.nome}`
+          const valorBonus = obterValorBonus('indicacao_cadastro');
+          
+          if (valorBonus > 0) {
+            await supabase
+              .from('transacoes')
+              .insert({
+                user_id: user.id,
+                tipo: 'bonus',
+                valor: valorBonus,
+                descricao: `Bônus por indicação - ${perfilIndicado.nome}`
+              });
+
+            // Mostrar notificação visual
+            mostrarRecompensa({
+              tipo: 'indicacao',
+              valor: valorBonus,
+              descricao: `${perfilIndicado.nome} se juntou à comunidade graças a você!`
             });
 
-          // Mostrar notificação visual
-          mostrarRecompensa({
-            tipo: 'indicacao',
-            valor: 2,
-            descricao: `${perfilIndicado.nome} se juntou à comunidade graças a você!`
-          });
-
-          // Toast de backup
-          toast({
-            title: "👥 Bônus de indicação!",
-            description: "Você ganhou 2 Girinhas por indicar uma nova mãe!",
-          });
+            // Toast de backup
+            toast({
+              title: "👥 Bônus de indicação!",
+              description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} por indicar uma nova mãe!`,
+            });
+          }
         }
       }
     } catch (error) {
@@ -266,27 +281,31 @@ export const useBonificacoes = () => {
         .eq('descricao', 'Bônus de boas-vindas');
 
       if (!bonusExistente || bonusExistente.length === 0) {
-        await supabase
-          .from('transacoes')
-          .insert({
-            user_id: user.id,
-            tipo: 'bonus',
-            valor: 5.00,
-            descricao: 'Bônus de boas-vindas'
+        const valorBonus = obterValorBonus('bonus_cadastro');
+        
+        if (valorBonus > 0) {
+          await supabase
+            .from('transacoes')
+            .insert({
+              user_id: user.id,
+              tipo: 'bonus',
+              valor: valorBonus,
+              descricao: 'Bônus de boas-vindas'
+            });
+
+          // Mostrar notificação visual especial de boas-vindas
+          mostrarRecompensa({
+            tipo: 'cadastro',
+            valor: valorBonus,
+            descricao: 'Bem-vinda à comunidade GiraMãe! Aqui você faz parte de algo especial.'
           });
 
-        // Mostrar notificação visual especial de boas-vindas
-        mostrarRecompensa({
-          tipo: 'cadastro',
-          valor: 5,
-          descricao: 'Bem-vinda à comunidade GiraMãe! Aqui você faz parte de algo especial.'
-        });
-
-        // Toast de boas-vindas
-        toast({
-          title: "🎁 Bem-vinda ao GiraMãe!",
-          description: "Você ganhou 5 Girinhas de boas-vindas! Explore e comece a trocar.",
-        });
+          // Toast de boas-vindas
+          toast({
+            title: "🎁 Bem-vinda ao GiraMãe!",
+            description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} de boas-vindas! Explore e comece a trocar.`,
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao processar bônus de cadastro:', error);
