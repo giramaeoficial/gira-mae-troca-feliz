@@ -19,7 +19,7 @@ import { Tables } from "@/integrations/supabase/types";
 type Item = Tables<'itens'>;
 
 const Perfil = () => {
-    const { profile, filhos, loading } = useProfile();
+    const { profile, filhos, loading, error } = useProfile(); // Agora pegando também o erro!
     const { buscarMeusItens } = useItens();
     const [showEditModal, setShowEditModal] = useState(false);
     const [meusItens, setMeusItens] = useState<Item[]>([]);
@@ -28,8 +28,12 @@ const Perfil = () => {
 
     const carregarItens = async () => {
         setLoadingItens(true);
-        const itens = await buscarMeusItens();
-        setMeusItens(itens);
+        try {
+            const itens = await buscarMeusItens();
+            setMeusItens(itens ?? []);
+        } catch (err) {
+            console.error('Erro carregando itens:', err);
+        }
         setLoadingItens(false);
     };
 
@@ -79,6 +83,7 @@ const Perfil = () => {
         carregarItens();
     };
 
+    // Se está carregando, mostra spinner
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
@@ -90,7 +95,35 @@ const Perfil = () => {
         );
     }
 
-    const primeiroFilho = filhos[0];
+    // Exibe erro se ocorreu
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-red-50">
+                <div className="bg-white rounded-xl p-6 shadow-lg text-center">
+                    <p className="text-lg text-red-600 font-bold mb-2">Erro ao carregar perfil</p>
+                    <p className="text-gray-700 mb-4">{error}</p>
+                    <Button onClick={() => window.location.reload()} className="bg-red-500 text-white hover:bg-red-600">Tentar novamente</Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Se não tem profile válido
+    if (!profile) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="bg-white rounded-xl p-6 shadow-lg text-center">
+                    <p className="text-lg text-gray-800 font-bold mb-2">Perfil não encontrado</p>
+                    <p className="mb-4 text-gray-600">Tente recarregar ou verifique se está logada.</p>
+                    <Button onClick={() => window.location.reload()} className="bg-primary text-white hover:bg-primary/80">Recarregar</Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Defensivo: garante que filhos seja array ao acessar .length, .map etc
+    const filhosArr = Array.isArray(filhos) ? filhos : [];
+    const primeiroFilho = filhosArr[0];
     const nomeDisplay = profile?.nome || "Usuário";
     const filhoDisplay = primeiroFilho ? `${primeiroFilho.nome}` : "filho(a)";
 
@@ -311,7 +344,7 @@ const Perfil = () => {
                             
                             <TabsContent value="filhos" className="mt-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {filhos.map(filho => (
+                                    {filhosArr.map(filho => (
                                         <Card key={filho.id} className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                                             <CardContent className="p-6">
                                                 <div className="flex items-center gap-3 mb-4">
@@ -340,7 +373,7 @@ const Perfil = () => {
                                         </Card>
                                     ))}
                                     
-                                    {filhos.length === 0 && (
+                                    {filhosArr.length === 0 && (
                                         <Card className="border-2 border-dashed border-primary/30 hover:border-primary/60 transition-colors duration-300 bg-white/40 backdrop-blur-sm">
                                             <CardContent className="p-6 flex flex-col items-center justify-center h-full min-h-[200px]">
                                                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
