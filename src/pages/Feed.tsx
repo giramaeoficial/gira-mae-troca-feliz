@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useReservas } from "@/hooks/useReservas";
 import { useCarteira } from "@/contexts/CarteiraContext";
 import { useItens } from "@/hooks/useItens";
+import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -34,6 +35,7 @@ const categorias = [
 
 const Feed = () => {
     const { toast } = useToast();
+    const { user } = useAuth();
     const { criarReserva, isItemReservado } = useReservas();
     const { saldo } = useCarteira();
     const { buscarTodosItens, loading } = useItens();
@@ -51,6 +53,16 @@ const Feed = () => {
     };
 
     const handleReservar = (item: ItemComPerfil) => {
+        // Verificar se é o próprio item
+        if (item.publicado_por === user?.id) {
+            toast({
+                title: "Não é possível reservar",
+                description: "Você não pode reservar seu próprio item.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         const itemFormatado = {
             id: item.id,
             title: item.titulo,
@@ -69,7 +81,10 @@ const Feed = () => {
         const resultado = criarReserva(item.id, itemFormatado, item.profiles?.nome || "Usuário");
     };
 
-    const filteredItems = itens.filter(item => {
+    // Filtrar itens removendo os do próprio usuário
+    const itensDisponiveis = itens.filter(item => item.publicado_por !== user?.id);
+
+    const filteredItems = itensDisponiveis.filter(item => {
         const matchesSearch = item.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (item.tamanho && item.tamanho.toLowerCase().includes(searchTerm.toLowerCase())) ||
                             (item.profiles?.bairro && item.profiles.bairro.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -256,8 +271,8 @@ const Feed = () => {
                         </div>
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhum item encontrado</h3>
                         <p className="text-gray-600">
-                            {itens.length === 0 
-                                ? "Ainda não há itens publicados. Seja a primeira a compartilhar!" 
+                            {itensDisponiveis.length === 0 
+                                ? "Ainda não há itens publicados por outras mães. Seja a primeira a compartilhar!" 
                                 : "Tente ajustar sua busca ou explorar outras categorias."
                             }
                         </p>
