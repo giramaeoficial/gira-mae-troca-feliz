@@ -1,3 +1,4 @@
+
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useReservas } from "@/hooks/useReservas";
-import { useCarteira } from "@/contexts/CarteiraContext";
+import { useCarteira } from "@/hooks/useCarteira";
 import { useItens } from "@/hooks/useItens";
 import { useAuth } from "@/hooks/useAuth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,7 +52,7 @@ const Feed = () => {
         setItens(itensData as ItemComPerfil[]);
     };
 
-    const handleReservar = (item: ItemComPerfil) => {
+    const handleReservar = async (item: ItemComPerfil) => {
         // Verificar se é o próprio item
         if (item.publicado_por === user?.id) {
             toast({
@@ -62,26 +63,31 @@ const Feed = () => {
             return;
         }
 
-        const itemFormatado = {
-            id: item.id,
-            title: item.titulo,
-            girinhas: Number(item.valor_girinhas),
-            image: item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300",
-            size: item.tamanho || "Não informado",
-            categoria: item.categoria,
-            idade: "Não informado",
-            estado: item.estado_conservacao,
-            localizacao: item.profiles?.bairro || item.profiles?.cidade || "Não informado",
-            maeName: item.profiles?.nome || "Usuário",
-            disponivel: item.status === 'disponivel',
-            descricao: item.descricao
-        };
+        // Verificar se já está reservado
+        if (isItemReservado(item.id)) {
+            toast({
+                title: "Item já reservado",
+                description: "Este item já foi reservado por outra mãe.",
+                variant: "destructive",
+            });
+            return;
+        }
 
-        // Converter o UUID para um número usando hash simples
-        const itemIdNumber = item.id.split('-').join('').slice(0, 10);
-        const numericId = parseInt(itemIdNumber, 16) || Math.abs(item.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
-        
-        const resultado = criarReserva(numericId, itemFormatado, item.profiles?.nome || "Usuário");
+        // Verificar saldo
+        if (saldo < Number(item.valor_girinhas)) {
+            toast({
+                title: "Saldo insuficiente! 😔",
+                description: `Você precisa de ${item.valor_girinhas} Girinhas, mas tem apenas ${saldo} disponíveis.`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const sucesso = await criarReserva(item.id, Number(item.valor_girinhas));
+        if (sucesso) {
+            // Recarregar itens para atualizar status
+            await carregarItens();
+        }
     };
 
     // Filtrar itens removendo os do próprio usuário
@@ -195,11 +201,7 @@ const Feed = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredItems.map(item => {
-                        // Converter UUID para número da mesma forma
-                        const itemIdNumber = item.id.split('-').join('').slice(0, 10);
-                        const numericId = parseInt(itemIdNumber, 16) || Math.abs(item.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
-                        
-                        const isReserved = isItemReservado(numericId) || item.status !== 'disponivel';
+                        const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
                         const semSaldo = saldo < Number(item.valor_girinhas);
                         const CategoryIcon = getCategoryIcon(item.categoria);
                         const imagemPrincipal = item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300";

@@ -205,6 +205,62 @@ export type Database = {
         }
         Relationships: []
       }
+      reservas: {
+        Row: {
+          confirmado_por_reservador: boolean
+          confirmado_por_vendedor: boolean
+          created_at: string
+          data_reserva: string
+          id: string
+          item_id: string
+          localizacao_combinada: string | null
+          prazo_expiracao: string
+          status: string
+          updated_at: string
+          usuario_item: string
+          usuario_reservou: string
+          valor_girinhas: number
+        }
+        Insert: {
+          confirmado_por_reservador?: boolean
+          confirmado_por_vendedor?: boolean
+          created_at?: string
+          data_reserva?: string
+          id?: string
+          item_id: string
+          localizacao_combinada?: string | null
+          prazo_expiracao?: string
+          status?: string
+          updated_at?: string
+          usuario_item: string
+          usuario_reservou: string
+          valor_girinhas: number
+        }
+        Update: {
+          confirmado_por_reservador?: boolean
+          confirmado_por_vendedor?: boolean
+          created_at?: string
+          data_reserva?: string
+          id?: string
+          item_id?: string
+          localizacao_combinada?: string | null
+          prazo_expiracao?: string
+          status?: string
+          updated_at?: string
+          usuario_item?: string
+          usuario_reservou?: string
+          valor_girinhas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transacoes: {
         Row: {
           created_at: string
@@ -251,7 +307,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cancelar_reserva: {
+        Args: { p_reserva_id: string; p_usuario_id: string }
+        Returns: boolean
+      }
+      confirmar_entrega: {
+        Args: { p_reserva_id: string; p_usuario_id: string }
+        Returns: boolean
+      }
+      processar_reserva: {
+        Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

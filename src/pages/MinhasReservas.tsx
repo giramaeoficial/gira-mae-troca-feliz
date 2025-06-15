@@ -1,233 +1,64 @@
 
 import Header from "@/components/shared/Header";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MessageCircle, CheckCircle2, X, MapPin, Sparkles, AlertTriangle } from "lucide-react";
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { useReservas, Reserva } from "@/hooks/useReservas";
-import ChatModal from "@/components/chat/ChatModal";
+import { Clock, MapPin, Sparkles, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { useReservas } from "@/hooks/useReservas";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const MinhasReservas = () => {
-  const { reservas, confirmarEntrega, cancelarReserva } = useReservas();
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [activeChatReserva, setActiveChatReserva] = useState<Reserva | null>(null);
+  const { reservas, loading, confirmarEntrega, cancelarReserva } = useReservas();
 
-  const handleAbrirChat = (reserva: Reserva) => {
-    setActiveChatReserva(reserva);
-    setIsChatOpen(true);
-  };
-  
-  const useCountdown = (targetDate: Date) => {
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
-
-    function calculateTimeLeft() {
-      const difference = +targetDate - +new Date();
-      let timeLeft = {};
-
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-        const minutes = Math.floor((difference / 1000 / 60) % 60);
-        
-        timeLeft = { days, hours, minutes };
-      }
-      return timeLeft;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pendente': return 'bg-yellow-500';
+      case 'confirmada': return 'bg-green-500';
+      case 'expirada': return 'bg-gray-500';
+      case 'cancelada': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
-
-    useEffect(() => {
-      const timer = setTimeout(() => {
-        setTimeLeft(calculateTimeLeft());
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    });
-
-    return timeLeft;
   };
 
-  const CountdownTimer = ({ expirationDate }: { expirationDate: Date }) => {
-    const timeLeft = useCountdown(expirationDate) as { days?: number, hours?: number, minutes?: number};
-
-    if (Object.keys(timeLeft).length === 0) {
-      return (
-        <div className="flex items-center gap-1 text-red-500 font-medium">
-          <AlertTriangle className="w-4 h-4" />
-          <span>Expirado</span>
-        </div>
-      );
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'pendente': return 'Pendente';
+      case 'confirmada': return 'Confirmada';
+      case 'expirada': return 'Expirada';
+      case 'cancelada': return 'Cancelada';
+      default: return status;
     }
-
-    const { days, hours, minutes } = timeLeft;
-    const isUrgent = (days || 0) === 0 && (hours || 0) < 6;
-
-    return (
-      <div className={`flex items-center gap-1 font-medium ${isUrgent ? 'text-red-600' : 'text-orange-600'}`}>
-        <Clock className="w-4 h-4" />
-        <span>
-          {days > 0 ? `${days}d ` : ''}
-          {hours}h {minutes}m restantes
-        </span>
-      </div>
-    );
   };
 
-  const getStatusBadge = (reserva: Reserva) => {
-    switch (reserva.status) {
-      case 'pendente':
-        return (
-          <Badge className="bg-orange-500 text-white">
-            {reserva.tipo === 'reservada' ? 'Você reservou' : 'Reservaram de você'}
-          </Badge>
-        );
-      case 'confirmada':
-        return <Badge className="bg-green-500 text-white">Troca Realizada</Badge>;
-      case 'expirada':
-        return <Badge className="bg-red-500 text-white">Expirada</Badge>;
-      case 'cancelada':
-        return <Badge className="bg-gray-500 text-white">Cancelada</Badge>;
-      default:
-        return <Badge variant="secondary">Desconhecido</Badge>;
+  const formatTimeRemaining = (expirationDate: string) => {
+    const now = new Date();
+    const expiration = new Date(expirationDate);
+    
+    if (expiration < now) {
+      return "Expirado";
     }
+    
+    return `Expira ${formatDistanceToNow(expiration, { locale: ptBR, addSuffix: true })}`;
   };
 
   const reservasPendentes = reservas.filter(r => r.status === 'pendente');
-  const reservasConcluidas = reservas.filter(r => r.status === 'confirmada');
-  const reservasExpiradas = reservas.filter(r => r.status === 'expirada' || r.status === 'cancelada');
+  const reservasConcluidas = reservas.filter(r => r.status !== 'pendente');
 
-  const ReservaCard = ({ reserva, onConfirm, onCancel, onChat }: { 
-    reserva: Reserva, 
-    onConfirm: (id: number) => void, 
-    onCancel: (id: number) => void, 
-    onChat: (reserva: Reserva) => void 
-  }) => (
-    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-      <CardContent className="p-4">
-        <div className="flex gap-4">
-          {/* Imagem do item */}
-          <div className="flex-shrink-0">
-            <img 
-              src={reserva.itemImagem} 
-              alt={reserva.itemTitulo} 
-              className="w-20 h-20 rounded-lg object-cover"
-            />
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando suas reservas...</p>
           </div>
-          
-          {/* Conteúdo principal */}
-          <div className="flex-grow min-w-0">
-            {/* Header com título e badge */}
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex-grow min-w-0">
-                <h3 className="font-semibold text-gray-800 truncate">{reserva.itemTitulo}</h3>
-                <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                  <MapPin className="w-3 h-3 flex-shrink-0" />
-                  <span>{reserva.localizacao}</span>
-                </div>
-              </div>
-              <div className="flex-shrink-0 ml-2">
-                {getStatusBadge(reserva)}
-              </div>
-            </div>
-
-            {/* Informações da outra mãe e valor */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage src={reserva.outraMaeAvatar} alt={reserva.outraMae} />
-                  <AvatarFallback className="text-xs">
-                    {reserva.outraMae.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-gray-600 truncate">{reserva.outraMae}</span>
-              </div>
-              <div className="flex items-center gap-1 text-primary font-medium flex-shrink-0">
-                <Sparkles className="w-4 h-4" />
-                <span>{reserva.itemGirinhas}</span>
-              </div>
-            </div>
-
-            {/* Status de confirmação (apenas para pendentes) */}
-            {reserva.status === 'pendente' && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
-                <CountdownTimer expirationDate={reserva.prazoExpiracao} />
-                <div className="mt-2 space-y-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${reserva.confirmedByMe ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <span className={`${reserva.confirmedByMe ? 'text-green-600 font-medium' : 'text-gray-600'} truncate`}>
-                      Você {reserva.confirmedByMe ? 'confirmou' : 'ainda não confirmou'} a entrega
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${reserva.confirmedByOther ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <span className={`${reserva.confirmedByOther ? 'text-green-600 font-medium' : 'text-gray-600'} truncate`}>
-                      {reserva.outraMae} {reserva.confirmedByOther ? 'confirmou' : 'ainda não confirmou'} a entrega
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Status de sucesso/erro */}
-            {reserva.status === 'confirmada' && (
-              <div className="flex items-center gap-2 text-green-600 text-sm font-medium mb-3 bg-green-50 border border-green-200 rounded-lg p-2">
-                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-                <span>Troca realizada com sucesso! 🎉</span>
-              </div>
-            )}
-
-            {(reserva.status === 'expirada' || reserva.status === 'cancelada') && (
-              <div className="flex items-center gap-2 text-gray-600 text-sm mb-3 bg-gray-50 border border-gray-200 rounded-lg p-2">
-                <X className="w-4 h-4 flex-shrink-0" />
-                <span>
-                  {reserva.status === 'expirada' ? 'Reserva expirou - Girinhas reembolsadas' : 'Reserva cancelada'}
-                </span>
-              </div>
-            )}
-
-            {/* Botões de ação */}
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => onChat(reserva)}
-                className="flex items-center gap-1 flex-1"
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span>Chat</span>
-              </Button>
-              
-              {reserva.status === 'pendente' && (
-                <>
-                  <Button 
-                    size="sm"
-                    onClick={() => onConfirm(reserva.id)}
-                    className="flex items-center gap-1 flex-1 bg-green-600 hover:bg-green-700 text-white"
-                    disabled={reserva.confirmedByMe}
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span className="truncate">
-                      {reserva.confirmedByMe ? "✓ Confirmado" : "Confirmar Entrega"}
-                    </span>
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => onCancel(reserva.id)}
-                    className="text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24 md:pb-8">
@@ -237,107 +68,187 @@ const MinhasReservas = () => {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
             Minhas Reservas
           </h1>
-          <p className="text-gray-600">Acompanhe suas trocas e gerencie suas reservas</p>
+          <p className="text-gray-600">Gerencie suas trocas em andamento e histórico</p>
         </div>
 
-        <Tabs defaultValue="pendentes" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white/60 backdrop-blur-sm">
-            <TabsTrigger value="pendentes" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-              🔄 Pendentes ({reservasPendentes.length})
-            </TabsTrigger>
-            <TabsTrigger value="concluidas" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-              ✅ Concluídas ({reservasConcluidas.length})
-            </TabsTrigger>
-            <TabsTrigger value="expiradas" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-              ❌ Expiradas ({reservasExpiradas.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Reservas Pendentes */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-yellow-500" />
+            Pendentes de troca ({reservasPendentes.length})
+          </h2>
+          
+          {reservasPendentes.length === 0 ? (
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-8 text-center">
+                <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Nenhuma reserva pendente</h3>
+                <p className="text-gray-600">Quando você reservar ou alguém reservar seus itens, eles aparecerão aqui.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {reservasPendentes.map((reserva) => {
+                const isReservador = reserva.usuario_reservou;
+                const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
+                const jáConfirmei = isReservador ? reserva.confirmado_por_reservador : reserva.confirmado_por_vendedor;
+                const outraConfirmou = isReservador ? reserva.confirmado_por_vendedor : reserva.confirmado_por_reservador;
+                
+                return (
+                  <Card key={reserva.id} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+                    <CardHeader className="pb-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex gap-4">
+                          <img 
+                            src={reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=100"} 
+                            alt={reserva.itens?.titulo || "Item"} 
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                          <div>
+                            <CardTitle className="text-lg">{reserva.itens?.titulo}</CardTitle>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Sparkles className="w-4 h-4 text-primary" />
+                              <span className="font-bold text-primary">{reserva.valor_girinhas}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={`${getStatusColor(reserva.status)} text-white mb-2`}>
+                            {getStatusText(reserva.status)}
+                          </Badge>
+                          <p className="text-sm text-gray-500">
+                            {formatTimeRemaining(reserva.prazo_expiracao)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={outraPessoa?.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {outraPessoa?.nome?.split(' ').map(n => n[0]).join('') || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{outraPessoa?.nome || 'Usuário'}</p>
+                          <p className="text-sm text-gray-600">
+                            {isReservador ? 'Dona do item' : 'Reservou o item'}
+                          </p>
+                        </div>
+                      </div>
 
-          <TabsContent value="pendentes" className="mt-6 space-y-4">
-            {reservasPendentes.length > 0 ? (
-              reservasPendentes.map(reserva => (
-                <ReservaCard 
-                  key={reserva.id} 
-                  reserva={reserva}
-                  onConfirm={confirmarEntrega}
-                  onCancel={cancelarReserva}
-                  onChat={handleAbrirChat}
-                />
-              ))
-            ) : (
-              <Card className="text-center py-8 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardContent>
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Clock className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Nenhuma reserva pendente</h3>
-                  <p className="text-gray-600 mb-4">Explore o feed para encontrar itens incríveis!</p>
-                  <Button asChild>
-                    <Link to="/feed">Ver Feed</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>{reserva.localizacao_combinada || 'Local não definido'}</span>
+                      </div>
 
-          <TabsContent value="concluidas" className="mt-6 space-y-4">
-            {reservasConcluidas.length > 0 ? (
-              reservasConcluidas.map(reserva => (
-                 <ReservaCard 
-                  key={reserva.id} 
-                  reserva={reserva}
-                  onConfirm={() => {}}
-                  onCancel={() => {}}
-                  onChat={handleAbrirChat}
-                />
-              ))
-            ) : (
-              <Card className="text-center py-8 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardContent>
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle2 className="w-8 h-8 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Nenhuma troca concluída ainda</h3>
-                  <p className="text-gray-600">Suas trocas finalizadas aparecerão aqui.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            {jáConfirmei ? (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-gray-400" />
+                            )}
+                            <span className={jáConfirmei ? 'text-green-600' : 'text-gray-500'}>
+                              Você confirmou
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {outraConfirmou ? (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-gray-400" />
+                            )}
+                            <span className={outraConfirmou ? 'text-green-600' : 'text-gray-500'}>
+                              {outraPessoa?.nome?.split(' ')[0]} confirmou
+                            </span>
+                          </div>
+                        </div>
 
-          <TabsContent value="expiradas" className="mt-6 space-y-4">
-            {reservasExpiradas.length > 0 ? (
-              reservasExpiradas.map(reserva => (
-                 <ReservaCard 
-                  key={reserva.id} 
-                  reserva={reserva}
-                  onConfirm={() => {}}
-                  onCancel={() => {}}
-                  onChat={handleAbrirChat}
-                />
-              ))
-            ) : (
-              <Card className="text-center py-8 border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-                <CardContent>
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <X className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Nenhuma reserva expirada</h3>
-                  <p className="text-gray-600">Ótimo! Você tem um histórico limpo de trocas.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+                        <div className="flex gap-2">
+                          {!jáConfirmei && (
+                            <Button 
+                              onClick={() => confirmarEntrega(reserva.id)}
+                              className="bg-green-500 hover:bg-green-600"
+                            >
+                              Confirmar Entrega
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outline"
+                            onClick={() => cancelarReserva(reserva.id)}
+                            className="border-red-200 text-red-600 hover:bg-red-50"
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Histórico */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-500" />
+            Histórico ({reservasConcluidas.length})
+          </h2>
+          
+          {reservasConcluidas.length === 0 ? (
+            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-8 text-center">
+                <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Nenhuma troca concluída</h3>
+                <p className="text-gray-600">Suas trocas finalizadas aparecerão aqui.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {reservasConcluidas.map((reserva) => {
+                const isReservador = reserva.usuario_reservou;
+                const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
+                
+                return (
+                  <Card key={reserva.id} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm opacity-75">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center">
+                        <div className="flex gap-4">
+                          <img 
+                            src={reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=100"} 
+                            alt={reserva.itens?.titulo || "Item"} 
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                          <div>
+                            <h3 className="font-medium">{reserva.itens?.titulo}</h3>
+                            <p className="text-sm text-gray-600">
+                              {isReservador ? 'Trocado com' : 'Trocado para'} {outraPessoa?.nome}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={`${getStatusColor(reserva.status)} text-white`}>
+                            {getStatusText(reserva.status)}
+                          </Badge>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatDistanceToNow(new Date(reserva.updated_at), { locale: ptBR, addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </main>
-
-      {isChatOpen && activeChatReserva && (
-        <ChatModal 
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          outraMae={{ nome: activeChatReserva.outraMae, avatar: activeChatReserva.outraMaeAvatar }}
-          item={{ titulo: activeChatReserva.itemTitulo, imagem: activeChatReserva.itemImagem }}
-        />
-      )}
     </div>
   );
 };

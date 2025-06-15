@@ -11,7 +11,7 @@ import { useState, useEffect } from "react";
 import { useReservas } from "@/hooks/useReservas";
 import { useItens } from "@/hooks/useItens";
 import { useAuth } from "@/hooks/useAuth";
-import { useCarteira } from "@/contexts/CarteiraContext";
+import { useCarteira } from "@/hooks/useCarteira";
 import { Tables } from "@/integrations/supabase/types";
 
 type ItemComPerfil = Tables<'itens'> & {
@@ -90,14 +90,11 @@ const DetalhesItem = () => {
         );
     }
 
-    // Converter UUID para número para compatibilidade com o sistema de reservas
-    const itemIdNumber = item.id.split('-').join('').slice(0, 10);
-    const numericId = parseInt(itemIdNumber, 16) || Math.abs(item.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0));
-    const isReserved = isItemReservado(numericId) || item.status !== 'disponivel';
+    const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
     const semSaldo = saldo < Number(item.valor_girinhas);
     const isProprio = item.publicado_por === user?.id;
 
-    const handleReservar = () => {
+    const handleReservar = async () => {
         if (isProprio) {
             toast({
                 title: "Não é possível reservar",
@@ -125,22 +122,11 @@ const DetalhesItem = () => {
             return;
         }
 
-        const itemFormatado = {
-            id: numericId,
-            title: item.titulo,
-            girinhas: Number(item.valor_girinhas),
-            image: item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300",
-            size: item.tamanho || "Não informado",
-            categoria: item.categoria,
-            idade: "Não informado",
-            estado: item.estado_conservacao,
-            localizacao: item.profiles?.bairro || item.profiles?.cidade || "Não informado",
-            maeName: item.profiles?.nome || "Usuário",
-            disponivel: item.status === 'disponivel',
-            descricao: item.descricao
-        };
-
-        criarReserva(numericId, itemFormatado, item.profiles?.nome || "Usuário");
+        const sucesso = await criarReserva(item.id, Number(item.valor_girinhas));
+        if (sucesso) {
+            // Recarregar item para atualizar status
+            await carregarItem();
+        }
     };
 
     const handleToggleFavorite = () => {
