@@ -1,59 +1,64 @@
 
 import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import Header from "@/components/shared/Header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Gift, Trophy, MessageCircle, ArrowLeft } from "lucide-react";
+import { useProfile } from "@/hooks/useProfile";
+import { useItens } from "@/hooks/useItens";
+import { Tables } from "@/integrations/supabase/types";
 
-// Dados simulados - em uma aplicação real viria de uma API
-const perfisData = {
-  "Ana Maria": {
-    nome: "Ana Maria",
-    avatar: "https://images.unsplash.com/photo-1721322800607-8c38375eef04?w=150",
-    reputacao: 4.8,
-    totalTrocas: 23,
-    filho: "Lorenzo (2 anos)",
-    localizacao: "Vila Madalena, São Paulo",
-    membroDesde: "Mar/2024",
-    bio: "Amo participar da comunidade GiraMãe! Lorenzo cresce rápido e adoro dar uma nova vida às roupinhas dele. Sempre cuido muito bem dos itens e espero encontrar mães que façam o mesmo! 💕",
-    conquistas: [
-      { nome: "Mãe Querida", cor: "bg-pink-100 text-pink-700", icone: Heart },
-      { nome: "10+ Trocas", cor: "bg-green-100 text-green-700", icone: Gift },
-      { nome: "Sempre Responde", cor: "bg-purple-100 text-purple-700", icone: MessageCircle }
-    ],
-    itens: [
-      { id: 1, title: "Kit Body Carter's", girinhas: 15, image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300", size: "3-6M", status: "Disponível" },
-      { id: 2, title: "Vestido Festa Lilás", girinhas: 30, image: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300", size: "2 anos", status: "Reservado" },
-      { id: 3, title: "Tênis All Star Baby", girinhas: 25, image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300", size: "18", status: "Disponível" }
-    ]
-  },
-  "Carla Silva": {
-    nome: "Carla Silva",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150",
-    reputacao: 4.5,
-    totalTrocas: 18,
-    filho: "Sofia (3 anos)",
-    localizacao: "Pinheiros, São Paulo",
-    membroDesde: "Fev/2024",
-    bio: "Mãe da Sofia, sempre em busca de itens de qualidade para minha pequena. Acredito na economia circular e no compartilhamento entre mães! 🌟",
-    conquistas: [
-      { nome: "Mãe Querida", cor: "bg-pink-100 text-pink-700", icone: Heart },
-      { nome: "10+ Trocas", cor: "bg-green-100 text-green-700", icone: Gift }
-    ],
-    itens: [
-      { id: 7, title: "Tênis All Star Baby", girinhas: 20, image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300", size: "18", status: "Disponível" },
-      { id: 8, title: "Conjunto Verão", girinhas: 18, image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=300", size: "3 anos", status: "Disponível" }
-    ]
-  }
+type Profile = Tables<'profiles'>;
+type ItemComPerfil = Tables<'itens'> & {
+  profiles?: Profile | null;
 };
 
 const PerfilPublico = () => {
     const { nome } = useParams();
-    const perfil = perfisData[nome as keyof typeof perfisData];
+    const { fetchProfileByName, profile, filhos, loading: profileLoading } = useProfile();
+    const { buscarTodosItens, loading: itensLoading } = useItens();
+    const [itensDoUsuario, setItensDoUsuario] = useState<ItemComPerfil[]>([]);
 
-    if (!perfil) {
+    useEffect(() => {
+        if (nome) {
+            carregarPerfilEItens();
+        }
+    }, [nome]);
+
+    const carregarPerfilEItens = async () => {
+        if (!nome) return;
+
+        console.log('Carregando perfil para:', nome);
+        const perfilEncontrado = await fetchProfileByName(nome);
+        
+        if (perfilEncontrado) {
+            // Buscar itens do usuário
+            const todosItens = await buscarTodosItens();
+            const itensFiltrados = todosItens.filter(item => 
+                item.profiles?.nome === decodeURIComponent(nome)
+            );
+            setItensDoUsuario(itensFiltrados);
+        }
+    };
+
+    if (profileLoading || itensLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-gray-600">Carregando perfil...</p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (!profile) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
                 <Header />
@@ -71,6 +76,35 @@ const PerfilPublico = () => {
             </div>
         );
     }
+
+    const formatarEstado = (estado: string) => {
+        const estados = {
+            'novo': 'Novo',
+            'otimo': 'Ótimo estado',
+            'bom': 'Bom estado',
+            'razoavel': 'Estado razoável'
+        };
+        return estados[estado as keyof typeof estados] || estado;
+    };
+
+    const formatarCategoria = (categoria: string) => {
+        const categorias = {
+            'roupa': 'Roupas',
+            'brinquedo': 'Brinquedos',
+            'calcado': 'Calçados',
+            'acessorio': 'Acessórios',
+            'kit': 'Kits',
+            'outro': 'Outros'
+        };
+        return categorias[categoria as keyof typeof categorias] || categoria;
+    };
+
+    const reputacao = profile.reputacao || 0;
+    const localizacao = profile.bairro || profile.cidade || "Localização não informada";
+    const dataMembroDesde = new Date(profile.created_at || '').toLocaleDateString('pt-BR', { 
+        month: 'short', 
+        year: 'numeric' 
+    });
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col">
@@ -93,9 +127,9 @@ const PerfilPublico = () => {
                             <div className="flex flex-col items-center text-center mb-6">
                                 <div className="relative">
                                     <Avatar className="w-28 h-28 mb-4 ring-4 ring-primary/20">
-                                        <AvatarImage src={perfil.avatar} alt={`Foto de ${perfil.nome}`} />
+                                        <AvatarImage src={profile.avatar_url || undefined} alt={`Foto de ${profile.nome}`} />
                                         <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
-                                            {perfil.nome.split(' ').map(n => n[0]).join('')}
+                                            {profile.nome?.split(' ').map(n => n[0]).join('') || 'U'}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
@@ -105,13 +139,17 @@ const PerfilPublico = () => {
                                         </Badge>
                                     </div>
                                 </div>
-                                <h2 className="text-2xl font-bold text-gray-800">{perfil.nome}</h2>
-                                <p className="text-primary font-medium">Mãe do {perfil.filho}</p>
+                                <h2 className="text-2xl font-bold text-gray-800">{profile.nome}</h2>
+                                {filhos.length > 0 && (
+                                    <p className="text-primary font-medium">
+                                        Mãe {filhos.length > 1 ? `de ${filhos.length} crianças` : `do(a) ${filhos[0].nome}`}
+                                    </p>
+                                )}
                                 <div className="flex items-center gap-1 mt-2 text-yellow-500">
                                     {[1,2,3,4,5].map((star) => (
-                                        <Star key={star} className={`w-5 h-5 ${star <= Math.floor(perfil.reputacao) ? 'fill-current' : 'opacity-30'}`} />
+                                        <Star key={star} className={`w-5 h-5 ${star <= Math.floor(reputacao) ? 'fill-current' : 'opacity-30'}`} />
                                     ))}
-                                    <span className="text-gray-600 text-sm ml-2">({perfil.reputacao}) • {perfil.totalTrocas} trocas</span>
+                                    <span className="text-gray-600 text-sm ml-2">({reputacao.toFixed(1)}) • {itensDoUsuario.length} itens</span>
                                 </div>
                             </div>
 
@@ -119,15 +157,15 @@ const PerfilPublico = () => {
                             <div className="space-y-3 mb-6">
                                 <div className="flex items-center gap-2 text-gray-600">
                                     <MapPin className="w-4 h-4 text-primary" />
-                                    <span className="text-sm">{perfil.localizacao}</span>
+                                    <span className="text-sm">{localizacao}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-gray-600">
                                     <Calendar className="w-4 h-4 text-primary" />
-                                    <span className="text-sm">Na comunidade desde {perfil.membroDesde}</span>
+                                    <span className="text-sm">Na comunidade desde {dataMembroDesde}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-gray-600">
                                     <Baby className="w-4 h-4 text-primary" />
-                                    <span className="text-sm">Mãe de 1 criança</span>
+                                    <span className="text-sm">Mãe de {filhos.length} criança{filhos.length !== 1 ? 's' : ''}</span>
                                 </div>
                             </div>
 
@@ -138,25 +176,36 @@ const PerfilPublico = () => {
                                     Conquistas
                                 </h3>
                                 <div className="flex flex-wrap gap-2">
-                                    {perfil.conquistas.map((conquista, index) => {
-                                        const IconeConquista = conquista.icone;
-                                        return (
-                                            <Badge key={index} variant="secondary" className={conquista.cor}>
-                                                <IconeConquista className="w-3 h-3 mr-1" />
-                                                {conquista.nome}
-                                            </Badge>
-                                        );
-                                    })}
+                                    {reputacao >= 10 && (
+                                        <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+                                            <Heart className="w-3 h-3 mr-1" />
+                                            Mãe Querida
+                                        </Badge>
+                                    )}
+                                    {itensDoUsuario.length >= 10 && (
+                                        <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                            <Gift className="w-3 h-3 mr-1" />
+                                            10+ Itens
+                                        </Badge>
+                                    )}
+                                    {reputacao >= 20 && (
+                                        <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                                            <MessageCircle className="w-3 h-3 mr-1" />
+                                            Sempre Responde
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Bio */}
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
-                                <p className="text-sm text-gray-600 leading-relaxed">
-                                    {perfil.bio}
-                                </p>
-                            </div>
+                            {profile.bio && (
+                                <div className="mb-6">
+                                    <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
+                                    <p className="text-sm text-gray-600 leading-relaxed">
+                                        {profile.bio}
+                                    </p>
+                                </div>
+                            )}
 
                             <Button className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" variant="default">
                                 Enviar Mensagem
@@ -170,31 +219,41 @@ const PerfilPublico = () => {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Sparkles className="w-5 h-5 text-primary" />
-                                    Itens Publicados ({perfil.itens.length})
+                                    Itens Publicados ({itensDoUsuario.length})
                                 </CardTitle>
-                                <CardDescription>Todos os itens disponibilizados por {perfil.nome}.</CardDescription>
+                                <CardDescription>Todos os itens disponibilizados por {profile.nome}.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                    {perfil.itens.map(item => (
+                                    {itensDoUsuario.map(item => (
                                         <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/80 backdrop-blur-sm">
                                             <div className="relative">
-                                                <img src={item.image} alt={item.title} className="w-full h-48 object-cover" />
+                                                <img 
+                                                    src={item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300"} 
+                                                    alt={item.titulo} 
+                                                    className="w-full h-48 object-cover" 
+                                                />
                                                 <Badge 
                                                     className={`absolute top-2 right-2 ${
-                                                        item.status === 'Disponível' ? 'bg-green-500' : 'bg-yellow-500'
+                                                        item.status === 'disponivel' ? 'bg-green-500' : 'bg-yellow-500'
                                                     } text-white`}
                                                 >
-                                                    {item.status}
+                                                    {item.status === 'disponivel' ? 'Disponível' : 'Reservado'}
+                                                </Badge>
+                                                <Badge variant="secondary" className="absolute top-2 left-2 bg-primary/10 text-primary">
+                                                    {formatarEstado(item.estado_conservacao)}
                                                 </Badge>
                                             </div>
                                             <CardContent className="p-4">
-                                                <h3 className="font-semibold text-gray-800 mb-1">{item.title}</h3>
-                                                <p className="text-sm text-gray-600 mb-2">Tamanho: {item.size}</p>
+                                                <h3 className="font-semibold text-gray-800 mb-1">{item.titulo}</h3>
+                                                <p className="text-sm text-gray-600 mb-1">{formatarCategoria(item.categoria)}</p>
+                                                {item.tamanho && (
+                                                    <p className="text-sm text-gray-600 mb-2">Tamanho: {item.tamanho}</p>
+                                                )}
                                                 <div className="flex justify-between items-center">
                                                     <p className="font-bold text-primary flex items-center gap-1">
                                                         <Sparkles className="w-4 h-4" />
-                                                        {item.girinhas}
+                                                        {item.valor_girinhas}
                                                     </p>
                                                     <Button size="sm" variant="outline" asChild>
                                                         <Link to={`/item/${item.id}`}>Ver Item</Link>
@@ -205,13 +264,13 @@ const PerfilPublico = () => {
                                     ))}
                                 </div>
 
-                                {perfil.itens.length === 0 && (
+                                {itensDoUsuario.length === 0 && (
                                     <div className="text-center py-12">
                                         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <Sparkles className="w-12 h-12 text-primary" />
                                         </div>
                                         <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhum item publicado</h3>
-                                        <p className="text-gray-600">{perfil.nome} ainda não publicou nenhum item.</p>
+                                        <p className="text-gray-600">{profile.nome} ainda não publicou nenhum item.</p>
                                     </div>
                                 )}
                             </CardContent>

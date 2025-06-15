@@ -53,6 +53,48 @@ export const useProfile = () => {
     }
   };
 
+  const fetchProfileByName = async (nome: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('Buscando perfil por nome:', nome);
+
+      // Buscar perfil por nome
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('nome', decodeURIComponent(nome))
+        .single();
+
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        throw profileError;
+      }
+
+      console.log('Perfil encontrado:', profileData);
+      setProfile(profileData);
+
+      // Buscar filhos do perfil
+      const { data: filhosData, error: filhosError } = await supabase
+        .from('filhos')
+        .select('*')
+        .eq('mae_id', profileData.id)
+        .order('created_at', { ascending: true });
+
+      if (filhosError) throw filhosError;
+
+      setFilhos(filhosData || []);
+      return profileData;
+    } catch (err) {
+      console.error('Erro ao carregar perfil por nome:', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return false;
 
@@ -106,6 +148,7 @@ export const useProfile = () => {
     loading,
     error,
     refetch: fetchProfile,
+    fetchProfileByName,
     updateProfile,
     deleteFilho
   };
