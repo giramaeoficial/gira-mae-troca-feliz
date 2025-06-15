@@ -4,16 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Trophy, History, TrendingUp, Heart, Gift } from "lucide-react";
+import { Sparkles, Trophy, History, TrendingUp, Heart, Gift, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/shared/Header";
 import PacoteCard from "@/components/girinhas/PacoteCard";
 import MetaCard from "@/components/girinhas/MetaCard";
 import CompraHistoricoCard from "@/components/girinhas/CompraHistoricoCard";
-import PromocaoEspecial from "@/components/girinhas/PromocaoEspecial";
-import InfoTaxas from "@/components/girinhas/InfoTaxas";
-import BeneficiosGirinhas from "@/components/girinhas/BeneficiosGirinhas";
-import EstatisticasPlataforma from "@/components/girinhas/EstatisticasPlataforma";
 import { usePacotesGirinhas } from "@/hooks/usePacotesGirinhas";
 import { useMetas } from "@/hooks/useMetas";
 import { useComprasGirinhas } from "@/hooks/useComprasGirinhas";
@@ -67,146 +63,164 @@ const SistemaGirinhas = () => {
       <Header activePage="sistema-girinhas" />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
+        {/* Hero Section - Simplificado */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-4 flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 via-pink-600 to-yellow-600 bg-clip-text text-transparent">
-            <Sparkles className="h-10 w-10 text-yellow-500 animate-spin" />
-            Sistema de Girinhas
-            <Heart className="h-8 w-8 text-pink-500 animate-pulse" />
+          <h1 className="text-4xl font-bold mb-4 text-purple-700">
+            ✨ Sistema de Girinhas
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-6">
-            💖 A moeda do carinho que conecta mães! Troque itens, ganhe bônus e faça parte da maior comunidade de mães do Brasil!
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+            A moeda que conecta mães! Compre Girinhas, faça trocas e ganhe bônus incríveis.
           </p>
-          <div className="flex items-center justify-center gap-4 text-lg">
-            <div className="bg-green-100 px-4 py-2 rounded-full">
-              <span className="text-green-700 font-semibold">✅ 100% Seguro</span>
-            </div>
-            <div className="bg-blue-100 px-4 py-2 rounded-full">
-              <span className="text-blue-700 font-semibold">🎁 Bônus Frequentes</span>
-            </div>
-            <div className="bg-purple-100 px-4 py-2 rounded-full">
-              <span className="text-purple-700 font-semibold">🏆 Sistema de Metas</span>
-            </div>
-          </div>
         </div>
 
-        {/* Benefícios e Estatísticas */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <BeneficiosGirinhas />
-          <EstatisticasPlataforma />
-        </div>
-
-        {/* Promoções Especiais */}
-        <PromocaoEspecial />
-
-        {/* Resumo da Carteira */}
-        <Card className="mb-8 bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 border-purple-300 shadow-xl">
+        {/* Carteira - Destaque Principal */}
+        <Card className="mb-8 bg-gradient-to-r from-purple-100 to-pink-100 border-purple-300 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-2xl text-purple-700">
-              <TrendingUp className="h-6 w-6" />
-              💼 Sua Carteira GiraMãe
+            <CardTitle className="flex items-center justify-center gap-2 text-2xl text-purple-700">
+              <Wallet className="h-6 w-6" />
+              Sua Carteira
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center bg-white/60 p-6 rounded-xl">
-                <div className="text-4xl font-bold text-primary mb-2 flex items-center justify-center gap-2">
-                  <Sparkles className="h-8 w-8 text-yellow-500" />
-                  {saldo.toFixed(0)}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div className="bg-white/70 p-4 rounded-xl">
+                <div className="text-3xl font-bold text-purple-600 mb-2">
+                  {saldo.toFixed(0)} 
+                  <Sparkles className="inline h-6 w-6 ml-1 text-yellow-500" />
                 </div>
-                <p className="text-lg font-medium text-purple-700">Girinhas Disponíveis</p>
-                <p className="text-sm text-purple-600">≈ R$ {saldo.toFixed(2)} em valor</p>
+                <p className="text-purple-700 font-medium">Girinhas Disponíveis</p>
+                <p className="text-sm text-purple-600">≈ R$ {saldo.toFixed(2)}</p>
               </div>
-              <div className="text-center bg-white/60 p-6 rounded-xl">
-                <div className="text-4xl font-bold text-green-600 mb-2 flex items-center justify-center gap-2">
-                  <Trophy className="h-8 w-8" />
+              
+              <div className="bg-white/70 p-4 rounded-xl">
+                <div className="text-3xl font-bold text-green-600 mb-2 flex items-center justify-center gap-1">
+                  <Trophy className="h-6 w-6" />
                   {metasConquistadas.length}
                 </div>
-                <p className="text-lg font-medium text-green-700">Metas Conquistadas</p>
+                <p className="text-green-700 font-medium">Metas Conquistadas</p>
                 <p className="text-sm text-green-600">Continue assim! 🎯</p>
               </div>
-              <div className="text-center bg-white/60 p-6 rounded-xl">
-                <div className="text-4xl font-bold text-orange-600 mb-2 flex items-center justify-center gap-2">
-                  <Gift className="h-8 w-8" />
+              
+              <div className="bg-white/70 p-4 rounded-xl">
+                <div className="text-3xl font-bold text-orange-600 mb-2 flex items-center justify-center gap-1">
+                  <Gift className="h-6 w-6" />
                   {getTotalBonusRecebido()}
                 </div>
-                <p className="text-lg font-medium text-orange-700">Bônus Recebidos</p>
+                <p className="text-orange-700 font-medium">Bônus Recebidos</p>
                 <p className="text-sm text-orange-600">Economia total! 💰</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Benefícios Resumidos */}
+        <Card className="mb-8 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+          <CardContent className="py-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <Heart className="h-8 w-8 text-pink-500 mx-auto mb-2" />
+                <p className="font-semibold text-gray-800">Trocas Justas</p>
+                <p className="text-sm text-gray-600">1 Girinha = R$ 1,00</p>
+              </div>
+              <div>
+                <Gift className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                <p className="font-semibold text-gray-800">5 Girinhas GRÁTIS</p>
+                <p className="text-sm text-gray-600">Ao se cadastrar</p>
+              </div>
+              <div>
+                <Trophy className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
+                <p className="font-semibold text-gray-800">Metas e Bônus</p>
+                <p className="text-sm text-gray-600">Complete desafios</p>
+              </div>
+              <div>
+                <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                <p className="font-semibold text-gray-800">Mais Economia</p>
+                <p className="text-sm text-gray-600">Até 15% de desconto</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-white/60 p-2 rounded-xl shadow-lg">
-            <TabsTrigger value="comprar" className="flex items-center gap-2 text-lg py-3 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-pink-500 data-[state=active]:text-white">
-              <Sparkles className="h-5 w-5" />
+          <TabsList className="grid w-full grid-cols-3 bg-white/80 p-2 rounded-xl shadow-md">
+            <TabsTrigger value="comprar" className="flex items-center gap-2 py-3 rounded-lg">
+              <Sparkles className="h-4 w-4" />
               Comprar Girinhas
             </TabsTrigger>
-            <TabsTrigger value="metas" className="flex items-center gap-2 text-lg py-3 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-500 data-[state=active]:text-white">
-              <Trophy className="h-5 w-5" />
+            <TabsTrigger value="metas" className="flex items-center gap-2 py-3 rounded-lg">
+              <Trophy className="h-4 w-4" />
               Metas e Conquistas
             </TabsTrigger>
-            <TabsTrigger value="historico" className="flex items-center gap-2 text-lg py-3 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-green-500 data-[state=active]:text-white">
-              <History className="h-5 w-5" />
+            <TabsTrigger value="historico" className="flex items-center gap-2 py-3 rounded-lg">
+              <History className="h-4 w-4" />
               Histórico
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="comprar" className="space-y-6">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold mb-4 text-purple-700">💎 Escolha seu Pacote de Girinhas</h2>
-              <p className="text-lg text-gray-600 mb-4">
-                Quanto mais você compra, mais você economiza! Todas as Girinhas têm validade infinita.
+              <h2 className="text-2xl font-bold mb-2 text-purple-700">💎 Pacotes de Girinhas</h2>
+              <p className="text-gray-600">
+                Quanto mais você compra, mais você economiza!
               </p>
             </div>
             
             {loadingPacotes ? (
-              <div className="text-center text-xl">Carregando pacotes incríveis...</div>
+              <div className="text-center text-xl">Carregando pacotes...</div>
             ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  {pacotes.map((pacote) => (
-                    <PacoteCard
-                      key={pacote.id}
-                      pacote={pacote}
-                      onComprar={handleComprarPacote}
-                      loading={loadingCompra === pacote.id}
-                    />
-                  ))}
-                </div>
-                
-                <InfoTaxas />
-              </>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {pacotes.map((pacote) => (
+                  <PacoteCard
+                    key={pacote.id}
+                    pacote={pacote}
+                    onComprar={handleComprarPacote}
+                    loading={loadingCompra === pacote.id}
+                  />
+                ))}
+              </div>
             )}
+
+            {/* Info sobre taxas simplificada */}
+            <Card className="bg-blue-50 border-blue-200 mt-6">
+              <CardContent className="py-4">
+                <div className="text-center">
+                  <p className="text-blue-700 font-medium mb-2">
+                    💡 Taxa de 5% sobre trocas (em reais)
+                  </p>
+                  <p className="text-sm text-blue-600">
+                    Exemplo: Item de 20 Girinhas = Taxa de R$ 1,00
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="metas" className="space-y-6">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold mb-4 text-yellow-700">🏆 Suas Conquistas e Metas</h2>
-              <p className="text-lg text-gray-600">
-                Complete trocas e desbloqueie distintivos especiais com bônus incríveis!
+              <h2 className="text-2xl font-bold mb-2 text-yellow-700">🏆 Suas Conquistas</h2>
+              <p className="text-gray-600">
+                Complete trocas e desbloqueie distintivos especiais!
               </p>
             </div>
 
             {proximaMeta && (
-              <Card className="mb-6 border-yellow-300 bg-gradient-to-r from-yellow-50 to-orange-50 shadow-lg">
+              <Card className="mb-6 border-yellow-300 bg-gradient-to-r from-yellow-50 to-orange-50">
                 <CardHeader>
-                  <CardTitle className="text-yellow-700 text-xl flex items-center gap-2">
+                  <CardTitle className="text-yellow-700 flex items-center gap-2">
                     🎯 Próxima Meta
-                    <Badge className="bg-yellow-100 text-yellow-800 animate-pulse">
+                    <Badge className="bg-yellow-100 text-yellow-800">
                       Quase lá!
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4">
-                    <Trophy className="h-12 w-12 text-yellow-500" />
+                    <Trophy className="h-10 w-10 text-yellow-500" />
                     <div>
-                      <p className="text-xl font-bold text-yellow-700">
+                      <p className="text-lg font-bold text-yellow-700">
                         Distintivo {proximaMeta.tipo_meta.charAt(0).toUpperCase() + proximaMeta.tipo_meta.slice(1)}
                       </p>
-                      <p className="text-yellow-600 text-lg">
+                      <p className="text-yellow-600">
                         Faltam apenas {proximaMeta.trocas_necessarias - trocasConfirmadas} trocas para ganhar 
                         <span className="font-bold text-green-600"> +{proximaMeta.girinhas_bonus} Girinhas!</span>
                       </p>
@@ -217,7 +231,7 @@ const SistemaGirinhas = () => {
             )}
             
             {loadingMetas ? (
-              <div className="text-center text-xl">Carregando suas conquistas...</div>
+              <div className="text-center text-xl">Carregando conquistas...</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {metas.map((meta) => (
@@ -234,9 +248,9 @@ const SistemaGirinhas = () => {
 
           <TabsContent value="historico" className="space-y-6">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold mb-4 text-blue-700">📊 Histórico de Compras</h2>
-              <p className="text-lg text-gray-600">
-                Acompanhe todas as suas aquisições de Girinhas.
+              <h2 className="text-2xl font-bold mb-2 text-blue-700">📊 Histórico de Compras</h2>
+              <p className="text-gray-600">
+                Acompanhe suas aquisições de Girinhas.
               </p>
             </div>
             
@@ -246,13 +260,13 @@ const SistemaGirinhas = () => {
               <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
                 <CardContent className="text-center py-12">
                   <History className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold text-blue-700 mb-2">Primeira vez aqui?</h3>
-                  <p className="text-blue-600 mb-6 text-lg">Comece comprando seu primeiro pacote de Girinhas!</p>
+                  <h3 className="text-xl font-bold text-blue-700 mb-2">Primeira vez aqui?</h3>
+                  <p className="text-blue-600 mb-6">Comece comprando seu primeiro pacote de Girinhas!</p>
                   <Button 
-                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-8 py-3 text-lg" 
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-2" 
                     onClick={() => handleTabChange("comprar")}
                   >
-                    🚀 Comprar Girinhas Agora
+                    🚀 Comprar Girinhas
                   </Button>
                 </CardContent>
               </Card>
