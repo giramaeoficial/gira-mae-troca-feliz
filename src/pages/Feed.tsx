@@ -7,186 +7,78 @@ import { Search, Sparkles, MapPin, Baby, Shirt, Car, Gamepad2, BookOpen, Heart }
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useReservas } from "@/hooks/useReservas";
 import { useCarteira } from "@/contexts/CarteiraContext";
+import { useItens } from "@/hooks/useItens";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tables } from "@/integrations/supabase/types";
 
-const placeholderItems = [
-  { 
-    id: 1, 
-    title: "Kit Body Carter's Recém-nascido", 
-    girinhas: 15, 
-    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300", 
-    size: "RN-3M",
-    categoria: "Roupas",
-    idade: "0-3 meses",
-    estado: "Ótimo estado",
-    localizacao: "Vila Madalena",
-    maeName: "Ana Maria",
-    disponivel: true,
-    descricao: "5 bodies de manga longa + 3 de manga curta"
-  },
-  { 
-    id: 2, 
-    title: "Tênis All Star Baby Primeiro Passo", 
-    girinhas: 20, 
-    image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=300", 
-    size: "18",
-    categoria: "Calçados",
-    idade: "12-18 meses",
-    estado: "Bom estado",
-    localizacao: "Pinheiros",
-    maeName: "Carla Silva",
-    disponivel: true,
-    descricao: "Perfeito para primeiros passos"
-  },
-  { 
-    id: 3, 
-    title: "Kit Brinquedos Educativos Fisher Price", 
-    girinhas: 30, 
-    image: "https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=300", 
-    size: "Variado",
-    categoria: "Brinquedos",
-    idade: "2-4 anos",
-    estado: "Ótimo estado",
-    localizacao: "Itaim Bibi",
-    maeName: "Fernanda Costa",
-    disponivel: true,
-    descricao: "Blocos de montar + quebra-cabeças + livros"
-  },
-  { 
-    id: 4, 
-    title: "Vestido de Festa Infantil Rosa", 
-    girinhas: 25, 
-    image: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=300", 
-    size: "1 Ano",
-    categoria: "Roupas",
-    idade: "12-18 meses",
-    estado: "Novo",
-    localizacao: "Jardins",
-    maeName: "Juliana Santos",
-    disponivel: false,
-    descricao: "Com laço e detalhes em renda"
-  },
-  { 
-    id: 5, 
-    title: "Cadeirinha Auto Chicco KeyFit", 
-    girinhas: 100, 
-    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=300", 
-    size: "Bebê conforto",
-    categoria: "Segurança",
-    idade: "0-13kg",
-    estado: "Bom estado",
-    localizacao: "Moema",
-    maeName: "Patricia Lima",
-    disponivel: true,
-    descricao: "Com base para carro + manual"
-  },
-  { 
-    id: 6, 
-    title: "Macacão Inverno Gap Kids", 
-    girinhas: 22, 
-    image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=300", 
-    size: "9M",
-    categoria: "Roupas",
-    idade: "6-12 meses",
-    estado: "Ótimo estado",
-    localizacao: "Vila Olimpia",
-    maeName: "Roberta Alves",
-    disponivel: true,
-    descricao: "Pelúcia interna + capuz"
-  },
-  { 
-    id: 7, 
-    title: "Carrinho de Bebê Galzerano Reversível", 
-    girinhas: 80, 
-    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=300", 
-    size: "0-15kg",
-    categoria: "Passeio",
-    idade: "0-3 anos",
-    estado: "Bom estado",
-    localizacao: "Butantã",
-    maeName: "Luciana Pereira",
-    disponivel: true,
-    descricao: "Com capa de chuva + cestinha"
-  },
-  { 
-    id: 8, 
-    title: "Lote Livros Infantis Clássicos", 
-    girinhas: 35, 
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300", 
-    size: "Variado",
-    categoria: "Livros",
-    idade: "3-6 anos",
-    estado: "Ótimo estado",
-    localizacao: "Santo Amaro",
-    maeName: "Mariana Souza",
-    disponivel: true,
-    descricao: "15 livros: Turma da Mônica + contos"
-  },
-  { 
-    id: 9, 
-    title: "Boneca Baby Alive Come e Faz Caquinha", 
-    girinhas: 40, 
-    image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=300", 
-    size: "30cm",
-    categoria: "Brinquedos",
-    idade: "3+ anos",
-    estado: "Bom estado",
-    localizacao: "Vila Mariana",
-    maeName: "Camila Torres",
-    disponivel: true,
-    descricao: "Com acessórios + roupinha extra"
-  },
-  { 
-    id: 10, 
-    title: "Kit Alimentação Bebê Avent", 
-    girinhas: 28, 
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300", 
-    size: "6M+",
-    categoria: "Alimentação",
-    idade: "6+ meses",
-    estado: "Ótimo estado",
-    localizacao: "Perdizes",
-    maeName: "Renata Oliveira",
-    disponivel: true,
-    descricao: "Mamadeiras + pratinhos + talheres"
-  }
-];
+type ItemComPerfil = Tables<'itens'> & {
+  profiles?: {
+    nome: string;
+    bairro: string | null;
+    cidade: string | null;
+  } | null;
+};
 
 const categorias = [
   { value: "todas", label: "Todas as categorias", icon: Heart },
-  { value: "roupas", label: "Roupas", icon: Shirt },
-  { value: "brinquedos", label: "Brinquedos", icon: Gamepad2 },
-  { value: "calçados", label: "Calçados", icon: Baby },
-  { value: "segurança", label: "Segurança", icon: Car },
-  { value: "livros", label: "Livros", icon: BookOpen },
-  { value: "passeio", label: "Passeio", icon: Car },
-  { value: "alimentação", label: "Alimentação", icon: Baby }
+  { value: "roupa", label: "Roupas", icon: Shirt },
+  { value: "brinquedo", label: "Brinquedos", icon: Gamepad2 },
+  { value: "calcado", label: "Calçados", icon: Baby },
+  { value: "acessorio", label: "Acessórios", icon: Car },
+  { value: "kit", label: "Kits", icon: BookOpen },
+  { value: "outro", label: "Outros", icon: Heart }
 ];
 
 const Feed = () => {
     const { toast } = useToast();
     const { criarReserva, isItemReservado } = useReservas();
     const { saldo } = useCarteira();
+    const { buscarTodosItens, loading } = useItens();
     const [searchTerm, setSearchTerm] = useState("");
     const [categoriaFiltro, setCategoriaFiltro] = useState("todas");
+    const [itens, setItens] = useState<ItemComPerfil[]>([]);
 
-    const handleReservar = (item: typeof placeholderItems[0]) => {
-        const resultado = criarReserva(item.id, item, item.maeName);
-        // O toast já é mostrado dentro da função criarReserva
+    useEffect(() => {
+        carregarItens();
+    }, []);
+
+    const carregarItens = async () => {
+        const itensData = await buscarTodosItens();
+        setItens(itensData as ItemComPerfil[]);
     };
 
-    const filteredItems = placeholderItems.filter(item => {
-        const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.size.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.localizacao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.idade.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            item.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+    const handleReservar = (item: ItemComPerfil) => {
+        const itemFormatado = {
+            id: item.id,
+            title: item.titulo,
+            girinhas: Number(item.valor_girinhas),
+            image: item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300",
+            size: item.tamanho || "Não informado",
+            categoria: item.categoria,
+            idade: "Não informado",
+            estado: item.estado_conservacao,
+            localizacao: item.profiles?.bairro || item.profiles?.cidade || "Não informado",
+            maeName: item.profiles?.nome || "Usuário",
+            disponivel: item.status === 'disponivel',
+            descricao: item.descricao
+        };
+
+        const resultado = criarReserva(item.id, itemFormatado, item.profiles?.nome || "Usuário");
+    };
+
+    const filteredItems = itens.filter(item => {
+        const matchesSearch = item.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (item.tamanho && item.tamanho.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                            (item.profiles?.bairro && item.profiles.bairro.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                            (item.profiles?.cidade && item.profiles.cidade.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                            item.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            item.descricao.toLowerCase().includes(searchTerm.toLowerCase());
         
         const matchesCategory = categoriaFiltro === "todas" || 
-                              item.categoria.toLowerCase() === categoriaFiltro;
+                              item.categoria === categoriaFiltro;
         
         return matchesSearch && matchesCategory;
     });
@@ -195,6 +87,44 @@ const Feed = () => {
         const cat = categorias.find(c => c.value === categoria.toLowerCase());
         return cat ? cat.icon : Heart;
     };
+
+    const formatarEstado = (estado: string) => {
+        const estados = {
+            'novo': 'Novo',
+            'otimo': 'Ótimo estado',
+            'bom': 'Bom estado',
+            'razoavel': 'Estado razoável'
+        };
+        return estados[estado as keyof typeof estados] || estado;
+    };
+
+    const formatarCategoria = (categoria: string) => {
+        const categorias = {
+            'roupa': 'Roupas',
+            'brinquedo': 'Brinquedos',
+            'calcado': 'Calçados',
+            'acessorio': 'Acessórios',
+            'kit': 'Kits',
+            'outro': 'Outros'
+        };
+        return categorias[categoria as keyof typeof categorias] || categoria;
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24 md:pb-8">
+                <Header />
+                <main className="flex-grow container mx-auto px-4 py-8">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                            <p className="text-gray-600">Carregando itens...</p>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24 md:pb-8">
@@ -218,7 +148,7 @@ const Feed = () => {
                         <div className="relative w-full md:w-80">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <Input 
-                                placeholder="Buscar por item, idade, tamanho..." 
+                                placeholder="Buscar por item, tamanho, localização..." 
                                 className="pl-10 bg-white/80 backdrop-blur-sm border-primary/20 focus:border-primary" 
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -247,14 +177,17 @@ const Feed = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filteredItems.map(item => {
-                        const isReserved = isItemReservado(item.id) || !item.disponivel;
-                        const semSaldo = saldo < item.girinhas;
+                        const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
+                        const semSaldo = saldo < Number(item.valor_girinhas);
                         const CategoryIcon = getCategoryIcon(item.categoria);
+                        const imagemPrincipal = item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=300";
+                        const localizacao = item.profiles?.bairro || item.profiles?.cidade || "Localização não informada";
+                        const nomeMae = item.profiles?.nome || "Usuário";
                         
                         return (
                             <Card key={item.id} className="overflow-hidden shadow-lg transform hover:-translate-y-1 transition-all duration-300 flex flex-col border-0 bg-white/80 backdrop-blur-sm">
                                 <CardHeader className="p-0 relative">
-                                    <img src={item.image} alt={item.title} className="w-full h-48 object-cover" />
+                                    <img src={imagemPrincipal} alt={item.titulo} className="w-full h-48 object-cover" />
                                     <div className="absolute top-2 right-2">
                                         <Badge className={`${isReserved ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
                                             {isReserved ? 'Reservado' : 'Disponível'}
@@ -262,32 +195,31 @@ const Feed = () => {
                                     </div>
                                     <div className="absolute top-2 left-2 flex flex-col gap-1">
                                         <Badge variant="secondary" className="bg-primary/10 text-primary">
-                                            {item.estado}
+                                            {formatarEstado(item.estado_conservacao)}
                                         </Badge>
                                         <Badge variant="outline" className="bg-white/90 text-gray-700 text-xs">
                                             <CategoryIcon className="w-3 h-3 mr-1" />
-                                            {item.categoria}
+                                            {formatarCategoria(item.categoria)}
                                         </Badge>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-4 flex-grow">
-                                    <CardTitle className="text-lg mb-2 text-gray-800 line-clamp-2">{item.title}</CardTitle>
+                                    <CardTitle className="text-lg mb-2 text-gray-800 line-clamp-2">{item.titulo}</CardTitle>
                                     <div className="space-y-1 text-sm text-gray-600">
-                                        <p><strong>Idade:</strong> {item.idade}</p>
-                                        <p><strong>Tamanho:</strong> {item.size}</p>
+                                        {item.tamanho && <p><strong>Tamanho:</strong> {item.tamanho}</p>}
                                         <p className="text-xs text-gray-500 line-clamp-2">{item.descricao}</p>
                                         <div className="flex items-center gap-1 pt-1">
                                             <MapPin className="w-3 h-3" />
-                                            <span className="text-xs">{item.localizacao}</span>
+                                            <span className="text-xs">{localizacao}</span>
                                         </div>
-                                        <p className="text-primary font-medium text-sm">Por {item.maeName}</p>
+                                        <p className="text-primary font-medium text-sm">Por {nomeMae}</p>
                                     </div>
                                 </CardContent>
                                 <CardFooter className="p-4 bg-muted/20">
                                     <div className="flex justify-between items-center w-full">
                                         <p className={`font-bold flex items-center gap-1 ${semSaldo && !isReserved ? 'text-red-500' : 'text-primary'}`}>
                                             <Sparkles className="w-4 h-4" />
-                                            {item.girinhas}
+                                            {item.valor_girinhas}
                                         </p>
                                         <div className="flex gap-2">
                                             <Button 
@@ -317,13 +249,18 @@ const Feed = () => {
                     })}
                 </div>
 
-                {filteredItems.length === 0 && (
+                {!loading && filteredItems.length === 0 && (
                     <div className="text-center py-12">
                         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                             <Search className="w-12 h-12 text-primary" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhum item encontrado</h3>
-                        <p className="text-gray-600">Tente ajustar sua busca ou explorar outras categorias.</p>
+                        <p className="text-gray-600">
+                            {itens.length === 0 
+                                ? "Ainda não há itens publicados. Seja a primeira a compartilhar!" 
+                                : "Tente ajustar sua busca ou explorar outras categorias."
+                            }
+                        </p>
                     </div>
                 )}
             </main>

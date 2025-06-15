@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -222,10 +221,49 @@ export const useItens = () => {
     }
   };
 
+  const buscarTodosItens = async (): Promise<Item[]> => {
+    try {
+      setLoading(true);
+      console.log('Buscando todos os itens disponíveis...');
+      
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          profiles!itens_publicado_por_fkey (
+            nome,
+            bairro,
+            cidade
+          )
+        `)
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar itens:', error);
+        throw error;
+      }
+
+      console.log('Itens encontrados:', data);
+      return data || [];
+    } catch (error) {
+      console.error('Erro ao buscar itens:', error);
+      toast({
+        title: "Erro ao carregar itens",
+        description: "Não foi possível carregar os itens. Tente novamente.",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     publicarItem,
     atualizarItem,
     buscarMeusItens,
+    buscarTodosItens,
     loading
   };
 };
