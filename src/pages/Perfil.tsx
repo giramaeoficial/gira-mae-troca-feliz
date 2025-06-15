@@ -217,7 +217,7 @@ const Perfil = () => {
                                     Meus Itens ({meusItens.length})
                                 </TabsTrigger>
                                 <TabsTrigger value="trocas" className="data-[state=active]:bg-primary data-[state=active]:text-white">
-                                    Minhas Trocas (0)
+                                    Minhas Trocas
                                 </TabsTrigger>
                                 <TabsTrigger value="filhos" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                                     Meus Filhos ({filhos.length})
@@ -289,37 +289,7 @@ const Perfil = () => {
                             </TabsContent>
                             
                             <TabsContent value="trocas" className="mt-6">
-                                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <Gift className="w-5 h-5 text-primary" />
-                                            Histórico de Trocas
-                                        </CardTitle>
-                                        <CardDescription>Suas últimas trocas realizadas na comunidade.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
-                                            {[
-                                                { item: "Macacão Tip Top", maes: "com Carla M.", data: "há 2 dias", valor: 18, status: "Concluída" },
-                                                { item: "Kit Bodies", maes: "com Fernanda S.", data: "há 1 semana", valor: 22, status: "Concluída" },
-                                                { item: "Sapatilha Rosa", maes: "com Juliana L.", data: "há 2 semanas", valor: 15, status: "Concluída" }
-                                            ].map((troca, index) => (
-                                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                                    <div>
-                                                        <p className="font-medium text-gray-800">{troca.item}</p>
-                                                        <p className="text-sm text-gray-600">{troca.maes} • {troca.data}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="font-semibold text-primary">+{troca.valor} Girinhas</p>
-                                                        <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-                                                            {troca.status}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                <MinhasTrocas />
                             </TabsContent>
                             
                             <TabsContent value="filhos" className="mt-6">
