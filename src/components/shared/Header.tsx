@@ -1,6 +1,6 @@
 
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Sparkles, Menu, User, Wallet, ShoppingBag, Plus, LogOut, LogIn, Clock } from "lucide-react";
+import { Sparkles, Menu, User, Wallet, ShoppingBag, Plus, LogOut, LogIn, Clock, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -57,6 +57,13 @@ const Header = ({ activePage }: HeaderProps) => {
             >
               <Plus className="w-4 h-4" />
               Publicar
+            </Link>
+            <Link 
+              to="/favoritos" 
+              className={cn("text-muted-foreground hover:text-primary transition-colors flex items-center gap-2", { 'text-primary font-semibold': isActive('/favoritos') })}
+            >
+              <Heart className="w-4 h-4" />
+              Favoritos
             </Link>
             <Link 
               to="/minhas-reservas" 
@@ -146,6 +153,12 @@ const Header = ({ activePage }: HeaderProps) => {
                 <Link to="/publicar-item" className="flex items-center gap-2">
                   <Plus className="w-4 h-4" />
                   Publicar Item
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/favoritos" className="flex items-center gap-2">
+                  <Heart className="w-4 h-4" />
+                  Favoritos
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
