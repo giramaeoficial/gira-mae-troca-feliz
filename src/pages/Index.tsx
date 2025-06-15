@@ -1,96 +1,118 @@
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PackagePlus, HandCoins, Users, CheckCircle, Heart, Sparkles, Gift } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, Heart, Users, Recycle, Shield, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
+  const { user } = useAuth();
+
   return (
-    <div className="min-h-screen bg-background text-foreground pb-24 md:pb-8">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col">
       <Header />
-
+      
       {/* Hero Section */}
-      <main className="container mx-auto px-4 text-center mt-16 mb-24 animate-fade-in-up">
-        <div className="inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-4">
-          <Gift className="h-4 w-4 mr-2" />
-          Cadastre-se e ganhe 50 Girinhas para começar!
+      <section className="flex-grow flex items-center justify-center py-20 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="mb-8">
+            <div className="flex items-center justify-center mb-6">
+              <Sparkles className="h-16 w-16 text-primary mr-4" />
+              <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+                GiraMãe
+              </h1>
+            </div>
+            <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto">
+              A plataforma onde mães trocam roupas, brinquedos e acessórios infantis de forma segura e solidária
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              {user ? (
+                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
+                  <Link to="/feed">
+                    Explorar Itens
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button asChild size="lg" className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
+                  <Link to="/auth">
+                    Começar Agora
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
+              <Button asChild variant="outline" size="lg" className="px-8 py-4 text-lg rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300">
+                <Link to="/feed">Ver Itens Disponíveis</Link>
+              </Button>
+            </div>
+          </div>
         </div>
-        <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-tight">
-          A economia <span className="text-primary">circular e afetiva</span> para mães
-        </h1>
-        <p className="mt-6 text-lg text-muted-foreground max-w-3xl mx-auto">
-          Troque roupas e acessórios infantis sem usar dinheiro. Cada mãe ganha um saldo inicial para começar a girar a economia. Participe de uma comunidade de mães que se ajudam!
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <Button size="lg" className="bg-primary hover:bg-primary/90">Quero participar!</Button>
-          <Button size="lg" variant="outline" onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}>Saber mais</Button>
-        </div>
-      </main>
+      </section>
 
-      {/* How it Works Section */}
-      <section id="como-funciona" className="py-20 bg-muted">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-12">Como o <span className="text-secondary">GiraMãe</span> funciona?</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+      {/* Features Section */}
+      <section className="py-20 px-4 bg-white/50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-800">
+            Como Funciona
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="text-center border-0 bg-white/80 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
               <CardHeader>
-                <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
-                  <PackagePlus className="h-10 w-10 text-primary" />
-                </div>
-                <CardTitle className="mt-4">1. Publique e ganhe</CardTitle>
+                <Users className="h-12 w-12 mx-auto text-primary mb-4" />
+                <CardTitle className="text-xl text-gray-800">Comunidade Solidária</CardTitle>
               </CardHeader>
               <CardContent>
-                Publique o que seu filho não usa mais. Você define um valor em Girinhas (onde 1 Girinha equivale a R$1).
+                <CardDescription className="text-gray-600">
+                  Conecte-se com outras mães e forme uma rede de apoio para troca de itens infantis.
+                </CardDescription>
               </CardContent>
             </Card>
-            <Card className="text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+
+            <Card className="text-center border-0 bg-white/80 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
               <CardHeader>
-                <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
-                  <HandCoins className="h-10 w-10 text-primary" />
-                </div>
-                <CardTitle className="mt-4">2. Use suas Girinhas</CardTitle>
+                <Recycle className="h-12 w-12 mx-auto text-primary mb-4" />
+                <CardTitle className="text-xl text-gray-800">Economia Circular</CardTitle>
               </CardHeader>
               <CardContent>
-                Use suas 50 Girinhas iniciais ou as que ganhar para "comprar" itens de outras mães, sem gastar nada.
+                <CardDescription className="text-gray-600">
+                  Reutilize itens em ótimo estado e contribua para um futuro mais sustentável.
+                </CardDescription>
               </CardContent>
             </Card>
-            <Card className="text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+
+            <Card className="text-center border-0 bg-white/80 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
               <CardHeader>
-                <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
-                  <Users className="h-10 w-10 text-primary" />
-                </div>
-                <CardTitle className="mt-4">3. Combine a entrega</CardTitle>
+                <Shield className="h-12 w-12 mx-auto text-primary mb-4" />
+                <CardTitle className="text-xl text-gray-800">Trocas Seguras</CardTitle>
               </CardHeader>
               <CardContent>
-                Converse com a outra mãe por chat e combinem a entrega em um local seguro ou ponto de encontro.
-              </CardContent>
-            </Card>
-            <Card className="text-center shadow-lg transform hover:scale-105 transition-transform duration-300">
-              <CardHeader>
-                <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit">
-                  <CheckCircle className="h-10 w-10 text-primary" />
-                </div>
-                <CardTitle className="mt-4">4. Acumule e troque</CardTitle>
-              </CardHeader>
-              <CardContent>
-                As Girinhas que você recebe por suas doações vão para seu saldo, prontas para novas trocas!
+                <CardDescription className="text-gray-600">
+                  Sistema de reputação e avaliações garante transações confiáveis e seguras.
+                </CardDescription>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Why Buy Girinhas Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4">E se eu não tiver nada para trocar agora?</h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-8">
-            Sem problemas! Se você precisa de um item com urgência e ainda não publicou nada, ou quer mais Girinhas para uma troca maior, você pode comprar pacotes e acelerar suas trocas.
+      {/* CTA Section */}
+      <section className="py-20 px-4 bg-gradient-to-r from-primary to-pink-500 text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Pronta para Começar?
+          </h2>
+          <p className="text-xl mb-8 opacity-90">
+            Junte-se à nossa comunidade e descubra como é fácil e gratificante trocar itens infantis.
           </p>
-          <Button asChild size="lg">
-            <Link to="/comprar-girinhas">Ver Pacotes de Girinhas</Link>
-          </Button>
+          {!user && (
+            <Button asChild size="lg" variant="secondary" className="px-8 py-4 text-lg rounded-full bg-white text-primary hover:bg-gray-100 transform hover:scale-105 transition-all duration-300">
+              <Link to="/auth">
+                Criar Conta Grátis
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          )}
         </div>
       </section>
 
@@ -98,17 +120,10 @@ const Index = () => {
       <footer className="bg-muted py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
-             <Link to="/" className="flex items-center text-primary">
-                <Sparkles className="h-6 w-6 mr-2" />
-                GiraMãe
-            </Link>
+            <Sparkles className="h-6 w-6 mr-2" />
+            GiraMãe
           </div>
           <p>&copy; {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
-          <div className="flex justify-center gap-6 mt-4">
-            <a href="#" className="hover:text-primary">Sobre</a>
-            <a href="#" className="hover:text-primary">FAQ</a>
-            <a href="#" className="hover:text-primary">Contato</a>
-          </div>
         </div>
       </footer>
     </div>

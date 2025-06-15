@@ -5,9 +5,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import QuickNav from "@/components/shared/QuickNav";
+import { AuthProvider } from "@/hooks/useAuth";
+import AuthGuard from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import ComprarGirinhas from "./pages/ComprarGirinhas";
 import Login from "./pages/Login";
+import Auth from "./pages/Auth";
 import Feed from "./pages/Feed";
 import PublicarItem from "./pages/PublicarItem";
 import Perfil from "./pages/Perfil";
@@ -27,30 +30,88 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <CarteiraProvider>
-        <ReservasProvider>
-          <BrowserRouter>
-            <div className="relative">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/comprar-girinhas" element={<ComprarGirinhas />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/cadastro" element={<Cadastro />} />
-                <Route path="/feed" element={<Feed />} />
-                <Route path="/item/:id" element={<DetalhesItem />} />
-                <Route path="/publicar-item" element={<PublicarItem />} />
-                <Route path="/carteira" element={<Carteira />} />
-                <Route path="/perfil" element={<Perfil />} />
-                <Route path="/perfil/:nome" element={<PerfilPublico />} />
-                <Route path="/minhas-reservas" element={<MinhasReservas />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <QuickNav />
-            </div>
-          </BrowserRouter>
-        </ReservasProvider>
-      </CarteiraProvider>
+      <AuthProvider>
+        <CarteiraProvider>
+          <ReservasProvider>
+            <BrowserRouter>
+              <div className="relative">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/cadastro" element={<Cadastro />} />
+                  <Route 
+                    path="/comprar-girinhas" 
+                    element={
+                      <AuthGuard>
+                        <ComprarGirinhas />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route 
+                    path="/feed" 
+                    element={
+                      <AuthGuard>
+                        <Feed />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route 
+                    path="/item/:id" 
+                    element={
+                      <AuthGuard>
+                        <DetalhesItem />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route 
+                    path="/publicar-item" 
+                    element={
+                      <AuthGuard>
+                        <PublicarItem />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route 
+                    path="/carteira" 
+                    element={
+                      <AuthGuard>
+                        <Carteira />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route 
+                    path="/perfil" 
+                    element={
+                      <AuthGuard>
+                        <Perfil />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route 
+                    path="/perfil/:nome" 
+                    element={
+                      <AuthGuard>
+                        <PerfilPublico />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route 
+                    path="/minhas-reservas" 
+                    element={
+                      <AuthGuard>
+                        <MinhasReservas />
+                      </AuthGuard>
+                    } 
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <QuickNav />
+              </div>
+            </BrowserRouter>
+          </ReservasProvider>
+        </CarteiraProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
