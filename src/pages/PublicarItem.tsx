@@ -12,7 +12,8 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Camera, X } from "lucide-react";
+import { useState } from "react";
 
 const itemSchema = z.object({
   title: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
@@ -21,7 +22,7 @@ const itemSchema = z.object({
   state: z.string().min(1, "Selecione o estado de conservação"),
   size: z.string().optional(),
   girinhas: z.number().min(1, "Valor deve ser maior que 0").max(500, "Valor máximo de 500 Girinhas"),
-  picture: z.any().optional()
+  pictures: z.array(z.any()).max(3, "Máximo de 3 fotos").optional()
 });
 
 type ItemFormData = z.infer<typeof itemSchema>;
@@ -29,6 +30,7 @@ type ItemFormData = z.infer<typeof itemSchema>;
 const PublicarItem = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
     const form = useForm<ItemFormData>({
         resolver: zodResolver(itemSchema),
@@ -39,19 +41,55 @@ const PublicarItem = () => {
             state: "",
             size: "",
             girinhas: 0,
+            pictures: []
         }
     });
 
+    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files) return;
+
+        const newImages: string[] = [];
+        const remainingSlots = 3 - selectedImages.length;
+        const filesToProcess = Math.min(files.length, remainingSlots);
+
+        for (let i = 0; i < filesToProcess; i++) {
+            const file = files[i];
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageUrl = e.target?.result as string;
+                    newImages.push(imageUrl);
+                    
+                    if (newImages.length === filesToProcess) {
+                        setSelectedImages(prev => [...prev, ...newImages]);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Reset input
+        event.target.value = '';
+    };
+
+    const removeImage = (indexToRemove: number) => {
+        setSelectedImages(prev => prev.filter((_, index) => index !== indexToRemove));
+    };
+
     const onSubmit = (data: ItemFormData) => {
-        console.log("Item publicado:", data);
+        const itemData = {
+            ...data,
+            pictures: selectedImages
+        };
         
-        // Simular salvamento
+        console.log("Item publicado:", itemData);
+        
         toast({
             title: "Item publicado com sucesso! 🎉",
             description: `${data.title} foi adicionado à sua lista de itens.`,
         });
 
-        // Redirecionar para o perfil após 1.5 segundos
         setTimeout(() => {
             navigate("/perfil");
         }, 1500);
@@ -74,6 +112,59 @@ const PublicarItem = () => {
                     <CardContent>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                {/* Fotos do Item */}
+                                <div className="space-y-4">
+                                    <Label>Fotos do item (até 3)</Label>
+                                    
+                                    {/* Preview das imagens */}
+                                    {selectedImages.length > 0 && (
+                                        <div className="grid grid-cols-3 gap-4">
+                                            {selectedImages.map((image, index) => (
+                                                <div key={index} className="relative">
+                                                    <img 
+                                                        src={image} 
+                                                        alt={`Preview ${index + 1}`}
+                                                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeImage(index)}
+                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Upload de novas imagens */}
+                                    {selectedImages.length < 3 && (
+                                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                onChange={handleImageUpload}
+                                                className="hidden"
+                                                id="photo-upload"
+                                            />
+                                            <label 
+                                                htmlFor="photo-upload" 
+                                                className="cursor-pointer flex flex-col items-center gap-2"
+                                            >
+                                                <Camera className="w-8 h-8 text-gray-400" />
+                                                <span className="text-sm text-gray-600">
+                                                    Clique para adicionar fotos
+                                                </span>
+                                                <span className="text-xs text-gray-500">
+                                                    {selectedImages.length}/3 fotos adicionadas
+                                                </span>
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <FormField
                                     control={form.control}
                                     name="title"
@@ -188,20 +279,6 @@ const PublicarItem = () => {
                                         )}
                                     />
                                 </div>
-
-                                <FormField
-                                    control={form.control}
-                                    name="picture"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Foto do item</FormLabel>
-                                            <FormControl>
-                                                <Input type="file" accept="image/*" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
 
                                 <Button 
                                     size="lg" 
