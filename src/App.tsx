@@ -19,8 +19,6 @@ import Indicacoes from './pages/Indicacoes';
 import { AuthProvider } from './hooks/useAuth';
 import { CarteiraProvider } from './contexts/CarteiraContext';
 import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
-import { useRecompensasAutomaticas } from './hooks/useRecompensasAutomaticas';
-import { useMonitorMetas } from './hooks/useMonitorMetas';
 import { memo } from 'react';
 
 const queryClient = new QueryClient({
@@ -28,14 +26,13 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutos
       gcTime: 10 * 60 * 1000, // 10 minutos
+      refetchOnWindowFocus: false,
+      retry: 1
     },
   },
 });
 
 const AppContent = memo(() => {
-  useRecompensasAutomaticas();
-  useMonitorMetas();
-  
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
       <Toaster />
