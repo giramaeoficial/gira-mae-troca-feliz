@@ -15,7 +15,10 @@ type NovoItem = {
   valor_girinhas: number;
 };
 
-type AtualizarItem = Partial<NovoItem> & { id: string };
+type AtualizarItem = Partial<NovoItem> & { 
+  id: string;
+  fotos?: string[];
+};
 
 export const useItens = () => {
   const { user } = useAuth();
@@ -149,7 +152,7 @@ export const useItens = () => {
       // Preparar dados para atualização (removendo o id dos dados)
       const { id, ...dadosParaAtualizacao } = itemData;
       
-      // Se há novas fotos, adicionar às existentes
+      // Se há novas fotos, substituir as existentes
       if (novasFotosUrls.length > 0) {
         dadosParaAtualizacao.fotos = novasFotosUrls;
       }
