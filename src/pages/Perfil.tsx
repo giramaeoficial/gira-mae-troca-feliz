@@ -16,7 +16,7 @@ const Perfil = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col">
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24 md:pb-8">
             <Header />
             <main className="flex-grow container mx-auto px-4 py-8">
                 <div className="flex flex-col lg:flex-row gap-8 items-start">
