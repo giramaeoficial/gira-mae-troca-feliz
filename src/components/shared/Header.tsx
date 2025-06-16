@@ -54,7 +54,7 @@ const Header = ({ activePage }: HeaderProps) => {
               </Link>
 
               <Link
-                to="/publicar-item"
+                to="/publicar"
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   activePage === "publicar"
                     ? "bg-primary text-primary-foreground"
@@ -66,7 +66,7 @@ const Header = ({ activePage }: HeaderProps) => {
               </Link>
 
               <Link
-                to="/minhas-reservas"
+                to="/reservas"
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   activePage === "reservas"
                     ? "bg-primary text-primary-foreground"
