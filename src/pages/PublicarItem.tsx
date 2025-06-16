@@ -1,4 +1,6 @@
+
 import Header from "@/components/shared/Header";
+import QuickNav from "@/components/shared/QuickNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { Sparkles, Camera, X } from "lucide-react";
 import { useState } from "react";
 import { useItens } from "@/hooks/useItens";
+import { useToast } from "@/hooks/use-toast";
 
 const itemSchema = z.object({
   titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
@@ -31,6 +34,7 @@ type ItemFormData = z.infer<typeof itemSchema>;
 
 const PublicarItem = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const { publicarItem, loading } = useItens();
@@ -84,23 +88,36 @@ const PublicarItem = () => {
     };
 
     const onSubmit = async (data: ItemFormData) => {
-        // Garantir que todas as propriedades obrigatórias estão presentes
-        const itemData = {
-            titulo: data.titulo,
-            descricao: data.descricao,
-            categoria: data.categoria!,
-            estado_conservacao: data.estado_conservacao!,
-            tamanho: data.tamanho || null,
-            valor_girinhas: data.valor_girinhas,
-            fotos: selectedFiles.length > 0 ? ['placeholder-image-url'] : undefined // Simplificado por enquanto
-        };
-        
-        const sucesso = await publicarItem(itemData);
-        
-        if (sucesso) {
-            setTimeout(() => {
-                navigate("/perfil");
-            }, 1500);
+        try {
+            const itemData = {
+                titulo: data.titulo,
+                descricao: data.descricao,
+                categoria: data.categoria!,
+                estado_conservacao: data.estado_conservacao!,
+                tamanho: data.tamanho || null,
+                valor_girinhas: data.valor_girinhas,
+                fotos: selectedFiles.length > 0 ? ['placeholder-image-url'] : undefined
+            };
+            
+            const sucesso = await publicarItem(itemData);
+            
+            if (sucesso) {
+                toast({
+                    title: "Item publicado com sucesso!",
+                    description: "Seu item está agora disponível na comunidade.",
+                });
+                
+                setTimeout(() => {
+                    navigate("/perfil");
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Erro ao publicar item:', error);
+            toast({
+                title: "Erro ao publicar item",
+                description: "Tente novamente em alguns instantes.",
+                variant: "destructive"
+            });
         }
     };
 
@@ -302,6 +319,7 @@ const PublicarItem = () => {
                     </CardContent>
                 </Card>
             </main>
+            <QuickNav />
         </div>
     );
 }

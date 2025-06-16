@@ -385,7 +385,22 @@ export type Database = {
           indicado_id?: string
           indicador_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "indicacoes_indicado_id_fkey"
+            columns: ["indicado_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicacoes_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       itens: {
         Row: {
@@ -773,6 +788,14 @@ export type Database = {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
       }
+      distribuir_girinhas_promocionais: {
+        Args: {
+          p_valor: number
+          p_descricao: string
+          p_apenas_ativas?: boolean
+        }
+        Returns: number
+      }
       entrar_fila_espera: {
         Args: {
           p_item_id: string
@@ -780,6 +803,10 @@ export type Database = {
           p_valor_girinhas: number
         }
         Returns: Json
+      }
+      inicializar_metas_usuario: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
       obter_estatisticas_seguidor: {
         Args: { p_usuario_id: string }
@@ -803,6 +830,10 @@ export type Database = {
         Args: { p_tipo_bonus: string }
         Returns: number
       }
+      processar_bonus_indicacao: {
+        Args: { p_indicado_id: string; p_tipo_bonus: string }
+        Returns: undefined
+      }
       processar_compra_girinhas: {
         Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
         Returns: string
@@ -814,6 +845,10 @@ export type Database = {
       processar_reserva: {
         Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }
         Returns: string
+      }
+      processar_taxa_transacao: {
+        Args: { p_reserva_id: string }
+        Returns: undefined
       }
       registrar_indicacao: {
         Args: { p_indicador_id: string; p_indicado_id: string }
