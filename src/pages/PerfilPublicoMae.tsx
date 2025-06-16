@@ -9,9 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, MapPin, Star, Calendar, Users, Package, Heart } from "lucide-react";
-import { useProfile } from "@/hooks/useProfile";
-import { useItens } from "@/hooks/useItens";
-import { useSeguidores } from "@/hooks/useSeguidores";
+import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<'profiles'>;
@@ -20,44 +18,80 @@ type Item = Tables<'itens'>;
 const PerfilPublicoMae = () => {
   const { nome } = useParams<{ nome: string }>();
   const navigate = useNavigate();
-  const { profile, loading: profileLoading, fetchProfileByName } = useProfile();
-  const { buscarItensDoUsuario } = useItens();
-  const { buscarEstatisticas } = useSeguidores();
   
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [itens, setItens] = useState<Item[]>([]);
   const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const carregarDados = async () => {
-      if (!nome) return;
+      if (!nome) {
+        setError('Nome do perfil não informado');
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
+        setError(null);
+        
+        console.log('Buscando perfil por nome:', nome);
         
         // Buscar perfil por nome
-        const perfilEncontrado = await fetchProfileByName(nome);
-        
-        if (perfilEncontrado) {
-          // Buscar itens do usuário
-          const itensUsuario = await buscarItensDoUsuario(perfilEncontrado.id);
-          setItens(itensUsuario);
-          
-          // Buscar estatísticas de seguidores
-          const stats = await buscarEstatisticas(perfilEncontrado.id);
-          setEstatisticas(stats);
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('nome', decodeURIComponent(nome))
+          .single();
+
+        if (profileError) {
+          console.error('Erro ao buscar perfil:', profileError);
+          setError('Perfil não encontrado');
+          setLoading(false);
+          return;
         }
+
+        console.log('Perfil encontrado:', profileData);
+        setProfile(profileData);
+        
+        // Buscar itens do usuário
+        const { data: itensData, error: itensError } = await supabase
+          .from('itens')
+          .select('*')
+          .eq('publicado_por', profileData.id)
+          .eq('status', 'disponivel')
+          .order('created_at', { ascending: false });
+
+        if (itensError) {
+          console.error('Erro ao buscar itens:', itensError);
+        } else {
+          setItens(itensData || []);
+        }
+        
+        // Buscar estatísticas de seguidores
+        const { data: statsData, error: statsError } = await supabase
+          .rpc('obter_estatisticas_seguidor', { p_usuario_id: profileData.id });
+
+        if (statsError) {
+          console.error('Erro ao buscar estatísticas:', statsError);
+        } else {
+          setEstatisticas(statsData?.[0] || { total_seguindo: 0, total_seguidores: 0 });
+        }
+        
       } catch (error) {
         console.error('Erro ao carregar dados do perfil:', error);
+        setError('Erro ao carregar perfil');
       } finally {
         setLoading(false);
       }
     };
 
     carregarDados();
-  }, [nome, fetchProfileByName, buscarItensDoUsuario, buscarEstatisticas]);
+  }, [nome]);
 
-  if (loading || profileLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
@@ -72,7 +106,7 @@ const PerfilPublicoMae = () => {
     );
   }
 
-  if (!profile) {
+  if (error || !profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
@@ -80,7 +114,7 @@ const PerfilPublicoMae = () => {
           <Card className="max-w-md mx-auto text-center">
             <CardContent className="p-8">
               <h2 className="text-2xl font-bold mb-4">Perfil não encontrado</h2>
-              <p className="text-gray-600 mb-6">O perfil que você está procurando não existe.</p>
+              <p className="text-gray-600 mb-6">{error || 'O perfil que você está procurando não existe.'}</p>
               <Button onClick={() => navigate(-1)}>Voltar</Button>
             </CardContent>
           </Card>
