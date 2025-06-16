@@ -4,11 +4,30 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
-type Indicacao = Tables<'indicacoes'>;
+type Indicacao = Tables<'indicacoes'> & {
+  profiles?: {
+    id: string;
+    nome: string | null;
+    email: string | null;
+    avatar_url: string | null;
+    created_at: string | null;
+  };
+};
+
+type IndicadoInfo = Tables<'indicacoes'> & {
+  profiles?: {
+    id: string;
+    nome: string | null;
+    email: string | null;
+    avatar_url: string | null;
+    created_at: string | null;
+  };
+};
 
 export const useIndicacoes = () => {
   const { user } = useAuth();
   const [indicacoes, setIndicacoes] = useState<Indicacao[]>([]);
+  const [indicados, setIndicados] = useState<IndicadoInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,6 +43,7 @@ export const useIndicacoes = () => {
           profiles!indicacoes_indicado_id_fkey (
             id,
             nome,
+            email,
             avatar_url,
             created_at
           )
@@ -44,16 +64,59 @@ export const useIndicacoes = () => {
     }
   };
 
-  const registrarIndicacao = async (indicadoId: string) => {
+  const buscarQuemMeIndicou = async () => {
+    if (!user) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from('indicacoes')
+        .select(`
+          *,
+          profiles!indicacoes_indicador_id_fkey (
+            id,
+            nome,
+            email,
+            avatar_url,
+            created_at
+          )
+        `)
+        .eq('indicado_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setIndicados(data || []);
+      return data || [];
+    } catch (err) {
+      console.error('Erro ao buscar quem me indicou:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar indicações');
+      return [];
+    }
+  };
+
+  const registrarIndicacao = async (emailIndicado: string) => {
     if (!user) return false;
 
     try {
       setLoading(true);
+      
+      // Buscar usuário pelo email
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', emailIndicado)
+        .single();
+
+      if (profileError || !profileData) {
+        setError('Usuário não encontrado com este email');
+        return false;
+      }
+
       const { error } = await supabase
         .from('indicacoes')
         .insert({
           indicador_id: user.id,
-          indicado_id: indicadoId
+          indicado_id: profileData.id
         });
 
       if (error) throw error;
@@ -68,6 +131,30 @@ export const useIndicacoes = () => {
       return false;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const compartilharIndicacao = async () => {
+    if (!user) return;
+
+    try {
+      const linkIndicacao = `${window.location.origin}/?indicador=${user.id}`;
+      
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Venha para o GiraMãe!',
+          text: 'Olá! Te convido para participar do GiraMãe, uma plataforma incrível onde mães trocam itens infantis. Use meu link e ganhe bônus!',
+          url: linkIndicacao,
+        });
+      } else {
+        // Fallback para navegadores que não suportam Web Share API
+        await navigator.clipboard.writeText(linkIndicacao);
+        // Aqui você pode adicionar um toast de sucesso
+        console.log('Link copiado para a área de transferência!');
+      }
+    } catch (err) {
+      console.error('Erro ao compartilhar:', err);
+      setError('Erro ao compartilhar indicação');
     }
   };
 
@@ -119,15 +206,19 @@ export const useIndicacoes = () => {
   useEffect(() => {
     if (user) {
       buscarMinhasIndicacoes();
+      buscarQuemMeIndicou();
     }
   }, [user]);
 
   return {
     indicacoes,
+    indicados,
     loading,
     error,
     buscarMinhasIndicacoes,
+    buscarQuemMeIndicou,
     registrarIndicacao,
+    compartilharIndicacao,
     obterEstatisticas
   };
 };
