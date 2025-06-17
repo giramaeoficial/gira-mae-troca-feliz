@@ -138,95 +138,104 @@ const UniversalCard: React.FC<UniversalCardProps> = (props) => {
       return colors[estado as keyof typeof colors] || 'bg-gray-500 text-white';
     };
 
-    const CardWrapper = linkTo ? Link : 'div';
-    const wrapperProps = linkTo ? { to: linkTo } : {};
+    const cardContent = (
+      <>
+        <div className="relative">
+          <div className="w-full h-48 bg-gray-100">
+            <LazyImage
+              src={imagemPrincipal}
+              alt={data.titulo}
+              bucket="itens"
+              size="medium"
+              className="w-full h-full object-cover"
+              placeholder="📷"
+            />
+          </div>
+          
+          {onFavorite && (
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onFavorite();
+              }}
+              className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+            >
+              <Heart className={cn("w-4 h-4", isFavorite ? "fill-red-500 text-red-500" : "text-gray-600")} />
+            </button>
+          )}
+
+          <Badge className={cn("absolute top-2 left-2", getEstadoColor(data.estadoConservacao))}>
+            {data.estadoConservacao === 'novo' ? 'Novo' :
+             data.estadoConservacao === 'otimo' ? 'Ótimo' :
+             data.estadoConservacao === 'bom' ? 'Bom' : 'Razoável'}
+          </Badge>
+        </div>
+
+        <CardContent className="p-4">
+          {showAuthor && data.autorNome && (
+            <div className="flex items-center gap-2 mb-3">
+              <Avatar className="w-6 h-6">
+                <AvatarImage src={data.autorAvatar} />
+                <AvatarFallback className="text-xs">
+                  {data.autorNome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-sm text-primary hover:underline">
+                {data.autorNome}
+              </span>
+              {data.autorReputacao && (
+                <div className="flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <span className="text-xs text-gray-500">{(data.autorReputacao/20).toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2">{data.titulo}</h3>
+          
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+            <span>{formatarCategoria(data.categoria)}</span>
+            {data.tamanho && (
+              <>
+                <span>•</span>
+                <span>{data.tamanho}</span>
+              </>
+            )}
+          </div>
+
+          {data.descricao && (
+            <p className="text-xs text-gray-500 mb-3 line-clamp-2">{data.descricao}</p>
+          )}
+
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1 text-primary font-bold">
+              <Sparkles className="w-4 h-4" />
+              <span>{data.valorGirinhas}</span>
+            </div>
+            
+            {data.status === 'disponivel' && (
+              <Badge className="bg-green-500 text-white text-xs">
+                Disponível
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </>
+    );
 
     return (
       <Card className={baseCardClass}>
-        <CardWrapper {...wrapperProps}>
-          <div className="relative">
-            <div className="w-full h-48 bg-gray-100">
-              <LazyImage
-                src={imagemPrincipal}
-                alt={data.titulo}
-                bucket="itens"
-                size="medium"
-                className="w-full h-full object-cover"
-                placeholder="📷"
-              />
-            </div>
-            
-            {onFavorite && (
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onFavorite();
-                }}
-                className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
-              >
-                <Heart className={cn("w-4 h-4", isFavorite ? "fill-red-500 text-red-500" : "text-gray-600")} />
-              </button>
-            )}
-
-            <Badge className={cn("absolute top-2 left-2", getEstadoColor(data.estadoConservacao))}>
-              {data.estadoConservacao === 'novo' ? 'Novo' :
-               data.estadoConservacao === 'otimo' ? 'Ótimo' :
-               data.estadoConservacao === 'bom' ? 'Bom' : 'Razoável'}
-            </Badge>
+        {linkTo ? (
+          <Link to={linkTo}>
+            {cardContent}
+          </Link>
+        ) : (
+          <div>
+            {cardContent}
           </div>
-
-          <CardContent className="p-4">
-            {showAuthor && data.autorNome && (
-              <div className="flex items-center gap-2 mb-3">
-                <Avatar className="w-6 h-6">
-                  <AvatarImage src={data.autorAvatar} />
-                  <AvatarFallback className="text-xs">
-                    {data.autorNome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-sm text-primary hover:underline">
-                  {data.autorNome}
-                </span>
-                {data.autorReputacao && (
-                  <div className="flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs text-gray-500">{(data.autorReputacao/20).toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <h3 className="font-semibold text-gray-800 mb-1 line-clamp-2">{data.titulo}</h3>
-            
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-              <span>{formatarCategoria(data.categoria)}</span>
-              {data.tamanho && (
-                <>
-                  <span>•</span>
-                  <span>{data.tamanho}</span>
-                </>
-              )}
-            </div>
-
-            {data.descricao && (
-              <p className="text-xs text-gray-500 mb-3 line-clamp-2">{data.descricao}</p>
-            )}
-
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1 text-primary font-bold">
-                <Sparkles className="w-4 h-4" />
-                <span>{data.valorGirinhas}</span>
-              </div>
-              
-              {data.status === 'disponivel' && (
-                <Badge className="bg-green-500 text-white text-xs">
-                  Disponível
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </CardWrapper>
+        )}
       </Card>
     );
   }
@@ -267,55 +276,62 @@ const UniversalCard: React.FC<UniversalCardProps> = (props) => {
   if (props.variant === 'profile') {
     const { data, linkTo, onAction, actionLabel } = props;
 
-    const CardWrapper = linkTo ? Link : 'div';
-    const wrapperProps = linkTo ? { to: linkTo } : {};
+    const cardContent = (
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={data.avatar} />
+            <AvatarFallback>
+              {data.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-grow">
+            <h4 className="font-medium text-gray-800">{data.nome}</h4>
+            {data.localização && (
+              <p className="text-sm text-gray-600">{data.localização}</p>
+            )}
+            {data.reputacao && (
+              <div className="flex items-center gap-1 mt-1">
+                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                <span className="text-xs text-gray-500">{(data.reputacao/20).toFixed(1)}</span>
+              </div>
+            )}
+          </div>
+
+          {data.badge && (
+            <Badge variant={data.badgeVariant || 'secondary'} className="text-xs">
+              {data.badge}
+            </Badge>
+          )}
+
+          {onAction && actionLabel && (
+            <Button 
+              size="sm" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAction();
+              }}
+            >
+              {actionLabel}
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    );
 
     return (
       <Card className={cn(baseCardClass, 'hover:bg-gray-50')}>
-        <CardWrapper {...wrapperProps}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Avatar className="w-10 h-10">
-                <AvatarImage src={data.avatar} />
-                <AvatarFallback>
-                  {data.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-grow">
-                <h4 className="font-medium text-gray-800">{data.nome}</h4>
-                {data.localização && (
-                  <p className="text-sm text-gray-600">{data.localização}</p>
-                )}
-                {data.reputacao && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs text-gray-500">{(data.reputacao/20).toFixed(1)}</span>
-                  </div>
-                )}
-              </div>
-
-              {data.badge && (
-                <Badge variant={data.badgeVariant || 'secondary'} className="text-xs">
-                  {data.badge}
-                </Badge>
-              )}
-
-              {onAction && actionLabel && (
-                <Button 
-                  size="sm" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAction();
-                  }}
-                >
-                  {actionLabel}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </CardWrapper>
+        {linkTo ? (
+          <Link to={linkTo}>
+            {cardContent}
+          </Link>
+        ) : (
+          <div>
+            {cardContent}
+          </div>
+        )}
       </Card>
     );
   }
@@ -334,7 +350,7 @@ const UniversalCard: React.FC<UniversalCardProps> = (props) => {
                   src={data.foto}
                   alt={data.titulo}
                   bucket="itens"
-                  size="small"
+                  size="thumbnail"
                   className="w-full h-full object-cover"
                   placeholder="📷"
                 />
