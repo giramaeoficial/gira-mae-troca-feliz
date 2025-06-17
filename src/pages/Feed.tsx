@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -27,13 +28,19 @@ const Feed = () => {
     });
     
     const { user } = useAuth();
-    const { itens, loading, error } = useItens();
+    const { itens, loading, error, refetch } = useItens();
     const { favoritos, toggleFavorito, loading: favoritosLoading } = useFavoritos();
     const { entrarNaFila, isItemReservado } = useReservas();
     const { obterFilaItem } = useFilaEspera();
     const { saldo } = useCarteira();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
     const [filasInfo, setFilasInfo] = useState<Record<string, { total_fila: number; posicao_usuario: number }>>({});
+
+    // Carregar itens na montagem do componente
+    useEffect(() => {
+        console.log('Feed montado, carregando itens...');
+        refetch();
+    }, [refetch]);
 
     const handleFavoritar = async (itemId: string) => {
         setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
@@ -104,7 +111,7 @@ const Feed = () => {
                     title="Erro ao carregar itens"
                     description={error}
                     actionLabel="Tentar Novamente"
-                    onAction={() => window.location.reload()}
+                    onAction={() => refetch()}
                     className="mx-4 mt-8"
                 />
                 <QuickNav />
