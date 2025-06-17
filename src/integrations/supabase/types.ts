@@ -880,6 +880,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_municipios_por_uf: {
+        Args: { uf_param: string }
+        Returns: string[]
+      }
       inicializar_metas_usuario: {
         Args: { p_user_id: string }
         Returns: undefined

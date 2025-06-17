@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -36,10 +37,11 @@ export const useEscolas = (): UseEscolasReturn => {
     try {
       console.log('Buscando municípios únicos para UF:', uf);
       
-      // Usar RPC para buscar municípios únicos de forma mais eficiente
-      const { data, error: searchError } = await supabase.rpc('get_municipios_por_uf', {
-        uf_param: uf
-      });
+      // Usar chamada direta para a função RPC com casting de tipo
+      const { data, error: searchError } = await supabase
+        .rpc('get_municipios_por_uf' as any, {
+          uf_param: uf
+        });
 
       if (searchError) {
         console.error('Erro na RPC, tentando fallback:', searchError);
@@ -76,14 +78,16 @@ export const useEscolas = (): UseEscolasReturn => {
         
         setMunicipios(municipiosUnicos);
       } else {
-        console.log(`Encontrados ${data?.length || 0} municípios únicos para ${uf} (RPC)`);
-        console.log('Primeiros 10 municípios:', data?.slice(0, 10));
+        // Fazer cast do tipo de retorno para string[]
+        const municipiosData = data as string[];
+        console.log(`Encontrados ${municipiosData?.length || 0} municípios únicos para ${uf} (RPC)`);
+        console.log('Primeiros 10 municípios:', municipiosData?.slice(0, 10));
         
         // Verificar se Canoas está na lista
-        const temCanoas = data?.some((m: string) => m.toLowerCase().includes('canoas'));
+        const temCanoas = municipiosData?.some((m: string) => m.toLowerCase().includes('canoas'));
         console.log('Canoas encontrado:', temCanoas);
         
-        setMunicipios(data || []);
+        setMunicipios(municipiosData || []);
       }
     } catch (err) {
       console.error('Erro ao buscar municípios:', err);
