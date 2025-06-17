@@ -8,13 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, MessageCircle, Plus, Send } from "lucide-react";
+import { Search, MessageCircle, Plus, Send, ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Mensagens = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedConversa, setSelectedConversa] = useState<string | null>(null);
+  const [novaMensagem, setNovaMensagem] = useState("");
+  const [showNovaConversa, setShowNovaConversa] = useState(false);
 
-  // Mock data para demonstração
+  // Mock data para demonstração - em produção viria do Supabase
   const conversas = [
     {
       id: "1",
@@ -25,6 +30,29 @@ const Mensagens = () => {
       ultimaMensagem: "Oi! Ainda tem aquele vestido disponível?",
       timestamp: "2 min",
       naoLidas: 2,
+      mensagens: [
+        {
+          id: "1",
+          conteudo: "Oi! Vi seu perfil e gostei muito dos itens que você publica!",
+          remetente: "Maria Silva",
+          timestamp: "10:30",
+          minha: false
+        },
+        {
+          id: "2", 
+          conteudo: "Oi Maria! Obrigada! 😊",
+          remetente: "Você",
+          timestamp: "10:32",
+          minha: true
+        },
+        {
+          id: "3",
+          conteudo: "Ainda tem aquele vestido disponível?",
+          remetente: "Maria Silva", 
+          timestamp: "10:35",
+          minha: false
+        }
+      ]
     },
     {
       id: "2",
@@ -35,23 +63,141 @@ const Mensagens = () => {
       ultimaMensagem: "Obrigada pela troca! Minha filha adorou o brinquedo!",
       timestamp: "1h",
       naoLidas: 0,
-    },
-    {
-      id: "3",
-      participante: {
-        nome: "Carla Lima",
-        avatar: null,
-      },
-      ultimaMensagem: "Podemos combinar a entrega para amanhã?",
-      timestamp: "3h",
-      naoLidas: 1,
-    },
+      mensagens: [
+        {
+          id: "1",
+          conteudo: "Oi! Posso buscar o brinquedo hoje?",
+          remetente: "Ana Santos",
+          timestamp: "09:00",
+          minha: false
+        },
+        {
+          id: "2",
+          conteudo: "Claro! Pode vir aqui em casa depois das 14h",
+          remetente: "Você", 
+          timestamp: "09:05",
+          minha: true
+        },
+        {
+          id: "3",
+          conteudo: "Obrigada pela troca! Minha filha adorou o brinquedo!",
+          remetente: "Ana Santos",
+          timestamp: "15:30", 
+          minha: false
+        }
+      ]
+    }
   ];
 
   const filteredConversas = conversas.filter(conversa =>
     conversa.participante.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const conversaAtual = conversas.find(c => c.id === selectedConversa);
+
+  const handleEnviarMensagem = () => {
+    if (!novaMensagem.trim()) return;
+    
+    // Aqui você adicionaria a lógica para enviar via Supabase
+    toast({
+      title: "Mensagem enviada!",
+      description: "Sua mensagem foi enviada com sucesso.",
+    });
+    
+    setNovaMensagem("");
+  };
+
+  const handleNovaConversa = () => {
+    toast({
+      title: "Nova conversa",
+      description: "Em breve você poderá iniciar conversas com qualquer mãe da comunidade!",
+    });
+    setShowNovaConversa(false);
+  };
+
+  // Vista de conversa individual
+  if (selectedConversa && conversaAtual) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header activePage="mensagens" />
+        
+        {/* Header da conversa */}
+        <div className="bg-white border-b border-gray-200 p-4">
+          <div className="container mx-auto max-w-4xl">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSelectedConversa(null)}
+                className="md:hidden"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={conversaAtual.participante.avatar || undefined} />
+                <AvatarFallback>
+                  {conversaAtual.participante.nome.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div>
+                <h2 className="font-medium">{conversaAtual.participante.nome}</h2>
+                <p className="text-sm text-gray-500">Online agora</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mensagens */}
+        <div className="flex-1 container mx-auto max-w-4xl p-4 space-y-4 overflow-y-auto">
+          {conversaAtual.mensagens.map((mensagem) => (
+            <div
+              key={mensagem.id}
+              className={`flex ${mensagem.minha ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  mensagem.minha
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-white border border-gray-200'
+                }`}
+              >
+                <p className="text-sm">{mensagem.conteudo}</p>
+                <p className={`text-xs mt-1 ${
+                  mensagem.minha ? 'text-primary-foreground/70' : 'text-gray-500'
+                }`}>
+                  {mensagem.timestamp}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Input de nova mensagem */}
+        <div className="bg-white border-t border-gray-200 p-4 pb-24 md:pb-4">
+          <div className="container mx-auto max-w-4xl">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Digite sua mensagem..."
+                value={novaMensagem}
+                onChange={(e) => setNovaMensagem(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleEnviarMensagem()}
+                className="flex-1"
+              />
+              <Button onClick={handleEnviarMensagem} disabled={!novaMensagem.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <QuickNav />
+      </div>
+    );
+  }
+
+  // Vista principal das mensagens
   return (
     <div className="min-h-screen bg-gray-50">
       <Header activePage="mensagens" />
@@ -76,7 +222,10 @@ const Mensagens = () => {
                 className="pl-10"
               />
             </div>
-            <Button className="flex items-center gap-2">
+            <Button 
+              className="flex items-center gap-2"
+              onClick={() => setShowNovaConversa(true)}
+            >
               <Plus className="h-4 w-4" />
               Nova Conversa
             </Button>
@@ -101,7 +250,11 @@ const Mensagens = () => {
               </Card>
             ) : (
               filteredConversas.map((conversa) => (
-                <Card key={conversa.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card 
+                  key={conversa.id} 
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => setSelectedConversa(conversa.id)}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12">
@@ -137,6 +290,34 @@ const Mensagens = () => {
               ))
             )}
           </div>
+
+          {/* Modal/Dialog para nova conversa */}
+          {showNovaConversa && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <Card className="w-full max-w-md">
+                <CardHeader>
+                  <CardTitle>Nova Conversa</CardTitle>
+                  <CardDescription>
+                    Procure por uma mãe da comunidade para conversar
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Input placeholder="Digite o nome da mãe..." />
+                  <div className="flex gap-2 justify-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowNovaConversa(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleNovaConversa}>
+                      Iniciar Conversa
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Informação sobre mensagens livres */}
           <Card className="mt-6 bg-blue-50 border-blue-200">
