@@ -88,25 +88,27 @@ const LazyImage: React.FC<LazyImageProps> = ({
 
   return (
     <div className={cn('relative overflow-hidden', className)}>
-      {(!isLoaded || !isInView) && (
+      {/* Skeleton loading - só mostra se não carregou ainda e não deu erro */}
+      {(!isLoaded || !isInView) && !hasError && (
         <div 
           className={cn(
-            'absolute inset-0 bg-gray-200 animate-pulse',
+            'absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center',
             skeletonClassName
           )}
         >
           {placeholder && (
-            <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+            <div className="text-gray-400 text-sm">
               {placeholder}
             </div>
           )}
         </div>
       )}
 
-      {isInView && (
+      {/* Imagem real - só renderiza se estiver em view e não deu erro */}
+      {isInView && !hasError && (
         <img
           ref={imgRef}
-          src={hasError ? placeholder : imageUrl}
+          src={imageUrl}
           alt={alt}
           className={cn(
             'transition-opacity duration-300',
@@ -116,6 +118,19 @@ const LazyImage: React.FC<LazyImageProps> = ({
           onLoad={handleLoad}
           onError={handleError}
         />
+      )}
+
+      {/* Fallback de erro - elemento separado, não usa src */}
+      {hasError && (
+        <div className={cn(
+          'flex items-center justify-center h-full bg-gray-100 text-gray-400',
+          className
+        )}>
+          <div className="text-center">
+            <span className="text-4xl mb-2 block">📷</span>
+            <span className="text-sm">Imagem não encontrada</span>
+          </div>
+        </div>
       )}
     </div>
   );
