@@ -101,8 +101,9 @@ const PublicarItem = () => {
                     description: "Seu item está agora disponível na comunidade.",
                 });
                 
+                // Usar window.location.href ao invés de navigate para evitar problemas de chunk loading
                 setTimeout(() => {
-                    navigate("/perfil");
+                    window.location.href = "/perfil";
                 }, 1500);
             }
         } catch (error) {
@@ -133,12 +134,10 @@ const PublicarItem = () => {
                                 <CardDescription>Preencha os dados para que outras mães encontrem seu item na comunidade.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {/* Progresso do formulário */}
                                 <FormProgress steps={formSteps} />
 
                                 <Form {...form}>
                                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                        {/* Upload de Imagens com drag & drop */}
                                         <div className="space-y-4">
                                             <Label>Fotos do item (até 3) *</Label>
                                             <ImageUpload
@@ -299,7 +298,6 @@ const PublicarItem = () => {
                                             />
                                         </div>
 
-                                        {/* Sugestões de preço */}
                                         {watchedValues.categoria && (
                                             <PriceSuggestions
                                                 categoria={watchedValues.categoria}

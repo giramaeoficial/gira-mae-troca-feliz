@@ -29,6 +29,10 @@ export default defineConfig(({ mode }) => ({
           'vendor-router': ['react-router-dom'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-ui': ['lucide-react'],
+          // Separar páginas pesadas
+          'page-perfil': ['src/pages/Perfil.tsx'],
+          'page-publicar': ['src/pages/PublicarItem.tsx'],
+          'page-feed': ['src/pages/Feed.tsx']
         }
       }
     },
