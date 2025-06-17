@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CarteiraProvider } from "@/contexts/CarteiraContext";
-import { ProviderRecompensas } from "@/components/recompensas/ProviderRecompensas";
+import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -34,7 +34,7 @@ function App() {
       <TooltipProvider>
         <AuthProvider>
           <CarteiraProvider>
-            <ProviderRecompensas>
+            <RecompensasProvider>
               <ErrorBoundary>
                 <Toaster />
                 <Sonner />
@@ -136,7 +136,7 @@ function App() {
                   </Routes>
                 </BrowserRouter>
               </ErrorBoundary>
-            </ProviderRecompensas>
+            </RecompensasProvider>
           </CarteiraProvider>
         </AuthProvider>
       </TooltipProvider>
