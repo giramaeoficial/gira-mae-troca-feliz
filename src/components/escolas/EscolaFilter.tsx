@@ -52,6 +52,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
   const [estado, setEstado] = useState('');
   const [municipio, setMunicipio] = useState('');
   const [nomeEscola, setNomeEscola] = useState('');
+  const [lastEstadoBuscado, setLastEstadoBuscado] = useState('');
 
   const { 
     escolas, 
@@ -62,13 +63,14 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
     buscarMunicipios 
   } = useEscolas();
 
-  // Buscar municípios quando o estado mudar
+  // Buscar municípios quando o estado mudar, mas evitar loops
   useEffect(() => {
-    if (estado) {
+    if (estado && estado !== lastEstadoBuscado) {
+      setLastEstadoBuscado(estado);
       buscarMunicipios(estado);
       setMunicipio(''); // Resetar município quando estado muda
     }
-  }, [estado, buscarMunicipios]);
+  }, [estado, lastEstadoBuscado]);
 
   const handleBuscarEscolas = async () => {
     if (!estado || !municipio) {
@@ -89,6 +91,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
     setEstado('');
     setMunicipio('');
     setNomeEscola('');
+    setLastEstadoBuscado('');
   };
 
   const formatarEndereco = (escola: Escola) => {

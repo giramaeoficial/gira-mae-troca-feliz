@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -25,7 +25,7 @@ export const useEscolas = (): UseEscolasReturn => {
   const [error, setError] = useState<string | null>(null);
   const [escolaSelecionada, setEscolaSelecionada] = useState<Escola | null>(null);
 
-  const buscarMunicipios = async (uf: string) => {
+  const buscarMunicipios = useCallback(async (uf: string) => {
     if (!uf) {
       setMunicipios([]);
       return;
@@ -53,9 +53,9 @@ export const useEscolas = (): UseEscolasReturn => {
     } finally {
       setLoadingMunicipios(false);
     }
-  };
+  }, []);
 
-  const buscarEscolas = async (termo?: string, uf?: string, municipio?: string) => {
+  const buscarEscolas = useCallback(async (termo?: string, uf?: string, municipio?: string) => {
     // Agora só precisamos de estado e município
     if (!uf || !municipio) {
       setEscolas([]);
@@ -89,9 +89,9 @@ export const useEscolas = (): UseEscolasReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const selecionarEscola = (escola: Escola | null) => {
+  const selecionarEscola = useCallback((escola: Escola | null) => {
     setEscolaSelecionada(escola);
     
     // Salvar no localStorage
@@ -100,7 +100,7 @@ export const useEscolas = (): UseEscolasReturn => {
     } else {
       localStorage.removeItem('ultimaEscolaFiltrada');
     }
-  };
+  }, []);
 
   // Carregar escola do localStorage na inicialização
   useEffect(() => {
