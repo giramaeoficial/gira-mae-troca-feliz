@@ -185,7 +185,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          reserva_id: string
+          reserva_id: string | null
           updated_at: string
           usuario1_id: string
           usuario2_id: string
@@ -193,7 +193,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          reserva_id: string
+          reserva_id?: string | null
           updated_at?: string
           usuario1_id: string
           usuario2_id: string
@@ -201,7 +201,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          reserva_id?: string
+          reserva_id?: string | null
           updated_at?: string
           usuario1_id?: string
           usuario2_id?: string
@@ -547,6 +547,42 @@ export type Database = {
           },
         ]
       }
+      mencoes_mensagens: {
+        Row: {
+          created_at: string
+          id: string
+          mensagem_id: string
+          usuario_mencionado_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensagem_id: string
+          usuario_mencionado_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensagem_id?: string
+          usuario_mencionado_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mencoes_mensagens_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mencoes_mensagens_usuario_mencionado_id_fkey"
+            columns: ["usuario_mencionado_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mensagens: {
         Row: {
           conteudo: string
@@ -683,6 +719,7 @@ export type Database = {
           saldo_girinhas: number | null
           telefone: string | null
           updated_at: string | null
+          username: string
         }
         Insert: {
           aceita_entrega_domicilio?: boolean | null
@@ -705,6 +742,7 @@ export type Database = {
           saldo_girinhas?: number | null
           telefone?: string | null
           updated_at?: string | null
+          username: string
         }
         Update: {
           aceita_entrega_domicilio?: boolean | null
@@ -727,6 +765,7 @@ export type Database = {
           saldo_girinhas?: number | null
           telefone?: string | null
           updated_at?: string | null
+          username?: string
         }
         Relationships: []
       }
@@ -872,6 +911,15 @@ export type Database = {
         Args: { p_usuario_id: string; p_nova_nota: number }
         Returns: undefined
       }
+      buscar_usuario_por_username: {
+        Args: { p_username: string }
+        Returns: {
+          id: string
+          nome: string
+          username: string
+          avatar_url: string
+        }[]
+      }
       cancelar_reserva: {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
@@ -922,6 +970,10 @@ export type Database = {
         Args: { p_reserva_id: string }
         Returns: string
       }
+      obter_ou_criar_conversa_livre: {
+        Args: { p_usuario1_id: string; p_usuario2_id: string }
+        Returns: string
+      }
       obter_valor_bonus: {
         Args: { p_tipo_bonus: string }
         Returns: number
@@ -957,6 +1009,10 @@ export type Database = {
       verificar_metas_usuario: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      verificar_username_disponivel: {
+        Args: { p_username: string }
+        Returns: boolean
       }
     }
     Enums: {

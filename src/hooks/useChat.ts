@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useMentions } from '@/hooks/useMentions';
 
 interface Mensagem {
   id: string;
@@ -18,15 +19,16 @@ interface Mensagem {
 
 interface Conversa {
   id: string;
-  reserva_id: string;
+  reserva_id: string | null;
   usuario1_id: string;
   usuario2_id: string;
   created_at: string;
 }
 
-export const useChat = (reservaId: string) => {
+export const useChat = (reservaId?: string, outroUsuarioId?: string) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { processarMencoes } = useMentions();
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [conversa, setConversa] = useState<Conversa | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,18 +36,32 @@ export const useChat = (reservaId: string) => {
 
   // Buscar ou criar conversa
   const buscarConversa = async () => {
-    if (!user || !reservaId) return;
+    if (!user) return;
 
     try {
       setLoading(true);
-      
-      // Usar função RPC para buscar ou criar conversa
-      const { data: conversaId, error: conversaError } = await supabase
-        .rpc('obter_ou_criar_conversa', {
-          p_reserva_id: reservaId
-        });
+      let conversaId: string;
 
-      if (conversaError) throw conversaError;
+      if (reservaId) {
+        // Conversa baseada em reserva
+        const { data, error } = await supabase
+          .rpc('obter_ou_criar_conversa', { p_reserva_id: reservaId });
+
+        if (error) throw error;
+        conversaId = data;
+      } else if (outroUsuarioId) {
+        // Conversa livre entre usuários
+        const { data, error } = await supabase
+          .rpc('obter_ou_criar_conversa_livre', { 
+            p_usuario1_id: user.id, 
+            p_usuario2_id: outroUsuarioId 
+          });
+
+        if (error) throw error;
+        conversaId = data;
+      } else {
+        throw new Error('É necessário fornecer reservaId ou outroUsuarioId');
+      }
 
       // Buscar dados da conversa
       const { data: conversaData, error: conversaDataError } = await supabase
@@ -99,16 +115,23 @@ export const useChat = (reservaId: string) => {
 
     setEnviandoMensagem(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('mensagens')
         .insert({
           conversa_id: conversa.id,
           remetente_id: user.id,
           conteudo: conteudo.trim(),
           tipo
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Processar menções na mensagem
+      if (data) {
+        await processarMencoes(data.id, conteudo);
+      }
 
       return true;
     } catch (error) {
@@ -167,7 +190,7 @@ export const useChat = (reservaId: string) => {
   // Buscar conversa quando o componente monta
   useEffect(() => {
     buscarConversa();
-  }, [user, reservaId]);
+  }, [user, reservaId, outroUsuarioId]);
 
   return {
     mensagens,

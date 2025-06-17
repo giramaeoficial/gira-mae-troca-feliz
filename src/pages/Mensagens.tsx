@@ -1,122 +1,91 @@
-
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
+import MentionInput from "@/components/mensagens/MentionInput";
+import MessageText from "@/components/mensagens/MessageText";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, MessageCircle, Plus, Send, ArrowLeft } from "lucide-react";
+import { Search, MessageCircle, Plus, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useChat } from "@/hooks/useChat";
+import { useUserSearch } from "@/hooks/useUserSearch";
 
 const Mensagens = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedConversa, setSelectedConversa] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [novaMensagem, setNovaMensagem] = useState("");
   const [showNovaConversa, setShowNovaConversa] = useState(false);
+  const [searchUsername, setSearchUsername] = useState("");
 
-  // Mock data para demonstração - em produção viria do Supabase
+  const { users: searchResults } = useUserSearch(searchUsername);
+
+  // Hook do chat - só ativo quando há um usuário selecionado
+  const { 
+    mensagens, 
+    loading: chatLoading, 
+    enviandoMensagem, 
+    enviarMensagem 
+  } = useChat(undefined, selectedUser || undefined);
+
+  // Mock data para demonstração da lista de conversas
   const conversas = [
     {
       id: "1",
       participante: {
+        id: "user1",
         nome: "Maria Silva",
+        username: "maria_silva",
         avatar: null,
       },
       ultimaMensagem: "Oi! Ainda tem aquele vestido disponível?",
       timestamp: "2 min",
       naoLidas: 2,
-      mensagens: [
-        {
-          id: "1",
-          conteudo: "Oi! Vi seu perfil e gostei muito dos itens que você publica!",
-          remetente: "Maria Silva",
-          timestamp: "10:30",
-          minha: false
-        },
-        {
-          id: "2", 
-          conteudo: "Oi Maria! Obrigada! 😊",
-          remetente: "Você",
-          timestamp: "10:32",
-          minha: true
-        },
-        {
-          id: "3",
-          conteudo: "Ainda tem aquele vestido disponível?",
-          remetente: "Maria Silva", 
-          timestamp: "10:35",
-          minha: false
-        }
-      ]
     },
     {
-      id: "2",
+      id: "2", 
       participante: {
+        id: "user2",
         nome: "Ana Santos",
+        username: "ana_santos",
         avatar: null,
       },
       ultimaMensagem: "Obrigada pela troca! Minha filha adorou o brinquedo!",
       timestamp: "1h",
       naoLidas: 0,
-      mensagens: [
-        {
-          id: "1",
-          conteudo: "Oi! Posso buscar o brinquedo hoje?",
-          remetente: "Ana Santos",
-          timestamp: "09:00",
-          minha: false
-        },
-        {
-          id: "2",
-          conteudo: "Claro! Pode vir aqui em casa depois das 14h",
-          remetente: "Você", 
-          timestamp: "09:05",
-          minha: true
-        },
-        {
-          id: "3",
-          conteudo: "Obrigada pela troca! Minha filha adorou o brinquedo!",
-          remetente: "Ana Santos",
-          timestamp: "15:30", 
-          minha: false
-        }
-      ]
     }
   ];
 
   const filteredConversas = conversas.filter(conversa =>
-    conversa.participante.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    conversa.participante.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conversa.participante.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const conversaAtual = conversas.find(c => c.id === selectedConversa);
-
-  const handleEnviarMensagem = () => {
+  const handleEnviarMensagem = async () => {
     if (!novaMensagem.trim()) return;
     
-    // Aqui você adicionaria a lógica para enviar via Supabase
-    toast({
-      title: "Mensagem enviada!",
-      description: "Sua mensagem foi enviada com sucesso.",
-    });
-    
-    setNovaMensagem("");
+    const sucesso = await enviarMensagem(novaMensagem);
+    if (sucesso) {
+      setNovaMensagem("");
+    }
   };
 
-  const handleNovaConversa = () => {
-    toast({
-      title: "Nova conversa",
-      description: "Em breve você poderá iniciar conversas com qualquer mãe da comunidade!",
-    });
+  const handleIniciarConversa = (userId: string) => {
+    setSelectedUser(userId);
     setShowNovaConversa(false);
+    setSearchUsername("");
   };
 
   // Vista de conversa individual
-  if (selectedConversa && conversaAtual) {
+  if (selectedUser) {
+    const participante = searchResults.find(u => u.id === selectedUser) || 
+      conversas.find(c => c.participante.id === selectedUser)?.participante;
+
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header activePage="mensagens" />
@@ -128,22 +97,22 @@ const Mensagens = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setSelectedConversa(null)}
+                onClick={() => setSelectedUser(null)}
                 className="md:hidden"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               
               <Avatar className="h-10 w-10">
-                <AvatarImage src={conversaAtual.participante.avatar || undefined} />
+                <AvatarImage src={participante?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {conversaAtual.participante.nome.charAt(0)}
+                  {participante?.nome?.charAt(0) || participante?.username?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               
               <div>
-                <h2 className="font-medium">{conversaAtual.participante.nome}</h2>
-                <p className="text-sm text-gray-500">Online agora</p>
+                <h2 className="font-medium">{participante?.nome}</h2>
+                <p className="text-sm text-gray-500">@{participante?.username}</p>
               </div>
             </div>
           </div>
@@ -151,44 +120,49 @@ const Mensagens = () => {
 
         {/* Mensagens */}
         <div className="flex-1 container mx-auto max-w-4xl p-4 space-y-4 overflow-y-auto">
-          {conversaAtual.mensagens.map((mensagem) => (
-            <div
-              key={mensagem.id}
-              className={`flex ${mensagem.minha ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  mensagem.minha
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-white border border-gray-200'
-                }`}
-              >
-                <p className="text-sm">{mensagem.conteudo}</p>
-                <p className={`text-xs mt-1 ${
-                  mensagem.minha ? 'text-primary-foreground/70' : 'text-gray-500'
-                }`}>
-                  {mensagem.timestamp}
-                </p>
-              </div>
+          {chatLoading ? (
+            <div className="flex justify-center">
+              <div className="text-gray-500">Carregando mensagens...</div>
             </div>
-          ))}
+          ) : (
+            mensagens.map((mensagem) => (
+              <div
+                key={mensagem.id}
+                className={`flex ${mensagem.remetente_id === user?.id ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    mensagem.remetente_id === user?.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-white border border-gray-200'
+                  }`}
+                >
+                  <MessageText 
+                    className={`text-sm ${mensagem.remetente_id === user?.id ? 'text-primary-foreground' : ''}`}
+                  >
+                    {mensagem.conteudo}
+                  </MessageText>
+                  <p className={`text-xs mt-1 ${
+                    mensagem.remetente_id === user?.id ? 'text-primary-foreground/70' : 'text-gray-500'
+                  }`}>
+                    {new Date(mensagem.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
-        {/* Input de nova mensagem */}
+        {/* Input de nova mensagem com suporte a menções */}
         <div className="bg-white border-t border-gray-200 p-4 pb-24 md:pb-4">
           <div className="container mx-auto max-w-4xl">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Digite sua mensagem..."
-                value={novaMensagem}
-                onChange={(e) => setNovaMensagem(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleEnviarMensagem()}
-                className="flex-1"
-              />
-              <Button onClick={handleEnviarMensagem} disabled={!novaMensagem.trim()}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
+            <MentionInput
+              value={novaMensagem}
+              onChange={setNovaMensagem}
+              onSubmit={handleEnviarMensagem}
+              placeholder="Digite sua mensagem... Use @ para mencionar alguém"
+              disabled={enviandoMensagem}
+            />
           </div>
         </div>
 
@@ -253,7 +227,7 @@ const Mensagens = () => {
                 <Card 
                   key={conversa.id} 
                   className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => setSelectedConversa(conversa.id)}
+                  onClick={() => setSelectedUser(conversa.participante.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
@@ -291,7 +265,7 @@ const Mensagens = () => {
             )}
           </div>
 
-          {/* Modal/Dialog para nova conversa */}
+          {/* Modal para nova conversa */}
           {showNovaConversa && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
               <Card className="w-full max-w-md">
@@ -302,16 +276,42 @@ const Mensagens = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Input placeholder="Digite o nome da mãe..." />
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Digite o nome da mãe..."
+                      value={searchUsername}
+                      onChange={(e) => setSearchUsername(e.target.value)}
+                      className="pl-10"
+                    />
+                    {searchUsername.length > 2 && (
+                      <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-md mt-1 max-h-48 overflow-y-auto z-50">
+                        {searchResults.length > 0 ? (
+                          searchResults.map((user) => (
+                            <button
+                              key={user.id}
+                              className="w-full text-left p-2 hover:bg-gray-100 flex items-center gap-2"
+                              onClick={() => handleIniciarConversa(user.id)}
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={user.avatar_url || undefined} />
+                                <AvatarFallback>{user.nome?.charAt(0) || user.username?.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span>{user.nome} (@{user.username})</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="text-gray-500 p-2">Nenhum resultado encontrado.</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex gap-2 justify-end">
                     <Button 
                       variant="outline" 
                       onClick={() => setShowNovaConversa(false)}
                     >
                       Cancelar
-                    </Button>
-                    <Button onClick={handleNovaConversa}>
-                      Iniciar Conversa
                     </Button>
                   </div>
                 </CardContent>
