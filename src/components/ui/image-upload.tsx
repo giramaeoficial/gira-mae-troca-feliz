@@ -1,7 +1,7 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, Upload } from 'lucide-react';
+import { Camera, X, Upload, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { compressImage } from '@/utils/imageCompression';
 import { toast } from '@/hooks/use-toast';
@@ -20,58 +20,43 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   value = [],
   onChange,
   maxFiles = 3,
-  maxSizeKB = 5000, // 5MB
+  maxSizeKB = 5000,
   accept = "image/*",
   className,
   disabled = false
 }) => {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generatePreviews = useCallback((files: File[]) => {
     const newPreviews = files.map(file => URL.createObjectURL(file));
     setPreviews(prev => {
-      // Limpar URLs anteriores
       prev.forEach(url => URL.revokeObjectURL(url));
       return newPreviews;
     });
   }, []);
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
+  const processFiles = async (files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    const remainingSlots = maxFiles - value.length;
+    const filesToProcess = fileArray.slice(0, remainingSlots);
+
+    const oversizedFiles = filesToProcess.filter(file => file.size > maxSizeKB * 1024);
+    if (oversizedFiles.length > 0) {
+      toast({
+        title: "Arquivos muito grandes",
+        description: `${oversizedFiles.length} arquivo(s) excedem o limite de ${maxSizeKB}KB`,
+        variant: "destructive"
+      });
+    }
+
+    const validFiles = filesToProcess.filter(file => file.size <= maxSizeKB * 1024);
+    if (validFiles.length === 0) return;
 
     setIsUploading(true);
-
     try {
-      const selectedFiles = Array.from(files);
-      const remainingSlots = maxFiles - value.length;
-      const filesToProcess = selectedFiles.slice(0, remainingSlots);
-
-      // Validar tamanho dos arquivos
-      const oversizedFiles = filesToProcess.filter(
-        file => file.size > maxSizeKB * 1024
-      );
-
-      if (oversizedFiles.length > 0) {
-        toast({
-          title: "Arquivos muito grandes",
-          description: `${oversizedFiles.length} arquivo(s) excedem o limite de ${maxSizeKB}KB`,
-          variant: "destructive"
-        });
-      }
-
-      // Processar apenas arquivos do tamanho correto
-      const validFiles = filesToProcess.filter(
-        file => file.size <= maxSizeKB * 1024
-      );
-
-      if (validFiles.length === 0) {
-        setIsUploading(false);
-        return;
-      }
-
-      // Comprimir imagens
       const compressedFiles = await Promise.all(
         validFiles.map(file => compressImage(file, {
           maxWidth: 1024,
@@ -87,20 +72,50 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       toast({
         title: "Imagens processadas",
-        description: `${compressedFiles.length} imagem(ns) comprimida(s) e otimizada(s)`,
+        description: `${compressedFiles.length} imagem(ns) adicionada(s)`,
       });
-
     } catch (error) {
-      console.error('Erro ao processar imagens:', error);
       toast({
         title: "Erro no processamento",
-        description: "Falha ao processar as imagens selecionadas",
+        description: "Falha ao processar as imagens",
         variant: "destructive"
       });
     } finally {
       setIsUploading(false);
-      // Reset input
-      event.target.value = '';
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+    await processFiles(files);
+    event.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled && !isUploading) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    if (disabled || isUploading) return;
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      await processFiles(files);
     }
   };
 
@@ -108,11 +123,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     const newFiles = value.filter((_, index) => index !== indexToRemove);
     onChange(newFiles);
     
-    // Atualizar previews
     const newPreviews = previews.filter((_, index) => index !== indexToRemove);
-    // Revogar URL removida
     URL.revokeObjectURL(previews[indexToRemove]);
     setPreviews(newPreviews);
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -135,42 +152,67 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               >
                 <X className="w-3 h-3" />
               </button>
+              {index === 0 && (
+                <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                  Principal
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {/* Upload area */}
+      {/* Upload area com drag & drop */}
       {value.length < maxFiles && (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+        <div 
+          className={cn(
+            "border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer",
+            isDragOver 
+              ? "border-primary bg-primary/5 scale-105" 
+              : "border-gray-300 hover:border-gray-400",
+            (disabled || isUploading) && "cursor-not-allowed opacity-50"
+          )}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={openFileDialog}
+        >
           <input
+            ref={fileInputRef}
             type="file"
             accept={accept}
             multiple
             onChange={handleFileSelect}
             disabled={disabled || isUploading}
             className="hidden"
-            id="image-upload"
           />
-          <label 
-            htmlFor="image-upload" 
-            className={cn(
-              'cursor-pointer flex flex-col items-center gap-2',
-              (disabled || isUploading) && 'cursor-not-allowed opacity-50'
-            )}
-          >
+          
+          <div className="flex flex-col items-center gap-3">
             {isUploading ? (
-              <Upload className="w-8 h-8 text-gray-400 animate-pulse" />
+              <Upload className="w-10 h-10 text-primary animate-bounce" />
+            ) : isDragOver ? (
+              <Image className="w-10 h-10 text-primary" />
             ) : (
-              <Camera className="w-8 h-8 text-gray-400" />
+              <Camera className="w-10 h-10 text-gray-400" />
             )}
-            <span className="text-sm text-gray-600">
-              {isUploading ? 'Processando imagens...' : 'Clique para adicionar fotos'}
-            </span>
-            <span className="text-xs text-gray-500">
-              {value.length}/{maxFiles} fotos • Max {maxSizeKB}KB cada
-            </span>
-          </label>
+            
+            <div className="space-y-1">
+              <p className={cn(
+                "font-medium",
+                isDragOver ? "text-primary" : "text-gray-700"
+              )}>
+                {isUploading ? 'Processando imagens...' : 
+                 isDragOver ? 'Solte as imagens aqui' : 
+                 'Clique ou arraste fotos aqui'}
+              </p>
+              <p className="text-sm text-gray-500">
+                {value.length}/{maxFiles} fotos • Max {maxSizeKB}KB cada
+              </p>
+              <p className="text-xs text-gray-400">
+                JPG, PNG, WebP até {maxSizeKB}KB
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>
