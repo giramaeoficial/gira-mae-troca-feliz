@@ -1,4 +1,5 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -7,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, MapPin, Star, Calendar, Users, Package, Heart } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Calendar, Users, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import LazyImage from "@/components/ui/lazy-image";
+import UniversalCard from "@/components/ui/universal-card";
 
 type Profile = Tables<'profiles'>;
 type Item = Tables<'itens'>;
@@ -134,18 +135,6 @@ const PerfilPublicoMae = () => {
       idade--;
     }
     return idade;
-  };
-
-  const formatarCategoria = (categoria: string) => {
-    const categorias = {
-      'roupa': 'Roupas',
-      'brinquedo': 'Brinquedos',
-      'calcado': 'Calçados',
-      'acessorio': 'Acessórios',
-      'kit': 'Kits',
-      'outro': 'Outros'
-    };
-    return categorias[categoria as keyof typeof categorias] || categoria;
   };
 
   return (
@@ -272,43 +261,23 @@ const PerfilPublicoMae = () => {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {itens.map((item) => (
-                      <Card key={item.id} className="border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
-                        <Link to={`/item/${item.id}`}>
-                          <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                            <LazyImage
-                              src={item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400"}
-                              alt={item.titulo}
-                              bucket="itens"
-                              size="medium"
-                              className="w-full h-full object-cover"
-                              placeholder="📷"
-                              onError={() => console.error('Erro ao carregar imagem do item:', item.id)}
-                            />
-                            <div className="absolute top-2 right-2">
-                              <Badge className="bg-green-500 text-white text-xs">
-                                Disponível
-                              </Badge>
-                            </div>
-                          </div>
-                          <CardContent className="p-4">
-                            <h3 className="font-semibold text-gray-800 mb-1 line-clamp-1">
-                              {item.titulo}
-                            </h3>
-                            <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                              {item.descricao}
-                            </p>
-                            <div className="flex items-center justify-between">
-                              <Badge variant="outline" className="text-xs">
-                                {formatarCategoria(item.categoria)}
-                              </Badge>
-                              <div className="flex items-center gap-1 text-primary font-bold">
-                                <Heart className="w-3 h-3" />
-                                {item.valor_girinhas}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Link>
-                      </Card>
+                      <UniversalCard
+                        key={item.id}
+                        variant="item"
+                        data={{
+                          id: item.id,
+                          titulo: item.titulo,
+                          categoria: item.categoria,
+                          tamanho: item.tamanho,
+                          valorGirinhas: item.valor_girinhas,
+                          estadoConservacao: item.estado_conservacao,
+                          fotos: item.fotos,
+                          status: item.status,
+                          descricao: item.descricao
+                        }}
+                        linkTo={`/item/${item.id}`}
+                        showAuthor={false}
+                      />
                     ))}
                   </div>
                 )}

@@ -1,12 +1,13 @@
 
 import Header from "@/components/shared/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Package, CheckCircle } from "lucide-react";
 import { useReservas } from "@/hooks/useReservas";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import FilaEsperaCard from "@/components/reservas/FilaEsperaCard";
 import { useAuth } from "@/hooks/useAuth";
+import UniversalCard from "@/components/ui/universal-card";
 
 const MinhasReservas = () => {
   const { user } = useAuth();
@@ -65,37 +66,45 @@ const MinhasReservas = () => {
 
         {/* Estatísticas */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Package className="w-8 h-8 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-800">{stats.totalAtivas}</p>
-              <p className="text-sm text-gray-600">Reservas Ativas</p>
-            </CardContent>
-          </Card>
+          <UniversalCard
+            variant="stats"
+            data={{
+              icon: Package,
+              title: "Reservas Ativas",
+              value: stats.totalAtivas,
+              gradient: "bg-gradient-to-br from-primary to-pink-500"
+            }}
+          />
           
-          <Card className="bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-800">{stats.totalFilaEspera}</p>
-              <p className="text-sm text-gray-600">Na Fila</p>
-            </CardContent>
-          </Card>
+          <UniversalCard
+            variant="stats"
+            data={{
+              icon: Users,
+              title: "Na Fila",
+              value: stats.totalFilaEspera,
+              gradient: "bg-gradient-to-br from-blue-500 to-blue-600"
+            }}
+          />
 
-          <Card className="bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <Clock className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-800">{stats.totalVendas}</p>
-              <p className="text-sm text-gray-600">Suas Vendas</p>
-            </CardContent>
-          </Card>
+          <UniversalCard
+            variant="stats"
+            data={{
+              icon: Clock,
+              title: "Suas Vendas",
+              value: stats.totalVendas,
+              gradient: "bg-gradient-to-br from-orange-500 to-orange-600"
+            }}
+          />
 
-          <Card className="bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4 text-center">
-              <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-gray-800">{stats.totalConcluidas}</p>
-              <p className="text-sm text-gray-600">Concluídas</p>
-            </CardContent>
-          </Card>
+          <UniversalCard
+            variant="stats"
+            data={{
+              icon: CheckCircle,
+              title: "Concluídas",
+              value: stats.totalConcluidas,
+              gradient: "bg-gradient-to-br from-green-500 to-green-600"
+            }}
+          />
         </div>
 
         <div className="space-y-8">

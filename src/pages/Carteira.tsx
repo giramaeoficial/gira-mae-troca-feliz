@@ -10,6 +10,7 @@ import { useCarteira } from "@/hooks/useCarteira";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import UniversalCard from "@/components/ui/universal-card";
 
 const Carteira = () => {
     const { user } = useAuth();
@@ -78,9 +79,6 @@ const Carteira = () => {
         )
         .reduce((total, t) => total + Number(t.valor), 0);
 
-    // Calcular categorias mais vendidas (simulação baseada nas transações)
-    const totalTransacoes = transacoes.filter(t => t.tipo === 'recebido').length;
-
     const formatarTempo = (data: string) => {
         try {
             const agora = new Date();
@@ -112,61 +110,45 @@ const Carteira = () => {
 
                 {/* Cards de Resumo */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <Card className="bg-gradient-to-br from-primary to-pink-500 text-white border-0 shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-primary-foreground/80 text-sm">Saldo Atual</p>
-                                    <div className="flex items-center gap-2">
-                                        <Sparkles className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">{Number(saldo).toFixed(0)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <UniversalCard
+                        variant="stats"
+                        data={{
+                            icon: Sparkles,
+                            title: "Saldo Atual",
+                            value: Number(saldo).toFixed(0),
+                            gradient: "bg-gradient-to-br from-primary to-pink-500"
+                        }}
+                    />
 
-                    <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-green-100 text-sm">Total Recebido</p>
-                                    <div className="flex items-center gap-2">
-                                        <TrendingUp className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">{Number(totalRecebido).toFixed(0)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <UniversalCard
+                        variant="stats"
+                        data={{
+                            icon: TrendingUp,
+                            title: "Total Recebido",
+                            value: Number(totalRecebido).toFixed(0),
+                            gradient: "bg-gradient-to-br from-green-500 to-green-600"
+                        }}
+                    />
 
-                    <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-blue-100 text-sm">Total Gasto</p>
-                                    <div className="flex items-center gap-2">
-                                        <TrendingDown className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">{Number(totalGasto).toFixed(0)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <UniversalCard
+                        variant="stats"
+                        data={{
+                            icon: TrendingDown,
+                            title: "Total Gasto",
+                            value: Number(totalGasto).toFixed(0),
+                            gradient: "bg-gradient-to-br from-blue-500 to-blue-600"
+                        }}
+                    />
 
-                    <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-purple-100 text-sm">Ganho Este Mês</p>
-                                    <div className="flex items-center gap-2">
-                                        <Gift className="w-6 h-6" />
-                                        <span className="text-2xl font-bold">+{ganhoEsteMes.toFixed(0)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <UniversalCard
+                        variant="stats"
+                        data={{
+                            icon: Gift,
+                            title: "Ganho Este Mês",
+                            value: `+${ganhoEsteMes.toFixed(0)}`,
+                            gradient: "bg-gradient-to-br from-purple-500 to-purple-600"
+                        }}
+                    />
                 </div>
 
                 {/* Conteúdo Principal */}
