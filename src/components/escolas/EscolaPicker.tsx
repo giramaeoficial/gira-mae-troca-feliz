@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEscolas } from '@/hooks/useEscolas';
 import { Tables } from '@/integrations/supabase/types';
 
@@ -17,40 +18,49 @@ interface EscolaPickerProps {
   className?: string;
 }
 
+const ESTADOS_BRASIL = [
+  { sigla: 'AC', nome: 'Acre' },
+  { sigla: 'AL', nome: 'Alagoas' },
+  { sigla: 'AP', nome: 'Amapá' },
+  { sigla: 'AM', nome: 'Amazonas' },
+  { sigla: 'BA', nome: 'Bahia' },
+  { sigla: 'CE', nome: 'Ceará' },
+  { sigla: 'DF', nome: 'Distrito Federal' },
+  { sigla: 'ES', nome: 'Espírito Santo' },
+  { sigla: 'GO', nome: 'Goiás' },
+  { sigla: 'MA', nome: 'Maranhão' },
+  { sigla: 'MT', nome: 'Mato Grosso' },
+  { sigla: 'MS', nome: 'Mato Grosso do Sul' },
+  { sigla: 'MG', nome: 'Minas Gerais' },
+  { sigla: 'PA', nome: 'Pará' },
+  { sigla: 'PB', nome: 'Paraíba' },
+  { sigla: 'PR', nome: 'Paraná' },
+  { sigla: 'PE', nome: 'Pernambuco' },
+  { sigla: 'PI', nome: 'Piauí' },
+  { sigla: 'RJ', nome: 'Rio de Janeiro' },
+  { sigla: 'RN', nome: 'Rio Grande do Norte' },
+  { sigla: 'RS', nome: 'Rio Grande do Sul' },
+  { sigla: 'RO', nome: 'Rondônia' },
+  { sigla: 'RR', nome: 'Roraima' },
+  { sigla: 'SC', nome: 'Santa Catarina' },
+  { sigla: 'SP', nome: 'São Paulo' },
+  { sigla: 'SE', nome: 'Sergipe' },
+  { sigla: 'TO', nome: 'Tocantins' }
+];
+
 const EscolaPicker: React.FC<EscolaPickerProps> = ({
   value,
   onChange,
   placeholder = "Buscar escola...",
   className = ""
 }) => {
-  const [termo, setTermo] = useState('');
+  const [estado, setEstado] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [nomeEscola, setNomeEscola] = useState('');
   const [mostrarResultados, setMostrarResultados] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { escolas, loading, buscarEscolas } = useEscolas();
-
-  // Debounce para a busca
-  useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    timeoutRef.current = setTimeout(() => {
-      if (termo.length >= 3) {
-        buscarEscolas(termo);
-        setMostrarResultados(true);
-      } else {
-        setMostrarResultados(false);
-      }
-    }, 300);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [termo, buscarEscolas]);
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -64,15 +74,31 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleBuscarEscolas = async () => {
+    if (!estado || !cidade) {
+      alert('Por favor, selecione o estado e digite a cidade antes de buscar');
+      return;
+    }
+
+    if (nomeEscola.length < 3) {
+      alert('Digite pelo menos 3 caracteres do nome da escola');
+      return;
+    }
+
+    await buscarEscolas(nomeEscola, estado, cidade);
+    setMostrarResultados(true);
+  };
+
   const handleSelecionarEscola = (escola: Escola) => {
     onChange(escola);
-    setTermo(escola.escola || '');
     setMostrarResultados(false);
   };
 
   const handleLimpar = () => {
     onChange(null);
-    setTermo('');
+    setEstado('');
+    setCidade('');
+    setNomeEscola('');
     setMostrarResultados(false);
   };
 
@@ -83,35 +109,9 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <Input
-          value={value ? (value.escola || '') : termo}
-          onChange={(e) => setTermo(e.target.value)}
-          placeholder={placeholder}
-          className="pl-10 pr-10"
-          onFocus={() => {
-            if (termo.length >= 3) {
-              setMostrarResultados(true);
-            }
-          }}
-        />
-        {value && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 h-6 w-6"
-            onClick={handleLimpar}
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-
       {/* Escola selecionada */}
       {value && (
-        <div className="mt-2">
+        <div className="mb-4">
           <Card className="border-primary">
             <CardContent className="p-3">
               <div className="flex items-start justify-between">
@@ -127,9 +127,81 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
                     </Badge>
                   )}
                 </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 h-6 w-6"
+                  onClick={handleLimpar}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Formulário de busca */}
+      {!value && (
+        <div className="space-y-4">
+          <div className="text-sm text-gray-600 mb-2">
+            Para buscar uma escola, primeiro selecione o estado e digite a cidade, depois digite parte do nome da escola.
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Estado *</label>
+              <Select value={estado} onValueChange={setEstado}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ESTADOS_BRASIL.map((uf) => (
+                    <SelectItem key={uf.sigla} value={uf.sigla}>
+                      {uf.nome} ({uf.sigla})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Cidade *</label>
+              <Input
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+                placeholder="Digite a cidade"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Nome da Escola *</label>
+            <div className="flex gap-2">
+              <Input
+                value={nomeEscola}
+                onChange={(e) => setNomeEscola(e.target.value)}
+                placeholder="Digite pelo menos 3 caracteres do nome da escola"
+                className="flex-1"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleBuscarEscolas();
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                onClick={handleBuscarEscolas}
+                disabled={!estado || !cidade || nomeEscola.length < 3}
+                className="shrink-0"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                Buscar Escola
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -170,17 +242,13 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
                   </div>
                 ))}
               </div>
-            ) : termo.length >= 3 ? (
+            ) : (
               <div className="p-4 text-center text-gray-500">
                 <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                 <p className="text-sm">Nenhuma escola encontrada</p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Tente buscar pelo nome da escola ou cidade
+                  Verifique se o estado, cidade e nome da escola estão corretos
                 </p>
-              </div>
-            ) : (
-              <div className="p-4 text-center text-gray-500">
-                <p className="text-sm">Digite pelo menos 3 caracteres para buscar</p>
               </div>
             )}
           </CardContent>

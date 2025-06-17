@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -18,13 +19,19 @@ import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
 import EmptyState from "@/components/loading/EmptyState";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import LazyImage from "@/components/ui/lazy-image";
+import EscolaFilter from "@/components/escolas/EscolaFilter";
+import { useFilhosPorEscola } from "@/hooks/useFilhosPorEscola";
+import { Tables } from "@/integrations/supabase/types";
 import { useState as useActionState } from "react";
+
+type Escola = Tables<'escolas_inep'>;
 
 const Feed = () => {
     const [filtros, setFiltros] = useState({
         busca: "",
         categoria: "todas",
-        ordem: "recentes"
+        ordem: "recentes",
+        escola: null as Escola | null
     });
     
     const { user } = useAuth();
@@ -33,6 +40,7 @@ const Feed = () => {
     const { entrarNaFila, isItemReservado } = useReservas();
     const { obterFilaItem } = useFilaEspera();
     const { saldo } = useCarteira();
+    const { temFilhoNaEscola } = useFilhosPorEscola();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
     const [filasInfo, setFilasInfo] = useState<Record<string, { total_fila: number; posicao_usuario: number }>>({});
 
@@ -90,7 +98,13 @@ const Feed = () => {
         
         const matchCategoria = filtros.categoria === "todas" || item.categoria === filtros.categoria;
         
-        return matchBusca && matchCategoria;
+        // Filtro por escola - verificar se o item foi publicado por alguém da mesma escola
+        const matchEscola = !filtros.escola || 
+            (item.publicado_por_profile?.filhos && 
+             item.publicado_por_profile.filhos.some((filho: any) => 
+                filho.escola_id === filtros.escola?.codigo_inep));
+        
+        return matchBusca && matchCategoria && matchEscola;
     }).sort((a, b) => {
         if (filtros.ordem === "recentes") {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -136,8 +150,9 @@ const Feed = () => {
                 {/* Filtros */}
                 <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="relative flex-1">
+                        <div className="space-y-4">
+                            {/* Primeira linha - Busca */}
+                            <div className="relative">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                                 <Input
                                     placeholder="Buscar por título ou descrição..."
@@ -146,30 +161,40 @@ const Feed = () => {
                                     className="pl-10 h-12"
                                 />
                             </div>
-                            <Select value={filtros.categoria} onValueChange={(value) => setFiltros({...filtros, categoria: value})}>
-                                <SelectTrigger className="w-full md:w-48 h-12">
-                                    <SelectValue placeholder="Categoria" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="todas">Todas</SelectItem>
-                                    <SelectItem value="roupa">👗 Roupa</SelectItem>
-                                    <SelectItem value="brinquedo">🧸 Brinquedo</SelectItem>
-                                    <SelectItem value="calcado">👟 Calçado</SelectItem>
-                                    <SelectItem value="acessorio">🎀 Acessório</SelectItem>
-                                    <SelectItem value="kit">📦 Kit</SelectItem>
-                                    <SelectItem value="outro">🔖 Outro</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select value={filtros.ordem} onValueChange={(value) => setFiltros({...filtros, ordem: value})}>
-                                <SelectTrigger className="w-full md:w-48 h-12">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="recentes">Mais Recentes</SelectItem>
-                                    <SelectItem value="menor-preco">Menor Preço</SelectItem>
-                                    <SelectItem value="maior-preco">Maior Preço</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            
+                            {/* Segunda linha - Filtros */}
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <Select value={filtros.categoria} onValueChange={(value) => setFiltros({...filtros, categoria: value})}>
+                                    <SelectTrigger className="w-full md:w-48 h-12">
+                                        <SelectValue placeholder="Categoria" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="todas">Todas</SelectItem>
+                                        <SelectItem value="roupa">👗 Roupa</SelectItem>
+                                        <SelectItem value="brinquedo">🧸 Brinquedo</SelectItem>
+                                        <SelectItem value="calcado">👟 Calçado</SelectItem>
+                                        <SelectItem value="acessorio">🎀 Acessório</SelectItem>
+                                        <SelectItem value="kit">📦 Kit</SelectItem>
+                                        <SelectItem value="outro">🔖 Outro</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                
+                                <EscolaFilter 
+                                    value={filtros.escola}
+                                    onChange={(escola) => setFiltros({...filtros, escola})}
+                                />
+                                
+                                <Select value={filtros.ordem} onValueChange={(value) => setFiltros({...filtros, ordem: value})}>
+                                    <SelectTrigger className="w-full md:w-48 h-12">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="recentes">Mais Recentes</SelectItem>
+                                        <SelectItem value="menor-preco">Menor Preço</SelectItem>
+                                        <SelectItem value="maior-preco">Maior Preço</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -181,10 +206,10 @@ const Feed = () => {
                     </div>
                 ) : filteredItens.length === 0 ? (
                     <EmptyState 
-                        type={filtros.busca || filtros.categoria !== "todas" ? "search" : "items"}
+                        type={filtros.busca || filtros.categoria !== "todas" || filtros.escola ? "search" : "items"}
                         onAction={() => {
-                            if (filtros.busca || filtros.categoria !== "todas") {
-                                setFiltros({ busca: "", categoria: "todas", ordem: "recentes" });
+                            if (filtros.busca || filtros.categoria !== "todas" || filtros.escola) {
+                                setFiltros({ busca: "", categoria: "todas", ordem: "recentes", escola: null });
                             }
                         }}
                     />
