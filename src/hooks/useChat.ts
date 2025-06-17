@@ -31,12 +31,15 @@ export const useChat = (reservaId?: string, outroUsuarioId?: string) => {
   const { processarMencoes } = useMentions();
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [conversa, setConversa] = useState<Conversa | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [enviandoMensagem, setEnviandoMensagem] = useState(false);
+
+  // Verificar se devemos buscar conversa
+  const shouldFetchConversation = Boolean(user && (reservaId || outroUsuarioId));
 
   // Buscar ou criar conversa
   const buscarConversa = async () => {
-    if (!user) return;
+    if (!user || (!reservaId && !outroUsuarioId)) return;
 
     try {
       setLoading(true);
@@ -187,10 +190,17 @@ export const useChat = (reservaId?: string, outroUsuarioId?: string) => {
     };
   }, [conversa]);
 
-  // Buscar conversa quando o componente monta
+  // Buscar conversa quando o componente monta (apenas se devemos buscar)
   useEffect(() => {
-    buscarConversa();
-  }, [user, reservaId, outroUsuarioId]);
+    if (shouldFetchConversation) {
+      buscarConversa();
+    } else {
+      // Reset dos estados quando não devemos buscar conversa
+      setMensagens([]);
+      setConversa(null);
+      setLoading(false);
+    }
+  }, [user, reservaId, outroUsuarioId, shouldFetchConversation]);
 
   return {
     mensagens,
@@ -198,6 +208,6 @@ export const useChat = (reservaId?: string, outroUsuarioId?: string) => {
     loading,
     enviandoMensagem,
     enviarMensagem,
-    refetch: buscarConversa
+    refetch: shouldFetchConversation ? buscarConversa : () => {}
   };
 };
