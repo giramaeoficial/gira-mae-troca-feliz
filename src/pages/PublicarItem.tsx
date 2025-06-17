@@ -1,4 +1,3 @@
-
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
 import { Button } from "@/components/ui/button";
@@ -16,6 +15,7 @@ import { Sparkles, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useItens } from "@/hooks/useItens";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import ImageUpload from "@/components/ui/image-upload";
 import ItemPreviewCard from "@/components/ui/item-preview-card";
 import PriceSuggestions from "@/components/ui/price-suggestions";
@@ -40,6 +40,7 @@ type ItemFormData = z.infer<typeof itemSchema>;
 const PublicarItem = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { user } = useAuth();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [showPreview, setShowPreview] = useState(false);
     const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -75,12 +76,15 @@ const PublicarItem = () => {
     };
 
     const uploadImagesToSupabase = async (files: File[]): Promise<string[]> => {
+        if (!user?.id) {
+            throw new Error('Usuário não autenticado');
+        }
+
         setIsUploadingImages(true);
         try {
             const uploadPromises = files.map(async (file) => {
-                // Gerar caminho único para o arquivo
-                const userId = 'temp-user-id'; // Substituir por ID do usuário logado
-                const path = generateImagePath(userId, file.name);
+                // Usar ID do usuário autenticado
+                const path = generateImagePath(user.id, file.name);
                 
                 // Upload para o bucket 'itens'
                 await uploadImage({
@@ -109,6 +113,15 @@ const PublicarItem = () => {
     };
 
     const onSubmit = async (data: ItemFormData) => {
+        if (!user) {
+            toast({
+                title: "Erro de autenticação",
+                description: "Você precisa estar logado para publicar um item.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         if (selectedFiles.length === 0) {
             toast({
                 title: "Adicione pelo menos uma foto",
@@ -157,6 +170,32 @@ const PublicarItem = () => {
             });
         }
     };
+
+    // Verificar se usuário está autenticado
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24">
+                <Header />
+                <main className="flex-grow container mx-auto px-3 py-4 max-w-md">
+                    <div className="text-center py-12">
+                        <h1 className="text-xl font-bold text-gray-800 mb-4">
+                            Faça login para publicar itens
+                        </h1>
+                        <p className="text-gray-600 mb-6">
+                            Você precisa estar autenticado para publicar um item na comunidade.
+                        </p>
+                        <Button 
+                            onClick={() => navigate('/auth')}
+                            className="bg-gradient-to-r from-primary to-pink-500"
+                        >
+                            Fazer Login
+                        </Button>
+                    </div>
+                </main>
+                <QuickNav />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24">
