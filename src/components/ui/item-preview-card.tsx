@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getImageUrl } from '@/utils/supabaseStorage';
 
 interface ItemPreviewCardProps {
   titulo: string;
@@ -12,7 +13,7 @@ interface ItemPreviewCardProps {
   categoria: string;
   estadoConservacao: string;
   tamanho?: string;
-  fotos: File[];
+  fotos: File[] | string[];
   className?: string;
 }
 
@@ -25,7 +26,12 @@ const ItemPreviewCard: React.FC<ItemPreviewCardProps> = ({
   fotos,
   className
 }) => {
-  const previewImage = fotos.length > 0 ? URL.createObjectURL(fotos[0]) : null;
+  // Verificar se fotos são Files ou strings (URLs)
+  const previewImage = fotos.length > 0 
+    ? (fotos[0] instanceof File 
+        ? URL.createObjectURL(fotos[0]) 
+        : getImageUrl('itens', fotos[0] as string, 'medium'))
+    : null;
 
   const getCategoriaLabel = (cat: string) => {
     const labels: Record<string, string> = {

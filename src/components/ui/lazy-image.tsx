@@ -24,7 +24,7 @@ interface LazyImageProps {
 const LazyImage: React.FC<LazyImageProps> = ({
   src,
   alt,
-  bucket,
+  bucket = 'itens', // Default para bucket 'itens'
   size = 'medium',
   className,
   skeletonClassName,
@@ -64,9 +64,8 @@ const LazyImage: React.FC<LazyImageProps> = ({
     };
   }, []);
 
-  const imageUrl = bucket 
-    ? getImageUrl(bucket, src, size, transform)
-    : src;
+  // Usar getImageUrl para obter a URL correta do Supabase
+  const imageUrl = getImageUrl(bucket, src, size, transform);
 
   const handleLoad = () => {
     setIsLoaded(true);
