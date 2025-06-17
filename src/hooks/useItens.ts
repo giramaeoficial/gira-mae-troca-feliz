@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -426,6 +427,7 @@ export const useItens = () => {
 
       if (error) throw error;
 
+      // Processar fotos antes de retornar - CORREÇÃO PRINCIPAL
       const itensComFotosProcessadas = processarFotosItens(data || []);
       
       return itensComFotosProcessadas;
