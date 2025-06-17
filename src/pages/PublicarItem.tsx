@@ -22,6 +22,8 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from '@/hooks/useAuth';
 import { useItens } from '@/hooks/useItens';
 import { toast } from '@/components/ui/use-toast';
+import Header from '@/components/shared/Header';
+import QuickNav from '@/components/shared/QuickNav';
 
 const formSchema = z.object({
   titulo: z.string().min(3, {
@@ -112,163 +114,169 @@ const PublicarItem = () => {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">Publicar Item</h1>
+    <div className="min-h-screen bg-background">
+      <Header activePage="publicar" />
+      
+      <div className="container max-w-4xl mx-auto py-6 px-4 pb-24">
+        <h1 className="text-2xl font-bold mb-6">Publicar Item</h1>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <FormField
-            control={form.control}
-            name="titulo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Título</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ex: Livro usado em bom estado" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Dê um título claro e objetivo para o seu item.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="categoria"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoria</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="titulo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Título</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
+                    <Input placeholder="Ex: Livro usado em bom estado" {...field} />
                   </FormControl>
-                  <SelectContent>
-                    <SelectItem value="livros">Livros</SelectItem>
-                    <SelectItem value="roupas">Roupas</SelectItem>
-                    <SelectItem value="brinquedos">Brinquedos</SelectItem>
-                    <SelectItem value="moveis">Móveis</SelectItem>
-                    <SelectItem value="eletronicos">Eletrônicos</SelectItem>
-                    <SelectItem value="outros">Outros</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Escolha a categoria que melhor se encaixa no seu item.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="descricao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descrição</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Descreva o item detalhadamente, incluindo suas características, estado e outras informações relevantes."
-                    className="resize-none"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Forneça o máximo de detalhes possível sobre o item.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="estado_conservacao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Estado de Conservação</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o estado de conservação" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="novo">Novo</SelectItem>
-                    <SelectItem value="seminovo">Seminovo</SelectItem>
-                    <SelectItem value="usado">Usado</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Selecione o estado de conservação do item.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="tamanho"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tamanho (opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ex: P, M, G, 36, 40, etc." {...field} />
-                </FormControl>
-                <FormDescription>
-                  Informe o tamanho do item, se aplicável.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="valor_girinhas"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Valor em Girinhas</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="Ex: 10" 
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Defina o valor do item em Girinhas.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="mb-4">
-            <Label htmlFor="fotos">Fotos do Item</Label>
-            <Input
-              id="fotos"
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              className="mt-2"
+                  <FormDescription>
+                    Dê um título claro e objetivo para o seu item.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-sm text-gray-500 mt-1">
-              Selecione uma ou mais fotos do item
-            </p>
-          </div>
+            
+            <FormField
+              control={form.control}
+              name="categoria"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoria</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="livros">Livros</SelectItem>
+                      <SelectItem value="roupas">Roupas</SelectItem>
+                      <SelectItem value="brinquedos">Brinquedos</SelectItem>
+                      <SelectItem value="moveis">Móveis</SelectItem>
+                      <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                      <SelectItem value="outros">Outros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Escolha a categoria que melhor se encaixa no seu item.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="descricao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Descreva o item detalhadamente, incluindo suas características, estado e outras informações relevantes."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Forneça o máximo de detalhes possível sobre o item.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="estado_conservacao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Estado de Conservação</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o estado de conservação" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="novo">Novo</SelectItem>
+                      <SelectItem value="seminovo">Seminovo</SelectItem>
+                      <SelectItem value="usado">Usado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o estado de conservação do item.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="tamanho"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tamanho (opcional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: P, M, G, 36, 40, etc." {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Informe o tamanho do item, se aplicável.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="valor_girinhas"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor em Girinhas</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="Ex: 10" 
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Defina o valor do item em Girinhas.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Publicando...' : 'Publicar Item'}
-          </Button>
-        </form>
-      </Form>
+            <div className="mb-4">
+              <Label htmlFor="fotos">Fotos do Item</Label>
+              <Input
+                id="fotos"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileChange}
+                className="mt-2"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Selecione uma ou mais fotos do item
+              </p>
+            </div>
+
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? 'Publicando...' : 'Publicar Item'}
+            </Button>
+          </form>
+        </Form>
+      </div>
+
+      <QuickNav />
     </div>
   );
 };
