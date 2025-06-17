@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -229,13 +228,13 @@ const PublicarItem = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="roupas">Roupas</SelectItem>
-                            <SelectItem value="calcados">Calçados</SelectItem>
-                            <SelectItem value="brinquedos">Brinquedos</SelectItem>
-                            <SelectItem value="livros">Livros</SelectItem>
-                            <SelectItem value="acessorios">Acessórios</SelectItem>
-                            <SelectItem value="utensilios">Utensílios</SelectItem>
-                            <SelectItem value="outros">Outros</SelectItem>
+                            <SelectItem value="roupa">Roupas</SelectItem>
+                            <SelectItem value="calcado">Calçados</SelectItem>
+                            <SelectItem value="brinquedo">Brinquedos</SelectItem>
+                            <SelectItem value="livro">Livros</SelectItem>
+                            <SelectItem value="acessorio">Acessórios</SelectItem>
+                            <SelectItem value="utensilio">Utensílios</SelectItem>
+                            <SelectItem value="outro">Outros</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
