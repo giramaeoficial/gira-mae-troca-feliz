@@ -63,10 +63,18 @@ const LazyImage: React.FC<LazyImageProps> = ({
     };
   }, []);
 
-  // Verificar se src já é uma URL completa (começando com http)
-  const imageUrl = src.startsWith('http') || src.startsWith('blob:') 
-    ? src 
-    : getImageUrl(bucket, src, size, transform);
+  // Melhorar a lógica de URL da imagem
+  const getProcessedImageUrl = () => {
+    // Se for uma URL completa (HTTP ou blob), usar diretamente
+    if (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:')) {
+      return src;
+    }
+    
+    // Se for um caminho relativo do Supabase, processar com bucket
+    return getImageUrl(bucket, src, size, transform);
+  };
+
+  const imageUrl = getProcessedImageUrl();
 
   const handleLoad = () => {
     setIsLoaded(true);

@@ -1,3 +1,4 @@
+
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -202,7 +203,7 @@ const DetalhesItem = () => {
                                     className="w-full h-96 object-cover"
                                     size="full"
                                     placeholder="Carregando imagem..."
-                                    bucket={imagens[currentImageIndex].includes('supabase') ? 'item-photos' : undefined}
+                                    bucket="itens"
                                 />
                                 <div className="absolute top-4 right-4">
                                     <Badge className={`${(isReserved || item.status !== 'disponivel') ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
@@ -233,7 +234,7 @@ const DetalhesItem = () => {
                                             alt={`${item.titulo} ${index + 1}`}
                                             className="w-full h-full object-cover"
                                             size="thumbnail"
-                                            bucket={image.includes('supabase') ? 'item-photos' : undefined}
+                                            bucket="itens"
                                         />
                                     </button>
                                 ))}
