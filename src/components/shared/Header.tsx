@@ -41,7 +41,7 @@ const Header = ({ activePage }: HeaderProps) => {
     setIsMenuOpen(false);
   };
 
-  // Desktop header - mantém funcionalidade atual
+  // Desktop header - versão completa com todos os menus
   if (!isMobile) {
     return (
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -53,7 +53,7 @@ const Header = ({ activePage }: HeaderProps) => {
               <span className="text-xl font-bold">GiraMãe</span>
             </Link>
 
-            {/* Navigation */}
+            {/* Navigation Desktop - Todos os menus */}
             {user && (
               <nav className="hidden md:flex items-center space-x-6">
                 <Link
@@ -110,6 +110,17 @@ const Header = ({ activePage }: HeaderProps) => {
                 >
                   <span>Girinhas</span>
                 </Link>
+
+                <Link
+                  to="/indicacoes"
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activePage === "indicacoes"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-gray-600 hover:text-primary hover:bg-primary/10"
+                  }`}
+                >
+                  <span>Indicações</span>
+                </Link>
               </nav>
             )}
 
@@ -165,6 +176,12 @@ const Header = ({ activePage }: HeaderProps) => {
                           <span>Sistema Girinhas</span>
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/indicacoes" className="flex items-center">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Indicações</span>
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleSignOut}>
                         <Settings className="mr-2 h-4 w-4" />
@@ -190,7 +207,7 @@ const Header = ({ activePage }: HeaderProps) => {
     );
   }
 
-  // Mobile header - versão simplificada
+  // Mobile header - com menu Sheet completo
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 md:hidden">
       <div className="container mx-auto px-4">
@@ -217,7 +234,7 @@ const Header = ({ activePage }: HeaderProps) => {
                   </div>
                 </Link>
 
-                {/* Menu Hambúrguer */}
+                {/* Menu Hambúrguer - Todos os menus principais */}
                 <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                   <SheetTrigger asChild>
                     <Button 
@@ -253,6 +270,31 @@ const Header = ({ activePage }: HeaderProps) => {
                           <p className="text-xs text-gray-500 truncate">{user.email}</p>
                         </div>
                       </div>
+
+                      {/* Links principais de navegação */}
+                      <Link
+                        to="/feed"
+                        className="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors min-h-[44px]"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Feed
+                      </Link>
+
+                      <Link
+                        to="/publicar"
+                        className="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors min-h-[44px]"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Publicar Item
+                      </Link>
+
+                      <Link
+                        to="/reservas"
+                        className="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors min-h-[44px]"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Minhas Trocas
+                      </Link>
 
                       {/* Links secundários */}
                       <Link
