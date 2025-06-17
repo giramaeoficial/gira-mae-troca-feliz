@@ -33,8 +33,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <CarteiraProvider>
-            <RecompensasProvider>
+          <RecompensasProvider>
+            <CarteiraProvider>
               <ErrorBoundary>
                 <Toaster />
                 <Sonner />
@@ -136,8 +136,8 @@ function App() {
                   </Routes>
                 </BrowserRouter>
               </ErrorBoundary>
-            </RecompensasProvider>
-          </CarteiraProvider>
+            </CarteiraProvider>
+          </RecompensasProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
