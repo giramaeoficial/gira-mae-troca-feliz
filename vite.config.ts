@@ -27,15 +27,6 @@ export default defineConfig(({ mode }) => ({
           // Vendor chunks separados
           'vendor-react': ['react', 'react-dom'],
           'vendor-router': ['react-router-dom'],
-          'vendor-ui': [
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-card',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-select',
-            '@radix-ui/react-badge'
-          ],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-icons': ['lucide-react'],
