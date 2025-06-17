@@ -2,36 +2,36 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
+import LocationFilter from "@/components/shared/LocationFilter";
+import AdvancedFilters from "@/components/shared/AdvancedFilters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useItens } from "@/hooks/useItens";
 import { useReservas } from "@/hooks/useReservas";
 import { useFilaEspera } from "@/hooks/useFilaEspera";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useAuth } from "@/hooks/useAuth";
-import { Heart, Search, Sparkles, Users, Clock } from "lucide-react";
+import { Heart, Sparkles, Users, Clock } from "lucide-react";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
 import EmptyState from "@/components/loading/EmptyState";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import LazyImage from "@/components/ui/lazy-image";
-import EscolaFilter from "@/components/escolas/EscolaFilter";
-import { useFilhosPorEscola } from "@/hooks/useFilhosPorEscola";
 import { Tables } from "@/integrations/supabase/types";
 import { useState as useActionState } from "react";
 
 type Escola = Tables<'escolas_inep'>;
 
 const Feed = () => {
+    const [location, setLocation] = useState<{ estado: string; cidade: string } | null>(null);
     const [filtros, setFiltros] = useState({
         busca: "",
         categoria: "todas",
         ordem: "recentes",
         escola: null as Escola | null
     });
+    const [shouldSearch, setShouldSearch] = useState(false);
     
     const { user } = useAuth();
     const { itens, loading, error, refetch } = useItens();
@@ -39,29 +39,46 @@ const Feed = () => {
     const { entrarNaFila, isItemReservado } = useReservas();
     const { obterFilaItem } = useFilaEspera();
     const { saldo } = useCarteira();
-    const { temFilhoNaEscola } = useFilhosPorEscola();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
     const [filasInfo, setFilasInfo] = useState<Record<string, { total_fila: number; posicao_usuario: number }>>({});
 
-    // Carregar escola do localStorage na inicialização
+    // Carregar localização do localStorage na inicialização
     useEffect(() => {
-        const escolaSalva = localStorage.getItem('ultimaEscolaFiltrada');
-        if (escolaSalva) {
+        const locationSalva = localStorage.getItem('feedLocation');
+        if (locationSalva) {
             try {
-                const escola = JSON.parse(escolaSalva);
-                setFiltros(prev => ({ ...prev, escola }));
+                const loc = JSON.parse(locationSalva);
+                setLocation(loc);
             } catch (error) {
-                console.error('Erro ao carregar escola do localStorage:', error);
-                localStorage.removeItem('ultimaEscolaFiltrada');
+                console.error('Erro ao carregar localização do localStorage:', error);
+                localStorage.removeItem('feedLocation');
             }
         }
     }, []);
 
-    // Carregar itens na montagem do componente
+    // Salvar localização no localStorage quando mudar
     useEffect(() => {
-        console.log('Feed montado, carregando itens...');
-        refetch();
-    }, [refetch]);
+        if (location) {
+            localStorage.setItem('feedLocation', JSON.stringify(location));
+        } else {
+            localStorage.removeItem('feedLocation');
+        }
+    }, [location]);
+
+    // Carregar itens quando localização estiver definida e busca for solicitada
+    useEffect(() => {
+        if (location && shouldSearch) {
+            console.log('Carregando itens para:', location);
+            refetch();
+            setShouldSearch(false);
+        }
+    }, [location, shouldSearch, refetch]);
+
+    const handleSearch = () => {
+        if (location) {
+            setShouldSearch(true);
+        }
+    };
 
     const handleFavoritar = async (itemId: string) => {
         setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
@@ -87,7 +104,6 @@ const Feed = () => {
             const sucesso = await entrarNaFila(itemId, valorGirinhas);
             if (sucesso) {
                 setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
-                // Atualizar info da fila
                 const filaInfo = await obterFilaItem(itemId);
                 setFilasInfo(prev => ({ ...prev, [itemId]: filaInfo }));
             } else {
@@ -112,7 +128,6 @@ const Feed = () => {
         const matchCategoria = filtros.categoria === "todas" || item.categoria === filtros.categoria;
         
         // Filtro por escola - por enquanto desabilitado até implementarmos corretamente
-        // TODO: Implementar filtro por escola quando tivermos os dados dos filhos no perfil
         const matchEscola = !filtros.escola || true;
         
         return matchBusca && matchCategoria && matchEscola;
@@ -148,89 +163,43 @@ const Feed = () => {
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
             <Header />
             
-            {/* Filtro de Escola - Posicionado no topo */}
-            <div className="container mx-auto px-4 py-4">
-                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                    <CardContent className="p-4">
-                        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                            <div className="flex-shrink-0">
-                                <label className="block text-sm font-medium mb-2 md:mb-0 md:mr-4">
-                                    Filtrar por escola:
-                                </label>
-                            </div>
-                            <div className="flex-grow">
-                                <EscolaFilter 
-                                    value={filtros.escola}
-                                    onChange={(escola) => setFiltros({...filtros, escola})}
-                                />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            {/* Filtro de Localização - Discreto no topo */}
+            <div className="container mx-auto px-4 py-2 border-b bg-white/80 backdrop-blur-sm">
+                <LocationFilter 
+                    value={location}
+                    onChange={setLocation}
+                />
             </div>
 
             <main className="container mx-auto px-4 py-6">
-                {/* Hero Section */}
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-                        Encontre Tesouros 
-                    </h1>
-                    <p className="text-gray-600 text-lg">
-                        Descubra itens incríveis compartilhados pela comunidade
-                    </p>
-                </div>
+                {/* Hero Section - só mostra se tem localização */}
+                {location && (
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
+                            Encontre Tesouros em {location.cidade}
+                        </h1>
+                        <p className="text-gray-600 text-lg">
+                            Descubra itens incríveis compartilhados pela comunidade
+                        </p>
+                    </div>
+                )}
 
-                {/* Filtros principais */}
-                <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                    <CardContent className="p-4">
-                        <div className="space-y-4">
-                            {/* Primeira linha - Busca */}
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <Input
-                                    placeholder="Buscar por título ou descrição..."
-                                    value={filtros.busca}
-                                    onChange={(e) => setFiltros({...filtros, busca: e.target.value})}
-                                    className="pl-10 h-12"
-                                />
-                            </div>
-                            
-                            {/* Segunda linha - Filtros */}
-                            <div className="flex flex-col md:flex-row gap-4">
-                                <Select value={filtros.categoria} onValueChange={(value) => setFiltros({...filtros, categoria: value})}>
-                                    <SelectTrigger className="w-full md:w-48 h-12">
-                                        <SelectValue placeholder="Categoria" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="todas">Todas</SelectItem>
-                                        <SelectItem value="roupa">👗 Roupa</SelectItem>
-                                        <SelectItem value="brinquedo">🧸 Brinquedo</SelectItem>
-                                        <SelectItem value="calcado">👟 Calçado</SelectItem>
-                                        <SelectItem value="acessorio">🎀 Acessório</SelectItem>
-                                        <SelectItem value="kit">📦 Kit</SelectItem>
-                                        <SelectItem value="outro">🔖 Outro</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                
-                                <Select value={filtros.ordem} onValueChange={(value) => setFiltros({...filtros, ordem: value})}>
-                                    <SelectTrigger className="w-full md:w-48 h-12">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="recentes">Mais Recentes</SelectItem>
-                                        <SelectItem value="menor-preco">Menor Preço</SelectItem>
-                                        <SelectItem value="maior-preco">Maior Preço</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Filtros Avançados */}
+                <AdvancedFilters
+                    filters={filtros}
+                    onFilterChange={setFiltros}
+                    onSearch={handleSearch}
+                    hasLocation={!!location}
+                />
 
-                {/* Grid de Itens */}
-                {loading ? (
+                {/* Grid de Itens - só mostra se tem localização e já fez busca */}
+                {!location ? null : loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         <ItemCardSkeleton count={10} />
+                    </div>
+                ) : !shouldSearch && filteredItens.length === 0 ? (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">Clique em "Buscar Itens" para ver os produtos disponíveis</p>
                     </div>
                 ) : filteredItens.length === 0 ? (
                     <EmptyState 
@@ -251,13 +220,13 @@ const Feed = () => {
                             const semSaldo = saldo < Number(item.valor_girinhas);
                             const filaInfo = filasInfo[item.id];
                             
-                            // Garantir que sempre temos uma imagem válida
                             const imagemPrincipal = item.fotos && item.fotos.length > 0 && item.fotos[0]
                                 ? item.fotos[0]
                                 : "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400";
                             
                             return (
                                 <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-0">
+                                    
                                     <div className="relative">
                                         <Link to={`/item/${item.id}`}>
                                             <div className="aspect-square bg-gray-100 overflow-hidden">
@@ -271,14 +240,12 @@ const Feed = () => {
                                             </div>
                                         </Link>
                                         
-                                        {/* Status Badge */}
                                         {isReserved && (
                                             <Badge className="absolute top-2 left-2 bg-orange-500 text-white text-xs">
                                                 {filaInfo?.total_fila > 0 ? `Fila: ${filaInfo.total_fila}` : 'Reservado'}
                                             </Badge>
                                         )}
                                         
-                                        {/* Botão de favorito */}
                                         <Button
                                             size="sm"
                                             variant="ghost"
@@ -317,7 +284,6 @@ const Feed = () => {
                                                     </span>
                                                 </div>
                                                 
-                                                {/* Info da localização */}
                                                 {item.publicado_por_profile?.cidade && (
                                                     <span className="text-xs text-gray-500">
                                                         {item.publicado_por_profile.cidade}
@@ -326,7 +292,6 @@ const Feed = () => {
                                             </div>
                                         </Link>
 
-                                        {/* Botões de ação */}
                                         <div className="space-y-2">
                                             {isProprio ? (
                                                 <Button size="sm" variant="outline" className="w-full text-xs" disabled>
