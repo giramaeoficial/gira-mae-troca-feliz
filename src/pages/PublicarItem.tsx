@@ -1,485 +1,255 @@
-import Header from "@/components/shared/Header";
-import QuickNav from "@/components/shared/QuickNav";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useNavigate } from "react-router-dom";
-import { Sparkles, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
-import { useItens } from "@/hooks/useItens";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import ImageUpload from "@/components/ui/image-upload";
-import ItemPreviewCard from "@/components/ui/item-preview-card";
-import PriceSuggestions from "@/components/ui/price-suggestions";
-import FormProgress from "@/components/ui/form-progress";
-import { uploadImage, generateImagePath } from "@/utils/supabaseStorage";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
-const itemSchema = z.object({
-  titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
-  descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
-  categoria: z.enum(["roupa", "brinquedo", "calcado", "acessorio", "kit", "outro"], {
-    required_error: "Selecione uma categoria"
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { useAuth } from '@/hooks/useAuth';
+import { useItens } from '@/hooks/useItens';
+import { toast } from '@/components/ui/use-toast';
+import ImageUploader from '@/components/ImageUploader';
+
+const formSchema = z.object({
+  titulo: z.string().min(3, {
+    message: 'Título deve ter pelo menos 3 caracteres.',
   }),
-  estado_conservacao: z.enum(["novo", "otimo", "bom", "razoavel"], {
-    required_error: "Selecione o estado de conservação"
+  categoria: z.string().min(1, {
+    message: 'Selecione uma categoria.',
+  }),
+  descricao: z.string().min(10, {
+    message: 'Descrição deve ter pelo menos 10 caracteres.',
+  }),
+  estado_conservacao: z.string().min(1, {
+    message: 'Selecione o estado de conservação.',
   }),
   tamanho: z.string().optional(),
-  valor_girinhas: z.number().min(1, "Valor deve ser maior que 0").max(500, "Valor máximo de 500 Girinhas")
+  valor_girinhas: z.number({
+    invalid_type_error: 'Valor deve ser um número.',
+  }).min(1, {
+    message: 'Valor deve ser maior que zero.',
+  }),
 });
 
-type ItemFormData = z.infer<typeof itemSchema>;
-
 const PublicarItem = () => {
-    const navigate = useNavigate();
-    const { toast } = useToast();
-    const { user } = useAuth();
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [showPreview, setShowPreview] = useState(false);
-    const [isUploadingImages, setIsUploadingImages] = useState(false);
-    const { publicarItem, loading } = useItens();
+  const { user } = useAuth();
+  const { publicarItem } = useItens();
+  const navigate = useRouter();
+  const [fotos, setFotos] = useState<File[]>([]);
 
-    const form = useForm<ItemFormData>({
-        resolver: zodResolver(itemSchema),
-        defaultValues: {
-            titulo: "",
-            descricao: "",
-            categoria: undefined,
-            estado_conservacao: undefined,
-            tamanho: "",
-            valor_girinhas: 0
-        }
-    });
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      titulo: '',
+      categoria: '',
+      descricao: '',
+      estado_conservacao: '',
+      tamanho: '',
+      valor_girinhas: 1,
+    },
+  });
 
-    const watchedValues = form.watch();
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log(values);
+  };
 
-    // Calcular progresso do formulário
-    const formSteps = [
-        { label: "Fotos", completed: selectedFiles.length > 0, required: true },
-        { label: "Título", completed: (watchedValues.titulo?.length || 0) >= 3, required: true },
-        { label: "Descrição", completed: (watchedValues.descricao?.length || 0) >= 10, required: true },
-        { label: "Categoria", completed: !!watchedValues.categoria, required: true },
-        { label: "Estado", completed: !!watchedValues.estado_conservacao, required: true },
-        { label: "Preço", completed: (watchedValues.valor_girinhas || 0) > 0, required: true },
-        { label: "Tamanho", completed: !!watchedValues.tamanho, required: false }
-    ];
+  const handleSubmit = async (data: FormData) => {
+    if (!user) return;
 
-    const handlePriceSelect = (price: number) => {
-        form.setValue('valor_girinhas', price);
-    };
+    const titulo = data.get('titulo') as string;
+    const categoria = data.get('categoria') as string;
+    const descricao = data.get('descricao') as string;
+    const estado_conservacao = data.get('estado_conservacao') as string;
+    const tamanho = data.get('tamanho') as string;
+    const valor_girinhas = Number(data.get('valor_girinhas'));
 
-    const uploadImagesToSupabase = async (files: File[]): Promise<string[]> => {
-        if (!user?.id) {
-            throw new Error('Usuário não autenticado');
-        }
-
-        setIsUploadingImages(true);
-        try {
-            const uploadPromises = files.map(async (file) => {
-                // Usar ID do usuário autenticado
-                const path = generateImagePath(user.id, file.name);
-                
-                // Upload para o bucket 'itens'
-                await uploadImage({
-                    bucket: 'itens',
-                    path: path,
-                    file: file
-                });
-                
-                return path;
-            });
-
-            const uploadedPaths = await Promise.all(uploadPromises);
-            console.log('Imagens uploaded com sucesso:', uploadedPaths);
-            return uploadedPaths;
-        } catch (error) {
-            console.error('Erro no upload das imagens:', error);
-            toast({
-                title: "Erro no upload das imagens",
-                description: "Tente novamente ou use imagens menores.",
-                variant: "destructive"
-            });
-            throw error;
-        } finally {
-            setIsUploadingImages(false);
-        }
-    };
-
-    const onSubmit = async (data: ItemFormData) => {
-        if (!user) {
-            toast({
-                title: "Erro de autenticação",
-                description: "Você precisa estar logado para publicar um item.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        if (selectedFiles.length === 0) {
-            toast({
-                title: "Adicione pelo menos uma foto",
-                description: "Itens com fotos têm mais chances de serem trocados.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        try {
-            // Upload das imagens primeiro
-            let fotosUrls: string[] = [];
-            if (selectedFiles.length > 0) {
-                fotosUrls = await uploadImagesToSupabase(selectedFiles);
-            }
-
-            const itemData = {
-                titulo: data.titulo,
-                descricao: data.descricao,
-                categoria: data.categoria!,
-                estado_conservacao: data.estado_conservacao!,
-                tamanho: data.tamanho || null,
-                valor_girinhas: data.valor_girinhas,
-                fotos: fotosUrls
-            };
-            
-            const sucesso = await publicarItem(itemData);
-            
-            if (sucesso) {
-                toast({
-                    title: "Item publicado com sucesso!",
-                    description: "Seu item está agora disponível na comunidade.",
-                });
-                
-                // Usar window.location.href ao invés de navigate para evitar problemas de chunk loading
-                setTimeout(() => {
-                    window.location.href = "/perfil";
-                }, 1500);
-            }
-        } catch (error) {
-            console.error('Erro ao publicar item:', error);
-            toast({
-                title: "Erro ao publicar item",
-                description: "Tente novamente em alguns instantes.",
-                variant: "destructive"
-            });
-        }
-    };
-
-    // Verificar se usuário está autenticado
-    if (!user) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24">
-                <Header />
-                <main className="flex-grow container mx-auto px-3 py-4 max-w-md">
-                    <div className="text-center py-12">
-                        <h1 className="text-xl font-bold text-gray-800 mb-4">
-                            Faça login para publicar itens
-                        </h1>
-                        <p className="text-gray-600 mb-6">
-                            Você precisa estar autenticado para publicar um item na comunidade.
-                        </p>
-                        <Button 
-                            onClick={() => navigate('/auth')}
-                            className="bg-gradient-to-r from-primary to-pink-500"
-                        >
-                            Fazer Login
-                        </Button>
-                    </div>
-                </main>
-                <QuickNav />
-            </div>
-        );
+    if (!titulo || !categoria || !descricao || !estado_conservacao || !valor_girinhas) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios",
+        variant: "destructive"
+      });
+      return;
     }
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 text-foreground flex flex-col pb-24">
-            <Header />
-            <main className="flex-grow container mx-auto px-3 py-4 max-w-md">
-                {/* Header Mobile */}
-                <div className="text-center mb-6">
-                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-1">
-                        Publicar Item
-                    </h1>
-                    <p className="text-sm text-gray-600">Compartilhe com a comunidade</p>
-                </div>
+    if (fotos.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Adicione pelo menos uma foto",
+        variant: "destructive"
+      });
+      return;
+    }
 
-                {/* Progresso */}
-                <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm mb-4">
-                    <CardContent className="p-4">
-                        <FormProgress steps={formSteps} />
-                    </CardContent>
-                </Card>
+    const itemData = {
+      titulo,
+      categoria,
+      descricao,
+      estado_conservacao,
+      tamanho,
+      valor_girinhas,
+      publicado_por: user.id,
+      status: 'disponivel',
+    };
 
-                {/* Formulário Principal */}
-                <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm mb-4">
-                    <CardContent className="p-4">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                                {/* Upload de Fotos */}
-                                <div className="space-y-3">
-                                    <Label className="text-sm font-medium">Fotos do item (até 3) *</Label>
-                                    <ImageUpload
-                                        value={selectedFiles}
-                                        onChange={setSelectedFiles}
-                                        maxFiles={3}
-                                        maxSizeKB={5000}
-                                        disabled={loading || isUploadingImages}
-                                    />
-                                    {isUploadingImages && (
-                                        <p className="text-sm text-blue-600">Processando imagens...</p>
-                                    )}
-                                </div>
+    const sucesso = await publicarItem(itemData, fotos);
+    
+    if (sucesso) {
+      navigate('/');
+    }
+  };
 
-                                {/* Título */}
-                                <FormField
-                                    control={form.control}
-                                    name="titulo"
-                                    render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-sm font-medium flex items-center gap-2">
-                                                Título do item *
-                                                {fieldState.error && (
-                                                    <span className="text-xs text-red-500">({fieldState.error.message})</span>
-                                                )}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    placeholder="Ex: Kit de bodies manga curta" 
-                                                    {...field}
-                                                    className={`h-12 ${fieldState.error ? "border-red-300 focus:border-red-500" : ""}`}
-                                                />
-                                            </FormControl>
-                                            <div className="text-xs text-gray-500">
-                                                {field.value?.length || 0}/100 caracteres
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
+  return (
+    <div className="container max-w-4xl mx-auto py-10">
+      <h1 className="text-3xl font-bold mb-6">Publicar Item</h1>
 
-                                {/* Descrição */}
-                                <FormField
-                                    control={form.control}
-                                    name="descricao"
-                                    render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-sm font-medium flex items-center gap-2">
-                                                Descrição *
-                                                {fieldState.error && (
-                                                    <span className="text-xs text-red-500">({fieldState.error.message})</span>
-                                                )}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Textarea 
-                                                    placeholder="Detalhes sobre o item, marca, estado..." 
-                                                    {...field}
-                                                    className={`min-h-[100px] ${fieldState.error ? "border-red-300 focus:border-red-500" : ""}`}
-                                                />
-                                            </FormControl>
-                                            <div className="text-xs text-gray-500">
-                                                {field.value?.length || 0}/500 caracteres
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" action={handleSubmit}>
+          <FormField
+            control={form.control}
+            name="titulo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Título</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: Livro usado em bom estado" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Dê um título claro e objetivo para o seu item.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="categoria"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoria</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="livros">Livros</SelectItem>
+                    <SelectItem value="roupas">Roupas</SelectItem>
+                    <SelectItem value="brinquedos">Brinquedos</SelectItem>
+                    <SelectItem value="moveis">Móveis</SelectItem>
+                    <SelectItem value="eletronicos">Eletrônicos</SelectItem>
+                    <SelectItem value="outros">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Escolha a categoria que melhor se encaixa no seu item.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="descricao"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Descreva o item detalhadamente, incluindo suas características, estado e outras informações relevantes."
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Forneça o máximo de detalhes possível sobre o item.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="estado_conservacao"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado de Conservação</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o estado de conservação" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="novo">Novo</SelectItem>
+                    <SelectItem value="seminovo">Seminovo</SelectItem>
+                    <SelectItem value="usado">Usado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Selecione o estado de conservação do item.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="tamanho"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tamanho (opcional)</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ex: P, M, G, 36, 40, etc." {...field} />
+                </FormControl>
+                <FormDescription>
+                  Informe o tamanho do item, se aplicável.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="valor_girinhas"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Valor em Girinhas</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="Ex: 10" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Defina o valor do item em Girinhas.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-                                {/* Categoria e Estado */}
-                                <div className="grid grid-cols-1 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="categoria"
-                                        render={({ field, fieldState }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-sm font-medium flex items-center gap-2">
-                                                    Categoria *
-                                                    {fieldState.error && (
-                                                        <span className="text-xs text-red-500">({fieldState.error.message})</span>
-                                                    )}
-                                                </FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || ""}>
-                                                    <FormControl>
-                                                        <SelectTrigger className={`h-12 ${fieldState.error ? "border-red-300 focus:border-red-500" : ""}`}>
-                                                            <SelectValue placeholder="Selecione a categoria" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="roupa">👗 Roupa</SelectItem>
-                                                        <SelectItem value="brinquedo">🧸 Brinquedo</SelectItem>
-                                                        <SelectItem value="calcado">👟 Calçado</SelectItem>
-                                                        <SelectItem value="acessorio">🎀 Acessório</SelectItem>
-                                                        <SelectItem value="kit">📦 Kit</SelectItem>
-                                                        <SelectItem value="outro">🔖 Outro</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormItem>
-                                        )}
-                                    />
+          <div className="mb-4">
+            <Label htmlFor="fotos">Fotos do Item</Label>
+            <ImageUploader onUpload={setFotos} />
+          </div>
 
-                                    <FormField
-                                        control={form.control}
-                                        name="estado_conservacao"
-                                        render={({ field, fieldState }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-sm font-medium flex items-center gap-2">
-                                                    Estado *
-                                                    {fieldState.error && (
-                                                        <span className="text-xs text-red-500">({fieldState.error.message})</span>
-                                                    )}
-                                                </FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || ""}>
-                                                    <FormControl>
-                                                        <SelectTrigger className={`h-12 ${fieldState.error ? "border-red-300 focus:border-red-500" : ""}`}>
-                                                            <SelectValue placeholder="Como está o item?" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="novo">✨ Novo (com etiqueta)</SelectItem>
-                                                        <SelectItem value="otimo">💎 Ótimo estado</SelectItem>
-                                                        <SelectItem value="bom">👍 Bom estado</SelectItem>
-                                                        <SelectItem value="razoavel">⚡ Razoável</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Tamanho e Preço */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="tamanho"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-sm font-medium">Tamanho</FormLabel>
-                                                <FormControl>
-                                                    <Input 
-                                                        placeholder="Ex: 6-9M, 24" 
-                                                        {...field} 
-                                                        className="h-12"
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="valor_girinhas"
-                                        render={({ field, fieldState }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-sm font-medium flex items-center gap-2">
-                                                    Girinhas *
-                                                    {fieldState.error && (
-                                                        <span className="text-xs text-red-500">({fieldState.error.message})</span>
-                                                    )}
-                                                </FormLabel>
-                                                <FormControl>
-                                                    <Input 
-                                                        type="number" 
-                                                        placeholder="25" 
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                                        className={`h-12 ${fieldState.error ? "border-red-300 focus:border-red-500" : ""}`}
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Sugestões de Preço - só renderiza se categoria estiver selecionada */}
-                                {watchedValues.categoria && watchedValues.categoria.trim() !== "" && (
-                                    <PriceSuggestions
-                                        categoria={watchedValues.categoria}
-                                        onSelectPrice={handlePriceSelect}
-                                        currentPrice={watchedValues.valor_girinhas || 0}
-                                    />
-                                )}
-
-                                {/* Botão Submit */}
-                                <Button 
-                                    size="lg" 
-                                    className="w-full h-12 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-base font-semibold"
-                                    type="submit"
-                                    disabled={loading || isUploadingImages || formSteps.filter(s => s.required && !s.completed).length > 0}
-                                >
-                                    {loading || isUploadingImages ? "Publicando..." : "Publicar Item"}
-                                </Button>
-                            </form>
-                        </Form>
-                    </CardContent>
-                </Card>
-
-                {/* Preview Toggle */}
-                <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="w-full mb-4 h-10"
-                >
-                    {showPreview ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                    {showPreview ? 'Ocultar Preview' : 'Ver Preview no Feed'}
-                </Button>
-
-                {/* Preview */}
-                {showPreview && (
-                    <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm mb-4">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-base">Como ficará no feed</CardTitle>
-                            <CardDescription className="text-sm">
-                                Assim outras mães verão seu item
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                            <ItemPreviewCard
-                                titulo={watchedValues.titulo || ""}
-                                valorGirinhas={watchedValues.valor_girinhas || 0}
-                                categoria={watchedValues.categoria || ""}
-                                estadoConservacao={watchedValues.estado_conservacao || ""}
-                                tamanho={watchedValues.tamanho}
-                                fotos={selectedFiles}
-                            />
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Dicas */}
-                <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-base">💡 Dicas para uma boa troca</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm text-gray-600 pt-0">
-                        <div className="flex items-start gap-3">
-                            <span className="text-green-500 text-lg">✓</span>
-                            <span>Adicione pelo menos 2 fotos bem iluminadas</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <span className="text-green-500 text-lg">✓</span>
-                            <span>Seja honesta sobre o estado de conservação</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <span className="text-green-500 text-lg">✓</span>
-                            <span>Inclua marca e tamanho na descrição</span>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <span className="text-green-500 text-lg">✓</span>
-                            <span>Use preços justos baseados nas sugestões</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </main>
-            <QuickNav />
-        </div>
-    );
-}
+          <Button type="submit">Publicar Item</Button>
+        </form>
+      </Form>
+    </div>
+  );
+};
 
 export default PublicarItem;

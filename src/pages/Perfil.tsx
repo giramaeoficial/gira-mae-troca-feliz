@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -30,7 +29,7 @@ const Perfil = () => {
     // Carregar meus itens quando o usuário estiver disponível
     useEffect(() => {
         if (user) {
-            buscarMeusItens().then(setMeusItens);
+            buscarMeusItens(user.id);
         }
     }, [user, buscarMeusItens]);
 

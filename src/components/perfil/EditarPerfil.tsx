@@ -23,13 +23,7 @@ interface FilhoData {
   tamanho_roupas: string;
   tamanho_calcados: string;
   escola_id?: number | null;
-  escola?: {
-    codigo_inep: number;
-    escola: string;
-    municipio: string;
-    uf: string;
-    categoria_administrativa: string;
-  } | null;
+  escola?: Tables<'escolas_inep'> | null;
 }
 
 interface PerfilData {
@@ -111,13 +105,7 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
         .from('filhos')
         .select(`
           *,
-          escolas_inep!filhos_escola_id_fkey (
-            codigo_inep,
-            escola,
-            municipio,
-            uf,
-            categoria_administrativa
-          )
+          escolas_inep!filhos_escola_id_fkey (*)
         `)
         .eq('mae_id', user.id);
 
@@ -132,13 +120,7 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
           tamanho_roupas: filho.tamanho_roupas || "",
           tamanho_calcados: filho.tamanho_calcados || "",
           escola_id: filho.escola_id,
-          escola: filho.escolas_inep ? {
-            codigo_inep: filho.escolas_inep.codigo_inep,
-            escola: filho.escolas_inep.escola || '',
-            municipio: filho.escolas_inep.municipio || '',
-            uf: filho.escolas_inep.uf || '',
-            categoria_administrativa: filho.escolas_inep.categoria_administrativa || ''
-          } : null
+          escola: filho.escolas_inep || null
         }));
         
         setFilhos(filhosProcessados);
@@ -257,13 +239,7 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
       const escola = valor as Tables<'escolas_inep'> | null;
       novosFilhos[index] = { 
         ...novosFilhos[index], 
-        escola: escola ? {
-          codigo_inep: escola.codigo_inep,
-          escola: escola.escola || '',
-          municipio: escola.municipio || '',
-          uf: escola.uf || '',
-          categoria_administrativa: escola.categoria_administrativa || ''
-        } : null,
+        escola: escola,
         escola_id: escola?.codigo_inep || null
       };
     } else {
