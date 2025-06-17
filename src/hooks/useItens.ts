@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { useQueryWithErrorHandling } from '@/hooks/useQueryWithErrorHandling';
 
 type Item = Tables<'itens'>;
 type ProfileSubset = Pick<Tables<'profiles'>, 'id' | 'nome' | 'avatar_url' | 'bairro' | 'cidade' | 'reputacao'>;
@@ -145,47 +145,69 @@ export const useItens = () => {
       }
       setError(null);
 
-      let query = supabase
-        .from('itens')
-        .select('*')
-        .eq('status', 'disponivel')
-        .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE);
+      // Query com timeout e retry automático
+      const queryFn = async () => {
+        let query = supabase
+          .from('itens')
+          .select('*')
+          .eq('status', 'disponivel')
+          .order('created_at', { ascending: false })
+          .limit(PAGE_SIZE);
 
-      // Aplicar paginação cursor-based
-      if (loadMore && pagination.lastCreatedAt) {
-        query = query.lt('created_at', pagination.lastCreatedAt);
+        // Aplicar paginação cursor-based
+        if (loadMore && pagination.lastCreatedAt) {
+          query = query.lt('created_at', pagination.lastCreatedAt);
+        }
+
+        // Aplicar filtros
+        if (filtros?.categoria && filtros.categoria !== 'todos') {
+          query = query.eq('categoria', filtros.categoria);
+        }
+
+        if (filtros?.busca) {
+          query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
+        }
+
+        if (filtros?.tamanho) {
+          query = query.eq('tamanho', filtros.tamanho);
+        }
+
+        if (filtros?.valorMin !== undefined) {
+          query = query.gte('valor_girinhas', filtros.valorMin);
+        }
+
+        if (filtros?.valorMax !== undefined) {
+          query = query.lte('valor_girinhas', filtros.valorMax);
+        }
+
+        // Excluir itens do próprio usuário se estiver logado
+        if (user) {
+          query = query.neq('publicado_por', user.id);
+        }
+
+        return query;
+      };
+
+      const { data: itensData, error } = await Promise.race([
+        queryFn(),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: busca demorou mais que 30 segundos')), 30000)
+        )
+      ]);
+
+      if (error) {
+        // Tentar usar cache como fallback
+        if (!loadMore) {
+          const cachedData = getCachedData(cacheKey);
+          if (cachedData) {
+            console.log('Usando cache como fallback após erro');
+            setItens(cachedData);
+            setError('Dados podem estar desatualizados (sem conexão)');
+            return cachedData;
+          }
+        }
+        throw error;
       }
-
-      // Aplicar filtros
-      if (filtros?.categoria && filtros.categoria !== 'todos') {
-        query = query.eq('categoria', filtros.categoria);
-      }
-
-      if (filtros?.busca) {
-        query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
-      }
-
-      if (filtros?.tamanho) {
-        query = query.eq('tamanho', filtros.tamanho);
-      }
-
-      if (filtros?.valorMin !== undefined) {
-        query = query.gte('valor_girinhas', filtros.valorMin);
-      }
-
-      if (filtros?.valorMax !== undefined) {
-        query = query.lte('valor_girinhas', filtros.valorMax);
-      }
-
-      // Excluir itens do próprio usuário se estiver logado
-      if (user) {
-        query = query.neq('publicado_por', user.id);
-      }
-
-      const { data: itensData, error } = await query;
-
-      if (error) throw error;
 
       // Verificar se request foi cancelado
       if (controller.signal.aborted) {
@@ -247,6 +269,52 @@ export const useItens = () => {
       }
     }
   }, [user, pagination.lastCreatedAt, prefetchProfiles, getCachedData, setCachedData, cancelPendingRequests, cleanupExpiredCache]);
+
+  // Hook para buscar item específico com error handling
+  const { 
+    data: itemDetalhes, 
+    loading: loadingItem, 
+    error: errorItem, 
+    execute: buscarItemPorId,
+    retry: retryItem 
+  } = useQueryWithErrorHandling(
+    async () => {
+      throw new Error('itemId não fornecido');
+    },
+    {
+      enableCache: true,
+      cacheTTL: 10 * 60 * 1000, // 10 minutos para detalhes
+      maxRetries: 3,
+      timeout: 15000
+    }
+  );
+
+  const buscarItemPorIdWrapper = useCallback(async (itemId: string) => {
+    const queryFn = async () => {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          profiles!publicado_por (
+            id,
+            nome,
+            avatar_url,
+            bairro,
+            cidade,
+            reputacao,
+            telefone
+          )
+        `)
+        .eq('id', itemId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    };
+
+    // Substituir a função do hook temporariamente
+    return buscarItemPorId.call(null, queryFn);
+  }, [buscarItemPorId]);
 
   const carregarMais = useCallback(() => {
     if (pagination.hasMore && !pagination.isLoadingMore && !loading) {
@@ -362,46 +430,6 @@ export const useItens = () => {
       console.error('Erro ao buscar itens do usuário:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar itens do usuário');
       return [];
-    } finally {
-      setLoading(false);
-    }
-  }, [cancelPendingRequests]);
-
-  const buscarItemPorId = useCallback(async (itemId: string) => {
-    try {
-      cancelPendingRequests();
-      
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('itens')
-        .select(`
-          *,
-          profiles!publicado_por (
-            id,
-            nome,
-            avatar_url,
-            bairro,
-            cidade,
-            reputacao,
-            telefone
-          )
-        `)
-        .eq('id', itemId)
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return null;
-      }
-      
-      console.error('Erro ao buscar item:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao carregar item');
-      return null;
     } finally {
       setLoading(false);
     }
@@ -529,10 +557,15 @@ export const useItens = () => {
     buscarTodosItens,
     buscarMeusItens,
     buscarItensDoUsuario,
-    buscarItemPorId,
+    buscarItemPorId: buscarItemPorIdWrapper,
     publicarItem,
     atualizarItem,
     deletarItem,
-    carregarMais
+    carregarMais,
+    // Novos métodos relacionados ao error handling
+    itemDetalhes,
+    loadingItem,
+    errorItem,
+    retryItem
   };
 };
