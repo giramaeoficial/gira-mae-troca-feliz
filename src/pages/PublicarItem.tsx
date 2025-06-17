@@ -158,7 +158,7 @@ const PublicarItem = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
       <Header activePage="publicar" />
       
       <div className="container max-w-lg mx-auto py-4 px-4 pb-24">
@@ -172,7 +172,7 @@ const PublicarItem = () => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
             {/* Upload de Fotos */}
-            <Card>
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Fotos do Item</CardTitle>
               </CardHeader>
@@ -187,7 +187,7 @@ const PublicarItem = () => {
             </Card>
 
             {/* Informações Básicas */}
-            <Card>
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Informações Básicas</CardTitle>
               </CardHeader>
@@ -324,7 +324,7 @@ const PublicarItem = () => {
             </Card>
 
             {/* Localização */}
-            <Card>
+            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
@@ -445,7 +445,7 @@ const PublicarItem = () => {
             <Button 
               type="submit" 
               disabled={loading} 
-              className="w-full h-14 text-lg font-semibold"
+              className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
               size="lg"
             >
               {loading ? 'Publicando...' : 'Publicar Item'}

@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
+import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
 
 export interface Item {
   id: string;
@@ -17,6 +18,9 @@ export interface Item {
   fotos?: string[];
   created_at: string;
   updated_at: string;
+  filho_id?: string;
+  estado_manual?: string;
+  cidade_manual?: string;
   publicado_por_profile?: {
     nome: string;
     avatar_url?: string;
@@ -168,23 +172,35 @@ export const useItens = () => {
     setError('');
     
     try {
+      console.log('Iniciando upload de', fotos.length, 'fotos...');
+      
       // Upload das fotos
       const fotosUrls: string[] = [];
       
       for (const foto of fotos) {
-        const fileName = `${Date.now()}_${foto.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('itens')
-          .upload(fileName, foto);
+        try {
+          const fileName = generateImagePath(itemData.publicado_por, foto.name);
+          console.log('Fazendo upload da foto:', fileName);
+          
+          await uploadImage({
+            bucket: 'itens',
+            path: fileName,
+            file: foto
+          });
 
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('itens')
-          .getPublicUrl(fileName);
-        
-        fotosUrls.push(publicUrl);
+          const { data: { publicUrl } } = supabase.storage
+            .from('itens')
+            .getPublicUrl(fileName);
+          
+          fotosUrls.push(publicUrl);
+          console.log('Foto uploaded com sucesso:', publicUrl);
+        } catch (uploadError) {
+          console.error('Erro no upload da foto:', uploadError);
+          throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
+        }
       }
+
+      console.log('Inserindo item no banco com dados:', { ...itemData, fotos: fotosUrls });
 
       // Inserir item no banco
       const { error: insertError } = await supabase
@@ -194,7 +210,10 @@ export const useItens = () => {
           fotos: fotosUrls
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Erro ao inserir item:', insertError);
+        throw insertError;
+      }
 
       toast({
         title: "Sucesso!",
@@ -204,11 +223,11 @@ export const useItens = () => {
       await refetch();
       return true;
     } catch (err) {
-      console.error('Erro ao publicar item:', err);
+      console.error('Erro completo ao publicar item:', err);
       setError('Erro ao publicar item');
       toast({
         title: "Erro",
-        description: "Erro ao publicar item",
+        description: err.message || "Erro ao publicar item",
         variant: "destructive"
       });
       return false;
