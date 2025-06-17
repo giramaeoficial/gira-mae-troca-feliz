@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link, LinkProps } from 'react-router-dom';
 import { usePreloadRoute } from '@/hooks/usePreloadRoute';
 
@@ -15,11 +15,11 @@ const PreloadLink: React.FC<PreloadLinkProps> = ({
   ...props 
 }) => {
   const { preloadRoute } = usePreloadRoute();
-  let preloadTimer: NodeJS.Timeout | null = null;
+  const preloadTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleMouseEnter = () => {
     // Delay pequeno para evitar preloads desnecessários em hover rápido
-    preloadTimer = setTimeout(() => {
+    preloadTimerRef.current = setTimeout(() => {
       const path = typeof to === 'string' ? to : to.pathname;
       if (path) {
         preloadRoute(path);
@@ -28,9 +28,9 @@ const PreloadLink: React.FC<PreloadLinkProps> = ({
   };
 
   const handleMouseLeave = () => {
-    if (preloadTimer) {
-      clearTimeout(preloadTimer);
-      preloadTimer = null;
+    if (preloadTimerRef.current) {
+      clearTimeout(preloadTimerRef.current);
+      preloadTimerRef.current = null;
     }
   };
 
