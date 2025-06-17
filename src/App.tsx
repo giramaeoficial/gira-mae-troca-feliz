@@ -19,7 +19,7 @@ import PageSkeleton from './components/loading/PageSkeleton';
 const Feed = lazy(() => import('./pages/Feed'));
 const SistemaGirinhas = lazy(() => import('./pages/SistemaGirinhas'));
 const Perfil = lazy(() => import('./pages/Perfil'));
-const PerfilPublicoMae = lazy(() => import('./pages/PerfilPublicoMae'));
+const PerfilPublico = lazy(() => import('./pages/PerfilPublicoMae'));
 const PublicarItem = lazy(() => import('./pages/PublicarItem'));
 const DetalhesItem = lazy(() => import('./pages/DetalhesItem'));
 const Carteira = lazy(() => import('./pages/Carteira'));
@@ -79,10 +79,10 @@ function AppContent() {
             </Suspense>
           </ErrorBoundary>
         } />
-        <Route path="/perfil/:nome" element={
+        <Route path="/perfil/:id" element={
           <ErrorBoundary fallbackType="page">
             <Suspense fallback={<PageSkeleton type="perfil" />}>
-              <PerfilPublicoMae />
+              <PerfilPublico />
             </Suspense>
           </ErrorBoundary>
         } />

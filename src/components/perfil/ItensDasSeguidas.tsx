@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -94,7 +95,7 @@ const ItensDasSeguidas = () => {
                       </AvatarFallback>
                     </Avatar>
                     <Link 
-                      to={`/perfil/${encodeURIComponent(item.profiles?.nome || '')}`}
+                      to={`/perfil/${item.profiles?.id || ''}`}
                       className="text-sm text-primary hover:underline"
                     >
                       {item.profiles?.nome}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -78,7 +77,7 @@ const ListaSeguidores = () => {
               {seguindo.map((item) => (
                 <Link 
                   key={item.id} 
-                  to={`/perfil/${encodeURIComponent(item.profiles.nome)}`}
+                  to={`/perfil/${item.profiles.id}`}
                   className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <Avatar className="w-10 h-10">
@@ -123,7 +122,7 @@ const ListaSeguidores = () => {
               {seguidores.map((item) => (
                 <Link 
                   key={item.id} 
-                  to={`/perfil/${encodeURIComponent(item.profiles.nome)}`}
+                  to={`/perfil/${item.profiles.id}`}
                   className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <Avatar className="w-10 h-10">

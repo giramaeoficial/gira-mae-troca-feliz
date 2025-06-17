@@ -83,6 +83,68 @@ export const useProfile = () => {
     }
   }, [user]);
 
+  const fetchProfileById = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('Buscando perfil por ID:', id);
+
+      // Buscar perfil por ID
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
+        throw profileError;
+      }
+
+      console.log('Perfil encontrado:', profileData);
+      setProfile(profileData);
+
+      // Buscar filhos do perfil com escolas
+      const { data: filhosData, error: filhosError } = await supabase
+        .from('filhos')
+        .select(`
+          *,
+          escolas_inep!filhos_escola_id_fkey (
+            codigo_inep,
+            escola,
+            municipio,
+            uf,
+            categoria_administrativa
+          )
+        `)
+        .eq('mae_id', profileData.id)
+        .order('created_at', { ascending: true });
+
+      if (filhosError) throw filhosError;
+
+      const filhosProcessados = filhosData?.map(filho => ({
+        ...filho,
+        escolas_inep: filho.escolas_inep ? {
+          codigo_inep: filho.escolas_inep.codigo_inep,
+          escola: filho.escolas_inep.escola || '',
+          municipio: filho.escolas_inep.municipio || '',
+          uf: filho.escolas_inep.uf || '',
+          categoria_administrativa: filho.escolas_inep.categoria_administrativa || ''
+        } : null
+      })) || [];
+
+      setFilhos(filhosProcessados);
+      return profileData;
+    } catch (err) {
+      console.error('Erro ao carregar perfil por ID:', err);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const fetchProfileByName = useCallback(async (nome: string) => {
     try {
       setLoading(true);
@@ -198,6 +260,7 @@ export const useProfile = () => {
     loading,
     error,
     refetch: fetchProfile,
+    fetchProfileById,
     fetchProfileByName,
     updateProfile,
     deleteFilho

@@ -1,4 +1,3 @@
-
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Header from "@/components/shared/Header";
@@ -17,7 +16,7 @@ type Profile = Tables<'profiles'>;
 type Item = Tables<'itens'>;
 
 const PerfilPublicoMae = () => {
-  const { nome } = useParams<{ nome: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -28,8 +27,8 @@ const PerfilPublicoMae = () => {
 
   useEffect(() => {
     const carregarDados = async () => {
-      if (!nome) {
-        setError('Nome do perfil não informado');
+      if (!id) {
+        setError('ID do perfil não informado');
         setLoading(false);
         return;
       }
@@ -38,13 +37,13 @@ const PerfilPublicoMae = () => {
         setLoading(true);
         setError(null);
         
-        console.log('Buscando perfil por nome:', nome);
+        console.log('Buscando perfil por ID:', id);
         
-        // Buscar perfil por nome
+        // Buscar perfil por ID
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('nome', decodeURIComponent(nome))
+          .eq('id', id)
           .single();
 
         if (profileError) {
@@ -90,7 +89,7 @@ const PerfilPublicoMae = () => {
     };
 
     carregarDados();
-  }, [nome]);
+  }, [id]);
 
   if (loading) {
     return (
