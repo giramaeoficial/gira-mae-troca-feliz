@@ -27,18 +27,12 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange, preSelecte
     buscarEscolas
   } = useEscolas();
 
-  // Buscar escolas quando o componente carregar ou a localização mudar
-  useEffect(() => {
-    if (preSelectedLocation?.estado && preSelectedLocation?.cidade) {
-      buscarEscolas('', preSelectedLocation.estado, preSelectedLocation.cidade);
-    }
-  }, [preSelectedLocation, buscarEscolas]);
-
   const handleBuscarEscolas = async () => {
     if (!preSelectedLocation?.estado || !preSelectedLocation?.cidade) {
       return;
     }
 
+    console.log('Buscando escolas em:', preSelectedLocation.cidade, preSelectedLocation.estado);
     await buscarEscolas(nomeEscola, preSelectedLocation.estado, preSelectedLocation.cidade);
   };
 
@@ -59,7 +53,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange, preSelecte
 
   if (!preSelectedLocation) {
     return (
-      <Button variant="outline" disabled className="w-full md:w-auto">
+      <Button variant="outline" disabled className="w-full h-12">
         <Building2 className="w-4 h-4 mr-2" />
         Selecione localização primeiro
       </Button>
@@ -72,7 +66,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange, preSelecte
         <PopoverTrigger asChild>
           <Button 
             variant={value ? "default" : "outline"} 
-            className="w-full md:w-auto justify-between"
+            className="w-full h-12 justify-between"
           >
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />

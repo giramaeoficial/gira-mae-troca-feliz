@@ -48,6 +48,7 @@ const Feed = () => {
         if (locationSalva) {
             try {
                 const loc = JSON.parse(locationSalva);
+                console.log('Localização carregada do localStorage:', loc);
                 setLocation(loc);
             } catch (error) {
                 console.error('Erro ao carregar localização do localStorage:', error);
@@ -55,15 +56,6 @@ const Feed = () => {
             }
         }
     }, []);
-
-    // Salvar localização no localStorage quando mudar
-    useEffect(() => {
-        if (location) {
-            localStorage.setItem('feedLocation', JSON.stringify(location));
-        } else {
-            localStorage.removeItem('feedLocation');
-        }
-    }, [location]);
 
     // Carregar itens quando localização estiver definida e busca for solicitada
     useEffect(() => {
@@ -73,6 +65,12 @@ const Feed = () => {
             setShouldSearch(false);
         }
     }, [location, shouldSearch, refetch]);
+
+    const handleLocationChange = (newLocation: { estado: string; cidade: string } | null) => {
+        setLocation(newLocation);
+        // Limpar escola selecionada quando muda localização
+        setFiltros(prev => ({ ...prev, escola: null }));
+    };
 
     const handleSearch = () => {
         if (location) {
@@ -167,7 +165,7 @@ const Feed = () => {
             <div className="container mx-auto px-4 py-2 border-b bg-white/80 backdrop-blur-sm">
                 <LocationFilter 
                     value={location}
-                    onChange={setLocation}
+                    onChange={handleLocationChange}
                 />
             </div>
 

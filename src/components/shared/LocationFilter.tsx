@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -43,14 +43,27 @@ interface LocationFilterProps {
 
 const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [tempEstado, setTempEstado] = useState(value?.estado || '');
-  const [tempCidade, setTempCidade] = useState(value?.cidade || '');
+  const [tempEstado, setTempEstado] = useState('');
+  const [tempCidade, setTempCidade] = useState('');
 
   const { municipios, loadingMunicipios, buscarMunicipios } = useEscolas();
 
+  // Sincronizar valores temporários com o valor atual quando o modal abre
+  useEffect(() => {
+    if (isOpen) {
+      setTempEstado(value?.estado || '');
+      setTempCidade(value?.cidade || '');
+      
+      // Se já tem estado selecionado, buscar municípios
+      if (value?.estado) {
+        buscarMunicipios(value.estado);
+      }
+    }
+  }, [isOpen, value, buscarMunicipios]);
+
   const handleEstadoChange = (estado: string) => {
     setTempEstado(estado);
-    setTempCidade('');
+    setTempCidade(''); // Limpar cidade quando muda estado
     if (estado) {
       buscarMunicipios(estado);
     }
@@ -58,7 +71,11 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
 
   const handleAplicar = () => {
     if (tempEstado && tempCidade) {
-      onChange({ estado: tempEstado, cidade: tempCidade });
+      const newLocation = { estado: tempEstado, cidade: tempCidade };
+      onChange(newLocation);
+      
+      // Salvar no localStorage
+      localStorage.setItem('feedLocation', JSON.stringify(newLocation));
       setIsOpen(false);
     }
   };
@@ -67,6 +84,7 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
     setTempEstado('');
     setTempCidade('');
     onChange(null);
+    localStorage.removeItem('feedLocation');
     setIsOpen(false);
   };
 
@@ -106,7 +124,7 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o estado" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 {ESTADOS_BRASIL.map((uf) => (
                   <SelectItem key={uf.sigla} value={uf.sigla}>
                     {uf.sigla} - {uf.nome}
@@ -134,7 +152,7 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
                   } 
                 />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 {municipios.map((municipio) => (
                   <SelectItem key={municipio} value={municipio}>
                     {municipio}

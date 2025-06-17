@@ -35,6 +35,7 @@ export const useEscolas = (): UseEscolasReturn => {
     setError(null);
 
     try {
+      // Remover o limite para buscar todos os municípios
       const { data, error: searchError } = await supabase
         .from('escolas_inep')
         .select('municipio')
@@ -44,8 +45,12 @@ export const useEscolas = (): UseEscolasReturn => {
 
       if (searchError) throw searchError;
 
-      // Extrair municípios únicos
-      const municipiosUnicos = Array.from(new Set(data?.map(item => item.municipio) || []));
+      // Extrair municípios únicos sem limite
+      const municipiosUnicos = Array.from(new Set(data?.map(item => item.municipio?.trim()) || []))
+        .filter(municipio => municipio && municipio.length > 0)
+        .sort();
+      
+      console.log(`Encontrados ${municipiosUnicos.length} municípios para ${uf}:`, municipiosUnicos.slice(0, 10));
       setMunicipios(municipiosUnicos);
     } catch (err) {
       console.error('Erro ao buscar municípios:', err);
@@ -56,7 +61,6 @@ export const useEscolas = (): UseEscolasReturn => {
   }, []);
 
   const buscarEscolas = useCallback(async (termo?: string, uf?: string, municipio?: string) => {
-    // Agora só precisamos de estado e município
     if (!uf || !municipio) {
       setEscolas([]);
       return;
@@ -70,10 +74,9 @@ export const useEscolas = (): UseEscolasReturn => {
         .from('escolas_inep')
         .select('*')
         .eq('uf', uf)
-        .eq('municipio', municipio) // Mudança aqui: usar eq em vez de ilike
-        .limit(50);
+        .eq('municipio', municipio)
+        .limit(100); // Aumentar limite para escolas
 
-      // Se o termo for fornecido, aplicamos filtro adicional
       if (termo && termo.length >= 2) {
         query = query.ilike('escola', `%${termo}%`);
       }
@@ -82,6 +85,7 @@ export const useEscolas = (): UseEscolasReturn => {
 
       if (searchError) throw searchError;
 
+      console.log(`Encontradas ${data?.length || 0} escolas em ${municipio}, ${uf}`);
       setEscolas(data || []);
     } catch (err) {
       console.error('Erro ao buscar escolas:', err);
@@ -94,7 +98,6 @@ export const useEscolas = (): UseEscolasReturn => {
   const selecionarEscola = useCallback((escola: Escola | null) => {
     setEscolaSelecionada(escola);
     
-    // Salvar no localStorage
     if (escola) {
       localStorage.setItem('ultimaEscolaFiltrada', JSON.stringify(escola));
     } else {
