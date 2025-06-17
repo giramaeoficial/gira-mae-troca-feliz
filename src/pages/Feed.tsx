@@ -9,14 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useItens } from "@/hooks/useItens";
-import { Heart, Search, Filter, Sparkles } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useReservas } from "@/hooks/useReservas";
+import { useFilaEspera } from "@/hooks/useFilaEspera";
+import { useCarteira } from "@/hooks/useCarteira";
+import { useAuth } from "@/hooks/useAuth";
+import { Heart, Search, Sparkles, Users, Clock } from "lucide-react";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
 import EmptyState from "@/components/loading/EmptyState";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import { useState as useActionState } from "react";
-import { getImageUrl } from "@/utils/supabaseStorage";
 
 const Feed = () => {
     const [filtros, setFiltros] = useState({
@@ -25,9 +27,14 @@ const Feed = () => {
         ordem: "recentes"
     });
     
+    const { user } = useAuth();
     const { itens, loading, error } = useItens();
     const { favoritos, toggleFavorito, loading: favoritosLoading } = useFavoritos();
+    const { entrarNaFila, isItemReservado } = useReservas();
+    const { obterFilaItem } = useFilaEspera();
+    const { saldo } = useCarteira();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
+    const [filasInfo, setFilasInfo] = useState<Record<string, { total_fila: number; posicao_usuario: number }>>({});
 
     const handleFavoritar = async (itemId: string) => {
         setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
@@ -38,6 +45,30 @@ const Feed = () => {
             setTimeout(() => {
                 setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
             }, 1000);
+        } catch (error) {
+            setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+            setTimeout(() => {
+                setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+            }, 2000);
+        }
+    };
+
+    const handleReservarItem = async (itemId: string, valorGirinhas: number) => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
+        
+        try {
+            const sucesso = await entrarNaFila(itemId, valorGirinhas);
+            if (sucesso) {
+                setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
+                // Atualizar info da fila
+                const filaInfo = await obterFilaItem(itemId);
+                setFilasInfo(prev => ({ ...prev, [itemId]: filaInfo }));
+            } else {
+                setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+            }
+            setTimeout(() => {
+                setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+            }, 2000);
         } catch (error) {
             setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
             setTimeout(() => {
@@ -156,6 +187,10 @@ const Feed = () => {
                         {filteredItens.map((item) => {
                             const isFavorito = favoritos.some(fav => fav.item_id === item.id);
                             const actionState = actionStates[item.id] || 'idle';
+                            const isReserved = isItemReservado(item.id) || item.status === 'reservado';
+                            const isProprio = item.publicado_por === user?.id;
+                            const semSaldo = saldo < Number(item.valor_girinhas);
+                            const filaInfo = filasInfo[item.id];
                             
                             return (
                                 <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-0">
@@ -164,9 +199,13 @@ const Feed = () => {
                                             <div className="aspect-square bg-gray-100 overflow-hidden">
                                                 {item.fotos && item.fotos.length > 0 ? (
                                                     <img 
-                                                        src={getImageUrl('itens', item.fotos[0], 'medium')} 
+                                                        src={item.fotos[0]} 
                                                         alt={item.titulo}
                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                        onError={(e) => {
+                                                            console.error('Erro ao carregar imagem:', item.fotos[0]);
+                                                            e.currentTarget.style.display = 'none';
+                                                        }}
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -175,6 +214,15 @@ const Feed = () => {
                                                 )}
                                             </div>
                                         </Link>
+                                        
+                                        {/* Status Badge */}
+                                        {isReserved && (
+                                            <Badge className="absolute top-2 left-2 bg-orange-500 text-white text-xs">
+                                                {filaInfo?.total_fila > 0 ? `Fila: ${filaInfo.total_fila}` : 'Reservado'}
+                                            </Badge>
+                                        )}
+                                        
+                                        {/* Botão de favorito */}
                                         <Button
                                             size="sm"
                                             variant="ghost"
@@ -189,6 +237,7 @@ const Feed = () => {
                                             )}
                                         </Button>
                                     </div>
+                                    
                                     <CardContent className="p-3">
                                         <Link to={`/item/${item.id}`}>
                                             <h3 className="font-semibold text-sm mb-1 line-clamp-2 group-hover:text-primary transition-colors">
@@ -204,18 +253,83 @@ const Feed = () => {
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <div className="flex items-center justify-between">
+                                            <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-1">
                                                     <Sparkles className="w-4 h-4 text-primary" />
                                                     <span className="font-bold text-primary">
                                                         {item.valor_girinhas}
                                                     </span>
                                                 </div>
-                                                <Button size="sm" className="h-7 px-3 text-xs">
-                                                    Ver
-                                                </Button>
+                                                
+                                                {/* Info da localização */}
+                                                {item.profiles?.cidade && (
+                                                    <span className="text-xs text-gray-500">
+                                                        {item.profiles.cidade}
+                                                    </span>
+                                                )}
                                             </div>
                                         </Link>
+
+                                        {/* Botões de ação */}
+                                        <div className="space-y-2">
+                                            {isProprio ? (
+                                                <Button size="sm" variant="outline" className="w-full text-xs" disabled>
+                                                    Seu item
+                                                </Button>
+                                            ) : (
+                                                <>
+                                                    {!isReserved ? (
+                                                        <Button 
+                                                            size="sm" 
+                                                            className="w-full text-xs bg-gradient-to-r from-primary to-pink-500"
+                                                            onClick={() => handleReservarItem(item.id, Number(item.valor_girinhas))}
+                                                            disabled={semSaldo || actionState === 'loading'}
+                                                        >
+                                                            {actionState === 'loading' ? (
+                                                                <ActionFeedback state="loading" size="sm" />
+                                                            ) : semSaldo ? (
+                                                                'Saldo insuficiente'
+                                                            ) : (
+                                                                <>
+                                                                    <Sparkles className="w-3 h-3 mr-1" />
+                                                                    Reservar
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    ) : (
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline"
+                                                            className="w-full text-xs"
+                                                            onClick={() => handleReservarItem(item.id, Number(item.valor_girinhas))}
+                                                            disabled={semSaldo || actionState === 'loading'}
+                                                        >
+                                                            {actionState === 'loading' ? (
+                                                                <ActionFeedback state="loading" size="sm" />
+                                                            ) : filaInfo?.posicao_usuario > 0 ? (
+                                                                <>
+                                                                    <Clock className="w-3 h-3 mr-1" />
+                                                                    Posição {filaInfo.posicao_usuario}
+                                                                </>
+                                                            ) : semSaldo ? (
+                                                                'Saldo insuficiente'
+                                                            ) : (
+                                                                <>
+                                                                    <Users className="w-3 h-3 mr-1" />
+                                                                    Entrar na fila
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    )}
+                                                    
+                                                    <Button asChild size="sm" variant="ghost" className="w-full text-xs">
+                                                        <Link to={`/item/${item.id}`}>
+                                                            Ver detalhes
+                                                        </Link>
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
                                     </CardContent>
                                 </Card>
                             );

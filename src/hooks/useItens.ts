@@ -289,24 +289,54 @@ export const useItens = () => {
     }
   }, [user, pagination.lastCreatedAt, prefetchProfiles, getCachedData, setCachedData, cancelPendingRequests, cleanupExpiredCache, processarFotosItens]);
 
-  // Hook para buscar item específico com error handling
-  const { 
-    data: itemDetalhes, 
-    loading: loadingItem, 
-    error: errorItem, 
-    execute: buscarItemPorId,
-    retry: retryItem 
-  } = useQueryWithErrorHandling(
-    async () => {
-      throw new Error('itemId não fornecido');
-    },
-    {
-      enableCache: true,
-      cacheTTL: 10 * 60 * 1000, // 10 minutos para detalhes
-      maxRetries: 3,
-      timeout: 15000
+  const buscarItemPorId = useCallback(async (itemId: string) => {
+    try {
+      console.log('Buscando item por ID:', itemId);
+      
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          profiles!publicado_por (
+            id,
+            nome,
+            avatar_url,
+            bairro,
+            cidade,
+            reputacao,
+            telefone
+          )
+        `)
+        .eq('id', itemId)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar item:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('Item não encontrado');
+      }
+      
+      console.log('Item encontrado:', data);
+      
+      // Processar fotos do item
+      if (data.fotos) {
+        data.fotos = data.fotos.map(foto => {
+          if (foto.startsWith('http') || foto.startsWith('blob:')) {
+            return foto;
+          }
+          return getImageUrl('itens', foto, 'medium');
+        });
+      }
+      
+      return data;
+    } catch (err) {
+      console.error('Erro ao buscar item por ID:', err);
+      throw err;
     }
-  );
+  }, []);
 
   const buscarItemPorIdWrapper = useCallback(async (itemId: string) => {
     const queryFn = async () => {
@@ -600,11 +630,6 @@ export const useItens = () => {
     publicarItem,
     atualizarItem,
     deletarItem,
-    carregarMais,
-    // Novos métodos relacionados ao error handling
-    itemDetalhes,
-    loadingItem,
-    errorItem,
-    retryItem
+    carregarMais
   };
 };
