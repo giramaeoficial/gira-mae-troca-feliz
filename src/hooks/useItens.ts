@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useFilhosPorEscola } from './useFilhosPorEscola';
+import { toast } from '@/components/ui/use-toast';
 
 type Item = Tables<'itens'> & {
   publicado_por_profile?: Tables<'profiles'>;
@@ -100,7 +101,7 @@ export const useItens = ({ categoria, filtroEscola = false, limite = 20 }: UseIt
                 ...item,
                 mesma_escola: temEscolaEmComum,
                 escola_vendedor: escolasDoVendedor.length > 0 ? escolasDoVendedor[0].nome : undefined
-              };
+              } as Item;
             });
 
             // Se filtro está ativo, mostrar apenas itens da mesma escola primeiro
@@ -124,6 +125,157 @@ export const useItens = ({ categoria, filtroEscola = false, limite = 20 }: UseIt
     }
   };
 
+  const buscarItemPorId = async (itemId: string): Promise<Item | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles!itens_publicado_por_fkey (
+            id,
+            nome,
+            avatar_url,
+            cidade,
+            bairro,
+            telefone,
+            instagram
+          )
+        `)
+        .eq('id', itemId)
+        .single();
+
+      if (error) throw error;
+      return data as Item;
+    } catch (err) {
+      console.error('Erro ao buscar item:', err);
+      return null;
+    }
+  };
+
+  const buscarMeusItens = async (userId: string): Promise<Item[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles!itens_publicado_por_fkey (
+            id,
+            nome,
+            avatar_url,
+            cidade,
+            bairro
+          )
+        `)
+        .eq('publicado_por', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Item[];
+    } catch (err) {
+      console.error('Erro ao buscar meus itens:', err);
+      return [];
+    }
+  };
+
+  const buscarItensDoUsuario = async (userId: string): Promise<Item[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles!itens_publicado_por_fkey (
+            id,
+            nome,
+            avatar_url,
+            cidade,
+            bairro
+          )
+        `)
+        .eq('publicado_por', userId)
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Item[];
+    } catch (err) {
+      console.error('Erro ao buscar itens do usuário:', err);
+      return [];
+    }
+  };
+
+  const publicarItem = async (itemData: any, fotos: File[]): Promise<boolean> => {
+    try {
+      // Upload das fotos primeiro
+      const fotosUrls: string[] = [];
+      
+      for (const foto of fotos) {
+        const fileName = `${Date.now()}-${foto.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('itens')
+          .upload(fileName, foto);
+
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage
+          .from('itens')
+          .getPublicUrl(fileName);
+
+        fotosUrls.push(urlData.publicUrl);
+      }
+
+      // Criar item
+      const { error } = await supabase
+        .from('itens')
+        .insert({
+          ...itemData,
+          fotos: fotosUrls
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso!",
+        description: "Item publicado com sucesso"
+      });
+
+      return true;
+    } catch (err) {
+      console.error('Erro ao publicar item:', err);
+      toast({
+        title: "Erro",
+        description: "Erro ao publicar item",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  const atualizarItem = async (itemId: string, updates: any): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('itens')
+        .update(updates)
+        .eq('id', itemId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso!",
+        description: "Item atualizado com sucesso"
+      });
+
+      return true;
+    } catch (err) {
+      console.error('Erro ao atualizar item:', err);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar item",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchItens();
   }, [categoria, filtroEscola, escolasDosMeusFilhos.length, limite]);
@@ -132,6 +284,11 @@ export const useItens = ({ categoria, filtroEscola = false, limite = 20 }: UseIt
     itens,
     loading,
     error,
-    refetch: fetchItens
+    refetch: fetchItens,
+    buscarItemPorId,
+    buscarMeusItens,
+    buscarItensDoUsuario,
+    publicarItem,
+    atualizarItem
   };
 };

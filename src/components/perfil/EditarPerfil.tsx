@@ -23,7 +23,13 @@ interface FilhoData {
   tamanho_roupas: string;
   tamanho_calcados: string;
   escola_id?: number | null;
-  escola?: Escola | null;
+  escola?: {
+    codigo_inep: number;
+    escola: string;
+    municipio: string;
+    uf: string;
+    categoria_administrativa: string;
+  } | null;
 }
 
 interface PerfilData {
@@ -118,7 +124,7 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
       if (filhosError) throw filhosError;
 
       if (filhosData) {
-        setFilhos(filhosData.map(filho => ({
+        const filhosProcessados = filhosData.map(filho => ({
           id: filho.id,
           nome: filho.nome,
           data_nascimento: filho.data_nascimento,
@@ -126,8 +132,16 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
           tamanho_roupas: filho.tamanho_roupas || "",
           tamanho_calcados: filho.tamanho_calcados || "",
           escola_id: filho.escola_id,
-          escola: filho.escolas_inep || null
-        })));
+          escola: filho.escolas_inep ? {
+            codigo_inep: filho.escolas_inep.codigo_inep,
+            escola: filho.escolas_inep.escola || '',
+            municipio: filho.escolas_inep.municipio || '',
+            uf: filho.escolas_inep.uf || '',
+            categoria_administrativa: filho.escolas_inep.categoria_administrativa || ''
+          } : null
+        }));
+        
+        setFilhos(filhosProcessados);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -237,13 +251,20 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
     setFilhos(filhos.filter((_, i) => i !== index));
   };
 
-  const atualizarFilho = (index: number, campo: keyof FilhoData, valor: string | Escola | null) => {
+  const atualizarFilho = (index: number, campo: keyof FilhoData, valor: string | any) => {
     const novosFilhos = [...filhos];
     if (campo === 'escola') {
+      const escola = valor as Tables<'escolas_inep'> | null;
       novosFilhos[index] = { 
         ...novosFilhos[index], 
-        escola: valor as Escola | null,
-        escola_id: (valor as Escola)?.codigo_inep || null
+        escola: escola ? {
+          codigo_inep: escola.codigo_inep,
+          escola: escola.escola || '',
+          municipio: escola.municipio || '',
+          uf: escola.uf || '',
+          categoria_administrativa: escola.categoria_administrativa || ''
+        } : null,
+        escola_id: escola?.codigo_inep || null
       };
     } else {
       novosFilhos[index] = { ...novosFilhos[index], [campo]: valor };

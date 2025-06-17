@@ -267,9 +267,9 @@ const Feed = () => {
                                                 </div>
                                                 
                                                 {/* Info da localização */}
-                                                {item.profiles?.cidade && (
+                                                {item.publicado_por_profile?.cidade && (
                                                     <span className="text-xs text-gray-500">
-                                                        {item.profiles.cidade}
+                                                        {item.publicado_por_profile.cidade}
                                                     </span>
                                                 )}
                                             </div>

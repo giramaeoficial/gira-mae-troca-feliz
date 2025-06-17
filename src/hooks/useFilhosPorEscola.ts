@@ -5,10 +5,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
 type Filho = Tables<'filhos'>;
-type Escola = Tables<'escolas_inep'>;
+type EscolaSimplificada = {
+  codigo_inep: number;
+  escola: string;
+  municipio: string;
+  uf: string;
+  categoria_administrativa: string;
+};
 
 interface FilhoComEscola extends Filho {
-  escola?: Escola | null;
+  escola?: EscolaSimplificada | null;
 }
 
 export const useFilhosPorEscola = () => {
@@ -45,7 +51,13 @@ export const useFilhosPorEscola = () => {
 
       const filhosComEscola = filhosData?.map(filho => ({
         ...filho,
-        escola: filho.escolas_inep || null
+        escola: filho.escolas_inep ? {
+          codigo_inep: filho.escolas_inep.codigo_inep,
+          escola: filho.escolas_inep.escola || '',
+          municipio: filho.escolas_inep.municipio || '',
+          uf: filho.escolas_inep.uf || '',
+          categoria_administrativa: filho.escolas_inep.categoria_administrativa || ''
+        } : null
       })) || [];
 
       setFilhos(filhosComEscola);

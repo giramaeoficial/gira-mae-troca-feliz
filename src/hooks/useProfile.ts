@@ -6,10 +6,15 @@ import { Tables } from '@/integrations/supabase/types';
 
 type Profile = Tables<'profiles'>;
 type Filho = Tables<'filhos'>;
-type Escola = Tables<'escolas_inep'>;
 
 interface FilhoComEscola extends Filho {
-  escolas_inep?: Escola | null;
+  escolas_inep?: {
+    codigo_inep: number;
+    escola: string;
+    municipio: string;
+    uf: string;
+    categoria_administrativa: string;
+  } | null;
 }
 
 export const useProfile = () => {
@@ -58,7 +63,18 @@ export const useProfile = () => {
 
       if (filhosError) throw filhosError;
 
-      setFilhos(filhosData || []);
+      const filhosProcessados = filhosData?.map(filho => ({
+        ...filho,
+        escolas_inep: filho.escolas_inep ? {
+          codigo_inep: filho.escolas_inep.codigo_inep,
+          escola: filho.escolas_inep.escola || '',
+          municipio: filho.escolas_inep.municipio || '',
+          uf: filho.escolas_inep.uf || '',
+          categoria_administrativa: filho.escolas_inep.categoria_administrativa || ''
+        } : null
+      })) || [];
+
+      setFilhos(filhosProcessados);
     } catch (err) {
       console.error('Erro ao carregar perfil:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -107,7 +123,18 @@ export const useProfile = () => {
 
       if (filhosError) throw filhosError;
 
-      setFilhos(filhosData || []);
+      const filhosProcessados = filhosData?.map(filho => ({
+        ...filho,
+        escolas_inep: filho.escolas_inep ? {
+          codigo_inep: filho.escolas_inep.codigo_inep,
+          escola: filho.escolas_inep.escola || '',
+          municipio: filho.escolas_inep.municipio || '',
+          uf: filho.escolas_inep.uf || '',
+          categoria_administrativa: filho.escolas_inep.categoria_administrativa || ''
+        } : null
+      })) || [];
+
+      setFilhos(filhosProcessados);
       return profileData;
     } catch (err) {
       console.error('Erro ao carregar perfil por nome:', err);
