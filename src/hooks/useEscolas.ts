@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -35,42 +34,57 @@ export const useEscolas = (): UseEscolasReturn => {
     setError(null);
 
     try {
-      console.log('Buscando municípios para UF:', uf);
+      console.log('Buscando municípios únicos para UF:', uf);
       
-      // Buscar todos os municípios únicos do estado usando distinct
-      const { data, error: searchError } = await supabase
-        .from('escolas_inep')
-        .select('municipio')
-        .eq('uf', uf)
-        .not('municipio', 'is', null)
-        .not('municipio', 'eq', '')
-        .order('municipio');
+      // Usar RPC para buscar municípios únicos de forma mais eficiente
+      const { data, error: searchError } = await supabase.rpc('get_municipios_por_uf', {
+        uf_param: uf
+      });
 
       if (searchError) {
-        console.error('Erro na query:', searchError);
-        throw searchError;
+        console.error('Erro na RPC, tentando fallback:', searchError);
+        
+        // Fallback: buscar todos e processar no cliente
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('escolas_inep')
+          .select('municipio')
+          .eq('uf', uf)
+          .not('municipio', 'is', null)
+          .not('municipio', 'eq', '');
+
+        if (fallbackError) {
+          console.error('Erro no fallback:', fallbackError);
+          throw fallbackError;
+        }
+
+        // Processar municípios únicos no cliente
+        const municipiosUnicos = Array.from(
+          new Set(
+            fallbackData
+              ?.map(item => item.municipio?.trim())
+              .filter(municipio => municipio && municipio.length > 0)
+              || []
+          )
+        ).sort();
+        
+        console.log(`Encontrados ${municipiosUnicos.length} municípios únicos para ${uf} (fallback)`);
+        console.log('Primeiros 10 municípios:', municipiosUnicos.slice(0, 10));
+        
+        // Verificar se Canoas está na lista
+        const temCanoas = municipiosUnicos.some(m => m.toLowerCase().includes('canoas'));
+        console.log('Canoas encontrado:', temCanoas);
+        
+        setMunicipios(municipiosUnicos);
+      } else {
+        console.log(`Encontrados ${data?.length || 0} municípios únicos para ${uf} (RPC)`);
+        console.log('Primeiros 10 municípios:', data?.slice(0, 10));
+        
+        // Verificar se Canoas está na lista
+        const temCanoas = data?.some((m: string) => m.toLowerCase().includes('canoas'));
+        console.log('Canoas encontrado:', temCanoas);
+        
+        setMunicipios(data || []);
       }
-
-      console.log('Dados retornados:', data?.length, 'registros');
-
-      // Processar municípios únicos
-      const municipiosUnicos = Array.from(
-        new Set(
-          data
-            ?.map(item => item.municipio?.trim())
-            .filter(municipio => municipio && municipio.length > 0)
-            || []
-        )
-      ).sort();
-      
-      console.log(`Encontrados ${municipiosUnicos.length} municípios únicos para ${uf}`);
-      console.log('Primeiros 10 municípios:', municipiosUnicos.slice(0, 10));
-      
-      // Verificar se Canoas está na lista
-      const temCanoas = municipiosUnicos.some(m => m.toLowerCase().includes('canoas'));
-      console.log('Canoas encontrado:', temCanoas);
-      
-      setMunicipios(municipiosUnicos);
     } catch (err) {
       console.error('Erro ao buscar municípios:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
