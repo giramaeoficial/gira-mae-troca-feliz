@@ -220,7 +220,7 @@ const PublicarItem = () => {
                                                         <span className="text-xs text-red-500">({fieldState.error.message})</span>
                                                     )}
                                                 </FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value || ""}>
                                                     <FormControl>
                                                         <SelectTrigger className={`h-12 ${fieldState.error ? "border-red-300 focus:border-red-500" : ""}`}>
                                                             <SelectValue placeholder="Selecione a categoria" />
@@ -250,7 +250,7 @@ const PublicarItem = () => {
                                                         <span className="text-xs text-red-500">({fieldState.error.message})</span>
                                                     )}
                                                 </FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <Select onValueChange={field.onChange} value={field.value || ""}>
                                                     <FormControl>
                                                         <SelectTrigger className={`h-12 ${fieldState.error ? "border-red-300 focus:border-red-500" : ""}`}>
                                                             <SelectValue placeholder="Como está o item?" />
