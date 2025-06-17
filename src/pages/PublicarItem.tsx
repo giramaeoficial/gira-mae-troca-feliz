@@ -114,7 +114,8 @@ const PublicarItem = () => {
       return;
     }
 
-    if (usarFilho && !values.filho_id) {
+    // Validar se está usando filho e tem filho selecionado
+    if (usarFilho && (!values.filho_id || values.filho_id === '')) {
       toast({
         title: "Erro",
         description: "Selecione um filho ou use localização manual",
@@ -123,10 +124,12 @@ const PublicarItem = () => {
       return;
     }
 
-    if (!usarFilho && (!values.estado_manual || !values.cidade_manual)) {
+    // Validar se está usando localização manual e tem dados preenchidos
+    if (!usarFilho && (!values.estado_manual || !values.cidade_manual || 
+                       values.estado_manual.trim() === '' || values.cidade_manual.trim() === '')) {
       toast({
         title: "Erro",
-        description: "Informe estado e cidade",
+        description: "Informe estado e cidade quando usar localização manual",
         variant: "destructive"
       });
       return;
@@ -139,14 +142,16 @@ const PublicarItem = () => {
       categoria: values.categoria,
       descricao: values.descricao,
       estado_conservacao: values.estado_conservacao,
-      tamanho: values.tamanho,
+      tamanho: values.tamanho || null,
       valor_girinhas: values.valor_girinhas,
       publicado_por: user.id,
       status: 'disponivel',
-      filho_id: usarFilho ? values.filho_id : null,
-      estado_manual: !usarFilho ? values.estado_manual : null,
-      cidade_manual: !usarFilho ? values.cidade_manual : null,
+      filho_id: usarFilho && values.filho_id ? values.filho_id : null,
+      estado_manual: !usarFilho && values.estado_manual ? values.estado_manual.trim() : null,
+      cidade_manual: !usarFilho && values.cidade_manual ? values.cidade_manual.trim() : null,
     };
+
+    console.log('Dados do item a serem enviados:', itemData);
 
     const sucesso = await publicarItem(itemData, fotos);
     
@@ -338,7 +343,12 @@ const PublicarItem = () => {
                     type="button"
                     variant={usarFilho ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setUsarFilho(true)}
+                    onClick={() => {
+                      setUsarFilho(true);
+                      // Limpar campos manuais quando trocar para filho
+                      form.setValue('estado_manual', '');
+                      form.setValue('cidade_manual', '');
+                    }}
                     className="flex-1"
                   >
                     <User className="w-4 h-4 mr-2" />
@@ -348,7 +358,11 @@ const PublicarItem = () => {
                     type="button"
                     variant={!usarFilho ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setUsarFilho(false)}
+                    onClick={() => {
+                      setUsarFilho(false);
+                      // Limpar campo de filho quando trocar para manual
+                      form.setValue('filho_id', '');
+                    }}
                     className="flex-1"
                   >
                     <MapPin className="w-4 h-4 mr-2" />
@@ -364,7 +378,7 @@ const PublicarItem = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Selecione o filho</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger className="h-12">
                                 <SelectValue placeholder="Escolha um filho" />
@@ -406,7 +420,7 @@ const PublicarItem = () => {
                       name="estado_manual"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Estado</FormLabel>
+                          <FormLabel>Estado *</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="SP" 
@@ -424,7 +438,7 @@ const PublicarItem = () => {
                       name="cidade_manual"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cidade</FormLabel>
+                          <FormLabel>Cidade *</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="São Paulo" 

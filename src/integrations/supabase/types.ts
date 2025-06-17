@@ -481,9 +481,12 @@ export type Database = {
       itens: {
         Row: {
           categoria: string
+          cidade_manual: string | null
           created_at: string
           descricao: string
           estado_conservacao: string
+          estado_manual: string | null
+          filho_id: string | null
           fotos: string[] | null
           id: string
           publicado_por: string
@@ -495,9 +498,12 @@ export type Database = {
         }
         Insert: {
           categoria: string
+          cidade_manual?: string | null
           created_at?: string
           descricao: string
           estado_conservacao: string
+          estado_manual?: string | null
+          filho_id?: string | null
           fotos?: string[] | null
           id?: string
           publicado_por: string
@@ -509,9 +515,12 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          cidade_manual?: string | null
           created_at?: string
           descricao?: string
           estado_conservacao?: string
+          estado_manual?: string | null
+          filho_id?: string | null
           fotos?: string[] | null
           id?: string
           publicado_por?: string
@@ -522,6 +531,13 @@ export type Database = {
           valor_girinhas?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "itens_filho_id_fkey"
+            columns: ["filho_id"]
+            isOneToOne: false
+            referencedRelation: "filhos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "itens_publicado_por_fkey"
             columns: ["publicado_por"]
