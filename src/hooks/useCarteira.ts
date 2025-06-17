@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 type Carteira = Tables<'carteiras'>;
 type Transacao = Tables<'transacoes'>;
@@ -74,8 +75,12 @@ export const useCarteira = () => {
       
       return true;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
-    onError: (error: any) => {
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000)
+  });
+
+  // Tratamento de erros usando useEffect
+  useEffect(() => {
+    if (error) {
       console.error('Erro ao carregar carteira:', error);
       
       if (error.message?.includes('não autenticado')) {
@@ -98,7 +103,7 @@ export const useCarteira = () => {
         });
       }
     }
-  });
+  }, [error]);
 
   // Mutation para adicionar transação
   const adicionarTransacaoMutation = useMutation({
