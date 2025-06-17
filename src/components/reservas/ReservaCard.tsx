@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import AvaliacaoModal from "./AvaliacaoModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useRecompensasAutomaticas } from "@/hooks/useRecompensasAutomaticas";
 
 interface ReservaCardProps {
   reserva: {
@@ -57,23 +57,28 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
   const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
   const imagemItem = reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
 
-  // Verificar se já avaliou esta reserva
-  const verificarSeJaAvaliou = async () => {
-    if (!user) return;
-    
-    try {
-      const { data } = await supabase
-        .from('avaliacoes' as any)
-        .select('id')
-        .eq('reserva_id', reserva.id)
-        .eq('avaliador_id', user.id)
-        .single();
-      
-      setJaAvaliou(!!data);
-    } catch (error) {
-      // Se der erro, assumir que não avaliou ainda
-      setJaAvaliou(false);
+  // Função com retry para verificação de avaliação
+  const verificarSeJaAvaliouComRetry = async (maxTentativas = 3): Promise<boolean> => {
+    for (let i = 0; i < maxTentativas; i++) {
+      try {
+        const { data } = await supabase
+          .from('avaliacoes')
+          .select('id')
+          .eq('reserva_id', reserva.id)
+          .eq('avaliador_id', user?.id)
+          .single();
+        
+        return !!data;
+      } catch (error) {
+        if (i === maxTentativas - 1) {
+          console.error('Erro ao verificar avaliação:', error);
+          return false;
+        }
+        // Aguardar antes de tentar novamente
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
+    return false;
   };
 
   const formatarTempo = (milliseconds: number) => {
@@ -87,16 +92,35 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
     try {
       await onConfirmarEntrega(reserva.id);
       
-      // Se ambos confirmaram, mostrar modal de avaliação
-      const ambosConfirmaram = (isReservador && reserva.confirmado_por_vendedor) || 
-                              (isVendedor && reserva.confirmado_por_reservador);
-      
-      if (ambosConfirmaram) {
-        await verificarSeJaAvaliou();
-        if (!jaAvaliou) {
-          setShowAvaliacao(true);
+      // Verificar se ambos confirmaram com delay para garantir consistência
+      setTimeout(async () => {
+        // Recarregar dados da reserva
+        const { data: reservaAtualizada } = await supabase
+          .from('reservas')
+          .select('*')
+          .eq('id', reserva.id)
+          .single();
+
+        const ambosConfirmaram = 
+          reservaAtualizada?.confirmado_por_vendedor && 
+          reservaAtualizada?.confirmado_por_reservador;
+        
+        if (ambosConfirmaram) {
+          // Verificar avaliação com retry
+          const jaAvaliou = await verificarSeJaAvaliouComRetry();
+          
+          if (!jaAvaliou) {
+            // Garantir que o modal aparece
+            setShowAvaliacao(true);
+            
+            // Feedback adicional
+            toast({
+              title: "🎉 Troca concluída!",
+              description: "Agora você pode avaliar esta troca.",
+            });
+          }
         }
-      }
+      }, 1000); // Delay para garantir consistência
       
       setShowConfirmacao(false);
     } catch (error) {

@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 type ReservaComRelacionamentos = Tables<'reservas'> & {
   itens?: {
@@ -36,7 +37,6 @@ type FilaEsperaComRelacionamentos = Tables<'fila_espera'> & {
   } | null;
 };
 
-// Interface para o retorno da função entrar_fila_espera
 interface FilaEsperaResponse {
   tipo: 'reserva_direta' | 'fila_espera';
   reserva_id?: string;
@@ -47,10 +47,21 @@ interface FilaEsperaResponse {
 export const useReservas = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [reservas, setReservas] = useState<ReservaComRelacionamentos[]>([]);
   const [filasEspera, setFilasEspera] = useState<FilaEsperaComRelacionamentos[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Função para invalidar cache de itens
+  const invalidateItemQueries = async (itemId?: string) => {
+    if (itemId) {
+      queryClient.invalidateQueries({ queryKey: ['item', itemId] });
+    }
+    queryClient.invalidateQueries({ queryKey: ['itens'] });
+    queryClient.invalidateQueries({ queryKey: ['meus-itens'] });
+    queryClient.invalidateQueries({ queryKey: ['itens-usuario'] });
+  };
 
   const fetchReservas = async () => {
     if (!user) {
@@ -62,7 +73,6 @@ export const useReservas = () => {
       setLoading(true);
       setError(null);
 
-      // Buscar reservas
       const { data: reservasData, error: reservasError } = await supabase
         .from('reservas')
         .select(`
@@ -78,7 +88,6 @@ export const useReservas = () => {
 
       if (reservasError) throw reservasError;
 
-      // Buscar filas de espera do usuário
       const { data: filasData, error: filasError } = await supabase
         .from('fila_espera')
         .select(`
@@ -95,24 +104,20 @@ export const useReservas = () => {
 
       if (filasError) throw filasError;
 
-      // Para cada reserva, buscar os perfis e calcular posição na fila
       const reservasComPerfis = await Promise.all(
         (reservasData || []).map(async (reserva) => {
-          // Buscar perfil do reservador
           const { data: perfilReservador } = await supabase
             .from('profiles')
             .select('nome, avatar_url')
             .eq('id', reserva.usuario_reservou)
             .single();
 
-          // Buscar perfil do vendedor
           const { data: perfilVendedor } = await supabase
             .from('profiles')
             .select('nome, avatar_url')
             .eq('id', reserva.usuario_item)
             .single();
 
-          // Calcular tempo restante para reservas ativas
           let tempo_restante = undefined;
           if (reserva.status === 'pendente') {
             const agora = new Date();
@@ -129,7 +134,6 @@ export const useReservas = () => {
         })
       );
 
-      // Para cada fila de espera, buscar perfil do vendedor
       const filasComPerfis = await Promise.all(
         (filasData || []).map(async (fila) => {
           let perfilVendedor = null;
@@ -203,7 +207,6 @@ export const useReservas = () => {
         return false;
       }
 
-      // Fazer cast seguro do tipo Json para nossa interface
       const resultado = data as unknown as FilaEsperaResponse;
 
       if (resultado?.tipo === 'reserva_direta') {
@@ -218,7 +221,12 @@ export const useReservas = () => {
         });
       }
 
-      await fetchReservas();
+      // Atualizar dados e invalidar cache
+      await Promise.all([
+        fetchReservas(),
+        invalidateItemQueries(itemId)
+      ]);
+      
       return true;
     } catch (err) {
       console.error('Erro ao entrar na fila:', err);
@@ -259,7 +267,11 @@ export const useReservas = () => {
         description: "Você foi removido da fila de espera.",
       });
 
-      await fetchReservas();
+      await Promise.all([
+        fetchReservas(),
+        invalidateItemQueries(itemId)
+      ]);
+      
       return true;
     } catch (err) {
       console.error('Erro ao sair da fila:', err);
@@ -273,7 +285,6 @@ export const useReservas = () => {
   };
 
   const criarReserva = async (itemId: string, valorGirinhas: number): Promise<boolean> => {
-    // Usar a nova função entrarNaFila que faz reserva direta se disponível
     return await entrarNaFila(itemId, valorGirinhas);
   };
 
@@ -301,7 +312,14 @@ export const useReservas = () => {
         });
       }
 
-      await fetchReservas();
+      // Buscar item_id da reserva para invalidar cache
+      const reserva = reservas.find(r => r.id === reservaId);
+      
+      await Promise.all([
+        fetchReservas(),
+        invalidateItemQueries(reserva?.item_id)
+      ]);
+      
       return true;
     } catch (err) {
       console.error('Erro ao cancelar reserva:', err);
@@ -338,7 +356,14 @@ export const useReservas = () => {
         });
       }
 
-      await fetchReservas();
+      // Buscar item_id da reserva para invalidar cache
+      const reserva = reservas.find(r => r.id === reservaId);
+      
+      await Promise.all([
+        fetchReservas(),
+        invalidateItemQueries(reserva?.item_id)
+      ]);
+      
       return true;
     } catch (err) {
       console.error('Erro ao confirmar entrega:', err);

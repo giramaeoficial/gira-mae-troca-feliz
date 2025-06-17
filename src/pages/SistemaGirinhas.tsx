@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,9 +13,8 @@ import CompraHistoricoCard from "@/components/girinhas/CompraHistoricoCard";
 import { usePacotesGirinhas } from "@/hooks/usePacotesGirinhas";
 import { useMetas } from "@/hooks/useMetas";
 import { useComprasGirinhas } from "@/hooks/useComprasGirinhas";
-import { useCarteira } from "@/hooks/useCarteira";
+import { useCarteira } from "@/contexts/CarteiraContext";
 import { useTrocas } from "@/hooks/useTrocas";
-import { useMonitorMetas } from "@/hooks/useMonitorMetas";
 
 const SistemaGirinhas = () => {
   const { toast } = useToast();
@@ -23,11 +23,9 @@ const SistemaGirinhas = () => {
   
   const { pacotes, loading: loadingPacotes } = usePacotesGirinhas();
   const { metas, loading: loadingMetas, getProgressoMeta, getProximaMeta, getMetasConquistadas, getTotalBonusRecebido } = useMetas();
-  const { compras, loading: loadingCompras, simularCompra } = useComprasGirinhas();
-  const { saldo } = useCarteira();
+  const { compras, loading: loadingCompras } = useComprasGirinhas();
+  const { saldo, comprarPacote } = useCarteira(); // ✅ Usando do context centralizado
   const { trocas } = useTrocas();
-
-  useMonitorMetas();
 
   const trocasConfirmadas = trocas.filter(t => t.status === 'confirmada').length;
   const proximaMeta = getProximaMeta(trocasConfirmadas);
@@ -37,7 +35,8 @@ const SistemaGirinhas = () => {
     setLoadingCompra(pacoteId);
     
     try {
-      const sucesso = await simularCompra(pacoteId);
+      // ✅ Usar método centralizado do context
+      const sucesso = await comprarPacote(pacoteId);
       
       if (sucesso) {
         toast({

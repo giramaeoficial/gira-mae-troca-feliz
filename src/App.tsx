@@ -12,7 +12,6 @@ import { AuthProvider } from './hooks/useAuth';
 import { CarteiraProvider } from './contexts/CarteiraContext';
 import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
 import { useRecompensasAutomaticas } from './hooks/useRecompensasAutomaticas';
-import { useMonitorMetas } from './hooks/useMonitorMetas';
 import ErrorBoundary from './components/error/ErrorBoundary';
 import PageSkeleton from './components/loading/PageSkeleton';
 
@@ -39,8 +38,8 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
+  // ✅ Instância única e centralizada de recompensas
   useRecompensasAutomaticas();
-  useMonitorMetas();
   
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
