@@ -20,6 +20,7 @@ import ImageUpload from "@/components/ui/image-upload";
 import ItemPreviewCard from "@/components/ui/item-preview-card";
 import PriceSuggestions from "@/components/ui/price-suggestions";
 import FormProgress from "@/components/ui/form-progress";
+import { uploadImage, generateImagePath } from "@/utils/supabaseStorage";
 
 const itemSchema = z.object({
   titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
@@ -41,6 +42,7 @@ const PublicarItem = () => {
     const { toast } = useToast();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [showPreview, setShowPreview] = useState(false);
+    const [isUploadingImages, setIsUploadingImages] = useState(false);
     const { publicarItem, loading } = useItens();
 
     const form = useForm<ItemFormData>({
@@ -72,6 +74,40 @@ const PublicarItem = () => {
         form.setValue('valor_girinhas', price);
     };
 
+    const uploadImagesToSupabase = async (files: File[]): Promise<string[]> => {
+        setIsUploadingImages(true);
+        try {
+            const uploadPromises = files.map(async (file) => {
+                // Gerar caminho único para o arquivo
+                const userId = 'temp-user-id'; // Substituir por ID do usuário logado
+                const path = generateImagePath(userId, file.name);
+                
+                // Upload para o bucket 'itens'
+                await uploadImage({
+                    bucket: 'itens',
+                    path: path,
+                    file: file
+                });
+                
+                return path;
+            });
+
+            const uploadedPaths = await Promise.all(uploadPromises);
+            console.log('Imagens uploaded com sucesso:', uploadedPaths);
+            return uploadedPaths;
+        } catch (error) {
+            console.error('Erro no upload das imagens:', error);
+            toast({
+                title: "Erro no upload das imagens",
+                description: "Tente novamente ou use imagens menores.",
+                variant: "destructive"
+            });
+            throw error;
+        } finally {
+            setIsUploadingImages(false);
+        }
+    };
+
     const onSubmit = async (data: ItemFormData) => {
         if (selectedFiles.length === 0) {
             toast({
@@ -83,6 +119,12 @@ const PublicarItem = () => {
         }
 
         try {
+            // Upload das imagens primeiro
+            let fotosUrls: string[] = [];
+            if (selectedFiles.length > 0) {
+                fotosUrls = await uploadImagesToSupabase(selectedFiles);
+            }
+
             const itemData = {
                 titulo: data.titulo,
                 descricao: data.descricao,
@@ -90,7 +132,7 @@ const PublicarItem = () => {
                 estado_conservacao: data.estado_conservacao!,
                 tamanho: data.tamanho || null,
                 valor_girinhas: data.valor_girinhas,
-                fotos: selectedFiles.length > 0 ? ['placeholder-image-url'] : undefined
+                fotos: fotosUrls
             };
             
             const sucesso = await publicarItem(itemData);
@@ -151,8 +193,11 @@ const PublicarItem = () => {
                                         onChange={setSelectedFiles}
                                         maxFiles={3}
                                         maxSizeKB={5000}
-                                        disabled={loading}
+                                        disabled={loading || isUploadingImages}
                                     />
+                                    {isUploadingImages && (
+                                        <p className="text-sm text-blue-600">Processando imagens...</p>
+                                    )}
                                 </div>
 
                                 {/* Título */}
@@ -312,8 +357,8 @@ const PublicarItem = () => {
                                     />
                                 </div>
 
-                                {/* Sugestões de Preço */}
-                                {watchedValues.categoria && (
+                                {/* Sugestões de Preço - só renderiza se categoria estiver selecionada */}
+                                {watchedValues.categoria && watchedValues.categoria.trim() !== "" && (
                                     <PriceSuggestions
                                         categoria={watchedValues.categoria}
                                         onSelectPrice={handlePriceSelect}
@@ -326,9 +371,9 @@ const PublicarItem = () => {
                                     size="lg" 
                                     className="w-full h-12 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-base font-semibold"
                                     type="submit"
-                                    disabled={loading || formSteps.filter(s => s.required && !s.completed).length > 0}
+                                    disabled={loading || isUploadingImages || formSteps.filter(s => s.required && !s.completed).length > 0}
                                 >
-                                    {loading ? "Publicando..." : "Publicar Item"}
+                                    {loading || isUploadingImages ? "Publicando..." : "Publicar Item"}
                                 </Button>
                             </form>
                         </Form>
