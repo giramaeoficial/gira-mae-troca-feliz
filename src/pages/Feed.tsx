@@ -16,6 +16,7 @@ import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
 import EmptyState from "@/components/loading/EmptyState";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import { useState as useActionState } from "react";
+import { getImageUrl } from "@/utils/supabaseStorage";
 
 const Feed = () => {
     const [filtros, setFiltros] = useState({
@@ -163,7 +164,7 @@ const Feed = () => {
                                             <div className="aspect-square bg-gray-100 overflow-hidden">
                                                 {item.fotos && item.fotos.length > 0 ? (
                                                     <img 
-                                                        src={item.fotos[0]} 
+                                                        src={getImageUrl('itens', item.fotos[0], 'medium')} 
                                                         alt={item.titulo}
                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                     />
