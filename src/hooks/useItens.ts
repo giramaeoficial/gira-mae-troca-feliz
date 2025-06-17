@@ -5,10 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
 type Item = Tables<'itens'>;
-type Profile = Tables<'profiles'>;
+type ProfileSubset = Pick<Tables<'profiles'>, 'id' | 'nome' | 'avatar_url' | 'bairro' | 'cidade' | 'reputacao'>;
 
 interface ItemComPerfil extends Item {
-  profiles?: Pick<Profile, 'id' | 'nome' | 'avatar_url' | 'bairro' | 'cidade' | 'reputacao'> | null;
+  profiles?: ProfileSubset | null;
 }
 
 interface PaginationState {
@@ -76,28 +76,24 @@ export const useItens = () => {
   }, []);
 
   // Prefetch de profiles em single query
-  const prefetchProfiles = useCallback(async (userIds: string[], signal: AbortSignal): Promise<Map<string, Profile>> => {
+  const prefetchProfiles = useCallback(async (userIds: string[]): Promise<Map<string, ProfileSubset>> => {
     if (userIds.length === 0) return new Map();
 
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, nome, avatar_url, bairro, cidade, reputacao')
-        .in('id', userIds)
-        .abortSignal(signal);
+        .in('id', userIds);
 
       if (error) throw error;
 
-      const profilesMap = new Map<string, Profile>();
+      const profilesMap = new Map<string, ProfileSubset>();
       data?.forEach(profile => {
         profilesMap.set(profile.id, profile);
       });
 
       return profilesMap;
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        throw err;
-      }
       console.error('Erro ao buscar profiles:', err);
       return new Map();
     }
@@ -154,8 +150,7 @@ export const useItens = () => {
         .select('*')
         .eq('status', 'disponivel')
         .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE)
-        .abortSignal(controller.signal);
+        .limit(PAGE_SIZE);
 
       // Aplicar paginação cursor-based
       if (loadMore && pagination.lastCreatedAt) {
@@ -192,9 +187,19 @@ export const useItens = () => {
 
       if (error) throw error;
 
+      // Verificar se request foi cancelado
+      if (controller.signal.aborted) {
+        return [];
+      }
+
       // Prefetch de profiles
       const userIds = [...new Set(itensData?.map(item => item.publicado_por) || [])];
-      const profilesMap = await prefetchProfiles(userIds, controller.signal);
+      const profilesMap = await prefetchProfiles(userIds);
+
+      // Verificar novamente se request foi cancelado após profiles
+      if (controller.signal.aborted) {
+        return [];
+      }
 
       // Combinar itens com profiles
       const itensComPerfil: ItemComPerfil[] = (itensData || []).map(item => ({
@@ -262,14 +267,21 @@ export const useItens = () => {
       const { data, error } = await supabase
         .from('itens')
         .select('*')
-        .order('created_at', { ascending: false })
-        .abortSignal(controller.signal);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
+      if (controller.signal.aborted) {
+        return [];
+      }
+
       // Prefetch de profiles
       const userIds = [...new Set(data?.map(item => item.publicado_por) || [])];
-      const profilesMap = await prefetchProfiles(userIds, controller.signal);
+      const profilesMap = await prefetchProfiles(userIds);
+
+      if (controller.signal.aborted) {
+        return [];
+      }
 
       // Combinar itens com profiles
       const itensComPerfil: ItemComPerfil[] = (data || []).map(item => ({
@@ -306,8 +318,7 @@ export const useItens = () => {
         .from('itens')
         .select('*')
         .eq('publicado_por', user.id)
-        .order('created_at', { ascending: false })
-        .abortSignal(controller.signal);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -338,8 +349,7 @@ export const useItens = () => {
         .select('*')
         .eq('publicado_por', usuarioId)
         .eq('status', 'disponivel')
-        .order('created_at', { ascending: false })
-        .abortSignal(controller.signal);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -380,8 +390,7 @@ export const useItens = () => {
           )
         `)
         .eq('id', itemId)
-        .single()
-        .abortSignal(controller.signal);
+        .single();
 
       if (error) throw error;
       return data;
