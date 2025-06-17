@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Building2, X, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -50,23 +50,33 @@ const ESTADOS_BRASIL = [
 const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [estado, setEstado] = useState('');
-  const [cidade, setCidade] = useState('');
+  const [municipio, setMunicipio] = useState('');
   const [nomeEscola, setNomeEscola] = useState('');
 
-  const { escolas, loading, buscarEscolas } = useEscolas();
+  const { 
+    escolas, 
+    municipios, 
+    loading, 
+    loadingMunicipios, 
+    buscarEscolas, 
+    buscarMunicipios 
+  } = useEscolas();
+
+  // Buscar municípios quando o estado mudar
+  useEffect(() => {
+    if (estado) {
+      buscarMunicipios(estado);
+      setMunicipio(''); // Resetar município quando estado muda
+    }
+  }, [estado, buscarMunicipios]);
 
   const handleBuscarEscolas = async () => {
-    if (!estado || !cidade) {
-      alert('Por favor, selecione o estado e digite a cidade antes de buscar');
+    if (!estado || !municipio) {
+      alert('Por favor, selecione o estado e a cidade antes de buscar');
       return;
     }
 
-    if (nomeEscola.length < 3) {
-      alert('Digite pelo menos 3 caracteres do nome da escola');
-      return;
-    }
-
-    await buscarEscolas(nomeEscola, estado, cidade);
+    await buscarEscolas(nomeEscola, estado, municipio);
   };
 
   const handleSelecionarEscola = (escola: Escola) => {
@@ -77,7 +87,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
   const handleLimpar = () => {
     onChange(null);
     setEstado('');
-    setCidade('');
+    setMunicipio('');
     setNomeEscola('');
   };
 
@@ -135,7 +145,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
             ) : (
               <>
                 <div className="text-sm text-gray-600">
-                  Selecione estado, cidade e digite parte do nome da escola
+                  Selecione estado e cidade para buscar escolas
                 </div>
                 
                 <div className="space-y-3">
@@ -143,12 +153,12 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
                     <label className="block text-sm font-medium mb-1">Estado</label>
                     <Select value={estado} onValueChange={setEstado}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
+                        <SelectValue placeholder="Selecione o estado" />
                       </SelectTrigger>
                       <SelectContent>
                         {ESTADOS_BRASIL.map((uf) => (
                           <SelectItem key={uf.sigla} value={uf.sigla}>
-                            {uf.sigla}
+                            {uf.sigla} - {uf.nome}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -157,56 +167,62 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
                   
                   <div>
                     <label className="block text-sm font-medium mb-1">Cidade</label>
-                    <Input
-                      value={cidade}
-                      onChange={(e) => setCidade(e.target.value)}
-                      placeholder="Digite a cidade"
-                    />
+                    <Select value={municipio} onValueChange={setMunicipio} disabled={!estado || loadingMunicipios}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingMunicipios ? "Carregando..." : "Selecione a cidade"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {municipios.map((mun) => (
+                          <SelectItem key={mun} value={mun}>
+                            {mun}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-1">Nome da Escola</label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={nomeEscola}
-                        onChange={(e) => setNomeEscola(e.target.value)}
-                        placeholder="Mín. 3 caracteres"
-                        className="flex-1"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={handleBuscarEscolas}
-                        disabled={!estado || !cidade || nomeEscola.length < 3}
-                      >
-                        <Search className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    <label className="block text-sm font-medium mb-1">Nome da Escola (opcional)</label>
+                    <Input
+                      value={nomeEscola}
+                      onChange={(e) => setNomeEscola(e.target.value)}
+                      placeholder="Digite parte do nome da escola"
+                    />
                   </div>
+
+                  <Button
+                    onClick={handleBuscarEscolas}
+                    disabled={!estado || !municipio || loading}
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto"></div>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4 mr-2" />
+                        Buscar Escolas
+                      </>
+                    )}
+                  </Button>
                 </div>
 
                 {/* Resultados */}
                 {escolas.length > 0 && (
                   <div className="max-h-40 overflow-y-auto border rounded-md">
-                    {loading ? (
-                      <div className="p-4 text-center text-gray-500">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto"></div>
-                      </div>
-                    ) : (
-                      <div className="space-y-1 p-2">
-                        {escolas.map((escola) => (
-                          <div
-                            key={escola.codigo_inep}
-                            className="p-2 hover:bg-gray-50 cursor-pointer rounded text-sm"
-                            onClick={() => handleSelecionarEscola(escola)}
-                          >
-                            <div className="font-medium line-clamp-1">{escola.escola}</div>
-                            <div className="text-xs text-gray-500">
-                              {formatarEndereco(escola)}
-                            </div>
+                    <div className="space-y-1 p-2">
+                      {escolas.map((escola) => (
+                        <div
+                          key={escola.codigo_inep}
+                          className="p-2 hover:bg-gray-50 cursor-pointer rounded text-sm"
+                          onClick={() => handleSelecionarEscola(escola)}
+                        >
+                          <div className="font-medium line-clamp-1">{escola.escola}</div>
+                          <div className="text-xs text-gray-500">
+                            {formatarEndereco(escola)}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>

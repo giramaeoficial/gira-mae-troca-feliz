@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -43,6 +42,20 @@ const Feed = () => {
     const { temFilhoNaEscola } = useFilhosPorEscola();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
     const [filasInfo, setFilasInfo] = useState<Record<string, { total_fila: number; posicao_usuario: number }>>({});
+
+    // Carregar escola do localStorage na inicialização
+    useEffect(() => {
+        const escolaSalva = localStorage.getItem('ultimaEscolaFiltrada');
+        if (escolaSalva) {
+            try {
+                const escola = JSON.parse(escolaSalva);
+                setFiltros(prev => ({ ...prev, escola }));
+            } catch (error) {
+                console.error('Erro ao carregar escola do localStorage:', error);
+                localStorage.removeItem('ultimaEscolaFiltrada');
+            }
+        }
+    }, []);
 
     // Carregar itens na montagem do componente
     useEffect(() => {
@@ -134,6 +147,28 @@ const Feed = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
             <Header />
+            
+            {/* Filtro de Escola - Posicionado no topo */}
+            <div className="container mx-auto px-4 py-4">
+                <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                    <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                            <div className="flex-shrink-0">
+                                <label className="block text-sm font-medium mb-2 md:mb-0 md:mr-4">
+                                    Filtrar por escola:
+                                </label>
+                            </div>
+                            <div className="flex-grow">
+                                <EscolaFilter 
+                                    value={filtros.escola}
+                                    onChange={(escola) => setFiltros({...filtros, escola})}
+                                />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             <main className="container mx-auto px-4 py-6">
                 {/* Hero Section */}
                 <div className="text-center mb-8">
@@ -145,7 +180,7 @@ const Feed = () => {
                     </p>
                 </div>
 
-                {/* Filtros */}
+                {/* Filtros principais */}
                 <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-4">
                         <div className="space-y-4">
@@ -176,11 +211,6 @@ const Feed = () => {
                                         <SelectItem value="outro">🔖 Outro</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                
-                                <EscolaFilter 
-                                    value={filtros.escola}
-                                    onChange={(escola) => setFiltros({...filtros, escola})}
-                                />
                                 
                                 <Select value={filtros.ordem} onValueChange={(value) => setFiltros({...filtros, ordem: value})}>
                                     <SelectTrigger className="w-full md:w-48 h-12">
