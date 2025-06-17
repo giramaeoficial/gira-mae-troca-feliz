@@ -1,118 +1,98 @@
 
-import { useState, useEffect, createContext, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
-  user: User | null;
   session: Session | null;
+  user: User | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state change:', event, session);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      // Reduzir logs de debug
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Initial session:', session ? 'authenticated' : 'not authenticated');
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      // Reduzir logs de debug
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Auth state change:', _event, session ? 'authenticated' : 'not authenticated');
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
-    try {
-      setLoading(true);
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account'
-          }
-        }
-      });
-      
-      if (error) {
-        console.error('Erro ao fazer login com Google:', error.message);
-        throw error;
-      }
-    } catch (error) {
-      console.error('Erro no login:', error);
-      setLoading(false);
-    }
-  };
-
   const signOut = async () => {
     try {
-      setLoading(true);
-      
-      // Clear local state first to ensure UI updates immediately
+      // Limpar estado local imediatamente
       setSession(null);
       setUser(null);
       
-      // Try to sign out from Supabase
+      // Tentar fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
       
-      // Don't throw error if session is already missing
-      if (error && !error.message.includes('Auth session missing')) {
+      if (error && error.message !== 'Auth session missing!') {
         console.error('Erro ao fazer logout:', error.message);
-        throw error;
+        toast({
+          title: "Erro no logout",
+          description: "Houve um problema ao fazer logout, mas você foi desconectado localmente.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Logout realizado",
+          description: "Você foi desconectado com sucesso.",
+        });
       }
-      
-      // Clear any remaining session data from localStorage
-      localStorage.removeItem('supabase.auth.token');
-      
-    } catch (error: any) {
+    } catch (error) {
       console.error('Erro no logout:', error);
-      // Even if logout fails, clear local state to prevent UI inconsistency
-      setSession(null);
-      setUser(null);
-    } finally {
-      setLoading(false);
+      toast({
+        title: "Erro no logout", 
+        description: "Você foi desconectado localmente.",
+        variant: "destructive",
+      });
     }
   };
 
-  return (
-    <AuthContext.Provider value={{
-      user,
-      session,
-      loading,
-      signInWithGoogle,
-      signOut
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    session,
+    user,
+    loading,
+    signOut,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

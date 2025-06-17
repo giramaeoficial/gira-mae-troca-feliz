@@ -100,16 +100,13 @@ export const useItens = () => {
     }
   }, []);
 
-  // Função para processar fotos dos itens
   const processarFotosItens = useCallback((itens: Item[]): ItemComPerfil[] => {
     return itens.map(item => ({
       ...item,
       fotos: item.fotos ? item.fotos.map(foto => {
-        // Se já é uma URL completa, retornar como está
         if (foto.startsWith('http') || foto.startsWith('blob:')) {
           return foto;
         }
-        // Caso contrário, usar getImageUrl
         return getImageUrl('itens', foto, 'medium');
       }) : []
     }));
@@ -126,10 +123,8 @@ export const useItens = () => {
     loadMore: boolean = false
   ) => {
     try {
-      // Cancelar requests anteriores
       cancelPendingRequests();
       
-      // Criar novo abort controller
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
@@ -140,7 +135,6 @@ export const useItens = () => {
         lastCreatedAt: loadMore ? pagination.lastCreatedAt : null
       });
 
-      // Verificar cache apenas para primeira página
       if (!loadMore) {
         const cachedData = getCachedData(cacheKey);
         if (cachedData) {
@@ -161,7 +155,6 @@ export const useItens = () => {
       }
       setError(null);
 
-      // Query com timeout e retry automático
       const queryFn = async () => {
         let query = supabase
           .from('itens')
@@ -170,12 +163,10 @@ export const useItens = () => {
           .order('created_at', { ascending: false })
           .limit(PAGE_SIZE);
 
-        // Aplicar paginação cursor-based
         if (loadMore && pagination.lastCreatedAt) {
           query = query.lt('created_at', pagination.lastCreatedAt);
         }
 
-        // Aplicar filtros
         if (filtros?.categoria && filtros.categoria !== 'todos') {
           query = query.eq('categoria', filtros.categoria);
         }
@@ -196,7 +187,6 @@ export const useItens = () => {
           query = query.lte('valor_girinhas', filtros.valorMax);
         }
 
-        // Excluir itens do próprio usuário se estiver logado
         if (user) {
           query = query.neq('publicado_por', user.id);
         }
@@ -212,7 +202,6 @@ export const useItens = () => {
       ]);
 
       if (error) {
-        // Tentar usar cache como fallback
         if (!loadMore) {
           const cachedData = getCachedData(cacheKey);
           if (cachedData) {
@@ -225,30 +214,24 @@ export const useItens = () => {
         throw error;
       }
 
-      // Verificar se request foi cancelado
       if (controller.signal.aborted) {
         return [];
       }
 
-      // Processar fotos dos itens
       const itensComFotosProcessadas = processarFotosItens(itensData || []);
 
-      // Prefetch de profiles
       const userIds = [...new Set(itensComFotosProcessadas.map(item => item.publicado_por))];
       const profilesMap = await prefetchProfiles(userIds);
 
-      // Verificar novamente se request foi cancelado após profiles
       if (controller.signal.aborted) {
         return [];
       }
 
-      // Combinar itens com profiles
       const itensComPerfil: ItemComPerfil[] = itensComFotosProcessadas.map(item => ({
         ...item,
         profiles: profilesMap.get(item.publicado_por) || null
       }));
 
-      // Atualizar estado
       if (loadMore) {
         setItens(prev => [...prev, ...itensComPerfil]);
         setPagination(prev => ({
@@ -265,17 +248,15 @@ export const useItens = () => {
           isLoadingMore: false
         });
         
-        // Cache apenas primeira página
         setCachedData(cacheKey, itensComPerfil);
       }
 
-      // Cleanup cache expirado
       cleanupExpiredCache();
 
       return itensComPerfil;
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        return []; // Request foi cancelado, não é erro
+        return [];
       }
       
       console.error('Erro ao buscar itens:', err);
@@ -338,44 +319,6 @@ export const useItens = () => {
     }
   }, []);
 
-  const buscarItemPorIdWrapper = useCallback(async (itemId: string) => {
-    const queryFn = async () => {
-      const { data, error } = await supabase
-        .from('itens')
-        .select(`
-          *,
-          profiles!publicado_por (
-            id,
-            nome,
-            avatar_url,
-            bairro,
-            cidade,
-            reputacao,
-            telefone
-          )
-        `)
-        .eq('id', itemId)
-        .single();
-
-      if (error) throw error;
-      
-      // Processar fotos do item
-      if (data.fotos) {
-        data.fotos = data.fotos.map(foto => {
-          if (foto.startsWith('http') || foto.startsWith('blob:')) {
-            return foto;
-          }
-          return getImageUrl('itens', foto, 'medium');
-        });
-      }
-      
-      return data;
-    };
-
-    // Substituir a função do hook temporariamente
-    return buscarItemPorId.call(null, queryFn);
-  }, [buscarItemPorId]);
-
   const carregarMais = useCallback(() => {
     if (pagination.hasMore && !pagination.isLoadingMore && !loading) {
       buscarItens(undefined, true);
@@ -403,10 +346,8 @@ export const useItens = () => {
         return [];
       }
 
-      // Processar fotos dos itens
       const itensComFotosProcessadas = processarFotosItens(data || []);
 
-      // Prefetch de profiles
       const userIds = [...new Set(itensComFotosProcessadas.map(item => item.publicado_por))];
       const profilesMap = await prefetchProfiles(userIds);
 
@@ -414,7 +355,6 @@ export const useItens = () => {
         return [];
       }
 
-      // Combinar itens com profiles
       const itensComPerfil: ItemComPerfil[] = itensComFotosProcessadas.map(item => ({
         ...item,
         profiles: profilesMap.get(item.publicado_por) || null
@@ -453,7 +393,6 @@ export const useItens = () => {
 
       if (error) throw error;
 
-      // Processar fotos dos itens
       const itensComFotosProcessadas = processarFotosItens(data || []);
       
       return itensComFotosProcessadas;
@@ -487,7 +426,6 @@ export const useItens = () => {
 
       if (error) throw error;
 
-      // Processar fotos dos itens
       const itensComFotosProcessadas = processarFotosItens(data || []);
       
       return itensComFotosProcessadas;
@@ -526,7 +464,6 @@ export const useItens = () => {
 
       if (error) throw error;
       
-      // Limpar cache após publicação
       cacheRef.current.clear();
       
       return true;
@@ -555,7 +492,6 @@ export const useItens = () => {
 
       if (error) throw error;
       
-      // Limpar cache após atualização
       cacheRef.current.clear();
       
       return true;
@@ -581,7 +517,6 @@ export const useItens = () => {
 
       if (error) throw error;
       
-      // Limpar cache após deleção
       cacheRef.current.clear();
       
       return true;
@@ -608,7 +543,7 @@ export const useItens = () => {
     return () => {
       cancelPendingRequests();
     };
-  }, [user]); // Removido buscarItens das dependências para evitar loops
+  }, [user]);
 
   // Memoized values
   const memoizedValues = useMemo(() => ({
@@ -626,7 +561,7 @@ export const useItens = () => {
     buscarTodosItens,
     buscarMeusItens,
     buscarItensDoUsuario,
-    buscarItemPorId: buscarItemPorIdWrapper,
+    buscarItemPorId,
     publicarItem,
     atualizarItem,
     deletarItem,
