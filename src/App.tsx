@@ -1,27 +1,31 @@
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
+import { Suspense, lazy } from 'react';
 
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
 import Auth from './pages/Auth';
-import Feed from './pages/Feed';
-import Perfil from './pages/Perfil';
-import PerfilPublicoMae from './pages/PerfilPublicoMae';
-import PublicarItem from './pages/PublicarItem';
-import DetalhesItem from './pages/DetalhesItem';
-import Carteira from './pages/Carteira';
-import SistemaGirinhas from './pages/SistemaGirinhas';
-import MinhasReservas from './pages/MinhasReservas';
-import Indicacoes from './pages/Indicacoes';
 import { AuthProvider } from './hooks/useAuth';
 import { CarteiraProvider } from './contexts/CarteiraContext';
 import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
 import { useRecompensasAutomaticas } from './hooks/useRecompensasAutomaticas';
 import { useMonitorMetas } from './hooks/useMonitorMetas';
 import ErrorBoundary from './components/error/ErrorBoundary';
+import PageSkeleton from './components/loading/PageSkeleton';
+
+// Lazy loading das páginas principais
+const Feed = lazy(() => import('./pages/Feed'));
+const SistemaGirinhas = lazy(() => import('./pages/SistemaGirinhas'));
+const Perfil = lazy(() => import('./pages/Perfil'));
+const PerfilPublicoMae = lazy(() => import('./pages/PerfilPublicoMae'));
+const PublicarItem = lazy(() => import('./pages/PublicarItem'));
+const DetalhesItem = lazy(() => import('./pages/DetalhesItem'));
+const Carteira = lazy(() => import('./pages/Carteira'));
+const MinhasReservas = lazy(() => import('./pages/MinhasReservas'));
+const Indicacoes = lazy(() => import('./pages/Indicacoes'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,47 +68,65 @@ function AppContent() {
         } />
         <Route path="/feed" element={
           <ErrorBoundary fallbackType="feed">
-            <Feed />
+            <Suspense fallback={<PageSkeleton type="feed" />}>
+              <Feed />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/perfil" element={
           <ErrorBoundary fallbackType="page">
-            <Perfil />
+            <Suspense fallback={<PageSkeleton type="perfil" />}>
+              <Perfil />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/perfil/:nome" element={
           <ErrorBoundary fallbackType="page">
-            <PerfilPublicoMae />
+            <Suspense fallback={<PageSkeleton type="perfil" />}>
+              <PerfilPublicoMae />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/publicar" element={
           <ErrorBoundary fallbackType="page">
-            <PublicarItem />
+            <Suspense fallback={<PageSkeleton type="default" />}>
+              <PublicarItem />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/item/:id" element={
           <ErrorBoundary fallbackType="page">
-            <DetalhesItem />
+            <Suspense fallback={<PageSkeleton type="default" />}>
+              <DetalhesItem />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/carteira" element={
           <ErrorBoundary fallbackType="page">
-            <Carteira />
+            <Suspense fallback={<PageSkeleton type="default" />}>
+              <Carteira />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/sistema-girinhas" element={
           <ErrorBoundary fallbackType="page">
-            <SistemaGirinhas />
+            <Suspense fallback={<PageSkeleton type="sistema-girinhas" />}>
+              <SistemaGirinhas />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/reservas" element={
           <ErrorBoundary fallbackType="page">
-            <MinhasReservas />
+            <Suspense fallback={<PageSkeleton type="default" />}>
+              <MinhasReservas />
+            </Suspense>
           </ErrorBoundary>
         } />
         <Route path="/indicacoes" element={
           <ErrorBoundary fallbackType="page">
-            <Indicacoes />
+            <Suspense fallback={<PageSkeleton type="default" />}>
+              <Indicacoes />
+            </Suspense>
           </ErrorBoundary>
         } />
       </Routes>
