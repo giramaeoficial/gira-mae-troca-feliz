@@ -189,7 +189,7 @@ const Feed = () => {
                     filters={filtros}
                     onFilterChange={setFiltros}
                     onSearch={handleSearch}
-                    hasLocation={!!location}
+                    location={location}
                 />
 
                 {/* Grid de Itens - só mostra se tem localização e já fez busca */}

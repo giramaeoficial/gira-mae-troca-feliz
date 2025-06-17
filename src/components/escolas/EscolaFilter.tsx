@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useEscolas } from '@/hooks/useEscolas';
 import { Tables } from '@/integrations/supabase/types';
@@ -15,70 +14,32 @@ type Escola = Tables<'escolas_inep'>;
 interface EscolaFilterProps {
   value?: Escola | null;
   onChange: (escola: Escola | null) => void;
+  preSelectedLocation?: { estado: string; cidade: string } | null;
 }
 
-const ESTADOS_BRASIL = [
-  { sigla: 'AC', nome: 'Acre' },
-  { sigla: 'AL', nome: 'Alagoas' },
-  { sigla: 'AP', nome: 'Amapá' },
-  { sigla: 'AM', nome: 'Amazonas' },
-  { sigla: 'BA', nome: 'Bahia' },
-  { sigla: 'CE', nome: 'Ceará' },
-  { sigla: 'DF', nome: 'Distrito Federal' },
-  { sigla: 'ES', nome: 'Espírito Santo' },
-  { sigla: 'GO', nome: 'Goiás' },
-  { sigla: 'MA', nome: 'Maranhão' },
-  { sigla: 'MT', nome: 'Mato Grosso' },
-  { sigla: 'MS', nome: 'Mato Grosso do Sul' },
-  { sigla: 'MG', nome: 'Minas Gerais' },
-  { sigla: 'PA', nome: 'Pará' },
-  { sigla: 'PB', nome: 'Paraíba' },
-  { sigla: 'PR', nome: 'Paraná' },
-  { sigla: 'PE', nome: 'Pernambuco' },
-  { sigla: 'PI', nome: 'Piauí' },
-  { sigla: 'RJ', nome: 'Rio de Janeiro' },
-  { sigla: 'RN', nome: 'Rio Grande do Norte' },
-  { sigla: 'RS', nome: 'Rio Grande do Sul' },
-  { sigla: 'RO', nome: 'Rondônia' },
-  { sigla: 'RR', nome: 'Roraima' },
-  { sigla: 'SC', nome: 'Santa Catarina' },
-  { sigla: 'SP', nome: 'São Paulo' },
-  { sigla: 'SE', nome: 'Sergipe' },
-  { sigla: 'TO', nome: 'Tocantins' }
-];
-
-const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
+const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange, preSelectedLocation }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [estado, setEstado] = useState('');
-  const [municipio, setMunicipio] = useState('');
   const [nomeEscola, setNomeEscola] = useState('');
-  const [lastEstadoBuscado, setLastEstadoBuscado] = useState('');
 
   const { 
     escolas, 
-    municipios, 
     loading, 
-    loadingMunicipios, 
-    buscarEscolas, 
-    buscarMunicipios 
+    buscarEscolas
   } = useEscolas();
 
-  // Buscar municípios quando o estado mudar, mas evitar loops
+  // Buscar escolas quando o componente carregar ou a localização mudar
   useEffect(() => {
-    if (estado && estado !== lastEstadoBuscado) {
-      setLastEstadoBuscado(estado);
-      buscarMunicipios(estado);
-      setMunicipio(''); // Resetar município quando estado muda
+    if (preSelectedLocation?.estado && preSelectedLocation?.cidade) {
+      buscarEscolas('', preSelectedLocation.estado, preSelectedLocation.cidade);
     }
-  }, [estado, lastEstadoBuscado]);
+  }, [preSelectedLocation, buscarEscolas]);
 
   const handleBuscarEscolas = async () => {
-    if (!estado || !municipio) {
-      alert('Por favor, selecione o estado e a cidade antes de buscar');
+    if (!preSelectedLocation?.estado || !preSelectedLocation?.cidade) {
       return;
     }
 
-    await buscarEscolas(nomeEscola, estado, municipio);
+    await buscarEscolas(nomeEscola, preSelectedLocation.estado, preSelectedLocation.cidade);
   };
 
   const handleSelecionarEscola = (escola: Escola) => {
@@ -88,16 +49,22 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
 
   const handleLimpar = () => {
     onChange(null);
-    setEstado('');
-    setMunicipio('');
     setNomeEscola('');
-    setLastEstadoBuscado('');
   };
 
   const formatarEndereco = (escola: Escola) => {
     const partes = [escola.municipio, escola.uf].filter(Boolean);
     return partes.join(', ');
   };
+
+  if (!preSelectedLocation) {
+    return (
+      <Button variant="outline" disabled className="w-full md:w-auto">
+        <Building2 className="w-4 h-4 mr-2" />
+        Selecione localização primeiro
+      </Button>
+    );
+  }
 
   return (
     <div className="relative">
@@ -148,42 +115,10 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
             ) : (
               <>
                 <div className="text-sm text-gray-600">
-                  Selecione estado e cidade para buscar escolas
+                  Buscando escolas em {preSelectedLocation.cidade}, {preSelectedLocation.estado}
                 </div>
                 
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Estado</label>
-                    <Select value={estado} onValueChange={setEstado}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ESTADOS_BRASIL.map((uf) => (
-                          <SelectItem key={uf.sigla} value={uf.sigla}>
-                            {uf.sigla} - {uf.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Cidade</label>
-                    <Select value={municipio} onValueChange={setMunicipio} disabled={!estado || loadingMunicipios}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingMunicipios ? "Carregando..." : "Selecione a cidade"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {municipios.map((mun) => (
-                          <SelectItem key={mun} value={mun}>
-                            {mun}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium mb-1">Nome da Escola (opcional)</label>
                     <Input
@@ -195,7 +130,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange }) => {
 
                   <Button
                     onClick={handleBuscarEscolas}
-                    disabled={!estado || !municipio || loading}
+                    disabled={loading}
                     className="w-full"
                   >
                     {loading ? (

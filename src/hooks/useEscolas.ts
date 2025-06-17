@@ -70,8 +70,8 @@ export const useEscolas = (): UseEscolasReturn => {
         .from('escolas_inep')
         .select('*')
         .eq('uf', uf)
-        .ilike('municipio', `%${municipio}%`)
-        .limit(50); // Aumentamos o limite já que não temos filtro de nome
+        .eq('municipio', municipio) // Mudança aqui: usar eq em vez de ilike
+        .limit(50);
 
       // Se o termo for fornecido, aplicamos filtro adicional
       if (termo && termo.length >= 2) {

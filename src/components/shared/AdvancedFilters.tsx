@@ -1,12 +1,13 @@
 
-import React from 'react';
-import { Search, Building2 } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import EscolaFilter from '@/components/escolas/EscolaFilter';
 import { Tables } from '@/integrations/supabase/types';
+import { useEscolas } from '@/hooks/useEscolas';
 
 type Escola = Tables<'escolas_inep'>;
 
@@ -19,25 +20,33 @@ interface AdvancedFiltersProps {
   };
   onFilterChange: (filters: any) => void;
   onSearch: () => void;
-  hasLocation: boolean;
+  location: { estado: string; cidade: string } | null;
 }
 
 const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   filters,
   onFilterChange,
   onSearch,
-  hasLocation
+  location
 }) => {
+  const { buscarEscolas } = useEscolas();
+
+  // Quando a localização mudar, buscar escolas automaticamente
+  useEffect(() => {
+    if (location?.estado && location?.cidade) {
+      buscarEscolas('', location.estado, location.cidade);
+    }
+  }, [location, buscarEscolas]);
+
   const updateFilter = (key: string, value: any) => {
     onFilterChange({ ...filters, [key]: value });
   };
 
-  if (!hasLocation) {
+  if (!location) {
     return (
       <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
         <CardContent className="p-6 text-center">
           <div className="text-gray-500 mb-2">
-            <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-400" />
             <h3 className="font-medium text-gray-700">Selecione sua localização</h3>
             <p className="text-sm text-gray-500 mt-1">
               Escolha seu estado e cidade para ver os itens disponíveis na sua região
@@ -100,6 +109,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             <EscolaFilter 
               value={filters.escola}
               onChange={(escola) => updateFilter('escola', escola)}
+              preSelectedLocation={location}
             />
           </div>
 
