@@ -29,7 +29,6 @@ export default defineConfig(({ mode }) => ({
           'vendor-router': ['react-router-dom'],
           'vendor-ui': [
             '@radix-ui/react-avatar',
-            '@radix-ui/react-button', 
             '@radix-ui/react-card',
             '@radix-ui/react-dialog',
             '@radix-ui/react-tabs',
