@@ -1,4 +1,3 @@
-
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
 import { Button } from "@/components/ui/button";
@@ -12,10 +11,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, Camera, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useItens } from "@/hooks/useItens";
 import { useToast } from "@/hooks/use-toast";
+import ImageUpload from "@/components/ui/image-upload";
 
 const itemSchema = z.object({
   titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
@@ -36,7 +36,6 @@ const PublicarItem = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const { publicarItem, loading } = useItens();
 
     const form = useForm<ItemFormData>({
@@ -50,42 +49,6 @@ const PublicarItem = () => {
             valor_girinhas: 0
         }
     });
-
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (!files) return;
-
-        const newFiles: File[] = [];
-        const newPreviews: string[] = [];
-        const remainingSlots = 3 - selectedFiles.length;
-        const filesToProcess = Math.min(files.length, remainingSlots);
-
-        for (let i = 0; i < filesToProcess; i++) {
-            const file = files[i];
-            if (file.type.startsWith('image/')) {
-                newFiles.push(file);
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const imageUrl = e.target?.result as string;
-                    newPreviews.push(imageUrl);
-                    
-                    if (newPreviews.length === filesToProcess) {
-                        setSelectedFiles(prev => [...prev, ...newFiles]);
-                        setPreviewUrls(prev => [...prev, ...newPreviews]);
-                    }
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // Reset input
-        event.target.value = '';
-    };
-
-    const removeImage = (indexToRemove: number) => {
-        setSelectedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
-        setPreviewUrls(prev => prev.filter((_, index) => index !== indexToRemove));
-    };
 
     const onSubmit = async (data: ItemFormData) => {
         try {
@@ -138,57 +101,16 @@ const PublicarItem = () => {
                     <CardContent>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                {/* Fotos do Item */}
+                                {/* Upload de Imagens */}
                                 <div className="space-y-4">
                                     <Label>Fotos do item (até 3)</Label>
-                                    
-                                    {/* Preview das imagens */}
-                                    {previewUrls.length > 0 && (
-                                        <div className="grid grid-cols-3 gap-4">
-                                            {previewUrls.map((image, index) => (
-                                                <div key={index} className="relative">
-                                                    <img 
-                                                        src={image} 
-                                                        alt={`Preview ${index + 1}`}
-                                                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeImage(index)}
-                                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                                                    >
-                                                        <X className="w-3 h-3" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* Upload de novas imagens */}
-                                    {selectedFiles.length < 3 && (
-                                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                multiple
-                                                onChange={handleImageUpload}
-                                                className="hidden"
-                                                id="photo-upload"
-                                            />
-                                            <label 
-                                                htmlFor="photo-upload" 
-                                                className="cursor-pointer flex flex-col items-center gap-2"
-                                            >
-                                                <Camera className="w-8 h-8 text-gray-400" />
-                                                <span className="text-sm text-gray-600">
-                                                    Clique para adicionar fotos
-                                                </span>
-                                                <span className="text-xs text-gray-500">
-                                                    {selectedFiles.length}/3 fotos adicionadas
-                                                </span>
-                                            </label>
-                                        </div>
-                                    )}
+                                    <ImageUpload
+                                        value={selectedFiles}
+                                        onChange={setSelectedFiles}
+                                        maxFiles={3}
+                                        maxSizeKB={5000}
+                                        disabled={loading}
+                                    />
                                 </div>
 
                                 <FormField

@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { Tables } from "@/integrations/supabase/types";
+import LazyImage from "@/components/ui/lazy-image";
 
 type ItemComPerfil = Tables<'itens'> & {
   profiles?: {
@@ -195,10 +196,13 @@ const DetalhesItem = () => {
                     <div className="space-y-4">
                         <Card className="overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                             <div className="relative">
-                                <img 
-                                    src={imagens[currentImageIndex]} 
-                                    alt={item.titulo} 
+                                <LazyImage
+                                    src={imagens[currentImageIndex]}
+                                    alt={item.titulo}
                                     className="w-full h-96 object-cover"
+                                    size="full"
+                                    placeholder="Carregando imagem..."
+                                    bucket={imagens[currentImageIndex].includes('supabase') ? 'item-photos' : undefined}
                                 />
                                 <div className="absolute top-4 right-4">
                                     <Badge className={`${(isReserved || item.status !== 'disponivel') ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
@@ -213,7 +217,7 @@ const DetalhesItem = () => {
                             </div>
                         </Card>
                         
-                        {/* Miniaturas */}
+                        {/* Miniaturas com lazy loading */}
                         {imagens.length > 1 && (
                             <div className="flex gap-2">
                                 {imagens.map((image, index) => (
@@ -224,7 +228,13 @@ const DetalhesItem = () => {
                                             currentImageIndex === index ? 'border-primary' : 'border-gray-200'
                                         }`}
                                     >
-                                        <img src={image} alt={`${item.titulo} ${index + 1}`} className="w-full h-full object-cover" />
+                                        <LazyImage
+                                            src={image}
+                                            alt={`${item.titulo} ${index + 1}`}
+                                            className="w-full h-full object-cover"
+                                            size="thumbnail"
+                                            bucket={image.includes('supabase') ? 'item-photos' : undefined}
+                                        />
                                     </button>
                                 ))}
                             </div>

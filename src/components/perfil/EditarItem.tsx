@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Camera, X } from "lucide-react";
 import { useItens } from "@/hooks/useItens";
 import { Tables } from "@/integrations/supabase/types";
+import ImageUpload from "@/components/ui/image-upload";
+import LazyImage from "@/components/ui/lazy-image";
 
 const itemSchema = z.object({
   titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
@@ -37,7 +38,6 @@ interface EditarItemProps {
 
 const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const { atualizarItem, loading } = useItens();
 
   const form = useForm<ItemFormData>({
@@ -64,44 +64,8 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
         valor_girinhas: Number(item.valor_girinhas)
       });
       setSelectedFiles([]);
-      setPreviewUrls([]);
     }
   }, [item, form]);
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
-
-    const newFiles: File[] = [];
-    const newPreviews: string[] = [];
-    const remainingSlots = 3 - selectedFiles.length;
-    const filesToProcess = Math.min(files.length, remainingSlots);
-
-    for (let i = 0; i < filesToProcess; i++) {
-      const file = files[i];
-      if (file.type.startsWith('image/')) {
-        newFiles.push(file);
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageUrl = e.target?.result as string;
-          newPreviews.push(imageUrl);
-          
-          if (newPreviews.length === filesToProcess) {
-            setSelectedFiles(prev => [...prev, ...newFiles]);
-            setPreviewUrls(prev => [...prev, ...newPreviews]);
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    }
-
-    event.target.value = '';
-  };
-
-  const removeImage = (indexToRemove: number) => {
-    setSelectedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
-    setPreviewUrls(prev => prev.filter((_, index) => index !== indexToRemove));
-  };
 
   const onSubmit = async (data: ItemFormData) => {
     const itemUpdates = {
@@ -136,67 +100,29 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
                 <label className="text-sm font-medium">Fotos atuais</label>
                 <div className="grid grid-cols-3 gap-4">
                   {item.fotos.map((foto, index) => (
-                    <div key={index} className="relative">
-                      <img 
-                        src={foto} 
-                        alt={`Foto ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
-                      />
-                    </div>
+                    <LazyImage
+                      key={index}
+                      src={foto}
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                      size="thumbnail"
+                      placeholder="Carregando..."
+                    />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Novas fotos */}
+            {/* Upload de novas fotos */}
             <div className="space-y-4">
               <label className="text-sm font-medium">Adicionar novas fotos (opcional)</label>
-              
-              {previewUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-4">
-                  {previewUrls.map((image, index) => (
-                    <div key={index} className="relative">
-                      <img 
-                        src={image} 
-                        alt={`Nova foto ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {selectedFiles.length < 3 && (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="photo-upload-edit"
-                  />
-                  <label 
-                    htmlFor="photo-upload-edit" 
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    <Camera className="w-8 h-8 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      Clique para adicionar novas fotos
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {selectedFiles.length}/3 novas fotos
-                    </span>
-                  </label>
-                </div>
-              )}
+              <ImageUpload
+                value={selectedFiles}
+                onChange={setSelectedFiles}
+                maxFiles={3}
+                maxSizeKB={5000}
+                disabled={loading}
+              />
             </div>
 
             <FormField
