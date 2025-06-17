@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { X, Plus, Save, User } from "lucide-react";
+import { X, Plus, Save, User, GraduationCap } from "lucide-react";
+import EscolaPicker from "@/components/escolas/EscolaPicker";
+import { Tables } from "@/integrations/supabase/types";
+
+type Escola = Tables<'escolas_inep'>;
 
 interface FilhoData {
   id?: string;
@@ -19,6 +22,8 @@ interface FilhoData {
   sexo: string;
   tamanho_roupas: string;
   tamanho_calcados: string;
+  escola_id?: number | null;
+  escola?: Escola | null;
 }
 
 interface PerfilData {
@@ -95,10 +100,19 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
         });
       }
 
-      // Carregar filhos
+      // Carregar filhos com escola
       const { data: filhosData, error: filhosError } = await supabase
         .from('filhos')
-        .select('*')
+        .select(`
+          *,
+          escolas_inep!filhos_escola_id_fkey (
+            codigo_inep,
+            escola,
+            municipio,
+            uf,
+            categoria_administrativa
+          )
+        `)
         .eq('mae_id', user.id);
 
       if (filhosError) throw filhosError;
@@ -110,7 +124,9 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
           data_nascimento: filho.data_nascimento,
           sexo: filho.sexo || "",
           tamanho_roupas: filho.tamanho_roupas || "",
-          tamanho_calcados: filho.tamanho_calcados || ""
+          tamanho_calcados: filho.tamanho_calcados || "",
+          escola_id: filho.escola_id,
+          escola: filho.escolas_inep || null
         })));
       }
     } catch (error) {
@@ -153,6 +169,8 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
 
       // Salvar filhos
       for (const filho of filhos) {
+        const escolaId = filho.escola?.codigo_inep || null;
+        
         if (filho.id) {
           // Atualizar filho existente
           const { error } = await supabase
@@ -163,6 +181,7 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
               sexo: filho.sexo,
               tamanho_roupas: filho.tamanho_roupas,
               tamanho_calcados: filho.tamanho_calcados,
+              escola_id: escolaId,
               updated_at: new Date().toISOString()
             })
             .eq('id', filho.id);
@@ -178,7 +197,8 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
               data_nascimento: filho.data_nascimento,
               sexo: filho.sexo,
               tamanho_roupas: filho.tamanho_roupas,
-              tamanho_calcados: filho.tamanho_calcados
+              tamanho_calcados: filho.tamanho_calcados,
+              escola_id: escolaId
             });
 
           if (error) throw error;
@@ -217,9 +237,17 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
     setFilhos(filhos.filter((_, i) => i !== index));
   };
 
-  const atualizarFilho = (index: number, campo: keyof FilhoData, valor: string) => {
+  const atualizarFilho = (index: number, campo: keyof FilhoData, valor: string | Escola | null) => {
     const novosFilhos = [...filhos];
-    novosFilhos[index] = { ...novosFilhos[index], [campo]: valor };
+    if (campo === 'escola') {
+      novosFilhos[index] = { 
+        ...novosFilhos[index], 
+        escola: valor as Escola | null,
+        escola_id: (valor as Escola)?.codigo_inep || null
+      };
+    } else {
+      novosFilhos[index] = { ...novosFilhos[index], [campo]: valor };
+    }
     setFilhos(novosFilhos);
   };
 
@@ -422,7 +450,10 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
           <Card>
             <CardHeader>
               <CardTitle className="flex justify-between items-center">
-                Meus Filhos
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5" />
+                  Meus Filhos
+                </div>
                 <Button type="button" onClick={adicionarFilho} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Adicionar Filho
@@ -486,6 +517,17 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
                         onChange={(e) => atualizarFilho(index, 'tamanho_calcados', e.target.value)}
                         placeholder="Ex: 25, 26, etc."
                       />
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-3">
+                      <Label>Escola</Label>
+                      <EscolaPicker
+                        value={filho.escola}
+                        onChange={(escola) => atualizarFilho(index, 'escola', escola)}
+                        placeholder="Buscar escola do(a) filho(a)..."
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Selecionar a escola facilita a entrega de itens e encontrar outros pais da mesma comunidade escolar
+                      </p>
                     </div>
                   </div>
                 </div>

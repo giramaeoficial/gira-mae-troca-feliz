@@ -6,11 +6,16 @@ import { Tables } from '@/integrations/supabase/types';
 
 type Profile = Tables<'profiles'>;
 type Filho = Tables<'filhos'>;
+type Escola = Tables<'escolas_inep'>;
+
+interface FilhoComEscola extends Filho {
+  escolas_inep?: Escola | null;
+}
 
 export const useProfile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [filhos, setFilhos] = useState<Filho[]>([]);
+  const [filhos, setFilhos] = useState<FilhoComEscola[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,10 +40,19 @@ export const useProfile = () => {
 
       setProfile(profileData);
 
-      // Buscar filhos
+      // Buscar filhos com escolas
       const { data: filhosData, error: filhosError } = await supabase
         .from('filhos')
-        .select('*')
+        .select(`
+          *,
+          escolas_inep!filhos_escola_id_fkey (
+            codigo_inep,
+            escola,
+            municipio,
+            uf,
+            categoria_administrativa
+          )
+        `)
         .eq('mae_id', user.id)
         .order('created_at', { ascending: true });
 
@@ -75,10 +89,19 @@ export const useProfile = () => {
       console.log('Perfil encontrado:', profileData);
       setProfile(profileData);
 
-      // Buscar filhos do perfil
+      // Buscar filhos do perfil com escolas
       const { data: filhosData, error: filhosError } = await supabase
         .from('filhos')
-        .select('*')
+        .select(`
+          *,
+          escolas_inep!filhos_escola_id_fkey (
+            codigo_inep,
+            escola,
+            municipio,
+            uf,
+            categoria_administrativa
+          )
+        `)
         .eq('mae_id', profileData.id)
         .order('created_at', { ascending: true });
 

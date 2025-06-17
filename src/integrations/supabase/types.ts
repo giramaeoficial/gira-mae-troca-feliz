@@ -230,6 +230,72 @@ export type Database = {
           },
         ]
       }
+      escolas_inep: {
+        Row: {
+          categoria_administrativa: string | null
+          categoria_escola_privada: string | null
+          codigo_inep: number
+          conveniada_poder_publico: string | null
+          dependencia_administrativa: string | null
+          endereco: string | null
+          escola: string | null
+          etapas_e_modalidade_de_ensino_oferecidas: string | null
+          latitude: string | null
+          localidade_diferenciada: string | null
+          localizacao: string | null
+          longitude: string | null
+          municipio: string | null
+          outras_ofertas_educacionais: string | null
+          porte_da_escola: string | null
+          regulamentacao_pelo_conselho_de_educacao: string | null
+          restricao_de_atendimento: string | null
+          telefone: string | null
+          uf: string | null
+        }
+        Insert: {
+          categoria_administrativa?: string | null
+          categoria_escola_privada?: string | null
+          codigo_inep: number
+          conveniada_poder_publico?: string | null
+          dependencia_administrativa?: string | null
+          endereco?: string | null
+          escola?: string | null
+          etapas_e_modalidade_de_ensino_oferecidas?: string | null
+          latitude?: string | null
+          localidade_diferenciada?: string | null
+          localizacao?: string | null
+          longitude?: string | null
+          municipio?: string | null
+          outras_ofertas_educacionais?: string | null
+          porte_da_escola?: string | null
+          regulamentacao_pelo_conselho_de_educacao?: string | null
+          restricao_de_atendimento?: string | null
+          telefone?: string | null
+          uf?: string | null
+        }
+        Update: {
+          categoria_administrativa?: string | null
+          categoria_escola_privada?: string | null
+          codigo_inep?: number
+          conveniada_poder_publico?: string | null
+          dependencia_administrativa?: string | null
+          endereco?: string | null
+          escola?: string | null
+          etapas_e_modalidade_de_ensino_oferecidas?: string | null
+          latitude?: string | null
+          localidade_diferenciada?: string | null
+          localizacao?: string | null
+          longitude?: string | null
+          municipio?: string | null
+          outras_ofertas_educacionais?: string | null
+          porte_da_escola?: string | null
+          regulamentacao_pelo_conselho_de_educacao?: string | null
+          restricao_de_atendimento?: string | null
+          telefone?: string | null
+          uf?: string | null
+        }
+        Relationships: []
+      }
       favoritos: {
         Row: {
           created_at: string
@@ -305,6 +371,7 @@ export type Database = {
         Row: {
           created_at: string
           data_nascimento: string
+          escola_id: number | null
           id: string
           mae_id: string
           nome: string
@@ -316,6 +383,7 @@ export type Database = {
         Insert: {
           created_at?: string
           data_nascimento: string
+          escola_id?: number | null
           id?: string
           mae_id: string
           nome: string
@@ -327,6 +395,7 @@ export type Database = {
         Update: {
           created_at?: string
           data_nascimento?: string
+          escola_id?: number | null
           id?: string
           mae_id?: string
           nome?: string
@@ -336,6 +405,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "filhos_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas_inep"
+            referencedColumns: ["codigo_inep"]
+          },
           {
             foreignKeyName: "filhos_mae_id_fkey"
             columns: ["mae_id"]
