@@ -10,61 +10,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, MessageCircle, Plus, ArrowLeft } from "lucide-react";
+import { Search, MessageCircle, Plus, ArrowLeft, Package, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useChat } from "@/hooks/useChat";
 import { useUserSearch } from "@/hooks/useUserSearch";
+import { useConversas } from "@/hooks/useConversas";
+import { getImageUrl } from "@/utils/supabaseStorage";
 
 const Mensagens = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedReservaId, setSelectedReservaId] = useState<string | null>(null);
   const [novaMensagem, setNovaMensagem] = useState("");
   const [showNovaConversa, setShowNovaConversa] = useState(false);
   const [searchUsername, setSearchUsername] = useState("");
 
   const { users: searchResults } = useUserSearch(searchUsername);
+  const { conversas, loading: conversasLoading } = useConversas();
 
-  // Hook do chat - só ativo quando há um usuário selecionado
+  // Hook do chat - ativo quando há um usuário selecionado
   const { 
     mensagens, 
     loading: chatLoading, 
     enviandoMensagem, 
     enviarMensagem 
-  } = useChat(undefined, selectedUser || undefined);
-
-  // Mock data para demonstração da lista de conversas
-  const conversas = [
-    {
-      id: "1",
-      participante: {
-        id: "user1",
-        nome: "Maria Silva",
-        username: "maria_silva",
-        avatar_url: null,
-      },
-      ultimaMensagem: "Oi! Ainda tem aquele vestido disponível?",
-      timestamp: "2 min",
-      naoLidas: 2,
-    },
-    {
-      id: "2", 
-      participante: {
-        id: "user2",
-        nome: "Ana Santos",
-        username: "ana_santos",
-        avatar_url: null,
-      },
-      ultimaMensagem: "Obrigada pela troca! Minha filha adorou o brinquedo!",
-      timestamp: "1h",
-      naoLidas: 0,
-    }
-  ];
+  } = useChat(selectedReservaId || undefined, selectedUser || undefined);
 
   const filteredConversas = conversas.filter(conversa =>
     conversa.participante.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conversa.participante.username.toLowerCase().includes(searchTerm.toLowerCase())
+    conversa.participante.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (conversa.item?.titulo && conversa.item.titulo.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleEnviarMensagem = async () => {
@@ -78,14 +55,40 @@ const Mensagens = () => {
 
   const handleIniciarConversa = (userId: string) => {
     setSelectedUser(userId);
+    setSelectedReservaId(null);
     setShowNovaConversa(false);
     setSearchUsername("");
+  };
+
+  const handleAbrirConversa = (conversa: any) => {
+    setSelectedUser(conversa.participante.id);
+    setSelectedReservaId(conversa.reserva_id);
+  };
+
+  const formatarTempo = (dataString: string) => {
+    const data = new Date(dataString);
+    const agora = new Date();
+    const diffMs = agora.getTime() - data.getTime();
+    const diffMinutos = Math.floor(diffMs / (1000 * 60));
+    const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMinutos < 1) return 'agora';
+    if (diffMinutos < 60) return `${diffMinutos}min`;
+    if (diffHoras < 24) return `${diffHoras}h`;
+    if (diffDias < 7) return `${diffDias}d`;
+    return data.toLocaleDateString();
   };
 
   // Vista de conversa individual
   if (selectedUser) {
     const participante = searchResults.find(u => u.id === selectedUser) || 
       conversas.find(c => c.participante.id === selectedUser)?.participante;
+
+    const conversaAtual = conversas.find(c => 
+      c.participante.id === selectedUser && 
+      (!selectedReservaId || c.reserva_id === selectedReservaId)
+    );
 
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -98,7 +101,10 @@ const Mensagens = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setSelectedUser(null)}
+                onClick={() => {
+                  setSelectedUser(null);
+                  setSelectedReservaId(null);
+                }}
                 className="md:hidden"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -111,9 +117,36 @@ const Mensagens = () => {
                 </AvatarFallback>
               </Avatar>
               
-              <div>
+              <div className="flex-1">
                 <h2 className="font-medium">{participante?.nome}</h2>
                 <p className="text-sm text-gray-500">@{participante?.username}</p>
+                
+                {/* Mostrar item se conversa for de reserva */}
+                {conversaAtual?.item && (
+                  <div className="flex items-center gap-2 mt-1 p-2 bg-blue-50 rounded-md">
+                    <Package className="h-4 w-4 text-blue-600" />
+                    <div className="flex items-center gap-2">
+                      {conversaAtual.item.fotos?.[0] && (
+                        <img 
+                          src={getImageUrl('itens', conversaAtual.item.fotos[0], 'small')}
+                          alt={conversaAtual.item.titulo}
+                          className="w-8 h-8 rounded object-cover"
+                        />
+                      )}
+                      <div>
+                        <span className="text-sm font-medium text-blue-900">
+                          {conversaAtual.item.titulo}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-yellow-500" />
+                          <span className="text-xs text-blue-700">
+                            {conversaAtual.item.valor_girinhas} Girinhas
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -208,7 +241,13 @@ const Mensagens = () => {
 
           {/* Lista de conversas */}
           <div className="space-y-3">
-            {filteredConversas.length === 0 ? (
+            {conversasLoading ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <div className="text-gray-500">Carregando conversas...</div>
+                </CardContent>
+              </Card>
+            ) : filteredConversas.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <MessageCircle className="h-12 w-12 text-gray-400 mb-4" />
@@ -217,7 +256,7 @@ const Mensagens = () => {
                   </h3>
                   <p className="text-gray-500 text-center max-w-md">
                     {searchTerm 
-                      ? "Tente buscar por outro nome"
+                      ? "Tente buscar por outro nome ou item"
                       : "Comece uma conversa com outras mães da comunidade para trocar itens e experiências!"
                     }
                   </p>
@@ -228,7 +267,7 @@ const Mensagens = () => {
                 <Card 
                   key={conversa.id} 
                   className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => setSelectedUser(conversa.participante.id)}
+                  onClick={() => handleAbrirConversa(conversa)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
@@ -246,7 +285,7 @@ const Mensagens = () => {
                           </h3>
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500">
-                              {conversa.timestamp}
+                              {conversa.ultimaMensagem ? formatarTempo(conversa.ultimaMensagem.created_at) : formatarTempo(conversa.created_at)}
                             </span>
                             {conversa.naoLidas > 0 && (
                               <Badge variant="default" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
@@ -255,8 +294,33 @@ const Mensagens = () => {
                             )}
                           </div>
                         </div>
+                        
+                        {/* Mostrar informações do item se for conversa de reserva */}
+                        {conversa.item ? (
+                          <div className="flex items-center gap-2 mb-1">
+                            <Package className="h-3 w-3 text-blue-600" />
+                            <span className="text-xs text-blue-600 font-medium">
+                              {conversa.item.titulo}
+                            </span>
+                            <span className="text-xs text-gray-500">•</span>
+                            <div className="flex items-center gap-1">
+                              <Sparkles className="w-3 h-3 text-yellow-500" />
+                              <span className="text-xs text-gray-600">
+                                {conversa.item.valor_girinhas}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 mb-1">
+                            <MessageCircle className="h-3 w-3 text-purple-600" />
+                            <span className="text-xs text-purple-600 font-medium">
+                              Conversa livre
+                            </span>
+                          </div>
+                        )}
+                        
                         <p className="text-sm text-gray-600 truncate">
-                          {conversa.ultimaMensagem}
+                          {conversa.ultimaMensagem ? conversa.ultimaMensagem.conteudo : 'Conversa iniciada'}
                         </p>
                       </div>
                     </div>
