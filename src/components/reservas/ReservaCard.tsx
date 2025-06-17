@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import AvaliacaoModal from "./AvaliacaoModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useRecompensasAutomaticas } from "@/hooks/useRecompensasAutomaticas";
 
 interface ReservaCardProps {
   reserva: {
@@ -51,9 +51,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
   const [showAvaliacao, setShowAvaliacao] = useState(false);
   const [loadingConfirmacao, setLoadingConfirmacao] = useState(false);
   const [jaAvaliou, setJaAvaliou] = useState(false);
-
-  // Adicionar hook de recompensas automáticas
-  useRecompensasAutomaticas();
 
   const isReservador = reserva.usuario_reservou === user?.id;
   const isVendedor = reserva.usuario_item === user?.id;
