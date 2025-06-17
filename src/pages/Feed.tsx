@@ -98,11 +98,9 @@ const Feed = () => {
         
         const matchCategoria = filtros.categoria === "todas" || item.categoria === filtros.categoria;
         
-        // Filtro por escola - verificar se o item foi publicado por alguém da mesma escola
-        const matchEscola = !filtros.escola || 
-            (item.publicado_por_profile?.filhos && 
-             item.publicado_por_profile.filhos.some((filho: any) => 
-                filho.escola_id === filtros.escola?.codigo_inep));
+        // Filtro por escola - por enquanto desabilitado até implementarmos corretamente
+        // TODO: Implementar filtro por escola quando tivermos os dados dos filhos no perfil
+        const matchEscola = !filtros.escola || true;
         
         return matchBusca && matchCategoria && matchEscola;
     }).sort((a, b) => {
