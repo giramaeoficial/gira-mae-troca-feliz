@@ -266,140 +266,164 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b p-6 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <User className="w-6 h-6" />
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+      <div className="bg-white w-full max-w-4xl min-h-full sm:min-h-0 sm:rounded-lg sm:max-h-[95vh] overflow-y-auto">
+        {/* Header fixo no mobile */}
+        <div className="sticky top-0 bg-white border-b p-4 sm:p-6 flex justify-between items-center z-10">
+          <h2 className="text-xl sm:text-2xl font-bold text-primary flex items-center gap-2">
+            <User className="w-5 h-5 sm:w-6 sm:h-6" />
             Editar Perfil
           </h2>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} className="p-2">
             <X className="w-5 h-5" />
           </Button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Informações Pessoais */}
           <Card>
-            <CardHeader>
-              <CardTitle>Informações Pessoais</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Informações Pessoais</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="nome">Nome *</Label>
+                  <Label htmlFor="nome" className="text-sm font-medium">Nome *</Label>
                   <Input
                     id="nome"
                     value={perfil.nome}
                     onChange={(e) => setPerfil({ ...perfil, nome: e.target.value })}
                     placeholder="Seu nome completo"
+                    className="mt-1 h-12"
                   />
                 </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="data_nascimento" className="text-sm font-medium">Data de Nascimento</Label>
+                    <Input
+                      id="data_nascimento"
+                      type="date"
+                      value={perfil.data_nascimento}
+                      onChange={(e) => setPerfil({ ...perfil, data_nascimento: e.target.value })}
+                      className="mt-1 h-12"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="profissao" className="text-sm font-medium">Profissão</Label>
+                    <Input
+                      id="profissao"
+                      value={perfil.profissao}
+                      onChange={(e) => setPerfil({ ...perfil, profissao: e.target.value })}
+                      placeholder="Sua profissão"
+                      className="mt-1 h-12"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="instagram" className="text-sm font-medium">Instagram</Label>
+                    <Input
+                      id="instagram"
+                      value={perfil.instagram}
+                      onChange={(e) => setPerfil({ ...perfil, instagram: e.target.value })}
+                      placeholder="@seuinstagram"
+                      className="mt-1 h-12"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="telefone" className="text-sm font-medium">Telefone</Label>
+                    <Input
+                      id="telefone"
+                      value={perfil.telefone}
+                      onChange={(e) => setPerfil({ ...perfil, telefone: e.target.value })}
+                      placeholder="(11) 99999-9999"
+                      className="mt-1 h-12"
+                    />
+                  </div>
+                </div>
+                
                 <div>
-                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                  <Input
-                    id="data_nascimento"
-                    type="date"
-                    value={perfil.data_nascimento}
-                    onChange={(e) => setPerfil({ ...perfil, data_nascimento: e.target.value })}
+                  <Label htmlFor="bio" className="text-sm font-medium">Sobre você</Label>
+                  <Textarea
+                    id="bio"
+                    value={perfil.bio}
+                    onChange={(e) => setPerfil({ ...perfil, bio: e.target.value })}
+                    placeholder="Conte um pouco sobre você, seus filhos e o que procura na comunidade..."
+                    rows={4}
+                    className="mt-1 resize-none"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="profissao">Profissão</Label>
-                  <Input
-                    id="profissao"
-                    value={perfil.profissao}
-                    onChange={(e) => setPerfil({ ...perfil, profissao: e.target.value })}
-                    placeholder="Sua profissão"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="instagram">Instagram</Label>
-                  <Input
-                    id="instagram"
-                    value={perfil.instagram}
-                    onChange={(e) => setPerfil({ ...perfil, instagram: e.target.value })}
-                    placeholder="@seuinstagram"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input
-                    id="telefone"
-                    value={perfil.telefone}
-                    onChange={(e) => setPerfil({ ...perfil, telefone: e.target.value })}
-                    placeholder="(11) 99999-9999"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="bio">Sobre você</Label>
-                <Textarea
-                  id="bio"
-                  value={perfil.bio}
-                  onChange={(e) => setPerfil({ ...perfil, bio: e.target.value })}
-                  placeholder="Conte um pouco sobre você, seus filhos e o que procura na comunidade..."
-                  rows={3}
-                />
               </div>
             </CardContent>
           </Card>
 
-          {/* Endereço */}
+          {/* Localização */}
           <Card>
-            <CardHeader>
-              <CardTitle>Localização</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Localização</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="endereco">Endereço</Label>
+                  <Label htmlFor="endereco" className="text-sm font-medium">Endereço</Label>
                   <Input
                     id="endereco"
                     value={perfil.endereco}
                     onChange={(e) => setPerfil({ ...perfil, endereco: e.target.value })}
                     placeholder="Rua, número, complemento"
+                    className="mt-1 h-12"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="bairro">Bairro</Label>
-                  <Input
-                    id="bairro"
-                    value={perfil.bairro}
-                    onChange={(e) => setPerfil({ ...perfil, bairro: e.target.value })}
-                    placeholder="Seu bairro"
-                  />
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="bairro" className="text-sm font-medium">Bairro</Label>
+                    <Input
+                      id="bairro"
+                      value={perfil.bairro}
+                      onChange={(e) => setPerfil({ ...perfil, bairro: e.target.value })}
+                      placeholder="Seu bairro"
+                      className="mt-1 h-12"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cidade" className="text-sm font-medium">Cidade</Label>
+                    <Input
+                      id="cidade"
+                      value={perfil.cidade}
+                      onChange={(e) => setPerfil({ ...perfil, cidade: e.target.value })}
+                      placeholder="Sua cidade"
+                      className="mt-1 h-12"
+                    />
+                  </div>
                 </div>
+                
                 <div>
-                  <Label htmlFor="cidade">Cidade</Label>
-                  <Input
-                    id="cidade"
-                    value={perfil.cidade}
-                    onChange={(e) => setPerfil({ ...perfil, cidade: e.target.value })}
-                    placeholder="Sua cidade"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ponto_retirada">Ponto de Retirada Preferido</Label>
+                  <Label htmlFor="ponto_retirada" className="text-sm font-medium">Ponto de Retirada Preferido</Label>
                   <Input
                     id="ponto_retirada"
                     value={perfil.ponto_retirada_preferido}
                     onChange={(e) => setPerfil({ ...perfil, ponto_retirada_preferido: e.target.value })}
                     placeholder="Ex: Escola do João, Shopping, etc."
+                    className="mt-1 h-12"
                   />
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              
+              <div className="flex items-center space-x-3 py-2">
                 <Switch
                   id="aceita_entrega"
                   checked={perfil.aceita_entrega_domicilio}
                   onCheckedChange={(checked) => setPerfil({ ...perfil, aceita_entrega_domicilio: checked })}
                 />
-                <Label htmlFor="aceita_entrega">Aceito entrega em domicílio</Label>
+                <Label htmlFor="aceita_entrega" className="text-sm font-medium">Aceito entrega em domicílio</Label>
               </div>
+              
               {perfil.aceita_entrega_domicilio && (
                 <div>
-                  <Label htmlFor="raio_entrega">Raio de entrega (km)</Label>
+                  <Label htmlFor="raio_entrega" className="text-sm font-medium">Raio de entrega (km)</Label>
                   <Input
                     id="raio_entrega"
                     type="number"
@@ -407,6 +431,7 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
                     onChange={(e) => setPerfil({ ...perfil, raio_entrega_km: parseInt(e.target.value) || 5 })}
                     min={1}
                     max={50}
+                    className="mt-1 h-12"
                   />
                 </div>
               )}
@@ -415,8 +440,8 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
 
           {/* Interesses */}
           <Card>
-            <CardHeader>
-              <CardTitle>Interesses</CardTitle>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">Interesses</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
@@ -425,15 +450,16 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
                   onChange={(e) => setNovoInteresse(e.target.value)}
                   placeholder="Ex: Roupas orgânicas, brinquedos educativos..."
                   onKeyPress={(e) => e.key === 'Enter' && adicionarInteresse()}
+                  className="flex-1 h-12"
                 />
-                <Button type="button" onClick={adicionarInteresse}>
+                <Button type="button" onClick={adicionarInteresse} className="px-4">
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {perfil.interesses.map((interesse, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {interesse}
+                  <Badge key={index} variant="secondary" className="flex items-center gap-1 py-1 px-2">
+                    <span className="text-sm">{interesse}</span>
                     <button onClick={() => removerInteresse(interesse)}>
                       <X className="w-3 h-3" />
                     </button>
@@ -445,84 +471,96 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
 
           {/* Filhos */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex justify-between items-center text-lg">
                 <div className="flex items-center gap-2">
                   <GraduationCap className="w-5 h-5" />
                   Meus Filhos
                 </div>
-                <Button type="button" onClick={adicionarFilho} size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Filho
+                <Button type="button" onClick={adicionarFilho} size="sm" className="text-sm">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Adicionar
                 </Button>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               {filhos.map((filho, index) => (
-                <div key={index} className="border p-4 rounded-lg relative">
+                <div key={index} className="border rounded-lg p-4 relative">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute top-2 right-2"
+                    className="absolute top-2 right-2 p-1 h-8 w-8"
                     onClick={() => removerFilho(index)}
                   >
                     <X className="w-4 h-4" />
                   </Button>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  
+                  <div className="space-y-4 pr-8">
                     <div>
-                      <Label>Nome *</Label>
+                      <Label className="text-sm font-medium">Nome *</Label>
                       <Input
                         value={filho.nome}
                         onChange={(e) => atualizarFilho(index, 'nome', e.target.value)}
                         placeholder="Nome do filho(a)"
+                        className="mt-1 h-12"
                       />
                     </div>
-                    <div>
-                      <Label>Data de Nascimento *</Label>
-                      <Input
-                        type="date"
-                        value={filho.data_nascimento}
-                        onChange={(e) => atualizarFilho(index, 'data_nascimento', e.target.value)}
-                      />
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Data de Nascimento *</Label>
+                        <Input
+                          type="date"
+                          value={filho.data_nascimento}
+                          onChange={(e) => atualizarFilho(index, 'data_nascimento', e.target.value)}
+                          className="mt-1 h-12"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Sexo</Label>
+                        <select
+                          className="w-full p-3 border rounded-md mt-1 h-12 bg-white"
+                          value={filho.sexo}
+                          onChange={(e) => atualizarFilho(index, 'sexo', e.target.value)}
+                        >
+                          <option value="">Selecione</option>
+                          <option value="masculino">Masculino</option>
+                          <option value="feminino">Feminino</option>
+                          <option value="outro">Outro</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Sexo</Label>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        value={filho.sexo}
-                        onChange={(e) => atualizarFilho(index, 'sexo', e.target.value)}
-                      >
-                        <option value="">Selecione</option>
-                        <option value="masculino">Masculino</option>
-                        <option value="feminino">Feminino</option>
-                        <option value="outro">Outro</option>
-                      </select>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Tamanho Roupas</Label>
+                        <Input
+                          value={filho.tamanho_roupas}
+                          onChange={(e) => atualizarFilho(index, 'tamanho_roupas', e.target.value)}
+                          placeholder="Ex: 2 anos, M, etc."
+                          className="mt-1 h-12"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Tamanho Calçados</Label>
+                        <Input
+                          value={filho.tamanho_calcados}
+                          onChange={(e) => atualizarFilho(index, 'tamanho_calcados', e.target.value)}
+                          placeholder="Ex: 25, 26, etc."
+                          className="mt-1 h-12"
+                        />
+                      </div>
                     </div>
+                    
                     <div>
-                      <Label>Tamanho Roupas</Label>
-                      <Input
-                        value={filho.tamanho_roupas}
-                        onChange={(e) => atualizarFilho(index, 'tamanho_roupas', e.target.value)}
-                        placeholder="Ex: 2 anos, M, etc."
-                      />
-                    </div>
-                    <div>
-                      <Label>Tamanho Calçados</Label>
-                      <Input
-                        value={filho.tamanho_calcados}
-                        onChange={(e) => atualizarFilho(index, 'tamanho_calcados', e.target.value)}
-                        placeholder="Ex: 25, 26, etc."
-                      />
-                    </div>
-                    <div className="md:col-span-2 lg:col-span-3">
-                      <Label>Escola</Label>
+                      <Label className="text-sm font-medium mb-2 block">Escola</Label>
                       <EscolaPicker
                         value={filho.escola}
                         onChange={(escola) => atualizarFilho(index, 'escola', escola)}
                         placeholder="Buscar escola do(a) filho(a)..."
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-2">
                         Selecionar a escola facilita a entrega de itens e encontrar outros pais da mesma comunidade escolar
                       </p>
                     </div>
@@ -530,22 +568,29 @@ const EditarPerfil = ({ onClose }: { onClose: () => void }) => {
                 </div>
               ))}
               {filhos.length === 0 && (
-                <p className="text-gray-500 text-center py-4">
-                  Nenhum filho cadastrado. Clique em "Adicionar Filho" para começar.
-                </p>
+                <div className="text-center py-8">
+                  <GraduationCap className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500 mb-4">Nenhum filho cadastrado</p>
+                  <Button onClick={adicionarFilho} variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Primeiro Filho
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Botões de Ação */}
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button onClick={salvarPerfil} disabled={loading}>
-              <Save className="w-4 h-4 mr-2" />
-              {loading ? 'Salvando...' : 'Salvar Perfil'}
-            </Button>
+          {/* Botões de Ação - Fixos no bottom no mobile */}
+          <div className="sticky bottom-0 bg-white border-t -mx-4 sm:-mx-6 p-4 sm:p-6 sm:border-t-0 sm:static sm:bg-transparent">
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <Button variant="outline" onClick={onClose} className="h-12 sm:h-10">
+                Cancelar
+              </Button>
+              <Button onClick={salvarPerfil} disabled={loading} className="h-12 sm:h-10">
+                <Save className="w-4 h-4 mr-2" />
+                {loading ? 'Salvando...' : 'Salvar Perfil'}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

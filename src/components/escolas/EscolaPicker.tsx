@@ -60,7 +60,22 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { escolas, loading, buscarEscolas } = useEscolas();
+  const { 
+    escolas, 
+    municipios, 
+    loading, 
+    loadingMunicipios, 
+    buscarEscolas, 
+    buscarMunicipios 
+  } = useEscolas();
+
+  // Carregar municípios quando estado mudar
+  useEffect(() => {
+    if (estado) {
+      buscarMunicipios(estado);
+      setCidade(''); // Limpar cidade quando estado muda
+    }
+  }, [estado, buscarMunicipios]);
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
@@ -76,7 +91,7 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
 
   const handleBuscarEscolas = async () => {
     if (!estado || !cidade) {
-      alert('Por favor, selecione o estado e digite a cidade antes de buscar');
+      alert('Por favor, selecione o estado e a cidade antes de buscar');
       return;
     }
 
@@ -115,11 +130,11 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
           <Card className="border-primary">
             <CardContent className="p-3">
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm line-clamp-2">{value.escola}</h4>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
-                    <MapPin className="w-3 h-3" />
-                    <span>{formatarEndereco(value)}</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-sm line-clamp-2 mb-1">{value.escola}</h4>
+                  <div className="flex items-center gap-1 text-xs text-gray-600">
+                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate">{formatarEndereco(value)}</span>
                   </div>
                   {value.categoria_administrativa && (
                     <Badge variant="secondary" className="mt-1 text-xs">
@@ -131,7 +146,7 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="p-1 h-6 w-6"
+                  className="p-1 h-6 w-6 ml-2 flex-shrink-0"
                   onClick={handleLimpar}
                 >
                   <X className="w-4 h-4" />
@@ -142,21 +157,22 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
         </div>
       )}
 
-      {/* Formulário de busca */}
+      {/* Formulário de busca - Mobile First */}
       {!value && (
         <div className="space-y-4">
-          <div className="text-sm text-gray-600 mb-2">
-            Para buscar uma escola, primeiro selecione o estado e digite a cidade, depois digite parte do nome da escola.
+          <div className="text-sm text-gray-600 mb-3 px-1">
+            Para buscar uma escola, primeiro selecione o estado e cidade, depois digite parte do nome da escola.
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Estado e Cidade - Stack vertical em mobile */}
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Estado *</label>
+              <label className="block text-sm font-medium mb-2 text-gray-700">Estado *</label>
               <Select value={estado} onValueChange={setEstado}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full h-12">
                   <SelectValue placeholder="Selecione o estado" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60">
                   {ESTADOS_BRASIL.map((uf) => (
                     <SelectItem key={uf.sigla} value={uf.sigla}>
                       {uf.nome} ({uf.sigla})
@@ -167,23 +183,47 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Cidade *</label>
-              <Input
-                value={cidade}
-                onChange={(e) => setCidade(e.target.value)}
-                placeholder="Digite a cidade"
-              />
+              <label className="block text-sm font-medium mb-2 text-gray-700">Cidade *</label>
+              <Select 
+                value={cidade} 
+                onValueChange={setCidade}
+                disabled={!estado || loadingMunicipios}
+              >
+                <SelectTrigger className="w-full h-12">
+                  <SelectValue 
+                    placeholder={
+                      !estado ? "Selecione o estado primeiro" :
+                      loadingMunicipios ? "Carregando cidades..." :
+                      "Selecione a cidade"
+                    } 
+                  />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {municipios.map((municipio) => (
+                    <SelectItem key={municipio} value={municipio}>
+                      {municipio}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {loadingMunicipios && (
+                <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                  Carregando cidades...
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Nome da escola */}
           <div>
-            <label className="block text-sm font-medium mb-1">Nome da Escola *</label>
-            <div className="flex gap-2">
+            <label className="block text-sm font-medium mb-2 text-gray-700">Nome da Escola *</label>
+            <div className="space-y-3">
               <Input
                 value={nomeEscola}
                 onChange={(e) => setNomeEscola(e.target.value)}
                 placeholder="Digite pelo menos 3 caracteres do nome da escola"
-                className="flex-1"
+                className="h-12"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -195,7 +235,7 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
                 type="button"
                 onClick={handleBuscarEscolas}
                 disabled={!estado || !cidade || nomeEscola.length < 3}
-                className="shrink-0"
+                className="w-full h-12 text-base"
               >
                 <Search className="w-4 h-4 mr-2" />
                 Buscar Escola
@@ -205,47 +245,45 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
         </div>
       )}
 
-      {/* Resultados da busca */}
+      {/* Resultados da busca - Mobile optimized */}
       {mostrarResultados && !value && (
-        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto">
+        <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto bg-white shadow-lg">
           <CardContent className="p-2">
             {loading ? (
-              <div className="p-4 text-center text-gray-500">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-sm">Buscando escolas...</p>
+              <div className="p-6 text-center text-gray-500">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-3 text-sm">Buscando escolas...</p>
               </div>
             ) : escolas.length > 0 ? (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {escolas.map((escola) => (
                   <div
                     key={escola.codigo_inep}
-                    className="p-3 hover:bg-gray-50 cursor-pointer rounded-md border"
+                    className="p-4 hover:bg-gray-50 cursor-pointer rounded-lg border active:bg-gray-100 transition-colors"
                     onClick={() => handleSelecionarEscola(escola)}
                   >
-                    <div className="flex items-start gap-2">
-                      <Building2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex items-start gap-3">
+                      <Building2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm line-clamp-2">{escola.escola}</h4>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
-                          <MapPin className="w-3 h-3" />
-                          <span>{formatarEndereco(escola)}</span>
+                        <h4 className="font-medium text-sm leading-5 mb-2">{escola.escola}</h4>
+                        <div className="flex items-center gap-1 mb-2 text-xs text-gray-600">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">{formatarEndereco(escola)}</span>
                         </div>
-                        <div className="flex gap-1 mt-1">
-                          {escola.categoria_administrativa && (
-                            <Badge variant="outline" className="text-xs">
-                              {escola.categoria_administrativa}
-                            </Badge>
-                          )}
-                        </div>
+                        {escola.categoria_administrativa && (
+                          <Badge variant="outline" className="text-xs">
+                            {escola.categoria_administrativa}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-4 text-center text-gray-500">
-                <Building2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                <p className="text-sm">Nenhuma escola encontrada</p>
+              <div className="p-6 text-center text-gray-500">
+                <Building2 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm font-medium">Nenhuma escola encontrada</p>
                 <p className="text-xs text-gray-400 mt-1">
                   Verifique se o estado, cidade e nome da escola estão corretos
                 </p>
