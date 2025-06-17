@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import AvaliacaoModal from "./AvaliacaoModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useRecompensasAutomaticas } from "@/hooks/useRecompensasAutomaticas";
 
 interface ReservaCardProps {
   reserva: {

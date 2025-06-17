@@ -15,7 +15,6 @@ import { useComprasGirinhas } from "@/hooks/useComprasGirinhas";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useTrocas } from "@/hooks/useTrocas";
 import { useMonitorMetas } from "@/hooks/useMonitorMetas";
-import { useRecompensasAutomaticas } from "@/hooks/useRecompensasAutomaticas";
 
 const SistemaGirinhas = () => {
   const { toast } = useToast();
@@ -28,7 +27,6 @@ const SistemaGirinhas = () => {
   const { saldo } = useCarteira();
   const { trocas } = useTrocas();
 
-  useRecompensasAutomaticas();
   useMonitorMetas();
 
   const trocasConfirmadas = trocas.filter(t => t.status === 'confirmada').length;
