@@ -69,16 +69,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setLoading(true);
+      
+      // Clear local state first to ensure UI updates immediately
+      setSession(null);
+      setUser(null);
+      
+      // Try to sign out from Supabase
       const { error } = await supabase.auth.signOut();
-      if (error) {
+      
+      // Don't throw error if session is already missing
+      if (error && !error.message.includes('Auth session missing')) {
         console.error('Erro ao fazer logout:', error.message);
         throw error;
       }
-      // Clear local state immediately
+      
+      // Clear any remaining session data from localStorage
+      localStorage.removeItem('supabase.auth.token');
+      
+    } catch (error: any) {
+      console.error('Erro no logout:', error);
+      // Even if logout fails, clear local state to prevent UI inconsistency
       setSession(null);
       setUser(null);
-    } catch (error) {
-      console.error('Erro no logout:', error);
     } finally {
       setLoading(false);
     }
