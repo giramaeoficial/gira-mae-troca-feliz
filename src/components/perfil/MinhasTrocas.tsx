@@ -7,6 +7,7 @@ import { useTrocas } from "@/hooks/useTrocas";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import LazyImage from "@/components/ui/lazy-image";
 
 const MinhasTrocas = () => {
   const { user } = useAuth();
@@ -97,11 +98,15 @@ const MinhasTrocas = () => {
               return (
                 <div key={troca.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="flex items-center gap-4 flex-grow">
-                    {/* Imagem do Item */}
-                    <img 
-                      src={imagemItem} 
+                    {/* Imagem do Item com LazyImage */}
+                    <LazyImage
+                      src={imagemItem}
                       alt={troca.itens?.titulo || "Item"}
+                      bucket="itens"
+                      size="thumbnail"
                       className="w-12 h-12 rounded-lg object-cover"
+                      placeholder="📷"
+                      onError={() => console.error('Erro ao carregar imagem da troca:', troca.id)}
                     />
                     
                     {/* Detalhes da Troca */}

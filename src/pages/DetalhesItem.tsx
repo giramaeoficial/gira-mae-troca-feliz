@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -218,7 +217,7 @@ const DetalhesItem = () => {
                             </div>
                         </Card>
                         
-                        {/* Miniaturas com lazy loading */}
+                        {/* Miniaturas com LazyImage */}
                         {imagens.length > 1 && (
                             <div className="flex gap-2">
                                 {imagens.map((image, index) => (
@@ -235,6 +234,8 @@ const DetalhesItem = () => {
                                             className="w-full h-full object-cover"
                                             size="thumbnail"
                                             bucket="itens"
+                                            placeholder="📷"
+                                            onError={() => console.error('Erro ao carregar miniatura:', image)}
                                         />
                                     </button>
                                 ))}

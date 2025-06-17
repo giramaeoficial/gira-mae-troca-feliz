@@ -18,6 +18,7 @@ import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
 import EmptyState from "@/components/loading/EmptyState";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import FriendlyError from "@/components/error/FriendlyError";
+import LazyImage from "@/components/ui/lazy-image";
 
 const Perfil = () => {
     const { user } = useAuth();
@@ -91,6 +92,57 @@ const Perfil = () => {
             return 'Data inválida';
         }
     };
+
+    const renderItemCard = (item: any) => (
+        <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white/90 backdrop-blur-sm border-0">
+            <div className="aspect-square bg-gray-100 overflow-hidden relative">
+                {item.fotos && item.fotos.length > 0 ? (
+                    <LazyImage
+                        src={item.fotos[0]}
+                        alt={item.titulo}
+                        bucket="itens"
+                        size="medium"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        placeholder="📷"
+                        onError={() => console.error('Erro ao carregar item do perfil:', item.id)}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <span className="text-4xl">📷</span>
+                    </div>
+                )}
+                <div className="absolute top-2 right-2">
+                    <Badge className={`${
+                        item.status === 'disponivel' ? 'bg-green-500' : 
+                        item.status === 'reservado' ? 'bg-orange-500' : 
+                        'bg-gray-500'
+                    } text-white`}>
+                        {item.status === 'disponivel' ? 'Ativo' : 
+                         item.status === 'reservado' ? 'Reservado' : 
+                         'Trocado'}
+                    </Badge>
+                </div>
+            </div>
+            <CardContent className="p-4">
+                <h3 className="font-semibold mb-2 line-clamp-2">
+                    {item.titulo}
+                </h3>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span className="font-bold text-primary">
+                            {item.valor_girinhas}
+                        </span>
+                    </div>
+                    <Button size="sm" variant="outline" asChild>
+                        <Link to={item.status === 'reservado' ? `/minhas-reservas` : `/item/${item.id}`}>
+                            {item.status === 'reservado' ? 'Ver Reserva' : 'Ver Detalhes'}
+                        </Link>
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
@@ -213,46 +265,7 @@ const Perfil = () => {
                                     />
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {itensAtivos.map((item) => (
-                                            <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white/90 backdrop-blur-sm border-0">
-                                                <div className="aspect-square bg-gray-100 overflow-hidden relative">
-                                                    {item.fotos && item.fotos.length > 0 ? (
-                                                        <img 
-                                                            src={item.fotos[0]} 
-                                                            alt={item.titulo}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                            <span className="text-4xl">📷</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="absolute top-2 right-2">
-                                                        <Badge className="bg-green-500 text-white">
-                                                            Ativo
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <CardContent className="p-4">
-                                                    <h3 className="font-semibold mb-2 line-clamp-2">
-                                                        {item.titulo}
-                                                    </h3>
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-1">
-                                                            <Sparkles className="w-4 h-4 text-primary" />
-                                                            <span className="font-bold text-primary">
-                                                                {item.valor_girinhas}
-                                                            </span>
-                                                        </div>
-                                                        <Button size="sm" variant="outline" asChild>
-                                                            <Link to={`/item/${item.id}`}>
-                                                                Ver Detalhes
-                                                            </Link>
-                                                        </Button>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
+                                        {itensAtivos.map(renderItemCard)}
                                     </div>
                                 )}
                             </TabsContent>
@@ -270,46 +283,7 @@ const Perfil = () => {
                                     />
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {itensReservados.map((item) => (
-                                            <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white/90 backdrop-blur-sm border-0">
-                                                <div className="aspect-square bg-gray-100 overflow-hidden relative">
-                                                    {item.fotos && item.fotos.length > 0 ? (
-                                                        <img 
-                                                            src={item.fotos[0]} 
-                                                            alt={item.titulo}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                            <span className="text-4xl">📷</span>
-                                                        </div>
-                                                    )}
-                                                    <div className="absolute top-2 right-2">
-                                                        <Badge className="bg-orange-500 text-white">
-                                                            Reservado
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <CardContent className="p-4">
-                                                    <h3 className="font-semibold mb-2 line-clamp-2">
-                                                        {item.titulo}
-                                                    </h3>
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-1">
-                                                            <Sparkles className="w-4 h-4 text-primary" />
-                                                            <span className="font-bold text-primary">
-                                                                {item.valor_girinhas}
-                                                            </span>
-                                                        </div>
-                                                        <Button size="sm" variant="outline" asChild>
-                                                            <Link to={`/minhas-reservas`}>
-                                                                Ver Reserva
-                                                            </Link>
-                                                        </Button>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
+                                        {itensReservados.map(renderItemCard)}
                                     </div>
                                 )}
                             </TabsContent>
@@ -323,7 +297,7 @@ const Perfil = () => {
                                     />
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {/* Similar structure for traded items */}
+                                        {itensTrocados.map(renderItemCard)}
                                     </div>
                                 )}
                             </TabsContent>
