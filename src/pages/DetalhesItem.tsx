@@ -47,6 +47,8 @@ const DetalhesItem = () => {
         
         try {
             const itemData = await buscarItemPorId(id);
+            console.log('Item carregado:', itemData);
+            console.log('Fotos do item:', itemData?.fotos);
             setItem(itemData as ItemComPerfil);
         } catch (error) {
             console.error('Erro ao carregar item:', error);
@@ -173,7 +175,13 @@ const DetalhesItem = () => {
         return categorias[categoria as keyof typeof categorias] || categoria;
     };
 
-    const imagens = item.fotos && item.fotos.length > 0 ? item.fotos : ["https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600"];
+    // Garantir que sempre temos uma imagem válida
+    const imagens = item.fotos && item.fotos.length > 0 
+        ? item.fotos.filter(foto => foto && foto.trim() !== '')
+        : ["https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600"];
+    
+    console.log('Imagens processadas para exibição:', imagens);
+
     const localizacao = item.profiles?.bairro || item.profiles?.cidade || "Localização não informada";
     const nomeMae = item.profiles?.nome || "Usuário";
     const reputacao = item.profiles?.reputacao || 0;
@@ -196,14 +204,17 @@ const DetalhesItem = () => {
                     <div className="space-y-4">
                         <Card className="overflow-hidden border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                             <div className="relative">
-                                <LazyImage
-                                    src={imagens[currentImageIndex]}
-                                    alt={item.titulo}
-                                    className="w-full h-96 object-cover"
-                                    size="full"
-                                    placeholder="Carregando imagem..."
-                                    bucket="itens"
-                                />
+                                <div className="w-full h-96 bg-gray-100">
+                                    <LazyImage
+                                        src={imagens[currentImageIndex]}
+                                        alt={item.titulo}
+                                        className="w-full h-full"
+                                        size="full"
+                                        placeholder="Carregando imagem..."
+                                        bucket="itens"
+                                        onError={() => console.error('Erro ao carregar imagem principal:', imagens[currentImageIndex])}
+                                    />
+                                </div>
                                 <div className="absolute top-4 right-4">
                                     <Badge className={`${(isReserved || item.status !== 'disponivel') ? 'bg-gray-500' : 'bg-green-500'} text-white`}>
                                         {(isReserved || item.status !== 'disponivel') ? 'Reservado' : 'Disponível'}
@@ -217,21 +228,21 @@ const DetalhesItem = () => {
                             </div>
                         </Card>
                         
-                        {/* Miniaturas com LazyImage */}
+                        {/* Miniaturas */}
                         {imagens.length > 1 && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 overflow-x-auto">
                                 {imagens.map((image, index) => (
                                     <button
                                         key={index}
                                         onClick={() => setCurrentImageIndex(index)}
-                                        className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
                                             currentImageIndex === index ? 'border-primary' : 'border-gray-200'
                                         }`}
                                     >
                                         <LazyImage
                                             src={image}
                                             alt={`${item.titulo} ${index + 1}`}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full"
                                             size="thumbnail"
                                             bucket="itens"
                                             placeholder="📷"

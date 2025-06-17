@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -192,26 +191,32 @@ const Feed = () => {
                             const semSaldo = saldo < Number(item.valor_girinhas);
                             const filaInfo = filasInfo[item.id];
                             
+                            // Garantir que sempre temos uma imagem válida
+                            const imagemPrincipal = item.fotos && item.fotos.length > 0 && item.fotos[0]
+                                ? item.fotos[0]
+                                : "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400";
+
+                            console.log('Imagem do feed:', imagemPrincipal);
+                            
                             return (
                                 <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white border-0">
                                     <div className="relative">
                                         <Link to={`/item/${item.id}`}>
                                             <div className="aspect-square bg-gray-100 overflow-hidden">
-                                                {item.fotos && item.fotos.length > 0 ? (
-                                                    <img 
-                                                        src={item.fotos[0]} 
-                                                        alt={item.titulo}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                        onError={(e) => {
-                                                            console.error('Erro ao carregar imagem:', item.fotos[0]);
-                                                            e.currentTarget.style.display = 'none';
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                                        <span className="text-4xl">📷</span>
-                                                    </div>
-                                                )}
+                                                <img 
+                                                    src={imagemPrincipal} 
+                                                    alt={item.titulo}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    onError={(e) => {
+                                                        console.error('Erro ao carregar imagem do feed:', imagemPrincipal);
+                                                        e.currentTarget.style.display = 'none';
+                                                        // Criar div de fallback
+                                                        const fallback = document.createElement('div');
+                                                        fallback.className = 'w-full h-full flex items-center justify-center text-gray-400 bg-gray-100';
+                                                        fallback.innerHTML = '<span class="text-4xl">📷</span>';
+                                                        e.currentTarget.parentNode?.appendChild(fallback);
+                                                    }}
+                                                />
                                             </div>
                                         </Link>
                                         

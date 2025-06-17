@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,6 +15,7 @@ const ItensDasSeguidas = () => {
   useEffect(() => {
     const carregarItens = async () => {
       const data = await buscarItensDasMinhasSeguidas();
+      console.log('Itens das seguidas carregados:', data);
       setItens(data);
     };
 
@@ -57,66 +57,77 @@ const ItensDasSeguidas = () => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {itens.map((item) => (
-            <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/80 backdrop-blur-sm">
-              <div className="relative">
-                <LazyImage
-                  src={item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400"}
-                  alt={item.titulo}
-                  bucket="itens"
-                  size="medium"
-                  className="w-full h-48 object-cover"
-                  placeholder="📷"
-                  onError={() => console.error('Erro ao carregar imagem do item das seguidas:', item.id)}
-                />
-                <Badge className="absolute top-2 right-2 bg-pink-500 text-white">
-                  <Heart className="w-3 h-3 mr-1" />
-                  Seguida
-                </Badge>
-              </div>
-              <CardContent className="p-4">
-                {/* Informações da mãe que publicou */}
-                <div className="flex items-center gap-2 mb-3">
-                  <Avatar className="w-6 h-6">
-                    <AvatarImage src={item.profiles?.avatar_url} />
-                    <AvatarFallback className="text-xs">
-                      {item.profiles?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Link 
-                    to={`/perfil/${encodeURIComponent(item.profiles?.nome || '')}`}
-                    className="text-sm text-primary hover:underline"
-                  >
-                    {item.profiles?.nome}
-                  </Link>
-                  {item.profiles?.reputacao && (
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs text-gray-500">{(item.profiles.reputacao/20).toFixed(1)}</span>
-                    </div>
-                  )}
-                </div>
+          {itens.map((item) => {
+            // Garantir que sempre temos uma imagem válida
+            const imagemPrincipal = item.fotos && item.fotos.length > 0 && item.fotos[0]
+              ? item.fotos[0]
+              : "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400";
 
-                <h3 className="font-semibold text-gray-800 mb-1">{item.titulo}</h3>
-                {item.tamanho && (
-                  <p className="text-sm text-gray-600 mb-2">Tamanho: {item.tamanho}</p>
-                )}
-                <p className="text-xs text-gray-500 mb-3 line-clamp-2">{item.descricao}</p>
-                
-                <div className="flex justify-between items-center">
-                  <p className="font-bold text-primary flex items-center gap-1">
-                    <Sparkles className="w-4 h-4" />
-                    {item.valor_girinhas}
-                  </p>
-                  <Button asChild size="sm">
-                    <Link to={`/item/${item.id}`}>
-                      Ver Item
-                    </Link>
-                  </Button>
+            console.log('Imagem do item das seguidas:', imagemPrincipal);
+
+            return (
+              <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/80 backdrop-blur-sm">
+                <div className="relative">
+                  <div className="w-full h-48 bg-gray-100">
+                    <LazyImage
+                      src={imagemPrincipal}
+                      alt={item.titulo}
+                      bucket="itens"
+                      size="medium"
+                      className="w-full h-full"
+                      placeholder="📷"
+                      onError={() => console.error('Erro ao carregar imagem do item das seguidas:', item.id, imagemPrincipal)}
+                    />
+                  </div>
+                  <Badge className="absolute top-2 right-2 bg-pink-500 text-white">
+                    <Heart className="w-3 h-3 mr-1" />
+                    Seguida
+                  </Badge>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+                <CardContent className="p-4">
+                  {/* Informações da mãe que publicou */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <Avatar className="w-6 h-6">
+                      <AvatarImage src={item.profiles?.avatar_url} />
+                      <AvatarFallback className="text-xs">
+                        {item.profiles?.nome?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <Link 
+                      to={`/perfil/${encodeURIComponent(item.profiles?.nome || '')}`}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      {item.profiles?.nome}
+                    </Link>
+                    {item.profiles?.reputacao && (
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs text-gray-500">{(item.profiles.reputacao/20).toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <h3 className="font-semibold text-gray-800 mb-1">{item.titulo}</h3>
+                  {item.tamanho && (
+                    <p className="text-sm text-gray-600 mb-2">Tamanho: {item.tamanho}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mb-3 line-clamp-2">{item.descricao}</p>
+                  
+                  <div className="flex justify-between items-center">
+                    <p className="font-bold text-primary flex items-center gap-1">
+                      <Sparkles className="w-4 h-4" />
+                      {item.valor_girinhas}
+                    </p>
+                    <Button asChild size="sm">
+                      <Link to={`/item/${item.id}`}>
+                        Ver Item
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

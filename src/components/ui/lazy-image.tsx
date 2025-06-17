@@ -30,19 +30,20 @@ const LazyImage: React.FC<LazyImageProps> = ({
   skeletonClassName,
   onLoad,
   onError,
-  placeholder,
+  placeholder = "📷",
   transform
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    const currentImg = imgRef.current;
+    const currentContainer = containerRef.current;
     
-    if (!currentImg) return;
+    if (!currentContainer) return;
 
     observerRef.current = new IntersectionObserver(
       ([entry]) => {
@@ -56,14 +57,14 @@ const LazyImage: React.FC<LazyImageProps> = ({
       }
     );
 
-    observerRef.current.observe(currentImg);
+    observerRef.current.observe(currentContainer);
 
     return () => {
       observerRef.current?.disconnect();
     };
   }, []);
 
-  // Melhorar a lógica de URL da imagem
+  // Processar URL da imagem
   const getProcessedImageUrl = () => {
     // Se for uma URL completa (HTTP ou blob), usar diretamente
     if (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:')) {
@@ -82,55 +83,72 @@ const LazyImage: React.FC<LazyImageProps> = ({
   };
 
   const handleError = () => {
+    console.error('Erro ao carregar imagem:', imageUrl);
     setHasError(true);
     onError?.();
   };
 
+  // Se deu erro, mostrar fallback
+  if (hasError) {
+    return (
+      <div 
+        ref={containerRef}
+        className={cn(
+          'flex items-center justify-center bg-gray-100 text-gray-400',
+          className
+        )}
+      >
+        <div className="text-center">
+          <span className="text-4xl mb-2 block">📷</span>
+          <span className="text-sm">Imagem não encontrada</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn('relative overflow-hidden', className)}>
-      {/* Skeleton loading - só mostra se não carregou ainda e não deu erro */}
-      {(!isLoaded || !isInView) && !hasError && (
+    <div ref={containerRef} className={cn('relative overflow-hidden', className)}>
+      {/* Skeleton loading - só mostra se não carregou ainda */}
+      {!isLoaded && isInView && (
         <div 
           className={cn(
             'absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center',
             skeletonClassName
           )}
         >
-          {placeholder && (
-            <div className="text-gray-400 text-sm">
-              {placeholder}
-            </div>
-          )}
+          <div className="text-gray-400 text-sm">
+            {placeholder}
+          </div>
         </div>
       )}
 
-      {/* Imagem real - só renderiza se estiver em view e não deu erro */}
-      {isInView && !hasError && (
+      {/* Placeholder inicial antes de entrar em view */}
+      {!isInView && (
+        <div 
+          className={cn(
+            'absolute inset-0 bg-gray-100 flex items-center justify-center',
+            skeletonClassName
+          )}
+        >
+          <div className="text-gray-400 text-2xl">
+            📷
+          </div>
+        </div>
+      )}
+
+      {/* Imagem real - só renderiza se estiver em view */}
+      {isInView && (
         <img
           ref={imgRef}
           src={imageUrl}
           alt={alt}
           className={cn(
-            'transition-opacity duration-300',
-            isLoaded ? 'opacity-100' : 'opacity-0',
-            className
+            'transition-opacity duration-300 w-full h-full object-cover',
+            isLoaded ? 'opacity-100' : 'opacity-0'
           )}
           onLoad={handleLoad}
           onError={handleError}
         />
-      )}
-
-      {/* Fallback de erro - elemento separado, não usa src */}
-      {hasError && (
-        <div className={cn(
-          'flex items-center justify-center h-full bg-gray-100 text-gray-400',
-          className
-        )}>
-          <div className="text-center">
-            <span className="text-4xl mb-2 block">📷</span>
-            <span className="text-sm">Imagem não encontrada</span>
-          </div>
-        </div>
       )}
     </div>
   );
