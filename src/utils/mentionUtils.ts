@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 // Utilitários para processar menções em mensagens
 
 export interface ParsedMention {
@@ -48,16 +50,18 @@ export const renderTextWithMentions = (text: string): (string | JSX.Element)[] =
     
     // Adicionar a menção como link
     parts.push(
-      <span
-        key={`mention-${index}`}
-        className="text-blue-600 font-medium bg-blue-50 px-1 rounded cursor-pointer hover:bg-blue-100"
-        onClick={() => {
-          // TODO: Implementar navegação para perfil
-          console.log('Navegar para perfil:', mention.username);
-        }}
-      >
-        @{mention.username}
-      </span>
+      React.createElement(
+        'span',
+        {
+          key: `mention-${index}`,
+          className: "text-blue-600 font-medium bg-blue-50 px-1 rounded cursor-pointer hover:bg-blue-100",
+          onClick: () => {
+            // TODO: Implementar navegação para perfil
+            console.log('Navegar para perfil:', mention.username);
+          }
+        },
+        `@${mention.username}`
+      )
     );
     
     lastIndex = mention.endIndex;
