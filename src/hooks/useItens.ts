@@ -1,260 +1,224 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
-import { useFilhosPorEscola } from './useFilhosPorEscola';
 import { toast } from '@/components/ui/use-toast';
+import { Tables } from '@/integrations/supabase/types';
 
-type Item = Tables<'itens'> & {
-  publicado_por_profile?: Tables<'profiles'>;
+export interface Item {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: string;
+  estado_conservacao: string;
+  tamanho?: string;
+  valor_girinhas: number;
+  publicado_por: string;
+  status: string;
+  fotos?: string[];
+  created_at: string;
+  updated_at: string;
+  publicado_por_profile?: {
+    nome: string;
+    avatar_url?: string;
+    cidade?: string;
+    reputacao?: number;
+  };
   mesma_escola?: boolean;
-  escola_vendedor?: string;
-};
-
-interface UseItensProps {
-  categoria?: string;
-  filtroEscola?: boolean;
-  limite?: number;
 }
 
-export const useItens = ({ categoria, filtroEscola = false, limite = 20 }: UseItensProps = {}) => {
+export const useItens = () => {
   const [itens, setItens] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const { escolasDosMeusFilhos } = useFilhosPorEscola();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const fetchItens = async () => {
+  const refetch = useCallback(async () => {
     setLoading(true);
-    setError(null);
-
-    try {
-      let query = supabase
-        .from('itens')
-        .select(`
-          *,
-          publicado_por_profile:profiles!itens_publicado_por_fkey (
-            id,
-            nome,
-            avatar_url,
-            cidade,
-            bairro
-          )
-        `)
-        .eq('status', 'disponivel')
-        .order('created_at', { ascending: false })
-        .limit(limite);
-
-      if (categoria && categoria !== 'todos') {
-        query = query.eq('categoria', categoria);
-      }
-
-      const { data: itensData, error: itensError } = await query;
-
-      if (itensError) throw itensError;
-
-      // Se filtro por escola está ativo, buscar dados das escolas dos vendedores
-      let itensComEscola = itensData || [];
-
-      if (filtroEscola && escolasDosMeusFilhos.length > 0) {
-        // Buscar filhos dos vendedores para verificar escolas
-        const vendedorIds = itensData?.map(item => item.publicado_por) || [];
-        
-        if (vendedorIds.length > 0) {
-          const { data: filhosVendedores, error: filhosError } = await supabase
-            .from('filhos')
-            .select(`
-              mae_id,
-              escola_id,
-              escolas_inep!filhos_escola_id_fkey (
-                codigo_inep,
-                escola
-              )
-            `)
-            .in('mae_id', vendedorIds)
-            .not('escola_id', 'is', null);
-
-          if (!filhosError && filhosVendedores) {
-            // Mapear escolas por vendedor
-            const escolasPorVendedor = new Map();
-            filhosVendedores.forEach(filho => {
-              if (filho.escola_id && filho.escolas_inep) {
-                const vendedorId = filho.mae_id;
-                if (!escolasPorVendedor.has(vendedorId)) {
-                  escolasPorVendedor.set(vendedorId, []);
-                }
-                escolasPorVendedor.get(vendedorId).push({
-                  id: filho.escola_id,
-                  nome: filho.escolas_inep.escola
-                });
-              }
-            });
-
-            // Marcar itens da mesma escola
-            itensComEscola = itensData.map(item => {
-              const escolasDoVendedor = escolasPorVendedor.get(item.publicado_por) || [];
-              const temEscolaEmComum = escolasDoVendedor.some((escola: any) => 
-                escolasDosMeusFilhos.includes(escola.id)
-              );
-
-              return {
-                ...item,
-                mesma_escola: temEscolaEmComum,
-                escola_vendedor: escolasDoVendedor.length > 0 ? escolasDoVendedor[0].nome : undefined
-              } as Item;
-            });
-
-            // Se filtro está ativo, mostrar apenas itens da mesma escola primeiro
-            if (filtroEscola) {
-              itensComEscola.sort((a, b) => {
-                if (a.mesma_escola && !b.mesma_escola) return -1;
-                if (!a.mesma_escola && b.mesma_escola) return 1;
-                return 0;
-              });
-            }
-          }
-        }
-      }
-
-      setItens(itensComEscola as Item[]);
-    } catch (err) {
-      console.error('Erro ao buscar itens:', err);
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buscarItemPorId = async (itemId: string): Promise<Item | null> => {
+    setError('');
+    
     try {
       const { data, error } = await supabase
         .from('itens')
         .select(`
           *,
-          publicado_por_profile:profiles!itens_publicado_por_fkey (
-            id,
-            nome,
-            avatar_url,
-            cidade,
-            bairro,
-            telefone,
-            instagram
-          )
+          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+        `)
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const itensFormatados = data?.map(item => ({
+        ...item,
+        publicado_por_profile: item.publicado_por_profile || undefined,
+        mesma_escola: false
+      })) || [];
+      
+      setItens(itensFormatados);
+    } catch (err) {
+      console.error('Erro ao buscar itens:', err);
+      setError('Erro ao carregar itens');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const buscarItens = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const buscarMeusItens = useCallback(async (userId: string) => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { data, error } = await supabase
+        .from('itens')
+        .select('*')
+        .eq('publicado_por', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const itensFormatados = data?.map(item => ({
+        ...item,
+        mesma_escola: false
+      })) || [];
+      
+      setItens(itensFormatados);
+    } catch (err) {
+      console.error('Erro ao buscar meus itens:', err);
+      setError('Erro ao carregar seus itens');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const buscarItensDoUsuario = useCallback(async (userId: string) => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+        `)
+        .eq('publicado_por', userId)
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const itensFormatados = data?.map(item => ({
+        ...item,
+        publicado_por_profile: item.publicado_por_profile || undefined,
+        mesma_escola: false
+      })) || [];
+      
+      setItens(itensFormatados);
+    } catch (err) {
+      console.error('Erro ao buscar itens do usuário:', err);
+      setError('Erro ao carregar itens do usuário');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const buscarItemPorId = useCallback(async (itemId: string) => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
         `)
         .eq('id', itemId)
         .single();
 
       if (error) throw error;
-      return data as Item;
+      
+      const itemFormatado = {
+        ...data,
+        publicado_por_profile: data.publicado_por_profile || undefined,
+        mesma_escola: false
+      };
+      
+      return itemFormatado;
     } catch (err) {
       console.error('Erro ao buscar item:', err);
+      setError('Erro ao carregar item');
       return null;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const buscarMeusItens = async (userId: string): Promise<Item[]> => {
+  const publicarItem = useCallback(async (itemData: any, fotos: File[]) => {
+    setLoading(true);
+    setError('');
+    
     try {
-      const { data, error } = await supabase
-        .from('itens')
-        .select(`
-          *,
-          publicado_por_profile:profiles!itens_publicado_por_fkey (
-            id,
-            nome,
-            avatar_url,
-            cidade,
-            bairro
-          )
-        `)
-        .eq('publicado_por', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Item[];
-    } catch (err) {
-      console.error('Erro ao buscar meus itens:', err);
-      return [];
-    }
-  };
-
-  const buscarItensDoUsuario = async (userId: string): Promise<Item[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('itens')
-        .select(`
-          *,
-          publicado_por_profile:profiles!itens_publicado_por_fkey (
-            id,
-            nome,
-            avatar_url,
-            cidade,
-            bairro
-          )
-        `)
-        .eq('publicado_por', userId)
-        .eq('status', 'disponivel')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as Item[];
-    } catch (err) {
-      console.error('Erro ao buscar itens do usuário:', err);
-      return [];
-    }
-  };
-
-  const publicarItem = async (itemData: any, fotos: File[]): Promise<boolean> => {
-    try {
-      // Upload das fotos primeiro
+      // Upload das fotos
       const fotosUrls: string[] = [];
       
       for (const foto of fotos) {
-        const fileName = `${Date.now()}-${foto.name}`;
+        const fileName = `${Date.now()}_${foto.name}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('itens')
           .upload(fileName, foto);
 
         if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
+        
+        const { data: { publicUrl } } = supabase.storage
           .from('itens')
           .getPublicUrl(fileName);
-
-        fotosUrls.push(urlData.publicUrl);
+        
+        fotosUrls.push(publicUrl);
       }
 
-      // Criar item
-      const { error } = await supabase
+      // Inserir item no banco
+      const { error: insertError } = await supabase
         .from('itens')
         .insert({
           ...itemData,
           fotos: fotosUrls
         });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       toast({
         title: "Sucesso!",
         description: "Item publicado com sucesso"
       });
 
+      await refetch();
       return true;
     } catch (err) {
       console.error('Erro ao publicar item:', err);
+      setError('Erro ao publicar item');
       toast({
         title: "Erro",
         description: "Erro ao publicar item",
         variant: "destructive"
       });
       return false;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [refetch]);
 
-  const atualizarItem = async (itemId: string, updates: any): Promise<boolean> => {
+  const atualizarItem = useCallback(async (itemId: string, dadosAtualizados: any) => {
+    setLoading(true);
+    setError('');
+    
     try {
       const { error } = await supabase
         .from('itens')
-        .update(updates)
+        .update(dadosAtualizados)
         .eq('id', itemId);
 
       if (error) throw error;
@@ -264,30 +228,31 @@ export const useItens = ({ categoria, filtroEscola = false, limite = 20 }: UseIt
         description: "Item atualizado com sucesso"
       });
 
+      await refetch();
       return true;
     } catch (err) {
       console.error('Erro ao atualizar item:', err);
+      setError('Erro ao atualizar item');
       toast({
         title: "Erro",
         description: "Erro ao atualizar item",
         variant: "destructive"
       });
       return false;
+    } finally {
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchItens();
-  }, [categoria, filtroEscola, escolasDosMeusFilhos.length, limite]);
+  }, [refetch]);
 
   return {
     itens,
     loading,
     error,
-    refetch: fetchItens,
-    buscarItemPorId,
+    refetch,
+    buscarItens,
     buscarMeusItens,
     buscarItensDoUsuario,
+    buscarItemPorId,
     publicarItem,
     atualizarItem
   };

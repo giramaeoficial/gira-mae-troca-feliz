@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { useItens } from "@/hooks/useItens";
-import { Star, MapPin, Calendar, Plus, Settings, Edit3, Sparkles } from "lucide-react";
+import { Star, MapPin, Calendar, Plus, Edit3, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
@@ -18,13 +18,14 @@ import EmptyState from "@/components/loading/EmptyState";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import FriendlyError from "@/components/error/FriendlyError";
 import LazyImage from "@/components/ui/lazy-image";
+import EditarPerfil from "@/components/perfil/EditarPerfil";
 
 const Perfil = () => {
     const { user } = useAuth();
-    const { profile, loading: profileLoading, error: profileError } = useProfile();
-    const { buscarMeusItens, loading: itensLoading, error: itensError } = useItens();
+    const { profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useProfile();
+    const { buscarMeusItens, loading: itensLoading, error: itensError, itens: meusItens } = useItens();
     const [activeTab, setActiveTab] = useState("ativos");
-    const [meusItens, setMeusItens] = useState<any[]>([]);
+    const [editandoPerfil, setEditandoPerfil] = useState(false);
 
     // Carregar meus itens quando o usuário estiver disponível
     useEffect(() => {
@@ -32,6 +33,16 @@ const Perfil = () => {
             buscarMeusItens(user.id);
         }
     }, [user, buscarMeusItens]);
+
+    const handleEditarPerfil = () => {
+        setEditandoPerfil(true);
+    };
+
+    const handleFecharEditar = () => {
+        setEditandoPerfil(false);
+        // Recarregar dados do perfil após edição
+        refetchProfile();
+    };
 
     if (!user) {
         return (
@@ -180,11 +191,12 @@ const Perfil = () => {
                                         </span>
                                     </div>
 
-                                    <Button asChild className="w-full mb-4 bg-gradient-to-r from-primary to-pink-500">
-                                        <Link to="/perfil/editar">
-                                            <Edit3 className="w-4 h-4 mr-2" />
-                                            Editar Perfil
-                                        </Link>
+                                    <Button 
+                                        onClick={handleEditarPerfil}
+                                        className="w-full mb-4 bg-gradient-to-r from-primary to-pink-500"
+                                    >
+                                        <Edit3 className="w-4 h-4 mr-2" />
+                                        Editar Perfil
                                     </Button>
                                 </div>
 
@@ -339,6 +351,12 @@ const Perfil = () => {
                     </div>
                 </div>
             </main>
+
+            {/* Modal de Editar Perfil */}
+            {editandoPerfil && (
+                <EditarPerfil onClose={handleFecharEditar} />
+            )}
+
             <QuickNav />
         </div>
     );

@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,7 +22,6 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from '@/hooks/useAuth';
 import { useItens } from '@/hooks/useItens';
 import { toast } from '@/components/ui/use-toast';
-import ImageUploader from '@/components/ImageUploader';
 
 const formSchema = z.object({
   titulo: z.string().min(3, {
@@ -47,8 +47,9 @@ const formSchema = z.object({
 const PublicarItem = () => {
   const { user } = useAuth();
   const { publicarItem } = useItens();
-  const navigate = useRouter();
+  const navigate = useNavigate();
   const [fotos, setFotos] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,24 +63,11 @@ const PublicarItem = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-  };
-
-  const handleSubmit = async (data: FormData) => {
-    if (!user) return;
-
-    const titulo = data.get('titulo') as string;
-    const categoria = data.get('categoria') as string;
-    const descricao = data.get('descricao') as string;
-    const estado_conservacao = data.get('estado_conservacao') as string;
-    const tamanho = data.get('tamanho') as string;
-    const valor_girinhas = Number(data.get('valor_girinhas'));
-
-    if (!titulo || !categoria || !descricao || !estado_conservacao || !valor_girinhas) {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user) {
       toast({
         title: "Erro",
-        description: "Preencha todos os campos obrigatórios",
+        description: "Você precisa estar logado para publicar um item",
         variant: "destructive"
       });
       return;
@@ -94,13 +82,15 @@ const PublicarItem = () => {
       return;
     }
 
+    setLoading(true);
+
     const itemData = {
-      titulo,
-      categoria,
-      descricao,
-      estado_conservacao,
-      tamanho,
-      valor_girinhas,
+      titulo: values.titulo,
+      categoria: values.categoria,
+      descricao: values.descricao,
+      estado_conservacao: values.estado_conservacao,
+      tamanho: values.tamanho,
+      valor_girinhas: values.valor_girinhas,
       publicado_por: user.id,
       status: 'disponivel',
     };
@@ -110,6 +100,15 @@ const PublicarItem = () => {
     if (sucesso) {
       navigate('/');
     }
+    
+    setLoading(false);
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      setFotos(Array.from(files));
+    }
   };
 
   return (
@@ -117,7 +116,7 @@ const PublicarItem = () => {
       <h1 className="text-3xl font-bold mb-6">Publicar Item</h1>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" action={handleSubmit}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
             control={form.control}
             name="titulo"
@@ -134,6 +133,7 @@ const PublicarItem = () => {
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="categoria"
@@ -162,6 +162,7 @@ const PublicarItem = () => {
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="descricao"
@@ -182,6 +183,7 @@ const PublicarItem = () => {
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="estado_conservacao"
@@ -207,6 +209,7 @@ const PublicarItem = () => {
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="tamanho"
@@ -223,6 +226,7 @@ const PublicarItem = () => {
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="valor_girinhas"
@@ -230,7 +234,12 @@ const PublicarItem = () => {
               <FormItem>
                 <FormLabel>Valor em Girinhas</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Ex: 10" {...field} />
+                  <Input 
+                    type="number" 
+                    placeholder="Ex: 10" 
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
                 </FormControl>
                 <FormDescription>
                   Defina o valor do item em Girinhas.
@@ -242,10 +251,22 @@ const PublicarItem = () => {
 
           <div className="mb-4">
             <Label htmlFor="fotos">Fotos do Item</Label>
-            <ImageUploader onUpload={setFotos} />
+            <Input
+              id="fotos"
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileChange}
+              className="mt-2"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Selecione uma ou mais fotos do item
+            </p>
           </div>
 
-          <Button type="submit">Publicar Item</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Publicando...' : 'Publicar Item'}
+          </Button>
         </form>
       </Form>
     </div>
