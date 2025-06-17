@@ -56,12 +56,14 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
       
       // Se já tem estado selecionado, buscar municípios
       if (value?.estado) {
+        console.log('Carregando municípios para estado:', value.estado);
         buscarMunicipios(value.estado);
       }
     }
   }, [isOpen, value, buscarMunicipios]);
 
   const handleEstadoChange = (estado: string) => {
+    console.log('Estado selecionado:', estado);
     setTempEstado(estado);
     setTempCidade(''); // Limpar cidade quando muda estado
     if (estado) {
@@ -69,9 +71,15 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
     }
   };
 
+  const handleCidadeChange = (cidade: string) => {
+    console.log('Cidade selecionada:', cidade);
+    setTempCidade(cidade);
+  };
+
   const handleAplicar = () => {
     if (tempEstado && tempCidade) {
       const newLocation = { estado: tempEstado, cidade: tempCidade };
+      console.log('Aplicando localização:', newLocation);
       onChange(newLocation);
       
       // Salvar no localStorage
@@ -135,10 +143,12 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-2">Cidade</label>
+            <label className="block text-sm font-medium mb-2">
+              Cidade {municipios.length > 0 && `(${municipios.length} encontradas)`}
+            </label>
             <Select 
               value={tempCidade} 
-              onValueChange={setTempCidade}
+              onValueChange={handleCidadeChange}
               disabled={!tempEstado || loadingMunicipios}
             >
               <SelectTrigger>
@@ -148,13 +158,15 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
                       ? "Carregando..." 
                       : !tempEstado 
                         ? "Selecione o estado primeiro"
-                        : "Selecione a cidade"
+                        : municipios.length === 0
+                          ? "Nenhuma cidade encontrada"
+                          : "Selecione a cidade"
                   } 
                 />
               </SelectTrigger>
-              <SelectContent className="max-h-60">
+              <SelectContent className="max-h-60 z-50 bg-white">
                 {municipios.map((municipio) => (
-                  <SelectItem key={municipio} value={municipio}>
+                  <SelectItem key={municipio} value={municipio} className="cursor-pointer hover:bg-gray-100">
                     {municipio}
                   </SelectItem>
                 ))}

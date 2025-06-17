@@ -35,22 +35,41 @@ export const useEscolas = (): UseEscolasReturn => {
     setError(null);
 
     try {
-      // Remover o limite para buscar todos os municípios
+      console.log('Buscando municípios para UF:', uf);
+      
+      // Buscar todos os municípios únicos do estado usando distinct
       const { data, error: searchError } = await supabase
         .from('escolas_inep')
         .select('municipio')
         .eq('uf', uf)
         .not('municipio', 'is', null)
+        .not('municipio', 'eq', '')
         .order('municipio');
 
-      if (searchError) throw searchError;
+      if (searchError) {
+        console.error('Erro na query:', searchError);
+        throw searchError;
+      }
 
-      // Extrair municípios únicos sem limite
-      const municipiosUnicos = Array.from(new Set(data?.map(item => item.municipio?.trim()) || []))
-        .filter(municipio => municipio && municipio.length > 0)
-        .sort();
+      console.log('Dados retornados:', data?.length, 'registros');
+
+      // Processar municípios únicos
+      const municipiosUnicos = Array.from(
+        new Set(
+          data
+            ?.map(item => item.municipio?.trim())
+            .filter(municipio => municipio && municipio.length > 0)
+            || []
+        )
+      ).sort();
       
-      console.log(`Encontrados ${municipiosUnicos.length} municípios para ${uf}:`, municipiosUnicos.slice(0, 10));
+      console.log(`Encontrados ${municipiosUnicos.length} municípios únicos para ${uf}`);
+      console.log('Primeiros 10 municípios:', municipiosUnicos.slice(0, 10));
+      
+      // Verificar se Canoas está na lista
+      const temCanoas = municipiosUnicos.some(m => m.toLowerCase().includes('canoas'));
+      console.log('Canoas encontrado:', temCanoas);
+      
       setMunicipios(municipiosUnicos);
     } catch (err) {
       console.error('Erro ao buscar municípios:', err);
@@ -70,12 +89,14 @@ export const useEscolas = (): UseEscolasReturn => {
     setError(null);
 
     try {
+      console.log('Buscando escolas para:', { uf, municipio, termo });
+      
       let query = supabase
         .from('escolas_inep')
         .select('*')
         .eq('uf', uf)
         .eq('municipio', municipio)
-        .limit(100); // Aumentar limite para escolas
+        .limit(100);
 
       if (termo && termo.length >= 2) {
         query = query.ilike('escola', `%${termo}%`);
