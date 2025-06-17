@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -19,7 +20,7 @@ import { useState as useActionState } from "react";
 const Feed = () => {
     const [filtros, setFiltros] = useState({
         busca: "",
-        categoria: "",
+        categoria: "todas",
         ordem: "recentes"
     });
     
@@ -49,7 +50,7 @@ const Feed = () => {
             item.titulo.toLowerCase().includes(filtros.busca.toLowerCase()) ||
             item.descricao.toLowerCase().includes(filtros.busca.toLowerCase());
         
-        const matchCategoria = !filtros.categoria || item.categoria === filtros.categoria;
+        const matchCategoria = filtros.categoria === "todas" || item.categoria === filtros.categoria;
         
         return matchBusca && matchCategoria;
     }).sort((a, b) => {
@@ -112,7 +113,7 @@ const Feed = () => {
                                     <SelectValue placeholder="Categoria" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="">Todas</SelectItem>
+                                    <SelectItem value="todas">Todas</SelectItem>
                                     <SelectItem value="roupa">👗 Roupa</SelectItem>
                                     <SelectItem value="brinquedo">🧸 Brinquedo</SelectItem>
                                     <SelectItem value="calcado">👟 Calçado</SelectItem>
@@ -142,10 +143,10 @@ const Feed = () => {
                     </div>
                 ) : filteredItens.length === 0 ? (
                     <EmptyState 
-                        type={filtros.busca || filtros.categoria ? "search" : "items"}
+                        type={filtros.busca || filtros.categoria !== "todas" ? "search" : "items"}
                         onAction={() => {
-                            if (filtros.busca || filtros.categoria) {
-                                setFiltros({ busca: "", categoria: "", ordem: "recentes" });
+                            if (filtros.busca || filtros.categoria !== "todas") {
+                                setFiltros({ busca: "", categoria: "todas", ordem: "recentes" });
                             }
                         }}
                     />
