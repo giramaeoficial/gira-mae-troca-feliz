@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/shared/Header";
@@ -41,7 +42,7 @@ const Mensagens = () => {
         id: "user1",
         nome: "Maria Silva",
         username: "maria_silva",
-        avatar: null,
+        avatar_url: null,
       },
       ultimaMensagem: "Oi! Ainda tem aquele vestido disponível?",
       timestamp: "2 min",
@@ -53,7 +54,7 @@ const Mensagens = () => {
         id: "user2",
         nome: "Ana Santos",
         username: "ana_santos",
-        avatar: null,
+        avatar_url: null,
       },
       ultimaMensagem: "Obrigada pela troca! Minha filha adorou o brinquedo!",
       timestamp: "1h",
@@ -232,7 +233,7 @@ const Mensagens = () => {
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12">
-                        <AvatarImage src={conversa.participante.avatar || undefined} />
+                        <AvatarImage src={conversa.participante.avatar_url || undefined} />
                         <AvatarFallback>
                           {conversa.participante.nome.charAt(0)}
                         </AvatarFallback>
