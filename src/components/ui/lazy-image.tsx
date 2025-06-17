@@ -24,7 +24,7 @@ interface LazyImageProps {
 const LazyImage: React.FC<LazyImageProps> = ({
   src,
   alt,
-  bucket = 'itens', // Default para bucket 'itens'
+  bucket = 'itens',
   size = 'medium',
   className,
   skeletonClassName,
@@ -44,7 +44,6 @@ const LazyImage: React.FC<LazyImageProps> = ({
     
     if (!currentImg) return;
 
-    // Configurar Intersection Observer
     observerRef.current = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -53,7 +52,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
         }
       },
       {
-        rootMargin: '50px' // Carregar 50px antes de aparecer
+        rootMargin: '50px'
       }
     );
 
@@ -64,8 +63,10 @@ const LazyImage: React.FC<LazyImageProps> = ({
     };
   }, []);
 
-  // Usar getImageUrl para obter a URL correta do Supabase
-  const imageUrl = getImageUrl(bucket, src, size, transform);
+  // Verificar se src já é uma URL completa (começando com http)
+  const imageUrl = src.startsWith('http') || src.startsWith('blob:') 
+    ? src 
+    : getImageUrl(bucket, src, size, transform);
 
   const handleLoad = () => {
     setIsLoaded(true);
@@ -79,7 +80,6 @@ const LazyImage: React.FC<LazyImageProps> = ({
 
   return (
     <div className={cn('relative overflow-hidden', className)}>
-      {/* Skeleton placeholder */}
       {(!isLoaded || !isInView) && (
         <div 
           className={cn(
@@ -95,7 +95,6 @@ const LazyImage: React.FC<LazyImageProps> = ({
         </div>
       )}
 
-      {/* Imagem principal */}
       {isInView && (
         <img
           ref={imgRef}
