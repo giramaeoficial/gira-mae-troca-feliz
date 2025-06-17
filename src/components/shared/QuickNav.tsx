@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Search, Plus, Clock, User, Badge as BadgeIcon } from "lucide-react";
+import { Search, Plus, Clock, User, Badge as BadgeIcon, MessageCircle } from "lucide-react";
 import { useCarteira } from "@/hooks/useCarteira";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,16 +26,16 @@ const QuickNav = () => {
       id: "nav-publicar" 
     },
     { 
+      icon: MessageCircle, 
+      label: "Mensagens", 
+      path: "/mensagens", 
+      id: "nav-mensagens" 
+    },
+    { 
       icon: Clock, 
       label: "Trocas", 
       path: "/reservas", 
       id: "nav-reservas" 
-    },
-    { 
-      icon: User, 
-      label: "Perfil", 
-      path: "/perfil", 
-      id: "nav-perfil" 
     },
   ];
 
@@ -63,6 +63,13 @@ const QuickNav = () => {
                 {item.path === "/reservas" && (
                   <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                     <span className="text-xs text-white font-medium">3</span>
+                  </div>
+                )}
+
+                {/* Badge de notificação para Mensagens */}
+                {item.path === "/mensagens" && (
+                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs text-white font-medium">2</span>
                   </div>
                 )}
               </div>

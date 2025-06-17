@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Menu, X, Bell, User, Wallet, ShoppingCart, Settings } from "lucide-react";
+import { Sparkles, Menu, X, Bell, User, Wallet, ShoppingCart, Settings, MessageCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCarteira } from "@/hooks/useCarteira";
@@ -90,6 +90,17 @@ const Header = ({ activePage }: HeaderProps) => {
                 </Link>
 
                 <Link
+                  to="/mensagens"
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activePage === "mensagens"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-gray-600 hover:text-primary hover:bg-primary/10"
+                  }`}
+                >
+                  <span>Mensagens</span>
+                </Link>
+
+                <Link
                   to="/carteira"
                   className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     activePage === "carteira"
@@ -162,6 +173,12 @@ const Header = ({ activePage }: HeaderProps) => {
                         <Link to="/perfil" className="flex items-center">
                           <User className="mr-2 h-4 w-4" />
                           <span>Meu Perfil</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/mensagens" className="flex items-center">
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          <span>Mensagens</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
@@ -294,6 +311,14 @@ const Header = ({ activePage }: HeaderProps) => {
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Minhas Trocas
+                      </Link>
+
+                      <Link
+                        to="/mensagens"
+                        className="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors min-h-[44px]"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Mensagens
                       </Link>
 
                       {/* Links secundários */}
