@@ -128,7 +128,7 @@ const Mensagens = () => {
                     <div className="flex items-center gap-2">
                       {conversaAtual.item.fotos?.[0] && (
                         <img 
-                          src={getImageUrl('itens', conversaAtual.item.fotos[0], 'small')}
+                          src={getImageUrl('itens', conversaAtual.item.fotos[0], 'thumbnail')}
                           alt={conversaAtual.item.titulo}
                           className="w-8 h-8 rounded object-cover"
                         />
