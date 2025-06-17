@@ -54,16 +54,18 @@ export const useItens = () => {
       })) || [];
       
       setItens(itensFormatados);
+      return itensFormatados;
     } catch (err) {
       console.error('Erro ao buscar itens:', err);
       setError('Erro ao carregar itens');
+      return [];
     } finally {
       setLoading(false);
     }
   }, []);
 
   const buscarItens = useCallback(async () => {
-    await refetch();
+    return await refetch();
   }, [refetch]);
 
   const buscarMeusItens = useCallback(async (userId: string) => {
@@ -85,9 +87,11 @@ export const useItens = () => {
       })) || [];
       
       setItens(itensFormatados);
+      return itensFormatados;
     } catch (err) {
       console.error('Erro ao buscar meus itens:', err);
       setError('Erro ao carregar seus itens');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -117,9 +121,11 @@ export const useItens = () => {
       })) || [];
       
       setItens(itensFormatados);
+      return itensFormatados;
     } catch (err) {
       console.error('Erro ao buscar itens do usuário:', err);
       setError('Erro ao carregar itens do usuário');
+      return [];
     } finally {
       setLoading(false);
     }

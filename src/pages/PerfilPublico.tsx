@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -9,13 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Star, MapPin, Calendar, Baby, Heart, Trophy, MessageCircle, Users } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
-import { useItens } from "@/hooks/useItens";
+import { useItens, Item } from "@/hooks/useItens";
 import { useSeguidores } from "@/hooks/useSeguidores";
 import BotaoSeguir from "@/components/perfil/BotaoSeguir";
-import { Tables } from "@/integrations/supabase/types";
 import { Link } from "react-router-dom";
-
-type Item = Tables<'itens'>;
 
 const PerfilPublico = () => {
     const { nome } = useParams<{ nome: string }>();
