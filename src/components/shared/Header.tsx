@@ -1,7 +1,8 @@
+
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Menu, X, Bell } from "lucide-react";
+import { Sparkles, Menu, X, Bell, User, Wallet, ShoppingCart, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCarteira } from "@/hooks/useCarteira";
