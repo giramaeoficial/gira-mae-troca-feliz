@@ -1,43 +1,166 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
 type Item = Tables<'itens'>;
+type Profile = Tables<'profiles'>;
+
+interface ItemComPerfil extends Item {
+  profiles?: Pick<Profile, 'id' | 'nome' | 'avatar_url' | 'bairro' | 'cidade' | 'reputacao'> | null;
+}
+
+interface PaginationState {
+  hasMore: boolean;
+  lastCreatedAt: string | null;
+  isLoadingMore: boolean;
+}
+
+interface CacheEntry {
+  data: ItemComPerfil[];
+  timestamp: number;
+  filters: string;
+}
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+const PAGE_SIZE = 20;
 
 export const useItens = () => {
   const { user } = useAuth();
-  const [itens, setItens] = useState<Item[]>([]);
+  const [itens, setItens] = useState<ItemComPerfil[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationState>({
+    hasMore: true,
+    lastCreatedAt: null,
+    isLoadingMore: false
+  });
 
-  const buscarItens = async (filtros?: {
-    categoria?: string;
-    busca?: string;
-    tamanho?: string;
-    valorMin?: number;
-    valorMax?: number;
-  }) => {
+  // Refs para abort controllers e cache
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
+
+  // Cache com useMemo para 5 minutos
+  const getCachedData = useCallback((cacheKey: string): ItemComPerfil[] | null => {
+    const cached = cacheRef.current.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.data;
+    }
+    return null;
+  }, []);
+
+  const setCachedData = useCallback((cacheKey: string, data: ItemComPerfil[]) => {
+    cacheRef.current.set(cacheKey, {
+      data,
+      timestamp: Date.now(),
+      filters: cacheKey
+    });
+  }, []);
+
+  // Cleanup de cache expirado
+  const cleanupExpiredCache = useCallback(() => {
+    const now = Date.now();
+    for (const [key, entry] of cacheRef.current.entries()) {
+      if (now - entry.timestamp > CACHE_DURATION) {
+        cacheRef.current.delete(key);
+      }
+    }
+  }, []);
+
+  // Abort controller cleanup
+  const cancelPendingRequests = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }, []);
+
+  // Prefetch de profiles em single query
+  const prefetchProfiles = useCallback(async (userIds: string[], signal: AbortSignal): Promise<Map<string, Profile>> => {
+    if (userIds.length === 0) return new Map();
+
     try {
-      setLoading(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, nome, avatar_url, bairro, cidade, reputacao')
+        .in('id', userIds)
+        .abortSignal(signal);
+
+      if (error) throw error;
+
+      const profilesMap = new Map<string, Profile>();
+      data?.forEach(profile => {
+        profilesMap.set(profile.id, profile);
+      });
+
+      return profilesMap;
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw err;
+      }
+      console.error('Erro ao buscar profiles:', err);
+      return new Map();
+    }
+  }, []);
+
+  const buscarItens = useCallback(async (
+    filtros?: {
+      categoria?: string;
+      busca?: string;
+      tamanho?: string;
+      valorMin?: number;
+      valorMax?: number;
+    },
+    loadMore: boolean = false
+  ) => {
+    try {
+      // Cancelar requests anteriores
+      cancelPendingRequests();
+      
+      // Criar novo abort controller
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      const cacheKey = JSON.stringify({
+        filtros,
+        userId: user?.id,
+        loadMore,
+        lastCreatedAt: loadMore ? pagination.lastCreatedAt : null
+      });
+
+      // Verificar cache apenas para primeira página
+      if (!loadMore) {
+        const cachedData = getCachedData(cacheKey);
+        if (cachedData) {
+          setItens(cachedData);
+          setPagination({
+            hasMore: cachedData.length >= PAGE_SIZE,
+            lastCreatedAt: cachedData[cachedData.length - 1]?.created_at || null,
+            isLoadingMore: false
+          });
+          return cachedData;
+        }
+      }
+
+      if (loadMore) {
+        setPagination(prev => ({ ...prev, isLoadingMore: true }));
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       let query = supabase
         .from('itens')
-        .select(`
-          *,
-          profiles!publicado_por (
-            id,
-            nome,
-            avatar_url,
-            bairro,
-            cidade,
-            reputacao
-          )
-        `)
+        .select('*')
         .eq('status', 'disponivel')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(PAGE_SIZE)
+        .abortSignal(controller.signal);
+
+      // Aplicar paginação cursor-based
+      if (loadMore && pagination.lastCreatedAt) {
+        query = query.lt('created_at', pagination.lastCreatedAt);
+      }
 
       // Aplicar filtros
       if (filtros?.categoria && filtros.categoria !== 'todos') {
@@ -65,101 +188,182 @@ export const useItens = () => {
         query = query.neq('publicado_por', user.id);
       }
 
-      const { data, error } = await query;
+      const { data: itensData, error } = await query;
 
       if (error) throw error;
 
-      setItens(data || []);
-      return data || [];
+      // Prefetch de profiles
+      const userIds = [...new Set(itensData?.map(item => item.publicado_por) || [])];
+      const profilesMap = await prefetchProfiles(userIds, controller.signal);
+
+      // Combinar itens com profiles
+      const itensComPerfil: ItemComPerfil[] = (itensData || []).map(item => ({
+        ...item,
+        profiles: profilesMap.get(item.publicado_por) || null
+      }));
+
+      // Atualizar estado
+      if (loadMore) {
+        setItens(prev => [...prev, ...itensComPerfil]);
+        setPagination(prev => ({
+          ...prev,
+          hasMore: itensComPerfil.length >= PAGE_SIZE,
+          lastCreatedAt: itensComPerfil[itensComPerfil.length - 1]?.created_at || prev.lastCreatedAt,
+          isLoadingMore: false
+        }));
+      } else {
+        setItens(itensComPerfil);
+        setPagination({
+          hasMore: itensComPerfil.length >= PAGE_SIZE,
+          lastCreatedAt: itensComPerfil[itensComPerfil.length - 1]?.created_at || null,
+          isLoadingMore: false
+        });
+        
+        // Cache apenas primeira página
+        setCachedData(cacheKey, itensComPerfil);
+      }
+
+      // Cleanup cache expirado
+      cleanupExpiredCache();
+
+      return itensComPerfil;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return []; // Request foi cancelado, não é erro
+      }
+      
       console.error('Erro ao buscar itens:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar itens');
       return [];
     } finally {
       setLoading(false);
+      if (loadMore) {
+        setPagination(prev => ({ ...prev, isLoadingMore: false }));
+      }
     }
-  };
+  }, [user, pagination.lastCreatedAt, prefetchProfiles, getCachedData, setCachedData, cancelPendingRequests, cleanupExpiredCache]);
 
-  const buscarTodosItens = async () => {
+  const carregarMais = useCallback(() => {
+    if (pagination.hasMore && !pagination.isLoadingMore && !loading) {
+      buscarItens(undefined, true);
+    }
+  }, [pagination.hasMore, pagination.isLoadingMore, loading, buscarItens]);
+
+  const buscarTodosItens = useCallback(async () => {
     try {
+      cancelPendingRequests();
+      
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setLoading(true);
       setError(null);
 
       const { data, error } = await supabase
         .from('itens')
-        .select(`
-          *,
-          profiles!publicado_por (
-            id,
-            nome,
-            avatar_url,
-            bairro,
-            cidade,
-            reputacao
-          )
-        `)
-        .order('created_at', { ascending: false });
+        .select('*')
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
 
       if (error) throw error;
 
-      setItens(data || []);
-      return data || [];
+      // Prefetch de profiles
+      const userIds = [...new Set(data?.map(item => item.publicado_por) || [])];
+      const profilesMap = await prefetchProfiles(userIds, controller.signal);
+
+      // Combinar itens com profiles
+      const itensComPerfil: ItemComPerfil[] = (data || []).map(item => ({
+        ...item,
+        profiles: profilesMap.get(item.publicado_por) || null
+      }));
+
+      setItens(itensComPerfil);
+      return itensComPerfil;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return [];
+      }
+      
       console.error('Erro ao buscar todos os itens:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar itens');
       return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, [prefetchProfiles, cancelPendingRequests]);
 
-  const buscarMeusItens = async () => {
+  const buscarMeusItens = useCallback(async () => {
     if (!user) return [];
 
     try {
+      cancelPendingRequests();
+      
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setLoading(true);
       const { data, error } = await supabase
         .from('itens')
         .select('*')
         .eq('publicado_por', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
 
       if (error) throw error;
 
       return data || [];
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return [];
+      }
+      
       console.error('Erro ao buscar meus itens:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar meus itens');
       return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, cancelPendingRequests]);
 
-  const buscarItensDoUsuario = async (usuarioId: string) => {
+  const buscarItensDoUsuario = useCallback(async (usuarioId: string) => {
     try {
+      cancelPendingRequests();
+      
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setLoading(true);
       const { data, error } = await supabase
         .from('itens')
         .select('*')
         .eq('publicado_por', usuarioId)
         .eq('status', 'disponivel')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal);
 
       if (error) throw error;
 
       return data || [];
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return [];
+      }
+      
       console.error('Erro ao buscar itens do usuário:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar itens do usuário');
       return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, [cancelPendingRequests]);
 
-  const buscarItemPorId = async (itemId: string) => {
+  const buscarItemPorId = useCallback(async (itemId: string) => {
     try {
+      cancelPendingRequests();
+      
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setLoading(true);
       const { data, error } = await supabase
         .from('itens')
@@ -176,20 +380,25 @@ export const useItens = () => {
           )
         `)
         .eq('id', itemId)
-        .single();
+        .single()
+        .abortSignal(controller.signal);
 
       if (error) throw error;
       return data;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return null;
+      }
+      
       console.error('Erro ao buscar item:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar item');
       return null;
     } finally {
       setLoading(false);
     }
-  };
+  }, [cancelPendingRequests]);
 
-  const publicarItem = async (novoItem: {
+  const publicarItem = useCallback(async (novoItem: {
     titulo: string;
     descricao: string;
     categoria: string;
@@ -210,6 +419,10 @@ export const useItens = () => {
         });
 
       if (error) throw error;
+      
+      // Limpar cache após publicação
+      cacheRef.current.clear();
+      
       return true;
     } catch (err) {
       console.error('Erro ao publicar item:', err);
@@ -218,9 +431,9 @@ export const useItens = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const atualizarItem = async (itemId: string, updates: Partial<Item>) => {
+  const atualizarItem = useCallback(async (itemId: string, updates: Partial<Item>) => {
     if (!user) return false;
 
     try {
@@ -232,9 +445,13 @@ export const useItens = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', itemId)
-        .eq('publicado_por', user.id); // Garantir que só o dono pode editar
+        .eq('publicado_por', user.id);
 
       if (error) throw error;
+      
+      // Limpar cache após atualização
+      cacheRef.current.clear();
+      
       return true;
     } catch (err) {
       console.error('Erro ao atualizar item:', err);
@@ -243,9 +460,9 @@ export const useItens = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const deletarItem = async (itemId: string) => {
+  const deletarItem = useCallback(async (itemId: string) => {
     if (!user) return false;
 
     try {
@@ -254,9 +471,13 @@ export const useItens = () => {
         .from('itens')
         .delete()
         .eq('id', itemId)
-        .eq('publicado_por', user.id); // Garantir que só o dono pode deletar
+        .eq('publicado_por', user.id);
 
       if (error) throw error;
+      
+      // Limpar cache após deleção
+      cacheRef.current.clear();
+      
       return true;
     } catch (err) {
       console.error('Erro ao deletar item:', err);
@@ -265,16 +486,36 @@ export const useItens = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    buscarItens();
   }, [user]);
 
-  return {
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      cancelPendingRequests();
+    };
+  }, [cancelPendingRequests]);
+
+  // Auto-load on mount
+  useEffect(() => {
+    buscarItens();
+    
+    return () => {
+      cancelPendingRequests();
+    };
+  }, [user]); // Removido buscarItens das dependências para evitar loops
+
+  // Memoized values
+  const memoizedValues = useMemo(() => ({
     itens,
     loading,
     error,
+    pagination,
+    hasMore: pagination.hasMore,
+    isLoadingMore: pagination.isLoadingMore
+  }), [itens, loading, error, pagination]);
+
+  return {
+    ...memoizedValues,
     buscarItens,
     buscarTodosItens,
     buscarMeusItens,
@@ -282,6 +523,7 @@ export const useItens = () => {
     buscarItemPorId,
     publicarItem,
     atualizarItem,
-    deletarItem
+    deletarItem,
+    carregarMais
   };
 };
