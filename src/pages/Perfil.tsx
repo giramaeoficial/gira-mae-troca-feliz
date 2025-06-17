@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -21,8 +22,16 @@ import FriendlyError from "@/components/error/FriendlyError";
 const Perfil = () => {
     const { user } = useAuth();
     const { profile, loading: profileLoading, error: profileError } = useProfile();
-    const { meusPerfil: meusItens, loading: itensLoading, error: itensError } = useItens();
+    const { buscarMeusItens, loading: itensLoading, error: itensError } = useItens();
     const [activeTab, setActiveTab] = useState("ativos");
+    const [meusItens, setMeusItens] = useState<any[]>([]);
+
+    // Carregar meus itens quando o usuário estiver disponível
+    useEffect(() => {
+        if (user) {
+            buscarMeusItens().then(setMeusItens);
+        }
+    }, [user, buscarMeusItens]);
 
     if (!user) {
         return (
@@ -94,14 +103,14 @@ const Perfil = () => {
                             <CardContent className="p-6">
                                 <div className="flex flex-col items-center text-center">
                                     <Avatar className="w-28 h-28 mb-4 ring-4 ring-primary/20">
-                                        <AvatarImage src={profile?.avatar_url} alt={profile?.nome_completo} />
+                                        <AvatarImage src={profile?.avatar_url} alt={profile?.nome} />
                                         <AvatarFallback className="text-xl bg-gradient-to-r from-primary to-pink-500 text-white">
-                                            {getInitials(profile?.nome_completo || 'Usuário')}
+                                            {getInitials(profile?.nome || 'Usuário')}
                                         </AvatarFallback>
                                     </Avatar>
                                     
                                     <h1 className="text-2xl font-bold text-gray-800 mb-1">
-                                        {profile?.nome_completo || 'Nome não informado'}
+                                        {profile?.nome || 'Nome não informado'}
                                     </h1>
                                     
                                     <div className="flex items-center gap-1 mb-4">
