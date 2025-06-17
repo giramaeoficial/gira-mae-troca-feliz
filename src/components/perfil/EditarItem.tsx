@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -94,7 +95,7 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Fotos existentes */}
+            {/* Fotos existentes com LazyImage */}
             {item.fotos && item.fotos.length > 0 && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Fotos atuais</label>
@@ -103,10 +104,12 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
                     <LazyImage
                       key={index}
                       src={foto}
-                      alt={`Foto ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                      alt={`Foto ${index + 1} do item ${item.titulo}`}
+                      bucket="itens"
                       size="thumbnail"
-                      placeholder="Carregando..."
+                      className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                      placeholder="📷"
+                      onError={() => console.error('Erro ao carregar foto:', foto)}
                     />
                   ))}
                 </div>

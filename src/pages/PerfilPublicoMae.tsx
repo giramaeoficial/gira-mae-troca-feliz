@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, MapPin, Star, Calendar, Users, Package, Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
+import LazyImage from "@/components/ui/lazy-image";
 
 type Profile = Tables<'profiles'>;
 type Item = Tables<'itens'>;
@@ -166,13 +167,13 @@ const PerfilPublicoMae = () => {
               <CardHeader className="text-center">
                 <div className="flex flex-col items-center">
                   <Avatar className="w-24 h-24 mb-4">
-                    <AvatarImage src={profile.avatar_url || undefined} alt={profile.nome || 'Avatar'} />
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.nome || 'Avatar'} />
                     <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                      {profile.nome?.split(' ').map(n => n[0]).join('') || 'M'}
+                      {profile?.nome?.split(' ').map(n => n[0]).join('') || 'M'}
                     </AvatarFallback>
                   </Avatar>
                   <CardTitle className="text-2xl text-gray-800 mb-2">
-                    {profile.nome || 'Usuário'}
+                    {profile?.nome || 'Usuário'}
                   </CardTitle>
                   
                   <div className="flex items-center gap-1 mb-4">
@@ -180,23 +181,23 @@ const PerfilPublicoMae = () => {
                       <Star 
                         key={star} 
                         className={`w-4 h-4 ${
-                          star <= Math.floor(profile.reputacao || 0) 
+                          star <= Math.floor(profile?.reputacao || 0) 
                             ? 'fill-current text-yellow-500' 
                             : 'text-gray-300'
                         }`} 
                       />
                     ))}
                     <span className="text-sm text-gray-600 ml-1">
-                      ({(profile.reputacao || 0).toFixed(1)})
+                      ({(profile?.reputacao || 0).toFixed(1)})
                     </span>
                   </div>
 
-                  <BotaoSeguir usuarioId={profile.id} className="w-full mb-4" />
+                  {profile && <BotaoSeguir usuarioId={profile.id} className="w-full mb-4" />}
                 </div>
               </CardHeader>
               
               <CardContent className="space-y-4">
-                {profile.bio && (
+                {profile?.bio && (
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
                     <p className="text-gray-600 text-sm">{profile.bio}</p>
@@ -206,14 +207,14 @@ const PerfilPublicoMae = () => {
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span className="text-sm">
-                    {profile.bairro && profile.cidade 
+                    {profile?.bairro && profile?.cidade 
                       ? `${profile.bairro}, ${profile.cidade}`
-                      : profile.cidade || 'Localização não informada'
+                      : profile?.cidade || 'Localização não informada'
                     }
                   </span>
                 </div>
 
-                {profile.data_nascimento && (
+                {profile?.data_nascimento && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Calendar className="w-4 h-4 text-primary" />
                     <span className="text-sm">{calcularIdade(profile.data_nascimento)} anos</span>
@@ -238,7 +239,7 @@ const PerfilPublicoMae = () => {
                   </div>
                 </div>
 
-                {profile.interesses && profile.interesses.length > 0 && (
+                {profile?.interesses && profile.interesses.length > 0 && (
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-2">Interesses</h3>
                     <div className="flex flex-wrap gap-2">
@@ -275,10 +276,14 @@ const PerfilPublicoMae = () => {
                       <Card key={item.id} className="border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer">
                         <Link to={`/item/${item.id}`}>
                           <div className="aspect-square relative overflow-hidden rounded-t-lg">
-                            <img 
-                              src={item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400"} 
-                              alt={item.titulo} 
+                            <LazyImage
+                              src={item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400"}
+                              alt={item.titulo}
+                              bucket="itens"
+                              size="medium"
                               className="w-full h-full object-cover"
+                              placeholder="📷"
+                              onError={() => console.error('Erro ao carregar imagem do item:', item.id)}
                             />
                             <div className="absolute top-2 right-2">
                               <Badge className="bg-green-500 text-white text-xs">

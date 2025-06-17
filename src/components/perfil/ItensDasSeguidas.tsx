@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, Heart, Star } from 'lucide-react';
 import { useSeguidores } from '@/hooks/useSeguidores';
 import { Link } from 'react-router-dom';
-import { getImageUrl } from '@/utils/supabaseStorage';
+import LazyImage from '@/components/ui/lazy-image';
 
 const ItensDasSeguidas = () => {
   const { buscarItensDasMinhasSeguidas, loading } = useSeguidores();
@@ -60,17 +60,15 @@ const ItensDasSeguidas = () => {
           {itens.map((item) => (
             <Card key={item.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/80 backdrop-blur-sm">
               <div className="relative">
-                {item.fotos && item.fotos.length > 0 ? (
-                  <img 
-                    src={getImageUrl('itens', item.fotos[0], 'medium')} 
-                    alt={item.titulo} 
-                    className="w-full h-48 object-cover" 
-                  />
-                ) : (
-                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-500">Sem foto</span>
-                  </div>
-                )}
+                <LazyImage
+                  src={item.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400"}
+                  alt={item.titulo}
+                  bucket="itens"
+                  size="medium"
+                  className="w-full h-48 object-cover"
+                  placeholder="📷"
+                  onError={() => console.error('Erro ao carregar imagem do item das seguidas:', item.id)}
+                />
                 <Badge className="absolute top-2 right-2 bg-pink-500 text-white">
                   <Heart className="w-3 h-3 mr-1" />
                   Seguida
