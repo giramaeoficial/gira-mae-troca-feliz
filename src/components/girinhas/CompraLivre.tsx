@@ -41,9 +41,11 @@ const CompraLivre: React.FC = () => {
         .single();
 
       if (configMin && configMax) {
+        const valorMin = configMin.valor as { quantidade: number };
+        const valorMax = configMax.valor as { quantidade: number };
         setConfiguracoes({
-          min: configMin.valor.quantidade,
-          max: configMax.valor.quantidade
+          min: valorMin.quantidade,
+          max: valorMax.quantidade
         });
       }
     };
@@ -70,7 +72,7 @@ const CompraLivre: React.FC = () => {
       // Simular processamento de pagamento (sempre aprovado para demo)
       const paymentId = `demo_${Date.now()}`;
 
-      // Criar registro da compra
+      // Criar registro da compra (sem pacote_id, pois é compra livre)
       const { error: compraError } = await supabase
         .from('compras_girinhas')
         .insert({
@@ -78,7 +80,8 @@ const CompraLivre: React.FC = () => {
           valor_pago: valorTotal,
           girinhas_recebidas: quantidadeNum,
           status: 'aprovado',
-          payment_id: paymentId
+          payment_id: paymentId,
+          pacote_id: null // Compra livre, sem pacote
         });
 
       if (compraError) throw compraError;
@@ -201,7 +204,6 @@ const CompraLivre: React.FC = () => {
               </div>
             </div>
 
-            {/* Alertas */}
             {!isQuantidadeValida && (
               <Alert className="border-red-200 bg-red-50">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -241,7 +243,6 @@ const CompraLivre: React.FC = () => {
           )}
         </Button>
 
-        {/* Informações adicionais */}
         <div className="text-xs text-gray-500 space-y-1 bg-gray-50 p-3 rounded-lg">
           <p>✅ Girinhas sem prazo de validade</p>
           <p>✅ Uso imediato após a compra</p>

@@ -38,22 +38,27 @@ const SystemConfig: React.FC = () => {
         configs.forEach(config => {
           switch (config.chave) {
             case 'taxa_transacao':
-              setConfig(prev => ({ ...prev, taxaTransacao: config.valor.percentual }));
+              const taxaTransacao = config.valor as { percentual: number };
+              setConfig(prev => ({ ...prev, taxaTransacao: taxaTransacao.percentual }));
               break;
             case 'taxa_transferencia':
-              setConfig(prev => ({ ...prev, taxaTransferencia: config.valor.percentual }));
+              const taxaTransferencia = config.valor as { percentual: number };
+              setConfig(prev => ({ ...prev, taxaTransferencia: taxaTransferencia.percentual }));
               break;
             case 'markup_emissao':
-              setConfig(prev => ({ ...prev, markupEmissao: config.valor.percentual }));
+              const markupEmissao = config.valor as { percentual: number };
+              setConfig(prev => ({ ...prev, markupEmissao: markupEmissao.percentual }));
               break;
             case 'validade_girinhas':
-              setConfig(prev => ({ ...prev, validadeGirinhas: config.valor.meses }));
+              const validadeGirinhas = config.valor as { meses: number };
+              setConfig(prev => ({ ...prev, validadeGirinhas: validadeGirinhas.meses }));
               break;
             case 'cotacao_min_max':
+              const cotacao = config.valor as { min: number; max: number };
               setConfig(prev => ({ 
                 ...prev, 
-                cotacaoMin: config.valor.min,
-                cotacaoMax: config.valor.max
+                cotacaoMin: cotacao.min,
+                cotacaoMax: cotacao.max
               }));
               break;
           }
@@ -179,7 +184,6 @@ const SystemConfig: React.FC = () => {
                 </div>
               </div>
 
-              {/* Cotação */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="cotacaoMin">Cotação Mínima (R$)</Label>
@@ -210,7 +214,6 @@ const SystemConfig: React.FC = () => {
                 </div>
               </div>
 
-              {/* Outros */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="markupEmissao">Markup de Emissão (%)</Label>

@@ -32,10 +32,12 @@ const ConfigCompraGirinhas: React.FC = () => {
       if (configs) {
         configs.forEach(config => {
           if (config.chave === 'compra_girinhas_min') {
-            setConfig(prev => ({ ...prev, quantidadeMin: config.valor.quantidade }));
+            const valor = config.valor as { quantidade: number };
+            setConfig(prev => ({ ...prev, quantidadeMin: valor.quantidade }));
           }
           if (config.chave === 'compra_girinhas_max') {
-            setConfig(prev => ({ ...prev, quantidadeMax: config.valor.quantidade }));
+            const valor = config.valor as { quantidade: number };
+            setConfig(prev => ({ ...prev, quantidadeMax: valor.quantidade }));
           }
         });
       }
