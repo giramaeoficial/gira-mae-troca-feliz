@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import Carteira from "./pages/Carteira";
 import ComprarGirinhas from "./pages/ComprarGirinhas";
 import Indicacoes from "./pages/Indicacoes";
 import Mensagens from "./pages/Mensagens";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/error/ErrorBoundary";
 
@@ -120,6 +120,14 @@ function App() {
                       element={
                         <AuthGuard>
                           <Indicacoes />
+                        </AuthGuard>
+                      }
+                    />
+                    <Route
+                      path="/admin"
+                      element={
+                        <AuthGuard>
+                          <AdminDashboard />
                         </AuthGuard>
                       }
                     />

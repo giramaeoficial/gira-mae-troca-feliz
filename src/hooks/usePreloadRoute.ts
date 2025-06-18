@@ -1,4 +1,3 @@
-
 import { lazy } from 'react';
 
 // Cache para componentes já carregados
@@ -12,6 +11,7 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/reservas': () => import('../pages/MinhasReservas'),
   '/publicar': () => import('../pages/PublicarItem'),
   '/indicacoes': () => import('../pages/Indicacoes'),
+  '/admin': () => import('../pages/AdminDashboard'),
 };
 
 export const usePreloadRoute = () => {

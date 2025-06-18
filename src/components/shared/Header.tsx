@@ -132,6 +132,18 @@ const Header = ({ activePage }: HeaderProps) => {
                 >
                   <span>Indicações</span>
                 </Link>
+
+                {/* Link temporário para admin - só em desenvolvimento */}
+                <Link
+                  to="/admin"
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activePage === "admin"
+                      ? "bg-red-600 text-white"
+                      : "text-red-600 hover:text-red-700 hover:bg-red-50"
+                  }`}
+                >
+                  <span>Admin</span>
+                </Link>
               </nav>
             )}
 
