@@ -9,33 +9,35 @@ import { useGirinhasSystem } from "@/modules/girinhas/hooks/useGirinhasSystem";
 const MetricsOverview = () => {
   const { cotacao } = useGirinhasSystem();
 
-  // Query para estatísticas gerais
+  // Query para estatísticas reais
   const { data: stats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
       const [
         { count: totalUsers },
         { count: totalTransactions },
-        { data: totalGirinhas },
+        { data: comprasGirinhas },
         { data: totalQueimas }
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('transacoes').select('*', { count: 'exact', head: true }),
-        supabase.from('transacoes').select('valor').eq('tipo', 'compra'),
+        supabase.from('compras_girinhas').select('valor_pago, girinhas_recebidas').eq('status', 'aprovado'),
         supabase.from('queimas_girinhas').select('quantidade')
       ]);
 
-      const girinhasEmitidas = totalGirinhas?.reduce((sum, t) => sum + Number(t.valor), 0) || 0;
+      // Calcular valores reais
+      const totalArrecadado = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.valor_pago), 0) || 0;
+      const girinhasEmitidas = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.girinhas_recebidas), 0) || 0;
       const girinhasQueimadas = totalQueimas?.reduce((sum, q) => sum + Number(q.quantidade), 0) || 0;
       const girinhasCirculacao = girinhasEmitidas - girinhasQueimadas;
 
       return {
         totalUsers: totalUsers || 0,
         totalTransactions: totalTransactions || 0,
+        totalArrecadado,
         girinhasEmitidas,
         girinhasQueimadas,
-        girinhasCirculacao,
-        receitaTotal: girinhasEmitidas * (cotacao?.cotacao_atual || 1)
+        girinhasCirculacao
       };
     },
     refetchInterval: 30000, // Atualizar a cada 30 segundos
@@ -43,7 +45,7 @@ const MetricsOverview = () => {
 
   const metrics = [
     {
-      title: "Preço de Emissão",
+      title: "Cotação Atual",
       value: `R$ ${cotacao?.cotacao_atual?.toFixed(4) || '1.0000'}`,
       change: "+0.25%",
       trend: "up",
@@ -76,11 +78,11 @@ const MetricsOverview = () => {
     },
     {
       title: "Total Arrecadado",
-      value: `R$ ${stats?.receitaTotal?.toLocaleString(undefined, {minimumFractionDigits: 2}) || '0.00'}`,
+      value: `R$ ${stats?.totalArrecadado?.toLocaleString(undefined, {minimumFractionDigits: 2}) || '0.00'}`,
       change: "+15.7%",
       trend: "up",
       icon: TrendingUp,
-      description: "Receita total"
+      description: "Receita da emissão"
     },
     {
       title: "Girinhas Queimadas",

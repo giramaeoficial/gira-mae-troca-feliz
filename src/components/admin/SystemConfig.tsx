@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Settings, DollarSign, Percent, Zap, Users, AlertTriangle } from "lucide-react";
+import { Settings, DollarSign, Percent, Zap, Users, AlertTriangle, Calendar } from "lucide-react";
 
 const SystemConfig = () => {
   const { toast } = useToast();
@@ -37,12 +37,12 @@ const SystemConfig = () => {
   });
 
   const [formData, setFormData] = useState({
+    taxaTransacao: configs?.taxa_transacao?.percentual || 5.0,
     taxaTransferencia: configs?.taxa_transferencia?.percentual || 1.0,
-    queimaPorTransacao: configs?.queima_por_transacao?.quantidade || 1.0,
+    markupEmissao: configs?.markup_emissao?.percentual || 0.0,
+    validadeGirinhas: configs?.validade_girinhas?.meses || 12,
     cotacaoMin: configs?.cotacao_min_max?.min || 0.80,
-    cotacaoMax: configs?.cotacao_min_max?.max || 1.30,
-    bonusInicial: 50.0,
-    limiteDiario: 1000.0
+    cotacaoMax: configs?.cotacao_min_max?.max || 1.30
   });
 
   // Mutation para atualizar configurações
@@ -50,12 +50,20 @@ const SystemConfig = () => {
     mutationFn: async (newConfig: typeof formData) => {
       const updates = [
         {
+          chave: 'taxa_transacao',
+          valor: { percentual: newConfig.taxaTransacao }
+        },
+        {
           chave: 'taxa_transferencia',
           valor: { percentual: newConfig.taxaTransferencia }
         },
         {
-          chave: 'queima_por_transacao', 
-          valor: { quantidade: newConfig.queimaPorTransacao }
+          chave: 'markup_emissao',
+          valor: { percentual: newConfig.markupEmissao }
+        },
+        {
+          chave: 'validade_girinhas',
+          valor: { meses: newConfig.validadeGirinhas }
         },
         {
           chave: 'cotacao_min_max',
@@ -101,7 +109,7 @@ const SystemConfig = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Status do Sistema</CardTitle>
@@ -116,8 +124,18 @@ const SystemConfig = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Taxa P2P Atual</CardTitle>
+            <CardTitle className="text-sm font-medium">Taxa de Transação</CardTitle>
             <Percent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formData.taxaTransacao}%</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Taxa P2P</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formData.taxaTransferencia}%</div>
@@ -126,12 +144,22 @@ const SystemConfig = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Queima/Transação</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Markup Emissão</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formData.queimaPorTransacao}</div>
-            <p className="text-xs text-muted-foreground">Girinhas</p>
+            <div className="text-2xl font-bold">{formData.markupEmissao}%</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Validade Girinhas</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formData.validadeGirinhas}</div>
+            <p className="text-xs text-muted-foreground">meses</p>
           </CardContent>
         </Card>
 
@@ -151,14 +179,28 @@ const SystemConfig = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Configurações Econômicas</CardTitle>
+            <CardTitle>Configurações do Sistema</CardTitle>
             <CardDescription>
-              Ajuste os parâmetros principais do sistema monetário
+              Ajuste todos os parâmetros principais do sistema monetário
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="taxaTransacao">Taxa de Transação (%)</Label>
+                  <Input
+                    id="taxaTransacao"
+                    type="number"
+                    step="0.1"
+                    value={formData.taxaTransacao}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      taxaTransacao: Number(e.target.value)
+                    }))}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="taxaTransferencia">Taxa P2P (%)</Label>
                   <Input
@@ -172,17 +214,32 @@ const SystemConfig = () => {
                     }))}
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="queimaPorTransacao">Queima/Transação</Label>
+                  <Label htmlFor="markupEmissao">Markup Emissão (%)</Label>
                   <Input
-                    id="queimaPorTransacao"
+                    id="markupEmissao"
                     type="number"
                     step="0.1"
-                    value={formData.queimaPorTransacao}
+                    value={formData.markupEmissao}
                     onChange={(e) => setFormData(prev => ({
                       ...prev,
-                      queimaPorTransacao: Number(e.target.value)
+                      markupEmissao: Number(e.target.value)
+                    }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="validadeGirinhas">Validade (meses)</Label>
+                  <Input
+                    id="validadeGirinhas"
+                    type="number"
+                    value={formData.validadeGirinhas}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      validadeGirinhas: Number(e.target.value)
                     }))}
                   />
                 </div>

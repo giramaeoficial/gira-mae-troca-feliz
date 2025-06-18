@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import Header from "@/components/shared/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { useGirinhasSystem } from "@/modules/girinhas/hooks/useGirinhasSystem";
 import { useCarteira } from "@/hooks/useCarteira";
 import MetricsOverview from "@/components/admin/MetricsOverview";
 import CotacaoChart from "@/components/admin/CotacaoChart";
+import EmissionChart from "@/components/admin/EmissionChart";
 import SystemConfig from "@/components/admin/SystemConfig";
 import UserManagement from "@/components/admin/UserManagement";
 
@@ -81,6 +81,7 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+            <EmissionChart />
           </TabsContent>
 
           <TabsContent value="config">

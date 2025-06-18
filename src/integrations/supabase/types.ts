@@ -966,6 +966,7 @@ export type Database = {
         Row: {
           cotacao_utilizada: number | null
           created_at: string
+          data_expiracao: string | null
           descricao: string
           id: string
           item_id: string | null
@@ -978,6 +979,7 @@ export type Database = {
         Insert: {
           cotacao_utilizada?: number | null
           created_at?: string
+          data_expiracao?: string | null
           descricao: string
           id?: string
           item_id?: string | null
@@ -990,6 +992,7 @@ export type Database = {
         Update: {
           cotacao_utilizada?: number | null
           created_at?: string
+          data_expiracao?: string | null
           descricao?: string
           id?: string
           item_id?: string | null
