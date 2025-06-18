@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Sparkles, Calculator, ShoppingCart, AlertTriangle, TrendingUp, Info } from 'lucide-react';
+import { Sparkles, Calculator, ShoppingCart, AlertTriangle, TrendingUp, Info, Gift, TrendingDown } from 'lucide-react';
 import { useGirinhasSystem } from '@/modules/girinhas/hooks/useGirinhasSystem';
 import { useCarteira } from '@/hooks/useCarteira';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,9 +67,9 @@ const CompraLivre: React.FC = () => {
   const isQuantidadeValida = quantidadeNum >= configuracoes.min && quantidadeNum <= configuracoes.max;
   const temImpacto = quantidadeNum >= 100;
   
-  // Simular impacto na cotação para compras grandes
-  const impactoCotacao = temImpacto ? quantidadeNum * 0.0001 : 0;
-  const novaCotacao = Math.min(cotacaoMercado + impactoCotacao, 1.30);
+  // Verificar se é promoção ou preço acima do mercado
+  const isPromocao = precoEmissao < cotacaoMercado;
+  const isPrecoAlto = precoEmissao > cotacaoMercado;
 
   const handleComprar = async () => {
     if (!user || !isQuantidadeValida) return;
@@ -174,6 +174,29 @@ const CompraLivre: React.FC = () => {
           </div>
         </div>
 
+        {/* Alertas de promoção ou preço alto */}
+        {isPromocao && (
+          <Alert className="border-green-200 bg-green-50">
+            <Gift className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              <strong>🎉 Aproveite a promoção!</strong><br />
+              O preço de emissão está R$ {(cotacaoMercado - precoEmissao).toFixed(4)} abaixo do valor de mercado. 
+              Excelente oportunidade para adquirir Girinhas com desconto!
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isPrecoAlto && (
+          <Alert className="border-orange-200 bg-orange-50">
+            <TrendingDown className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-orange-800">
+              <strong>⚠️ Preço acima do mercado</strong><br />
+              O preço de emissão está R$ {(precoEmissao - cotacaoMercado).toFixed(4)} acima do valor de mercado. 
+              Considere aguardar uma oportunidade melhor.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Informação sobre markup */}
         {markupEmissao !== 0 && (
           <Alert className="border-blue-200 bg-blue-50">
@@ -233,13 +256,6 @@ const CompraLivre: React.FC = () => {
                 </div>
               )}
               
-              {temImpacto && (
-                <div className="flex justify-between text-sm text-orange-600">
-                  <span>Nova cotação (estimada):</span>
-                  <span>R$ {novaCotacao.toFixed(4)}</span>
-                </div>
-              )}
-              
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Valor total:</span>
@@ -253,17 +269,6 @@ const CompraLivre: React.FC = () => {
                 <AlertTriangle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-800">
                   A quantidade deve estar entre {configuracoes.min} e {configuracoes.max.toLocaleString()} Girinhas.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {temImpacto && isQuantidadeValida && (
-              <Alert className="border-orange-200 bg-orange-50">
-                <AlertTriangle className="h-4 w-4 text-orange-600" />
-                <AlertDescription className="text-orange-800">
-                  <strong>Impacto na cotação detectado!</strong><br />
-                  Compras acima de 100 Girinhas podem aumentar a cotação do mercado.
-                  Nova cotação estimada: R$ {novaCotacao.toFixed(4)}
                 </AlertDescription>
               </Alert>
             )}
