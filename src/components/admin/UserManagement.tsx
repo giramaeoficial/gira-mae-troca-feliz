@@ -22,7 +22,7 @@ type Carteira = Database['public']['Tables']['carteiras']['Row'];
 type Transacao = Database['public']['Tables']['transacoes']['Row'];
 
 interface UserProfile extends Profile {
-  carteiras?: Carteira[];
+  carteiras?: Pick<Carteira, 'saldo_atual' | 'total_recebido' | 'total_gasto'>[];
   transacoes?: Pick<Transacao, 'id' | 'created_at'>[];
 }
 
@@ -33,27 +33,53 @@ const UserManagement = () => {
   // Query para buscar usuárias
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users', searchTerm, filterStatus],
-    queryFn: async (): Promise<UserProfile[]> => {
-      let query = supabase
+    queryFn: async () => {
+      console.log('Fetching users data...');
+      
+      // Buscar profiles primeiro
+      let profileQuery = supabase
         .from('profiles')
-        .select(`
-          *,
-          carteiras(saldo_atual, total_recebido, total_gasto),
-          transacoes(id, created_at)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
-        query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`);
+        profileQuery = profileQuery.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%`);
       }
 
-      const { data, error } = await query.limit(50);
+      const { data: profiles, error: profileError } = await profileQuery.limit(50);
       
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
+      if (profileError) {
+        console.error('Error fetching profiles:', profileError);
+        throw profileError;
       }
-      return data || [];
+
+      if (!profiles || profiles.length === 0) {
+        return [];
+      }
+
+      // Buscar carteiras separadamente
+      const userIds = profiles.map(p => p.id);
+      const { data: carteiras } = await supabase
+        .from('carteiras')
+        .select('user_id, saldo_atual, total_recebido, total_gasto')
+        .in('user_id', userIds);
+
+      // Buscar transações separadamente (apenas últimas para verificar atividade)
+      const { data: transacoes } = await supabase
+        .from('transacoes')
+        .select('user_id, id, created_at')
+        .in('user_id', userIds)
+        .order('created_at', { ascending: false });
+
+      // Combinar dados
+      const usersWithData: UserProfile[] = profiles.map(profile => ({
+        ...profile,
+        carteiras: carteiras?.filter(c => c.user_id === profile.id) || [],
+        transacoes: transacoes?.filter(t => t.user_id === profile.id).slice(0, 5) || []
+      }));
+
+      console.log('Users data fetched successfully:', usersWithData.length);
+      return usersWithData;
     },
     refetchInterval: 30000,
   });
@@ -74,8 +100,7 @@ const UserManagement = () => {
           .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
         supabase
           .from('profiles')
-          .select('nome, carteiras!inner(saldo_atual)')
-          .order('carteiras(saldo_atual)', { ascending: false })
+          .select('nome')
           .limit(5)
       ]);
 
