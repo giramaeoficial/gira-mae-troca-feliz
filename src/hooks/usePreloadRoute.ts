@@ -8,7 +8,6 @@ const routeCache = new Map<string, Promise<any>>();
 const routeImports: Record<string, () => Promise<any>> = {
   '/feed': () => import('../pages/Feed'),
   '/perfil': () => import('../pages/Perfil'),
-  '/sistema-girinhas': () => import('../pages/SistemaGirinhas'),
   '/carteira': () => import('../pages/Carteira'),
   '/reservas': () => import('../pages/MinhasReservas'),
   '/publicar': () => import('../pages/PublicarItem'),

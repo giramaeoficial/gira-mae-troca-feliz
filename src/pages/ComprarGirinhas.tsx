@@ -11,9 +11,9 @@ const ComprarGirinhas = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirecionar automaticamente para a nova página do sistema
+    // Redirecionar automaticamente para a carteira
     const timer = setTimeout(() => {
-      navigate("/sistema-girinhas");
+      navigate("/carteira");
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -28,10 +28,10 @@ const ComprarGirinhas = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-center gap-2 text-2xl">
               <Sparkles className="h-6 w-6 text-yellow-500" />
-              Sistema Atualizado!
+              Redirecionando...
             </CardTitle>
             <CardDescription>
-              Agora temos um sistema completo de Girinhas com metas, conquistas e muito mais!
+              Agora você pode comprar Girinhas diretamente na sua carteira!
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -39,8 +39,8 @@ const ComprarGirinhas = () => {
               Você será redirecionado automaticamente em alguns segundos...
             </p>
             <Button asChild className="w-full">
-              <Link to="/sistema-girinhas" className="flex items-center gap-2">
-                Ir para Sistema de Girinhas
+              <Link to="/carteira" className="flex items-center gap-2">
+                Ir para Carteira
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

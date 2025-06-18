@@ -20,7 +20,6 @@ import Perfil from "./pages/Perfil";
 import PerfilPublicoMae from "./pages/PerfilPublicoMae";
 import Carteira from "./pages/Carteira";
 import ComprarGirinhas from "./pages/ComprarGirinhas";
-import SistemaGirinhas from "./pages/SistemaGirinhas";
 import Indicacoes from "./pages/Indicacoes";
 import Mensagens from "./pages/Mensagens";
 import NotFound from "./pages/NotFound";
@@ -113,14 +112,6 @@ function App() {
                       element={
                         <AuthGuard>
                           <ComprarGirinhas />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/sistema-girinhas"
-                      element={
-                        <AuthGuard>
-                          <SistemaGirinhas />
                         </AuthGuard>
                       }
                     />
