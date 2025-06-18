@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Sparkles, Calculator, ShoppingCart, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Sparkles, Calculator, ShoppingCart, AlertTriangle, TrendingUp, Info } from 'lucide-react';
 import { useGirinhasSystem } from '@/modules/girinhas/hooks/useGirinhasSystem';
 import { useCarteira } from '@/hooks/useCarteira';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,7 @@ const CompraLivre: React.FC = () => {
     min: number;
     max: number;
   }>({ min: 10, max: 999000 });
+  const [markupEmissao, setMarkupEmissao] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   
   const { cotacao } = useGirinhasSystem();
@@ -28,24 +29,27 @@ const CompraLivre: React.FC = () => {
   // Carregar configurações
   useEffect(() => {
     const carregarConfiguracoes = async () => {
-      const { data: configMin } = await supabase
+      const { data: configs } = await supabase
         .from('config_sistema')
-        .select('valor')
-        .eq('chave', 'compra_girinhas_min')
-        .single();
+        .select('chave, valor')
+        .in('chave', ['compra_girinhas_min', 'compra_girinhas_max', 'markup_emissao']);
 
-      const { data: configMax } = await supabase
-        .from('config_sistema')
-        .select('valor')
-        .eq('chave', 'compra_girinhas_max')
-        .single();
-
-      if (configMin && configMax) {
-        const valorMin = configMin.valor as { quantidade: number };
-        const valorMax = configMax.valor as { quantidade: number };
-        setConfiguracoes({
-          min: valorMin.quantidade,
-          max: valorMax.quantidade
+      if (configs) {
+        configs.forEach(config => {
+          switch (config.chave) {
+            case 'compra_girinhas_min':
+              const valorMin = config.valor as { quantidade: number };
+              setConfiguracoes(prev => ({ ...prev, min: valorMin.quantidade }));
+              break;
+            case 'compra_girinhas_max':
+              const valorMax = config.valor as { quantidade: number };
+              setConfiguracoes(prev => ({ ...prev, max: valorMax.quantidade }));
+              break;
+            case 'markup_emissao':
+              const markup = config.valor as { percentual: number };
+              setMarkupEmissao(markup.percentual);
+              break;
+          }
         });
       }
     };
@@ -54,15 +58,18 @@ const CompraLivre: React.FC = () => {
   }, []);
 
   const quantidadeNum = parseFloat(quantidade) || 0;
-  const cotacaoAtual = cotacao?.cotacao_atual || 1.0;
-  const valorTotal = quantidadeNum * cotacaoAtual;
+  const cotacaoMercado = cotacao?.cotacao_atual || 1.0;
+  
+  // Calcular preço de emissão com markup
+  const precoEmissao = cotacaoMercado * (1 + markupEmissao / 100);
+  const valorTotal = quantidadeNum * precoEmissao;
   
   const isQuantidadeValida = quantidadeNum >= configuracoes.min && quantidadeNum <= configuracoes.max;
   const temImpacto = quantidadeNum >= 100;
   
   // Simular impacto na cotação para compras grandes
   const impactoCotacao = temImpacto ? quantidadeNum * 0.0001 : 0;
-  const novaCotacao = Math.min(cotacaoAtual + impactoCotacao, 1.30);
+  const novaCotacao = Math.min(cotacaoMercado + impactoCotacao, 1.30);
 
   const handleComprar = async () => {
     if (!user || !isQuantidadeValida) return;
@@ -93,7 +100,7 @@ const CompraLivre: React.FC = () => {
         `Compra de ${quantidadeNum} Girinhas`,
         undefined,
         undefined,
-        cotacaoAtual,
+        precoEmissao,
         quantidadeNum
       );
 
@@ -136,19 +143,49 @@ const CompraLivre: React.FC = () => {
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Cotação atual */}
-        <div className="bg-white p-4 rounded-lg border">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-600">Cotação atual:</span>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <span className="text-lg font-bold text-primary">
-                R$ {cotacaoAtual.toFixed(4)}
-              </span>
+        {/* Informações de cotação e preço */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white p-4 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-600">Cotação de mercado:</span>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-green-500" />
+                <span className="text-lg font-bold text-green-600">
+                  R$ {cotacaoMercado.toFixed(4)}
+                </span>
+              </div>
             </div>
+            <p className="text-xs text-gray-500 mt-1">preço de referência</p>
           </div>
-          <p className="text-xs text-gray-500 mt-1">por Girinha</p>
+
+          <div className="bg-white p-4 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-600">Preço de emissão:</span>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-500" />
+                <span className="text-lg font-bold text-primary">
+                  R$ {precoEmissao.toFixed(4)}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {markupEmissao > 0 ? `+${markupEmissao}%` : markupEmissao < 0 ? `${markupEmissao}%` : 'sem markup'} sobre o mercado
+            </p>
+          </div>
         </div>
+
+        {/* Informação sobre markup */}
+        {markupEmissao !== 0 && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              {markupEmissao > 0 
+                ? `O preço de emissão inclui um markup de ${markupEmissao}% sobre a cotação de mercado.`
+                : `O preço de emissão tem um desconto de ${Math.abs(markupEmissao)}% sobre a cotação de mercado.`
+              }
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Input de quantidade */}
         <div className="space-y-2">
@@ -185,9 +222,16 @@ const CompraLivre: React.FC = () => {
               </div>
               
               <div className="flex justify-between text-sm">
-                <span>Cotação:</span>
-                <span>R$ {cotacaoAtual.toFixed(4)}</span>
+                <span>Preço unitário:</span>
+                <span>R$ {precoEmissao.toFixed(4)}</span>
               </div>
+
+              {markupEmissao !== 0 && (
+                <div className="flex justify-between text-sm text-blue-600">
+                  <span>Markup aplicado:</span>
+                  <span>{markupEmissao > 0 ? '+' : ''}{markupEmissao}%</span>
+                </div>
+              )}
               
               {temImpacto && (
                 <div className="flex justify-between text-sm text-orange-600">
@@ -246,7 +290,7 @@ const CompraLivre: React.FC = () => {
         <div className="text-xs text-gray-500 space-y-1 bg-gray-50 p-3 rounded-lg">
           <p>✅ Girinhas sem prazo de validade</p>
           <p>✅ Uso imediato após a compra</p>
-          <p>✅ Cotação em tempo real</p>
+          <p>✅ Preço baseado na cotação + markup configurado</p>
           <p>✅ Pagamento seguro (demo)</p>
         </div>
       </CardContent>
