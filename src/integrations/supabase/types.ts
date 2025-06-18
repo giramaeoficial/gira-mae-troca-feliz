@@ -112,7 +112,7 @@ export type Database = {
           created_at: string
           girinhas_recebidas: number
           id: string
-          pacote_id: string
+          pacote_id: string | null
           payment_id: string | null
           status: string
           updated_at: string
@@ -123,7 +123,7 @@ export type Database = {
           created_at?: string
           girinhas_recebidas: number
           id?: string
-          pacote_id: string
+          pacote_id?: string | null
           payment_id?: string | null
           status?: string
           updated_at?: string
@@ -134,7 +134,7 @@ export type Database = {
           created_at?: string
           girinhas_recebidas?: number
           id?: string
-          pacote_id?: string
+          pacote_id?: string | null
           payment_id?: string | null
           status?: string
           updated_at?: string
