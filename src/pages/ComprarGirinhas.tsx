@@ -6,46 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Sparkles, Heart, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
+import CompraLivre from "@/components/girinhas/CompraLivre";
 
 const ComprarGirinhas = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Redirecionar automaticamente para a carteira
-    const timer = setTimeout(() => {
-      navigate("/carteira");
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 md:pb-8">
       <Header activePage="comprar-girinhas" />
       
-      <main className="flex-grow flex items-center justify-center">
-        <Card className="max-w-md mx-auto text-center">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2 text-2xl">
-              <Sparkles className="h-6 w-6 text-yellow-500" />
-              Redirecionando...
-            </CardTitle>
-            <CardDescription>
-              Agora você pode comprar Girinhas diretamente na sua carteira!
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              Você será redirecionado automaticamente em alguns segundos...
-            </p>
-            <Button asChild className="w-full">
-              <Link to="/carteira" className="flex items-center gap-2">
-                Ir para Carteira
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <main className="flex-grow container mx-auto px-4 py-6">
+        <div className="max-w-2xl mx-auto">
+          <CompraLivre />
+        </div>
       </main>
 
       <footer className="bg-muted py-8">
