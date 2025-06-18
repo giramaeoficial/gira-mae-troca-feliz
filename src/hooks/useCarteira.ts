@@ -28,6 +28,8 @@ export const useCarteira = () => {
     queryFn: async (): Promise<CarteiraData> => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      console.log('Buscando dados da carteira para usuário:', user.id);
+
       // Buscar carteira
       const { data: carteiraData, error: carteiraError } = await supabase
         .from('carteiras')
@@ -35,11 +37,15 @@ export const useCarteira = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (carteiraError) throw carteiraError;
+      if (carteiraError) {
+        console.error('Erro ao buscar carteira:', carteiraError);
+        throw carteiraError;
+      }
 
       // Se não existe carteira, criar uma
       let carteira = carteiraData;
       if (!carteira) {
+        console.log('Carteira não encontrada, criando nova...');
         carteira = await criarCarteiraInicial(user.id);
       }
 
@@ -50,9 +56,17 @@ export const useCarteira = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (transacoesError) throw transacoesError;
+      if (transacoesError) {
+        console.error('Erro ao buscar transações:', transacoesError);
+        throw transacoesError;
+      }
 
       const transacoes = transacoesData || [];
+
+      console.log('Dados carregados:', {
+        carteira: carteira,
+        totalTransacoes: transacoes.length
+      });
 
       // Verificar consistência da carteira
       await verificarConsistenciaCarteira(carteira, transacoes, user.id);
@@ -63,8 +77,8 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    staleTime: 300000, // 5 minutos
-    gcTime: 600000, // 10 minutos
+    staleTime: 0, // Sempre buscar dados frescos
+    gcTime: 0, // Não manter cache
     retry: (failureCount, error) => {
       // Retry com exponential backoff até 3 tentativas
       if (failureCount >= 3) return false;
@@ -278,7 +292,7 @@ export const useCarteira = () => {
     transacoes: Transacao[], 
     userId: string
   ) => {
-    const tiposCredito = ['recebido', 'bonus', 'transferencia_p2p_entrada'];
+    const tiposCredito = ['recebido', 'bonus', 'transferencia_p2p_entrada', 'compra'];
     const tiposDebito = ['gasto', 'queima', 'transferencia_p2p_saida', 'taxa'];
     
     const totalRecebido = transacoes
@@ -296,7 +310,14 @@ export const useCarteira = () => {
     const discrepanciaGasto = Math.abs(Number(carteira.total_gasto) - totalGasto) > 0.01;
 
     if (discrepanciaSaldo || discrepanciaRecebido || discrepanciaGasto) {
-      console.log('Discrepância detectada na carteira, corrigindo...');
+      console.log('Discrepância detectada na carteira, corrigindo...', {
+        saldoAtual: Number(carteira.saldo_atual),
+        saldoCalculado,
+        totalRecebidoAtual: Number(carteira.total_recebido),
+        totalRecebidoCalculado: totalRecebido,
+        totalGastoAtual: Number(carteira.total_gasto),
+        totalGastoCalculado: totalGasto
+      });
 
       const { error: updateError } = await supabase
         .from('carteiras')
@@ -310,6 +331,12 @@ export const useCarteira = () => {
 
       if (updateError) {
         console.error('Erro ao corrigir carteira:', updateError);
+      } else {
+        console.log('Carteira corrigida com sucesso');
+        // Forçar re-fetch após correção
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['carteira', userId] });
+        }, 500);
       }
     }
   };

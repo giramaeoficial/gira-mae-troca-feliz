@@ -54,7 +54,8 @@ export const usePacotesGirinhas = () => {
       console.log('Processando compra de Girinhas:', {
         pacoteId,
         valorGirinhas: pacote.valor_girinhas,
-        valorReal: pacote.valor_real
+        valorReal: pacote.valor_real,
+        userId: user.id
       });
 
       // Simular processamento de pagamento (sempre aprovado para demo)
@@ -100,10 +101,18 @@ export const usePacotesGirinhas = () => {
 
       console.log('Transação criada com sucesso');
 
-      // Invalidar queries relacionadas para atualizar a UI
-      queryClient.invalidateQueries({ queryKey: ['carteira'] });
-      queryClient.invalidateQueries({ queryKey: ['transacoes'] });
-      queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
+      // Forçar atualização imediata da carteira
+      console.log('Invalidando queries da carteira...');
+      
+      // Invalidar todas as queries relacionadas
+      await queryClient.invalidateQueries({ queryKey: ['carteira'] });
+      await queryClient.invalidateQueries({ queryKey: ['transacoes'] });
+      await queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
+      
+      // Forçar refetch da carteira específica do usuário
+      await queryClient.refetchQueries({ queryKey: ['carteira', user.id] });
+      
+      console.log('Queries invalidadas e refetch executado');
 
       toast({
         title: "💳 Compra realizada com sucesso!",
