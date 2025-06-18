@@ -356,7 +356,7 @@ const DetalhesItem = () => {
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <Button asChild size="sm">
-                                            <Link to={`/perfil/${item.publicado_por}`}>Ver Perfil</Link>
+                                            <Link to={`/mae/${item.publicado_por}`}>Ver Perfil</Link>
                                         </Button>
                                         <Button variant="outline" size="sm">
                                             <Flag className="w-3 h-3 mr-1" />
