@@ -39,6 +39,7 @@ export const usePacotesGirinhas = () => {
 
   const comprarGirinhas = async (pacoteId: string) => {
     setIsComprandoGirinhas(true);
+    
     try {
       // Buscar dados do pacote
       const pacote = pacotes.find(p => p.id === pacoteId);
@@ -46,12 +47,18 @@ export const usePacotesGirinhas = () => {
         throw new Error('Pacote não encontrado');
       }
 
-      // Simular processamento de pagamento (sempre aprovado para demo)
-      const paymentId = `demo_${Date.now()}`;
-
       // Obter usuário atual
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
+
+      console.log('Processando compra de Girinhas:', {
+        pacoteId,
+        valorGirinhas: pacote.valor_girinhas,
+        valorReal: pacote.valor_real
+      });
+
+      // Simular processamento de pagamento (sempre aprovado para demo)
+      const paymentId = `demo_${Date.now()}`;
 
       // Criar registro da compra
       const { data: compra, error: compraError } = await supabase
@@ -67,9 +74,14 @@ export const usePacotesGirinhas = () => {
         .select()
         .single();
 
-      if (compraError) throw compraError;
+      if (compraError) {
+        console.error('Erro ao criar compra:', compraError);
+        throw compraError;
+      }
 
-      // Adicionar Girinhas à carteira via transação
+      console.log('Compra criada com sucesso:', compra);
+
+      // Adicionar Girinhas à carteira via transação (usando tipo 'compra')
       const { error: transacaoError } = await supabase
         .from('transacoes')
         .insert({
@@ -77,29 +89,49 @@ export const usePacotesGirinhas = () => {
           tipo: 'compra',
           valor: pacote.valor_girinhas,
           quantidade_girinhas: pacote.valor_girinhas,
-          descricao: `Compra de pacote: ${pacote.nome}`
+          descricao: `Compra de pacote: ${pacote.nome}`,
+          cotacao_utilizada: 1.0000 // Cotação padrão para compras
         });
 
-      if (transacaoError) throw transacaoError;
+      if (transacaoError) {
+        console.error('Erro ao criar transação:', transacaoError);
+        throw transacaoError;
+      }
 
-      // Invalidar queries relacionadas
+      console.log('Transação criada com sucesso');
+
+      // Invalidar queries relacionadas para atualizar a UI
       queryClient.invalidateQueries({ queryKey: ['carteira'] });
       queryClient.invalidateQueries({ queryKey: ['transacoes'] });
       queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
 
       toast({
-        title: "💳 Compra realizada!",
-        description: `${pacote.valor_girinhas} Girinhas adicionadas à sua carteira!`,
+        title: "💳 Compra realizada com sucesso!",
+        description: `${pacote.valor_girinhas} Girinhas foram adicionadas à sua carteira!`,
       });
 
       return true;
     } catch (err) {
-      console.error('Erro ao processar compra:', err);
+      console.error('Erro completo ao processar compra:', err);
+      
+      let errorMessage = "Não foi possível processar a compra.";
+      
+      if (err instanceof Error) {
+        if (err.message.includes('constraint')) {
+          errorMessage = "Erro interno do sistema. Tente novamente em alguns instantes.";
+        } else if (err.message.includes('não autenticado')) {
+          errorMessage = "Você precisa estar logado para comprar Girinhas.";
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       toast({
         title: "Erro na compra",
-        description: err instanceof Error ? err.message : "Não foi possível processar a compra.",
+        description: errorMessage,
         variant: "destructive",
       });
+      
       return false;
     } finally {
       setIsComprandoGirinhas(false);
