@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,16 +26,24 @@ import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ErrorBoundary from "./components/error/ErrorBoundary";
 
-const queryClient = new QueryClient();
+// Criar uma única instância do QueryClient
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <RecompensasProvider>
-            <CarteiraProvider>
-              <ErrorBoundary>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <RecompensasProvider>
+              <CarteiraProvider>
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
@@ -134,12 +143,12 @@ function App() {
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
-              </ErrorBoundary>
-            </CarteiraProvider>
-          </RecompensasProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+              </CarteiraProvider>
+            </RecompensasProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -16,6 +16,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface UserProfile {
+  id: string;
+  nome: string | null;
+  email: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  reputacao: number | null;
+  created_at: string;
+  carteiras: {
+    saldo_atual: number;
+    total_recebido: number;
+    total_gasto: number;
+  }[];
+  transacoes: { id: string; created_at: string }[];
+}
+
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -23,13 +39,13 @@ const UserManagement = () => {
   // Query para buscar usuárias
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users', searchTerm, filterStatus],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserProfile[]> => {
       let query = supabase
         .from('profiles')
         .select(`
           *,
           carteiras!inner(saldo_atual, total_recebido, total_gasto),
-          transacoes(id)
+          transacoes(id, created_at)
         `)
         .order('created_at', { ascending: false });
 
@@ -40,7 +56,7 @@ const UserManagement = () => {
       const { data, error } = await query.limit(50);
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     refetchInterval: 30000,
   });
@@ -74,7 +90,7 @@ const UserManagement = () => {
     }
   });
 
-  const getStatusBadge = (user: any) => {
+  const getStatusBadge = (user: UserProfile) => {
     const lastTransaction = user.transacoes?.[0];
     const isActive = lastTransaction && 
       new Date(lastTransaction.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -85,7 +101,11 @@ const UserManagement = () => {
   };
 
   if (isLoading) {
-    return <div>Carregando usuárias...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-lg">Carregando usuárias...</div>
+      </div>
+    );
   }
 
   return (
@@ -169,7 +189,7 @@ const UserManagement = () => {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar_url} />
+                          <AvatarImage src={user.avatar_url || undefined} />
                           <AvatarFallback>{user.nome?.charAt(0) || 'U'}</AvatarFallback>
                         </Avatar>
                         <div>
