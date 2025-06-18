@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -27,8 +26,15 @@ const Mensagens = () => {
   const [showNovaConversa, setShowNovaConversa] = useState(false);
   const [searchUsername, setSearchUsername] = useState("");
 
-  const { users: searchResults } = useUserSearch(searchUsername);
+  const { users: searchResults, searchUsers } = useUserSearch();
   const { conversas, loading: conversasLoading } = useConversas();
+
+  // Buscar usuários quando o termo de busca muda
+  useEffect(() => {
+    if (searchUsername.length >= 2) {
+      searchUsers(searchUsername);
+    }
+  }, [searchUsername, searchUsers]);
 
   // Hook do chat - ativo quando há um usuário selecionado
   const { 

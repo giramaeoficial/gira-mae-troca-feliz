@@ -32,7 +32,14 @@ const MentionInput: React.FC<MentionInputProps> = ({
   const [mentionSearch, setMentionSearch] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { users, loading } = useUserSearch(mentionSearch);
+  const { users, isSearching, searchUsers } = useUserSearch();
+
+  // Detectar quando @ é digitado e buscar usuários
+  useEffect(() => {
+    if (mentionSearch.length >= 2) {
+      searchUsers(mentionSearch);
+    }
+  }, [mentionSearch, searchUsers]);
 
   // Detectar quando @ é digitado
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +125,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
           {/* Sugestões de menção */}
           {showSuggestions && (
             <div className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
-              {loading ? (
+              {isSearching ? (
                 <div className="p-3 text-sm text-gray-500">Buscando...</div>
               ) : users.length > 0 ? (
                 users.map((user) => (
