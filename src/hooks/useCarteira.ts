@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +43,7 @@ export const useCarteira = () => {
         carteira = await criarCarteiraInicial(user.id);
       }
 
-      // Buscar transações
+      // Buscar transações (incluindo novos tipos)
       const { data: transacoesData, error: transacoesError } = await supabase
         .from('transacoes')
         .select('*')
@@ -105,20 +104,24 @@ export const useCarteira = () => {
     }
   }, [error]);
 
-  // Mutation para adicionar transação
+  // Mutation para adicionar transação (atualizada para novos tipos)
   const adicionarTransacaoMutation = useMutation({
     mutationFn: async ({
       tipo,
       valor,
       descricao,
       itemId,
-      usuarioOrigem
+      usuarioOrigem,
+      cotacaoUtilizada,
+      quantidadeGirinhas
     }: {
-      tipo: 'recebido' | 'gasto' | 'bonus';
+      tipo: 'recebido' | 'gasto' | 'bonus' | 'compra' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa';
       valor: number;
       descricao: string;
       itemId?: string;
       usuarioOrigem?: string;
+      cotacaoUtilizada?: number;
+      quantidadeGirinhas?: number;
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
@@ -130,7 +133,9 @@ export const useCarteira = () => {
           valor,
           descricao,
           item_id: itemId || null,
-          usuario_origem: usuarioOrigem || null
+          usuario_origem: usuarioOrigem || null,
+          cotacao_utilizada: cotacaoUtilizada || null,
+          quantidade_girinhas: quantidadeGirinhas || null
         })
         .select()
         .single();
@@ -153,18 +158,21 @@ export const useCarteira = () => {
           descricao: novaTransacao.descricao,
           item_id: novaTransacao.itemId || null,
           usuario_origem: novaTransacao.usuarioOrigem || null,
+          cotacao_utilizada: novaTransacao.cotacaoUtilizada || null,
+          quantidade_girinhas: novaTransacao.quantidadeGirinhas || null,
           created_at: new Date().toISOString()
         };
 
-        const novoSaldo = novaTransacao.tipo === 'gasto' 
-          ? Number(previousData.carteira.saldo_atual) - novaTransacao.valor
-          : Number(previousData.carteira.saldo_atual) + novaTransacao.valor;
+        const isCredito = ['recebido', 'bonus', 'transferencia_p2p_entrada'].includes(novaTransacao.tipo);
+        const novoSaldo = isCredito
+          ? Number(previousData.carteira.saldo_atual) + novaTransacao.valor
+          : Number(previousData.carteira.saldo_atual) - novaTransacao.valor;
 
-        const novoTotalRecebido = (novaTransacao.tipo === 'recebido' || novaTransacao.tipo === 'bonus')
+        const novoTotalRecebido = isCredito
           ? Number(previousData.carteira.total_recebido) + novaTransacao.valor
           : Number(previousData.carteira.total_recebido);
 
-        const novoTotalGasto = novaTransacao.tipo === 'gasto'
+        const novoTotalGasto = !isCredito
           ? Number(previousData.carteira.total_gasto) + novaTransacao.valor
           : Number(previousData.carteira.total_gasto);
 
@@ -210,8 +218,9 @@ export const useCarteira = () => {
       }
     },
     onSuccess: () => {
-      // Invalidar e refazer query após sucesso
+      // Invalidar queries relacionadas após sucesso
       queryClient.invalidateQueries({ queryKey: ['carteira', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
       
       toast({
         title: "Transação Realizada",
@@ -269,12 +278,15 @@ export const useCarteira = () => {
     transacoes: Transacao[], 
     userId: string
   ) => {
+    const tiposCredito = ['recebido', 'bonus', 'transferencia_p2p_entrada'];
+    const tiposDebito = ['gasto', 'queima', 'transferencia_p2p_saida', 'taxa'];
+    
     const totalRecebido = transacoes
-      .filter(t => t.tipo === 'recebido' || t.tipo === 'bonus')
+      .filter(t => tiposCredito.includes(t.tipo))
       .reduce((total, t) => total + Number(t.valor), 0);
     
     const totalGasto = transacoes
-      .filter(t => t.tipo === 'gasto')
+      .filter(t => tiposDebito.includes(t.tipo))
       .reduce((total, t) => total + Number(t.valor), 0);
     
     const saldoCalculado = totalRecebido - totalGasto;
@@ -303,11 +315,13 @@ export const useCarteira = () => {
   };
 
   const adicionarTransacao = async (
-    tipo: 'recebido' | 'gasto' | 'bonus',
+    tipo: 'recebido' | 'gasto' | 'bonus' | 'compra' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa',
     valor: number,
     descricao: string,
     itemId?: string,
-    usuarioOrigem?: string
+    usuarioOrigem?: string,
+    cotacaoUtilizada?: number,
+    quantidadeGirinhas?: number
   ) => {
     try {
       await adicionarTransacaoMutation.mutateAsync({
@@ -315,7 +329,9 @@ export const useCarteira = () => {
         valor,
         descricao,
         itemId,
-        usuarioOrigem
+        usuarioOrigem,
+        cotacaoUtilizada,
+        quantidadeGirinhas
       });
       return true;
     } catch {

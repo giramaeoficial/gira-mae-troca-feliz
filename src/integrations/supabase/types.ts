@@ -151,6 +151,21 @@ export type Database = {
           },
         ]
       }
+      config_sistema: {
+        Row: {
+          chave: string
+          valor: Json | null
+        }
+        Insert: {
+          chave: string
+          valor?: Json | null
+        }
+        Update: {
+          chave?: string
+          valor?: Json | null
+        }
+        Relationships: []
+      }
       configuracoes_bonus: {
         Row: {
           ativo: boolean
@@ -229,6 +244,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cotacao_girinhas: {
+        Row: {
+          cotacao_atual: number
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          volume_24h: number | null
+        }
+        Insert: {
+          cotacao_atual?: number
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          volume_24h?: number | null
+        }
+        Update: {
+          cotacao_atual?: number
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          volume_24h?: number | null
+        }
+        Relationships: []
       }
       escolas_inep: {
         Row: {
@@ -420,6 +459,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      historico_cotacao: {
+        Row: {
+          cotacao: number
+          created_at: string | null
+          evento: string | null
+          id: string
+          volume_periodo: number | null
+        }
+        Insert: {
+          cotacao: number
+          created_at?: string | null
+          evento?: string | null
+          id?: string
+          volume_periodo?: number | null
+        }
+        Update: {
+          cotacao?: number
+          created_at?: string | null
+          evento?: string | null
+          id?: string
+          volume_periodo?: number | null
+        }
+        Relationships: []
       }
       indicacoes: {
         Row: {
@@ -718,6 +781,7 @@ export type Database = {
           reputacao: number | null
           saldo_girinhas: number | null
           telefone: string | null
+          ultimo_calculo_cotacao: string | null
           updated_at: string | null
           username: string
         }
@@ -741,6 +805,7 @@ export type Database = {
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
+          ultimo_calculo_cotacao?: string | null
           updated_at?: string | null
           username: string
         }
@@ -764,10 +829,46 @@ export type Database = {
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
+          ultimo_calculo_cotacao?: string | null
           updated_at?: string | null
           username?: string
         }
         Relationships: []
+      }
+      queimas_girinhas: {
+        Row: {
+          created_at: string | null
+          id: string
+          motivo: string | null
+          quantidade: number
+          transacao_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          quantidade: number
+          transacao_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          motivo?: string | null
+          quantidade?: number
+          transacao_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queimas_girinhas_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservas: {
         Row: {
@@ -863,30 +964,36 @@ export type Database = {
       }
       transacoes: {
         Row: {
+          cotacao_utilizada: number | null
           created_at: string
           descricao: string
           id: string
           item_id: string | null
+          quantidade_girinhas: number | null
           tipo: string
           user_id: string
           usuario_origem: string | null
           valor: number
         }
         Insert: {
+          cotacao_utilizada?: number | null
           created_at?: string
           descricao: string
           id?: string
           item_id?: string | null
+          quantidade_girinhas?: number | null
           tipo: string
           user_id: string
           usuario_origem?: string | null
           valor: number
         }
         Update: {
+          cotacao_utilizada?: number | null
           created_at?: string
           descricao?: string
           id?: string
           item_id?: string | null
+          quantidade_girinhas?: number | null
           tipo?: string
           user_id?: string
           usuario_origem?: string | null
@@ -898,6 +1005,51 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transferencias_girinhas: {
+        Row: {
+          created_at: string | null
+          destinatario_id: string | null
+          id: string
+          quantidade: number
+          remetente_id: string | null
+          status: string | null
+          taxa_cobrada: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          destinatario_id?: string | null
+          id?: string
+          quantidade: number
+          remetente_id?: string | null
+          status?: string | null
+          taxa_cobrada?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          destinatario_id?: string | null
+          id?: string
+          quantidade?: number
+          remetente_id?: string | null
+          status?: string | null
+          taxa_cobrada?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transferencias_girinhas_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_girinhas_remetente_id_fkey"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -919,6 +1071,10 @@ export type Database = {
           username: string
           avatar_url: string
         }[]
+      }
+      calcular_cotacao_dinamica: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       cancelar_reserva: {
         Args: { p_reserva_id: string; p_usuario_id: string }
@@ -998,6 +1154,10 @@ export type Database = {
         Args: { p_reserva_id: string }
         Returns: undefined
       }
+      queimar_girinhas: {
+        Args: { p_user_id: string; p_quantidade: number; p_motivo: string }
+        Returns: boolean
+      }
       registrar_indicacao: {
         Args: { p_indicador_id: string; p_indicado_id: string }
         Returns: boolean
@@ -1005,6 +1165,14 @@ export type Database = {
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
+      }
+      transferir_girinhas_p2p: {
+        Args: {
+          p_remetente_id: string
+          p_destinatario_id: string
+          p_quantidade: number
+        }
+        Returns: string
       }
       verificar_metas_usuario: {
         Args: { p_user_id: string }
