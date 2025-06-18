@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -174,6 +175,7 @@ export const useCarteira = () => {
           usuario_origem: novaTransacao.usuarioOrigem || null,
           cotacao_utilizada: novaTransacao.cotacaoUtilizada || null,
           quantidade_girinhas: novaTransacao.quantidadeGirinhas || null,
+          data_expiracao: null,
           created_at: new Date().toISOString()
         };
 
