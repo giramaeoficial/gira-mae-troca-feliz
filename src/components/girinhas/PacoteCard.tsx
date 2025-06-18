@@ -10,10 +10,10 @@ type PacoteGirinhas = Tables<'pacotes_girinhas'>;
 interface PacoteCardProps {
   pacote: PacoteGirinhas;
   onComprar: (pacoteId: string) => void;
-  loading?: boolean;
+  isLoading?: boolean; // Loading específico para este pacote
 }
 
-const PacoteCard = ({ pacote, onComprar, loading = false }: PacoteCardProps) => {
+const PacoteCard = ({ pacote, onComprar, isLoading = false }: PacoteCardProps) => {
   const bonusGirinhas = pacote.valor_girinhas - (pacote.valor_real / 1);
   const isPopular = pacote.desconto_percentual >= 10;
   const isMelhorOferta = pacote.desconto_percentual >= 15;
@@ -116,9 +116,9 @@ const PacoteCard = ({ pacote, onComprar, loading = false }: PacoteCardProps) => 
             'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600'
           } text-white font-bold transform hover:scale-105 transition-all duration-200`}
           onClick={() => onComprar(pacote.id)}
-          disabled={loading}
+          disabled={isLoading}
         >
-          {loading ? 'Processando...' : 'Comprar Agora! 🚀'}
+          {isLoading ? 'Processando...' : 'Comprar Agora! 🚀'}
         </Button>
       </CardFooter>
     </Card>

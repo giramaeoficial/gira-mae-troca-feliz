@@ -11,7 +11,7 @@ export const usePacotesGirinhas = () => {
   const [pacotes, setPacotes] = useState<PacoteGirinhas[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isComprandoGirinhas, setIsComprandoGirinhas] = useState(false);
+  const [loadingPacotes, setLoadingPacotes] = useState<Set<string>>(new Set()); // Loading por pacote
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -38,7 +38,8 @@ export const usePacotesGirinhas = () => {
   };
 
   const comprarGirinhas = async (pacoteId: string) => {
-    setIsComprandoGirinhas(true);
+    // Adicionar este pacote ao set de loading
+    setLoadingPacotes(prev => new Set([...prev, pacoteId]));
     
     try {
       // Buscar dados do pacote
@@ -143,8 +144,18 @@ export const usePacotesGirinhas = () => {
       
       return false;
     } finally {
-      setIsComprandoGirinhas(false);
+      // Remover este pacote do set de loading
+      setLoadingPacotes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(pacoteId);
+        return newSet;
+      });
     }
+  };
+
+  // Função para verificar se um pacote específico está carregando
+  const isPacoteLoading = (pacoteId: string) => {
+    return loadingPacotes.has(pacoteId);
   };
 
   useEffect(() => {
@@ -155,8 +166,8 @@ export const usePacotesGirinhas = () => {
     pacotes,
     loading,
     error,
-    isComprandoGirinhas,
     comprarGirinhas,
+    isPacoteLoading,
     refetch: fetchPacotes
   };
 };

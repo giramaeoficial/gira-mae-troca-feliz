@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,10 +17,9 @@ import { useTrocas } from "@/hooks/useTrocas";
 
 const SistemaGirinhas = () => {
   const { toast } = useToast();
-  const [loadingCompra, setLoadingCompra] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("comprar");
   
-  const { pacotes, loading: loadingPacotes } = usePacotesGirinhas();
+  const { pacotes, loading: loadingPacotes, comprarGirinhas, isPacoteLoading } = usePacotesGirinhas();
   const { metas, loading: loadingMetas, getProgressoMeta, getProximaMeta, getMetasConquistadas, getTotalBonusRecebido } = useMetas();
   const { compras, loading: loadingCompras } = useComprasGirinhas();
   const { saldo, comprarPacote } = useCarteira(); // ✅ Usando do context centralizado
@@ -32,11 +30,8 @@ const SistemaGirinhas = () => {
   const metasConquistadas = getMetasConquistadas();
 
   const handleComprarPacote = async (pacoteId: string) => {
-    setLoadingCompra(pacoteId);
-    
     try {
-      // ✅ Usar método centralizado do context
-      const sucesso = await comprarPacote(pacoteId);
+      const sucesso = await comprarGirinhas(pacoteId);
       
       if (sucesso) {
         toast({
@@ -50,8 +45,6 @@ const SistemaGirinhas = () => {
         description: "Não foi possível processar a compra. Tente novamente.",
         variant: "destructive",
       });
-    } finally {
-      setLoadingCompra(null);
     }
   };
 
@@ -175,7 +168,7 @@ const SistemaGirinhas = () => {
                     key={pacote.id}
                     pacote={pacote}
                     onComprar={handleComprarPacote}
-                    loading={loadingCompra === pacote.id}
+                    isLoading={isPacoteLoading(pacote.id)}
                   />
                 ))}
               </div>

@@ -14,7 +14,7 @@ const CompraComImpacto: React.FC = () => {
   const [cotacaoSimulada, setCotacaoSimulada] = useState<number | null>(null);
   
   const { cotacao } = useGirinhasSystem();
-  const { pacotes, comprarGirinhas, isComprandoGirinhas } = usePacotesGirinhas();
+  const { pacotes, comprarGirinhas, isPacoteLoading } = usePacotesGirinhas();
 
   // Simular impacto na cotação
   useEffect(() => {
@@ -77,11 +77,11 @@ const CompraComImpacto: React.FC = () => {
                   </div>
                   <Button
                     onClick={() => handleComprarPacote(pacote.id)}
-                    disabled={isComprandoGirinhas}
+                    disabled={isPacoteLoading(pacote.id)}
                     className="w-full"
                     size="sm"
                   >
-                    Comprar
+                    {isPacoteLoading(pacote.id) ? 'Processando...' : 'Comprar'}
                   </Button>
                 </div>
               </div>
@@ -145,18 +145,12 @@ const CompraComImpacto: React.FC = () => {
 
               <Button
                 onClick={() => {/* Implementar compra customizada */}}
-                disabled={isComprandoGirinhas || !quantidadeCustom}
+                disabled={!quantidadeCustom}
                 className="w-full"
                 size="lg"
               >
-                {isComprandoGirinhas ? (
-                  <>Processando...</>
-                ) : (
-                  <>
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Comprar {quantidadeCustom} Girinhas
-                  </>
-                )}
+                <ShoppingCart className="w-4 h-4 mr-2" />
+                Comprar {quantidadeCustom} Girinhas
               </Button>
             </div>
           )}
