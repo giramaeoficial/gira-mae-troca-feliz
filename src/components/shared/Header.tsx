@@ -123,17 +123,6 @@ const Header = ({ activePage }: HeaderProps) => {
                 </Link>
 
                 <Link
-                  to="/sistema-girinhas"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activePage === "sistema-girinhas"
-                      ? "bg-primary text-primary-foreground"
-                      : "text-gray-600 hover:text-primary hover:bg-primary/10"
-                  }`}
-                >
-                  <span>Girinhas</span>
-                </Link>
-
-                <Link
                   to="/indicacoes"
                   className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     activePage === "indicacoes"
@@ -196,12 +185,6 @@ const Header = ({ activePage }: HeaderProps) => {
                         <Link to="/carteira" className="flex items-center">
                           <Wallet className="mr-2 h-4 w-4" />
                           <span>Carteira</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/sistema-girinhas" className="flex items-center">
-                          <ShoppingCart className="mr-2 h-4 w-4" />
-                          <span>Sistema Girinhas</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
@@ -347,14 +330,6 @@ const Header = ({ activePage }: HeaderProps) => {
                         onClick={() => setIsMenuOpen(false)}
                       >
                         Carteira
-                      </Link>
-                      
-                      <Link
-                        to="/sistema-girinhas"
-                        className="flex items-center px-3 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md transition-colors min-h-[44px]"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Sistema Girinhas
                       </Link>
 
                       <Link
