@@ -15,21 +15,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { Database } from "@/integrations/supabase/types";
 
-interface UserProfile {
-  id: string;
-  nome: string | null;
-  email: string | null;
-  username: string | null;
-  avatar_url: string | null;
-  reputacao: number | null;
-  created_at: string;
-  carteiras: {
-    saldo_atual: number;
-    total_recebido: number;
-    total_gasto: number;
-  }[];
-  transacoes: { id: string; created_at: string }[];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+type Carteira = Database['public']['Tables']['carteiras']['Row'];
+type Transacao = Database['public']['Tables']['transacoes']['Row'];
+
+interface UserProfile extends Profile {
+  carteiras?: Carteira[];
+  transacoes?: Pick<Transacao, 'id' | 'created_at'>[];
 }
 
 const UserManagement = () => {
@@ -44,7 +38,7 @@ const UserManagement = () => {
         .from('profiles')
         .select(`
           *,
-          carteiras!inner(saldo_atual, total_recebido, total_gasto),
+          carteiras(saldo_atual, total_recebido, total_gasto),
           transacoes(id, created_at)
         `)
         .order('created_at', { ascending: false });
@@ -55,7 +49,10 @@ const UserManagement = () => {
 
       const { data, error } = await query.limit(50);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
       return data || [];
     },
     refetchInterval: 30000,
@@ -220,7 +217,7 @@ const UserManagement = () => {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                        {user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                       </div>
                     </TableCell>
                     <TableCell>
