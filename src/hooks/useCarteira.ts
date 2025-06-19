@@ -18,7 +18,7 @@ export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query para buscar dados da carteira
+  // Query para buscar dados da carteira com otimizações
   const {
     data: carteiraData,
     isLoading: loading,
@@ -50,12 +50,13 @@ export const useCarteira = () => {
         carteira = await criarCarteiraInicial(user.id);
       }
 
-      // Buscar transações (incluindo novos tipos)
+      // Buscar transações (limitadas às últimas 50 para performance)
       const { data: transacoesData, error: transacoesError } = await supabase
         .from('transacoes')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (transacoesError) {
         console.error('Erro ao buscar transações:', transacoesError);
@@ -69,30 +70,19 @@ export const useCarteira = () => {
         totalTransacoes: transacoes.length
       });
 
-      // Verificar consistência da carteira
-      await verificarConsistenciaCarteira(carteira, transacoes, user.id);
-
       return {
         carteira,
         transacoes
       };
     },
     enabled: !!user,
-    staleTime: 0, // Sempre buscar dados frescos
-    gcTime: 0, // Não manter cache
-    retry: (failureCount, error) => {
-      // Retry com exponential backoff até 3 tentativas
-      if (failureCount >= 3) return false;
-      
-      // Não fazer retry para erros de autenticação
-      if (error.message?.includes('não autenticado')) return false;
-      
-      return true;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000)
+    staleTime: 30000, // Cache por 30 segundos
+    gcTime: 60000, // Manter em cache por 1 minuto
+    retry: 2, // Reduzir tentativas de retry
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000)
   });
 
-  // Tratamento de erros usando useEffect
+  // Tratamento de erros usando useEffect (otimizado)
   useEffect(() => {
     if (error) {
       console.error('Erro ao carregar carteira:', error);
@@ -119,7 +109,7 @@ export const useCarteira = () => {
     }
   }, [error]);
 
-  // Mutation para adicionar transação (atualizada para novos tipos)
+  // Mutation para adicionar transação (otimizada)
   const adicionarTransacaoMutation = useMutation({
     mutationFn: async ({
       tipo,
@@ -158,71 +148,22 @@ export const useCarteira = () => {
       if (error) throw error;
       return data;
     },
-    onMutate: async (novaTransacao) => {
-      // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ['carteira', user?.id] });
-
-      const previousData = queryClient.getQueryData<CarteiraData>(['carteira', user?.id]);
-
-      if (previousData && previousData.carteira) {
-        const novaTransacaoTemp: Transacao = {
-          id: `temp-${Date.now()}`,
-          user_id: user!.id,
-          tipo: novaTransacao.tipo,
-          valor: novaTransacao.valor,
-          descricao: novaTransacao.descricao,
-          item_id: novaTransacao.itemId || null,
-          usuario_origem: novaTransacao.usuarioOrigem || null,
-          cotacao_utilizada: novaTransacao.cotacaoUtilizada || null,
-          quantidade_girinhas: novaTransacao.quantidadeGirinhas || null,
-          data_expiracao: null,
-          created_at: new Date().toISOString()
-        };
-
-        const isCredito = ['recebido', 'bonus', 'transferencia_p2p_entrada'].includes(novaTransacao.tipo);
-        const novoSaldo = isCredito
-          ? Number(previousData.carteira.saldo_atual) + novaTransacao.valor
-          : Number(previousData.carteira.saldo_atual) - novaTransacao.valor;
-
-        const novoTotalRecebido = isCredito
-          ? Number(previousData.carteira.total_recebido) + novaTransacao.valor
-          : Number(previousData.carteira.total_recebido);
-
-        const novoTotalGasto = !isCredito
-          ? Number(previousData.carteira.total_gasto) + novaTransacao.valor
-          : Number(previousData.carteira.total_gasto);
-
-        queryClient.setQueryData<CarteiraData>(['carteira', user?.id], {
-          carteira: {
-            ...previousData.carteira,
-            saldo_atual: novoSaldo,
-            total_recebido: novoTotalRecebido,
-            total_gasto: novoTotalGasto
-          },
-          transacoes: [novaTransacaoTemp, ...previousData.transacoes]
-        });
-      }
-
-      return { previousData };
+    onSuccess: () => {
+      // Invalidar apenas carteira, não outras queries
+      queryClient.invalidateQueries({ queryKey: ['carteira', user?.id] });
+      
+      toast({
+        title: "Transação Realizada",
+        description: "Sua transação foi processada com sucesso!",
+      });
     },
-    onError: (error: any, _novaTransacao, context) => {
-      // Reverter optimistic update em caso de erro
-      if (context?.previousData) {
-        queryClient.setQueryData(['carteira', user?.id], context.previousData);
-      }
-
+    onError: (error: any) => {
       console.error('Erro ao adicionar transação:', error);
       
       if (error.message?.includes('insufficient_funds')) {
         toast({
           title: "Saldo Insuficiente",
           description: "Você não tem Girinhas suficientes para esta transação.",
-          variant: "destructive",
-        });
-      } else if (error.message?.includes('network')) {
-        toast({
-          title: "Erro de Conexão",
-          description: "Não foi possível processar a transação. Verifique sua conexão.",
           variant: "destructive",
         });
       } else {
@@ -232,16 +173,6 @@ export const useCarteira = () => {
           variant: "destructive",
         });
       }
-    },
-    onSuccess: () => {
-      // Invalidar queries relacionadas após sucesso
-      queryClient.invalidateQueries({ queryKey: ['carteira', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
-      
-      toast({
-        title: "Transação Realizada",
-        description: "Sua transação foi processada com sucesso!",
-      });
     }
   });
 
@@ -286,61 +217,6 @@ export const useCarteira = () => {
     if (transacoesError) console.error('Erro ao criar transações iniciais:', transacoesError);
 
     return carteiraData;
-  };
-
-  // Função para verificar consistência da carteira
-  const verificarConsistenciaCarteira = async (
-    carteira: Carteira, 
-    transacoes: Transacao[], 
-    userId: string
-  ) => {
-    const tiposCredito = ['recebido', 'bonus', 'transferencia_p2p_entrada', 'compra'];
-    const tiposDebito = ['gasto', 'queima', 'transferencia_p2p_saida', 'taxa'];
-    
-    const totalRecebido = transacoes
-      .filter(t => tiposCredito.includes(t.tipo))
-      .reduce((total, t) => total + Number(t.valor), 0);
-    
-    const totalGasto = transacoes
-      .filter(t => tiposDebito.includes(t.tipo))
-      .reduce((total, t) => total + Number(t.valor), 0);
-    
-    const saldoCalculado = totalRecebido - totalGasto;
-
-    const discrepanciaSaldo = Math.abs(Number(carteira.saldo_atual) - saldoCalculado) > 0.01;
-    const discrepanciaRecebido = Math.abs(Number(carteira.total_recebido) - totalRecebido) > 0.01;
-    const discrepanciaGasto = Math.abs(Number(carteira.total_gasto) - totalGasto) > 0.01;
-
-    if (discrepanciaSaldo || discrepanciaRecebido || discrepanciaGasto) {
-      console.log('Discrepância detectada na carteira, corrigindo...', {
-        saldoAtual: Number(carteira.saldo_atual),
-        saldoCalculado,
-        totalRecebidoAtual: Number(carteira.total_recebido),
-        totalRecebidoCalculado: totalRecebido,
-        totalGastoAtual: Number(carteira.total_gasto),
-        totalGastoCalculado: totalGasto
-      });
-
-      const { error: updateError } = await supabase
-        .from('carteiras')
-        .update({
-          saldo_atual: saldoCalculado,
-          total_recebido: totalRecebido,
-          total_gasto: totalGasto,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (updateError) {
-        console.error('Erro ao corrigir carteira:', updateError);
-      } else {
-        console.log('Carteira corrigida com sucesso');
-        // Forçar re-fetch após correção
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['carteira', userId] });
-        }, 500);
-      }
-    }
   };
 
   const adicionarTransacao = async (

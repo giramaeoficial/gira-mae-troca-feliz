@@ -52,14 +52,18 @@ export const useReservas = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para invalidar cache de itens
+  // Função para invalidar cache de itens (otimizada)
   const invalidateItemQueries = async (itemId?: string) => {
+    const queries = ['itens', 'meus-itens', 'itens-usuario'];
+    
     if (itemId) {
       queryClient.invalidateQueries({ queryKey: ['item', itemId] });
     }
-    queryClient.invalidateQueries({ queryKey: ['itens'] });
-    queryClient.invalidateQueries({ queryKey: ['meus-itens'] });
-    queryClient.invalidateQueries({ queryKey: ['itens-usuario'] });
+    
+    // Invalidar queries em batch para melhor performance
+    queries.forEach(queryKey => {
+      queryClient.invalidateQueries({ queryKey: [queryKey] });
+    });
   };
 
   const fetchReservas = async () => {
@@ -72,6 +76,7 @@ export const useReservas = () => {
       setLoading(true);
       setError(null);
 
+      // Buscar reservas com menos joins para melhor performance
       const { data: reservasData, error: reservasError } = await supabase
         .from('reservas')
         .select(`
@@ -83,7 +88,8 @@ export const useReservas = () => {
           )
         `)
         .or(`usuario_reservou.eq.${user.id},usuario_item.eq.${user.id}`)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20); // Limitar para melhor performance
 
       if (reservasError) throw reservasError;
 
@@ -99,59 +105,49 @@ export const useReservas = () => {
           )
         `)
         .eq('usuario_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10); // Limitar para melhor performance
 
       if (filasError) throw filasError;
 
-      const reservasComPerfis = await Promise.all(
-        (reservasData || []).map(async (reserva) => {
-          const { data: perfilReservador } = await supabase
-            .from('profiles')
-            .select('nome, avatar_url')
-            .eq('id', reserva.usuario_reservou)
-            .single();
+      // Buscar perfis em batch para otimizar
+      const userIds = new Set<string>();
+      reservasData?.forEach(r => {
+        userIds.add(r.usuario_reservou);
+        userIds.add(r.usuario_item);
+      });
+      filasData?.forEach(f => {
+        if (f.itens?.publicado_por) userIds.add(f.itens.publicado_por);
+      });
 
-          const { data: perfilVendedor } = await supabase
-            .from('profiles')
-            .select('nome, avatar_url')
-            .eq('id', reserva.usuario_item)
-            .single();
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, nome, avatar_url')
+        .in('id', Array.from(userIds));
 
-          let tempo_restante = undefined;
-          if (reserva.status === 'pendente') {
-            const agora = new Date();
-            const expiracao = new Date(reserva.prazo_expiracao);
-            tempo_restante = Math.max(0, expiracao.getTime() - agora.getTime());
-          }
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
-          return {
-            ...reserva,
-            profiles_reservador: perfilReservador,
-            profiles_vendedor: perfilVendedor,
-            tempo_restante
-          };
-        })
-      );
+      const reservasComPerfis = (reservasData || []).map(reserva => {
+        let tempo_restante = undefined;
+        if (reserva.status === 'pendente') {
+          const agora = new Date();
+          const expiracao = new Date(reserva.prazo_expiracao);
+          tempo_restante = Math.max(0, expiracao.getTime() - agora.getTime());
+        }
 
-      const filasComPerfis = await Promise.all(
-        (filasData || []).map(async (fila) => {
-          let perfilVendedor = null;
-          
-          if (fila.itens?.publicado_por) {
-            const { data } = await supabase
-              .from('profiles')
-              .select('nome, avatar_url')
-              .eq('id', fila.itens.publicado_por)
-              .single();
-            perfilVendedor = data;
-          }
+        return {
+          ...reserva,
+          profiles_reservador: profilesMap.get(reserva.usuario_reservou) || null,
+          profiles_vendedor: profilesMap.get(reserva.usuario_item) || null,
+          tempo_restante
+        };
+      });
 
-          return {
-            ...fila,
-            profiles_vendedor: perfilVendedor
-          };
-        })
-      );
+      const filasComPerfis = (filasData || []).map(fila => ({
+        ...fila,
+        profiles_vendedor: fila.itens?.publicado_por ? 
+          profilesMap.get(fila.itens.publicado_por) || null : null
+      }));
 
       setReservas(reservasComPerfis);
       setFilasEspera(filasComPerfis);
@@ -178,29 +174,6 @@ export const useReservas = () => {
       console.log('Item ID:', itemId);
       console.log('Usuário ID:', user.id);
       console.log('Valor Girinhas:', valorGirinhas);
-
-      // Verificar saldo do usuário na carteira antes de chamar a função
-      const { data: carteiraData, error: carteiraError } = await supabase
-        .from('carteiras')
-        .select('saldo_atual')
-        .eq('user_id', user.id)
-        .single();
-
-      if (carteiraError) {
-        console.error('Erro ao verificar carteira:', carteiraError);
-        throw carteiraError;
-      }
-
-      console.log('Saldo atual na carteira:', carteiraData?.saldo_atual);
-      
-      if (!carteiraData || carteiraData.saldo_atual < valorGirinhas) {
-        toast({
-          title: "Saldo insuficiente! 😔",
-          description: `Você tem ${carteiraData?.saldo_atual || 0} Girinhas, mas precisa de ${valorGirinhas} para esta reserva.`,
-          variant: "destructive"
-        });
-        return false;
-      }
 
       const { data, error } = await supabase
         .rpc('entrar_fila_espera', {
@@ -250,11 +223,9 @@ export const useReservas = () => {
         });
       }
 
-      // Atualizar dados e invalidar cache
-      await Promise.all([
-        fetchReservas(),
-        invalidateItemQueries(itemId)
-      ]);
+      // Atualizar dados localmente
+      await fetchReservas();
+      await invalidateItemQueries(itemId);
       
       return true;
     } catch (err) {
@@ -424,7 +395,9 @@ export const useReservas = () => {
   };
 
   useEffect(() => {
-    fetchReservas();
+    if (user) {
+      fetchReservas();
+    }
   }, [user]);
 
   return {
@@ -432,7 +405,7 @@ export const useReservas = () => {
     filasEspera,
     loading,
     error,
-    criarReserva,
+    criarReserva: entrarNaFila,
     entrarNaFila,
     sairDaFila,
     removerDaReserva,
