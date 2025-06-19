@@ -15,6 +15,17 @@ interface TransferenciaP2P {
   quantidade: number;
 }
 
+interface SimulacaoMarkup {
+  cotacao_atual: number;
+  markup_atual: number;
+  preco_com_markup_atual: number;
+  preco_minimo: number;
+  preco_maximo: number;
+  precisa_ajuste: boolean;
+  markup_necessario: number;
+  preco_final: number;
+}
+
 export const useGirinhasSystem = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -40,6 +51,30 @@ export const useGirinhasSystem = () => {
     },
     staleTime: 30000, // 30 segundos
     refetchInterval: 60000, // 1 minuto
+  });
+
+  // Query para preço de emissão atual
+  const { data: precoEmissao, refetch: refetchPrecoEmissao } = useQuery({
+    queryKey: ['preco-emissao'],
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await supabase.rpc('obter_preco_emissao');
+      if (error) throw error;
+      return Number(data);
+    },
+    staleTime: 30000,
+    refetchInterval: 60000,
+  });
+
+  // Query para simulação de markup
+  const { data: simulacaoMarkup } = useQuery({
+    queryKey: ['simulacao-markup'],
+    queryFn: async (): Promise<SimulacaoMarkup[]> => {
+      const { data, error } = await supabase.rpc('simular_preco_emissao');
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 30000,
+    refetchInterval: 60000,
   });
 
   // Query para histórico de cotação
@@ -101,37 +136,56 @@ export const useGirinhasSystem = () => {
   // Mutation para recalcular cotação
   const recalcularCotacaoMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/supabase/functions/v1/calcular-cotacao', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) throw new Error('Erro ao calcular cotação');
-      return response.json();
+      const { data, error } = await supabase.rpc('calcular_cotacao_dinamica');
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
       queryClient.invalidateQueries({ queryKey: ['historico-cotacao'] });
+      queryClient.invalidateQueries({ queryKey: ['preco-emissao'] });
+      queryClient.invalidateQueries({ queryKey: ['simulacao-markup'] });
+    },
+  });
+
+  // Mutation para ajustar markup manualmente
+  const ajustarMarkupMutation = useMutation({
+    mutationFn: async (novoMarkup: number) => {
+      const { data, error } = await supabase.rpc('ajustar_markup_emissao', {
+        novo_markup: novoMarkup
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['preco-emissao'] });
+      queryClient.invalidateQueries({ queryKey: ['simulacao-markup'] });
+      
+      toast({
+        title: "Markup ajustado!",
+        description: `Novo markup: ${data.markup_novo}% - Preço resultante: R$ ${data.preco_resultante}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao ajustar markup",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   // Mutation para transferência P2P
   const transferirP2PMutation = useMutation({
     mutationFn: async (dados: TransferenciaP2P) => {
-      const response = await fetch('/supabase/functions/v1/transferir-p2p', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dados),
+      const { data, error } = await supabase.rpc('transferir_girinhas_p2p', {
+        p_remetente_id: user?.id,
+        p_destinatario_id: dados.destinatario_id,
+        p_quantidade: dados.quantidade
       });
 
-      if (!response.ok) throw new Error('Erro na transferência');
-      return response.json();
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['carteira'] });
@@ -155,6 +209,8 @@ export const useGirinhasSystem = () => {
   return {
     // Dados
     cotacao,
+    precoEmissao,
+    simulacaoMarkup,
     historico,
     transferencias,
     queimas,
@@ -162,10 +218,13 @@ export const useGirinhasSystem = () => {
     // Estados
     loadingCotacao,
     isTransferindo: transferirP2PMutation.isPending,
+    isAjustandoMarkup: ajustarMarkupMutation.isPending,
     
     // Ações
     recalcularCotacao: recalcularCotacaoMutation.mutate,
+    ajustarMarkup: ajustarMarkupMutation.mutate,
     transferirP2P: transferirP2PMutation.mutate,
     refetchCotacao,
+    refetchPrecoEmissao,
   };
 };

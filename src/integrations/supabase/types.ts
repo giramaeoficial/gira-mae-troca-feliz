@@ -1062,6 +1062,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ajustar_markup_emissao: {
+        Args: { novo_markup: number }
+        Returns: Json
+      }
       atualizar_reputacao: {
         Args: { p_usuario_id: string; p_nova_nota: number }
         Returns: undefined
@@ -1079,6 +1083,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      calcular_markup_para_preco_alvo: {
+        Args: { preco_alvo: number }
+        Returns: Json
+      }
       cancelar_reserva: {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
@@ -1086,6 +1094,25 @@ export type Database = {
       confirmar_entrega: {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
+      }
+      cotacao_atual: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cotacao_mercado: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      diagnostico_banda_cambial: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cotacao_marketplace: number
+          preco_venda: number
+          zona_atual: string
+          markup_aplicado: string
+          status_sistema: string
+          acao_recomendada: string
+        }[]
       }
       distribuir_girinhas_promocionais: {
         Args: {
@@ -1110,6 +1137,22 @@ export type Database = {
       inicializar_metas_usuario: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      mostrar_config_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          configuracao: string
+          valor_atual: string
+          descricao: string
+        }[]
+      }
+      obter_cotacao_atual: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      obter_cotacao_mercado: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       obter_data_expiracao: {
         Args: Record<PropertyKey, never>
@@ -1146,12 +1189,24 @@ export type Database = {
         Args: { p_usuario1_id: string; p_usuario2_id: string }
         Returns: string
       }
+      obter_preco_emissao: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      obter_preco_recompra_girinhas: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       obter_preco_venda_girinhas: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
       obter_valor_bonus: {
         Args: { p_tipo_bonus: string }
+        Returns: number
+      }
+      preco_emissao: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       processar_bonus_indicacao: {
@@ -1186,9 +1241,98 @@ export type Database = {
         Args: { p_indicador_id: string; p_indicado_id: string }
         Returns: boolean
       }
+      relatorio_banda_situacao: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cotacao_real: number
+          preco_venda: number
+          preco_recompra: number
+          zona_atual: string
+          markup_aplicado: string
+          status_sistema: string
+        }[]
+      }
+      relatorio_cotacao_detalhado: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cotacao_marketplace: number
+          preco_venda: number
+          preco_recompra: number
+          demanda_24h: number
+          emissao_24h: number
+          queima_24h: number
+          oferta_liquida: number
+          tendencia: string
+        }[]
+      }
+      relatorio_sistema_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cotacao_real: number
+          preco_venda: number
+          preco_recompra: number
+          limite_min: number
+          limite_max: number
+          markup_atual: number
+          status_sistema: string
+          configuracao_markup: string
+        }[]
+      }
+      relatorio_sistema_cotacao: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cotacao_real: number
+          preco_meta: number
+          preco_venda: number
+          preco_recompra: number
+          markup_aplicado: number
+          situacao_mercado: string
+          acao_sistema: string
+        }[]
+      }
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
+      }
+      simular_banda_cambial: {
+        Args: { cotacao_teste: number }
+        Returns: {
+          cotacao_simulada: number
+          preco_que_seria: number
+          markup_que_seria: number
+          zona_que_seria: string
+          explicacao: string
+        }[]
+      }
+      simular_markup_inteligente: {
+        Args: { cotacao_teste: number }
+        Returns: {
+          cotacao: number
+          markup_seria: number
+          preco_seria: number
+          explicacao: string
+        }[]
+      }
+      simular_preco_emissao: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cotacao_atual: number
+          markup_atual: number
+          preco_com_markup_atual: number
+          preco_minimo: number
+          preco_maximo: number
+          precisa_ajuste: boolean
+          markup_necessario: number
+          preco_final: number
+        }[]
+      }
+      testar_precos_tela: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          nome_funcao: string
+          valor_retornado: number
+          observacao: string
+        }[]
       }
       transferir_girinhas_p2p: {
         Args: {
