@@ -165,7 +165,10 @@ export const useGirinhasSystem = () => {
       });
 
       if (error) throw error;
-      return data as CompraSeguraResponse;
+      
+      // Converter o retorno Json para nossa interface
+      const resultado = data as unknown as CompraSeguraResponse;
+      return resultado;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['carteira'] });
@@ -209,7 +212,10 @@ export const useGirinhasSystem = () => {
         novo_markup: novoMarkup
       });
       if (error) throw error;
-      return data as AjusteMarkupResponse;
+      
+      // Converter o retorno Json para nossa interface
+      const resultado = data as unknown as AjusteMarkupResponse;
+      return resultado;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['preco-emissao'] });
