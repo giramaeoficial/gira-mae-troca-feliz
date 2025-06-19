@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -235,32 +234,80 @@ export const useGirinhasSystem = () => {
     },
   });
 
-  // Mutation para transferência P2P
+  // Mutation para transferência P2P - ATUALIZADA com melhor segurança
   const transferirP2PMutation = useMutation({
     mutationFn: async (dados: TransferenciaP2P) => {
-      const { data, error } = await supabase.rpc('transferir_girinhas_p2p', {
-        p_remetente_id: user?.id,
-        p_destinatario_id: dados.destinatario_id,
-        p_quantidade: dados.quantidade
+      if (!user) throw new Error('Usuário não autenticado');
+      
+      // Validações do frontend
+      if (!dados.destinatario_id || !dados.quantidade) {
+        throw new Error('Dados obrigatórios não informados');
+      }
+      
+      if (dados.quantidade <= 0) {
+        throw new Error('Quantidade deve ser maior que zero');
+      }
+      
+      if (dados.quantidade > 10000) {
+        throw new Error('Quantidade máxima: 10.000 Girinhas por transferência');
+      }
+      
+      // Usar edge function para maior segurança
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session?.access_token) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/transferir-p2p`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          destinatario_id: dados.destinatario_id,
+          quantidade: dados.quantidade
+        })
       });
-
-      if (error) throw error;
-      return data;
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Erro na transferência');
+      }
+      
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['carteira'] });
       queryClient.invalidateQueries({ queryKey: ['transferencias-p2p'] });
       queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
       
       toast({
-        title: "Transferência realizada!",
-        description: "Girinhas transferidas com sucesso.",
+        title: "✅ Transferência realizada!",
+        description: data.mensagem || "Girinhas transferidas com sucesso.",
       });
     },
     onError: (error: any) => {
+      console.error('Erro na transferência P2P:', error);
+      
+      let mensagemErro = "Erro na transferência. Tente novamente.";
+      
+      if (error.message?.includes('Saldo insuficiente')) {
+        mensagemErro = "Saldo insuficiente para esta transferência.";
+      } else if (error.message?.includes('não encontrado')) {
+        mensagemErro = "Destinatário não encontrado.";
+      } else if (error.message?.includes('Muitas transferências')) {
+        mensagemErro = "Muitas transferências recentes. Aguarde um momento.";
+      } else if (error.message?.includes('Sessão expirada')) {
+        mensagemErro = "Sua sessão expirou. Faça login novamente.";
+      } else if (error.message) {
+        mensagemErro = error.message;
+      }
+      
       toast({
-        title: "Erro na transferência",
-        description: error.message,
+        title: "❌ Erro na transferência",
+        description: mensagemErro,
         variant: "destructive",
       });
     },

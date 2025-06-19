@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Send, User, Calculator } from 'lucide-react';
+import { Send, User, Calculator, AlertTriangle } from 'lucide-react';
 import { useUserSearch } from '@/hooks/useUserSearch';
 import { useGirinhasSystem } from '../hooks/useGirinhasSystem';
 import { useCarteira } from '@/hooks/useCarteira';
+import { useConfigSistema } from '@/hooks/useConfigSistema';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const TransferenciaP2P: React.FC = () => {
   const [quantidade, setQuantidade] = useState('');
@@ -17,9 +19,11 @@ const TransferenciaP2P: React.FC = () => {
   const { searchUsers, users, isSearching } = useUserSearch();
   const { transferirP2P, isTransferindo } = useGirinhasSystem();
   const { saldo } = useCarteira();
+  const { taxaTransferencia, isLoadingConfig } = useConfigSistema();
 
-  const taxa = parseFloat(quantidade) * 0.01 || 0;
-  const valorLiquido = parseFloat(quantidade) - taxa || 0;
+  const valorQuantidade = parseFloat(quantidade) || 0;
+  const taxa = (valorQuantidade * taxaTransferencia) / 100;
+  const valorLiquido = valorQuantidade - taxa;
 
   const handleSearch = (value: string) => {
     setUsuarioDestino(value);
@@ -43,8 +47,9 @@ const TransferenciaP2P: React.FC = () => {
   };
 
   const canTransfer = usuarioSelecionado && 
-    parseFloat(quantidade) > 0 && 
-    parseFloat(quantidade) <= saldo;
+    valorQuantidade > 0 && 
+    valorQuantidade <= saldo &&
+    !isLoadingConfig;
 
   return (
     <Card className="border-0 shadow-lg">
@@ -55,6 +60,15 @@ const TransferenciaP2P: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Alerta de segurança */}
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            🔒 Transferências são processadas de forma segura pelo sistema. 
+            Verifique sempre o destinatário antes de confirmar.
+          </AlertDescription>
+        </Alert>
+
         {/* Busca de usuário */}
         <div className="space-y-2">
           <Label htmlFor="usuario">Para quem enviar?</Label>
@@ -126,12 +140,12 @@ const TransferenciaP2P: React.FC = () => {
             max={saldo}
           />
           <p className="text-sm text-gray-500">
-            Seu saldo: {saldo} Girinhas
+            Seu saldo: {saldo.toFixed(2)} Girinhas
           </p>
         </div>
 
         {/* Cálculo da taxa */}
-        {quantidade && parseFloat(quantidade) > 0 && (
+        {quantidade && valorQuantidade > 0 && (
           <div className="bg-purple-50 p-3 rounded-lg space-y-2">
             <div className="flex items-center gap-2 mb-2">
               <Calculator className="w-4 h-4 text-purple-600" />
@@ -140,10 +154,10 @@ const TransferenciaP2P: React.FC = () => {
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span>Valor a transferir:</span>
-                <span className="font-medium">{parseFloat(quantidade)} Girinhas</span>
+                <span className="font-medium">{valorQuantidade.toFixed(2)} Girinhas</span>
               </div>
               <div className="flex justify-between text-orange-600">
-                <span>Taxa (1%):</span>
+                <span>Taxa ({taxaTransferencia}%):</span>
                 <span className="font-medium">-{taxa.toFixed(2)} Girinhas</span>
               </div>
               <div className="flex justify-between border-t pt-1 font-bold text-purple-800">
@@ -154,6 +168,16 @@ const TransferenciaP2P: React.FC = () => {
           </div>
         )}
 
+        {/* Validações de erro */}
+        {valorQuantidade > saldo && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Saldo insuficiente. Você tem apenas {saldo.toFixed(2)} Girinhas.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Button
           onClick={handleTransferir}
           disabled={!canTransfer || isTransferindo}
@@ -161,19 +185,20 @@ const TransferenciaP2P: React.FC = () => {
           size="lg"
         >
           {isTransferindo ? (
-            <>Processando...</>
+            <>Processando transferência...</>
           ) : (
             <>
               <Send className="w-4 h-4 mr-2" />
-              Transferir Girinhas
+              Transferir {valorQuantidade.toFixed(2)} Girinhas
             </>
           )}
         </Button>
 
         <div className="text-xs text-gray-500 text-center space-y-1">
-          <p>• Taxa de 1% é aplicada em todas as transferências</p>
+          <p>• Taxa de {taxaTransferencia}% aplicada automaticamente</p>
           <p>• A taxa é queimada do sistema para controlar a inflação</p>
           <p>• Transferências são instantâneas e irreversíveis</p>
+          <p>• Sistema protegido contra manipulações e fraudes</p>
         </div>
       </CardContent>
     </Card>

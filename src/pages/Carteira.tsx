@@ -1,4 +1,3 @@
-
 import Header from "@/components/shared/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +10,12 @@ import CotacaoWidget from "@/modules/girinhas/components/CotacaoWidget";
 import TransferenciaP2P from "@/modules/girinhas/components/TransferenciaP2P";
 import CompraComImpacto from "@/modules/girinhas/components/CompraComImpacto";
 import ValidadeGirinhas from "@/components/carteira/ValidadeGirinhas";
+import { useConfigSistema } from "@/hooks/useConfigSistema";
 
 const Carteira = () => {
   const { carteira, transacoes, loading, saldo, totalRecebido, totalGasto } = useCarteira();
   const { expiracao } = useGirinhasExpiracao();
+  const { taxaTransferencia, taxaTransacao } = useConfigSistema();
 
   if (loading) {
     return (
@@ -179,7 +180,7 @@ const Carteira = () => {
               </TabsTrigger>
               <TabsTrigger value="transferir" className="flex items-center gap-2">
                 <Send className="w-4 h-4" />
-                Transferir
+                Transferir ({taxaTransferencia}%)
               </TabsTrigger>
             </TabsList>
 
@@ -250,7 +251,32 @@ const Carteira = () => {
             </TabsContent>
 
             <TabsContent value="transferir">
-              <TransferenciaP2P />
+              <div className="space-y-4">
+                {/* Info sobre taxas atuais */}
+                <Card className="border-0 shadow-lg bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Send className="w-4 h-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">Informações das Taxas</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-600">Taxa de Transferência P2P:</span>
+                        <span className="font-bold text-blue-800 ml-2">{taxaTransferencia}%</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-600">Taxa de Transação:</span>
+                        <span className="font-bold text-blue-800 ml-2">{taxaTransacao}%</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2">
+                      * Taxas configuradas pelo sistema para manter a economia equilibrada
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <TransferenciaP2P />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
