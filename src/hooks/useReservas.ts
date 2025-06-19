@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -175,6 +174,34 @@ export const useReservas = () => {
     }
 
     try {
+      console.log('=== DEBUG: Entrando na fila ===');
+      console.log('Item ID:', itemId);
+      console.log('Usuário ID:', user.id);
+      console.log('Valor Girinhas:', valorGirinhas);
+
+      // Verificar saldo do usuário na carteira antes de chamar a função
+      const { data: carteiraData, error: carteiraError } = await supabase
+        .from('carteiras')
+        .select('saldo_atual')
+        .eq('user_id', user.id)
+        .single();
+
+      if (carteiraError) {
+        console.error('Erro ao verificar carteira:', carteiraError);
+        throw carteiraError;
+      }
+
+      console.log('Saldo atual na carteira:', carteiraData?.saldo_atual);
+      
+      if (!carteiraData || carteiraData.saldo_atual < valorGirinhas) {
+        toast({
+          title: "Saldo insuficiente! 😔",
+          description: `Você tem ${carteiraData?.saldo_atual || 0} Girinhas, mas precisa de ${valorGirinhas} para esta reserva.`,
+          variant: "destructive"
+        });
+        return false;
+      }
+
       const { data, error } = await supabase
         .rpc('entrar_fila_espera', {
           p_item_id: itemId,
@@ -183,6 +210,8 @@ export const useReservas = () => {
         });
 
       if (error) {
+        console.error('Erro na função entrar_fila_espera:', error);
+        
         if (error.message.includes('Saldo insuficiente')) {
           toast({
             title: "Saldo insuficiente! 😔",
