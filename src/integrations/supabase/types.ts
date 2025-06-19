@@ -1125,6 +1125,15 @@ export type Database = {
           posicao_usuario: number
         }[]
       }
+      obter_girinhas_expiracao: {
+        Args: { p_user_id: string }
+        Returns: {
+          total_expirando_7_dias: number
+          total_expirando_30_dias: number
+          proxima_expiracao: string
+          detalhes_expiracao: Json
+        }[]
+      }
       obter_ou_criar_conversa: {
         Args: { p_reserva_id: string }
         Returns: string
@@ -1144,6 +1153,10 @@ export type Database = {
       processar_compra_girinhas: {
         Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
         Returns: string
+      }
+      processar_expiracao_girinhas: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       processar_proximo_fila: {
         Args: { p_item_id: string }

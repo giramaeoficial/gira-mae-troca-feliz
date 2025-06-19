@@ -141,11 +141,13 @@ const Header = ({ activePage }: HeaderProps) => {
             <div className="flex items-center space-x-4">
               {user ? (
                 <>
-                  {/* Saldo de Girinhas */}
-                  <Badge variant="secondary" className="text-sm font-medium bg-yellow-100 text-yellow-800">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    {saldo.toFixed(0)} Girinhas
-                  </Badge>
+                  {/* Saldo de Girinhas com indicador de expiração */}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-sm font-medium bg-yellow-100 text-yellow-800">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      {saldo.toFixed(0)} Girinhas
+                    </Badge>
+                  </div>
 
                   {/* User Dropdown */}
                   <DropdownMenu>

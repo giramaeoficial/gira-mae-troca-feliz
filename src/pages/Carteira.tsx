@@ -3,14 +3,18 @@ import Header from "@/components/shared/Header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, History, ShoppingCart, Send, Sparkles, TrendingUp } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Wallet, History, ShoppingCart, Send, Sparkles, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
 import { useCarteira } from "@/hooks/useCarteira";
+import { useGirinhasExpiracao } from "@/hooks/useGirinhasExpiracao";
 import CotacaoWidget from "@/modules/girinhas/components/CotacaoWidget";
 import TransferenciaP2P from "@/modules/girinhas/components/TransferenciaP2P";
 import CompraComImpacto from "@/modules/girinhas/components/CompraComImpacto";
+import ValidadeGirinhas from "@/components/carteira/ValidadeGirinhas";
 
 const Carteira = () => {
   const { carteira, transacoes, loading, saldo, totalRecebido, totalGasto } = useCarteira();
+  const { expiracao } = useGirinhasExpiracao();
 
   if (loading) {
     return (
@@ -63,9 +67,23 @@ const Carteira = () => {
             <p className="text-gray-600">Gerencie suas Girinhas, veja cotações e faça transferências</p>
           </div>
 
+          {/* Alerta global de expiração */}
+          {expiracao.total_expirando_30_dias > 0 && (
+            <Alert className={`mb-6 ${expiracao.total_expirando_7_dias > 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
+              <AlertTriangle className={`h-4 w-4 ${expiracao.total_expirando_7_dias > 0 ? 'text-red-600' : 'text-yellow-600'}`} />
+              <AlertDescription className={expiracao.total_expirando_7_dias > 0 ? 'text-red-800' : 'text-yellow-800'}>
+                {expiracao.total_expirando_7_dias > 0 ? (
+                  <>⚠️ <strong>Urgente!</strong> {expiracao.total_expirando_7_dias} Girinhas expiram nos próximos 7 dias. Use antes de perder!</>
+                ) : (
+                  <>📅 {expiracao.total_expirando_30_dias} Girinhas expiram nos próximos 30 dias. Fique atenta às validades.</>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Widgets superiores */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Saldo atual */}
+            {/* Saldo atual com informação de expiração */}
             <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/10 to-purple-100">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -79,6 +97,24 @@ const Carteira = () => {
                     {saldo}
                   </p>
                   <p className="text-gray-600">Girinhas disponíveis</p>
+                  
+                  {/* Informação de expiração no saldo */}
+                  {expiracao.total_expirando_7_dias > 0 && (
+                    <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded-lg">
+                      <p className="text-sm text-red-700 font-medium flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" />
+                        {expiracao.total_expirando_7_dias} expirando em 7 dias
+                      </p>
+                    </div>
+                  )}
+                  {expiracao.total_expirando_30_dias > 0 && expiracao.total_expirando_7_dias === 0 && (
+                    <div className="mt-3 p-2 bg-yellow-100 border border-yellow-200 rounded-lg">
+                      <p className="text-sm text-yellow-700 font-medium flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {expiracao.total_expirando_30_dias} expirando em 30 dias
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <div className="text-center p-2 bg-white/50 rounded-lg">
@@ -128,10 +164,14 @@ const Carteira = () => {
 
           {/* Tabs principais */}
           <Tabs defaultValue="historico" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="historico" className="flex items-center gap-2">
                 <History className="w-4 h-4" />
                 Histórico
+              </TabsTrigger>
+              <TabsTrigger value="validades" className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Validades
               </TabsTrigger>
               <TabsTrigger value="comprar" className="flex items-center gap-2">
                 <ShoppingCart className="w-4 h-4" />
@@ -193,6 +233,10 @@ const Carteira = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="validades">
+              <ValidadeGirinhas />
             </TabsContent>
 
             <TabsContent value="comprar">
