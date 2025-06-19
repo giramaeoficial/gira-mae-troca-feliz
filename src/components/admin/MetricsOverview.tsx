@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Users, Coins, DollarSign, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useGirinhasSystem } from "@/modules/girinhas/hooks/useGirinhasSystem";
+import { useGirinhasAdmin } from "@/modules/girinhas/hooks/useGirinhasAdmin";
 
 const MetricsOverview = () => {
-  const { cotacao } = useGirinhasSystem();
+  const { cotacao } = useGirinhasAdmin();
 
   // Query para estatísticas reais
   const { data: stats } = useQuery({
@@ -25,7 +25,6 @@ const MetricsOverview = () => {
         supabase.from('queimas_girinhas').select('quantidade')
       ]);
 
-      // Calcular valores reais
       const totalArrecadado = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.valor_pago), 0) || 0;
       const girinhasEmitidas = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.girinhas_recebidas), 0) || 0;
       const girinhasQueimadas = totalQueimas?.reduce((sum, q) => sum + Number(q.quantidade), 0) || 0;
@@ -40,12 +39,12 @@ const MetricsOverview = () => {
         girinhasCirculacao
       };
     },
-    refetchInterval: 30000, // Atualizar a cada 30 segundos
+    refetchInterval: 30000,
   });
 
   const metrics = [
     {
-      title: "Cotação Atual",
+      title: "Cotação Atual (Admin)",
       value: `R$ ${cotacao?.cotacao_atual?.toFixed(4) || '1.0000'}`,
       change: "+0.25%",
       trend: "up",
@@ -69,7 +68,7 @@ const MetricsOverview = () => {
       description: "Usuárias registradas"
     },
     {
-      title: "Volume 24h",
+      title: "Volume 24h (Admin)",
       value: cotacao?.volume_24h?.toLocaleString() || "0",
       change: "-3.1%",
       trend: "down",

@@ -9,7 +9,7 @@ import { ptBR } from "date-fns/locale";
 const EmissionChart = () => {
   // Query para dados de emissão de Girinhas
   const { data: emissionData } = useQuery({
-    queryKey: ['emission-data'],
+    queryKey: ['admin-emission-data'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('compras_girinhas')
@@ -19,7 +19,6 @@ const EmissionChart = () => {
 
       if (error) throw error;
 
-      // Agrupar por dia
       const groupedData = data?.reduce((acc, compra) => {
         const date = format(new Date(compra.created_at), 'yyyy-MM-dd');
         
@@ -43,7 +42,7 @@ const EmissionChart = () => {
 
   // Query para proporção Girinhas/Mães
   const { data: proportionData } = useQuery({
-    queryKey: ['girinhas-maes-proportion'],
+    queryKey: ['admin-girinhas-maes-proportion'],
     queryFn: async () => {
       const [
         { data: compras },
@@ -68,7 +67,7 @@ const EmissionChart = () => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Emissão de Girinhas</CardTitle>
+          <CardTitle>Emissão de Girinhas (Admin)</CardTitle>
           <CardDescription>
             Histórico de emissão e arrecadação nos últimos 30 dias
           </CardDescription>
@@ -119,7 +118,7 @@ const EmissionChart = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Girinhas por Mãe</CardTitle>
+          <CardTitle>Girinhas por Mãe (Admin)</CardTitle>
           <CardDescription>
             Proporção de Girinhas em circulação por usuária
           </CardDescription>

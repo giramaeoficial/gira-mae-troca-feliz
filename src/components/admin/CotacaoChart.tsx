@@ -1,12 +1,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { useGirinhasSystem } from "@/modules/girinhas/hooks/useGirinhasSystem";
+import { useGirinhasAdmin } from "@/modules/girinhas/hooks/useGirinhasAdmin";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const CotacaoChart = () => {
-  const { historico, cotacao } = useGirinhasSystem();
+  const { historico, cotacao } = useGirinhasAdmin();
 
   const chartData = historico?.slice(-30).map(item => ({
     data: format(new Date(item.created_at), 'dd/MM', { locale: ptBR }),
@@ -17,7 +17,7 @@ const CotacaoChart = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Evolução da Cotação</CardTitle>
+        <CardTitle>Evolução da Cotação (Admin)</CardTitle>
         <CardDescription>
           Histórico de preços das Girinhas nos últimos 30 dias
         </CardDescription>
