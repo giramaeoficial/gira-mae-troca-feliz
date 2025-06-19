@@ -3,11 +3,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, RefreshCw, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, RefreshCw, Sparkles, ShoppingCart } from 'lucide-react';
 import { useGirinhasSystem } from '../hooks/useGirinhasSystem';
 
 const CotacaoWidget: React.FC = () => {
-  const { cotacao, historico, loadingCotacao, recalcularCotacao, refetchCotacao } = useGirinhasSystem();
+  const { cotacao, precoEmissao, historico, loadingCotacao, recalcularCotacao, refetchCotacao } = useGirinhasSystem();
 
   if (loadingCotacao) {
     return (
@@ -64,12 +64,13 @@ const CotacaoWidget: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Cotação de Mercado */}
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold text-purple-600">
+            <p className="text-xl font-bold text-purple-600">
               R$ {cotacao.cotacao_atual.toFixed(4)}
             </p>
-            <p className="text-sm text-gray-500">por Girinha</p>
+            <p className="text-xs text-gray-500">Cotação de mercado</p>
           </div>
           <div className="text-right">
             <div className={`flex items-center gap-1 ${trendColor}`}>
@@ -80,6 +81,29 @@ const CotacaoWidget: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Preço de Venda */}
+        {precoEmissao && (
+          <div className="bg-white/60 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-lg font-bold text-green-600 flex items-center gap-1">
+                  <ShoppingCart className="w-4 h-4" />
+                  R$ {precoEmissao.toFixed(4)}
+                </p>
+                <p className="text-xs text-gray-500">Preço de venda (com markup)</p>
+              </div>
+              <div className="text-right">
+                <Badge variant="outline" className="text-xs">
+                  {precoEmissao && cotacao.cotacao_atual ? 
+                    `+${(((precoEmissao / cotacao.cotacao_atual) - 1) * 100).toFixed(1)}%` : 
+                    'Calculando...'
+                  }
+                </Badge>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/60 rounded-lg p-3">
