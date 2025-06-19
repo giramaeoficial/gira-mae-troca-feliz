@@ -7,7 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,21 +30,11 @@ interface HeaderProps {
 
 const Header = ({ activePage }: HeaderProps) => {
   const { user, signOut } = useAuth();
-  const { saldo, refetch } = useCarteira();
+  // OTIMIZAÇÃO: Remover polling excessivo - saldo só atualiza quando necessário
+  const { saldo } = useCarteira();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Forçar atualização do saldo a cada 5 segundos quando logado
-  useEffect(() => {
-    if (user) {
-      const interval = setInterval(() => {
-        refetch();
-      }, 5000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [user, refetch]);
 
   const handleSignOut = async () => {
     await signOut();

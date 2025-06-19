@@ -18,7 +18,7 @@ export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query SUPER OTIMIZADA para buscar dados da carteira 
+  // Query SUPER OTIMIZADA - Cache agressivo para minimizar requests
   const {
     data: carteiraData,
     isLoading: loading,
@@ -76,12 +76,13 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    staleTime: 300000, // Cache por 5 minutos (aumentado ainda mais)
-    gcTime: 600000, // Manter em cache por 10 minutos
-    refetchOnWindowFocus: false, // Não refazer quando janela ganha foco
-    refetchOnMount: false, // IMPORTANTE: Não buscar na montagem se já tem cache
-    refetchInterval: false, // Desabilitar polling automático
-    retry: 1, // Reduzir tentativas de retry
+    // OTIMIZAÇÃO EXTREMA: Cache muito agressivo para reduzir requests
+    staleTime: 1000 * 60 * 10, // 10 minutos sem refetch
+    gcTime: 1000 * 60 * 20, // 20 minutos em cache
+    refetchOnWindowFocus: false, // Nunca refetch no foco da janela
+    refetchOnMount: false, // Nunca refetch na montagem se tem cache
+    refetchInterval: false, // Sem polling automático
+    retry: 1, // Minimizar retries
     retryDelay: 2000 // Delay entre retries
   });
 
@@ -112,7 +113,7 @@ export const useCarteira = () => {
         });
       }
     }
-  }, [error?.message]); // Dependência específica para evitar re-execuções
+  }, [error?.message]);
 
   // Mutation OTIMIZADA para adicionar transação
   const adicionarTransacaoMutation = useMutation({
@@ -341,14 +342,13 @@ export const useCarteira = () => {
     totalRecebido: carteiraData?.carteira ? Number(carteiraData.carteira.total_recebido) : 0,
     totalGasto: carteiraData?.carteira ? Number(carteiraData.carteira.total_gasto) : 0,
     isAddingTransaction: adicionarTransacaoMutation.isPending,
-    comprarPacote, // Função migrada do CarteiraContext
+    comprarPacote,
     
     // Métodos compatíveis com CarteiraContext para facilitar migração
     transferirGirinhas: (valor: number, para: string, itemId: number, descricao: string): boolean => {
       if (!verificarSaldo(valor)) {
         return false;
       }
-      // Para compatibilidade - na prática seria implementado via mutations
       adicionarTransacao('gasto', valor, `${descricao} - para ${para}`, String(itemId));
       return true;
     },
