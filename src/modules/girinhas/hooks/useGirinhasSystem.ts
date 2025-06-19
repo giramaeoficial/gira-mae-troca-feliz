@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -234,7 +235,7 @@ export const useGirinhasSystem = () => {
     },
   });
 
-  // Mutation para transferência P2P - ATUALIZADA com melhor segurança
+  // Mutation para transferência P2P - CORRIGIDA sem propriedade protegida
   const transferirP2PMutation = useMutation({
     mutationFn: async (dados: TransferenciaP2P) => {
       if (!user) throw new Error('Usuário não autenticado');
@@ -258,7 +259,8 @@ export const useGirinhasSystem = () => {
         throw new Error('Sessão expirada. Faça login novamente.');
       }
       
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/transferir-p2p`, {
+      // Usar a URL diretamente em vez da propriedade protegida
+      const response = await fetch('https://mkuuwnqiaeguuexeeicw.supabase.co/functions/v1/transferir-p2p', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
