@@ -18,7 +18,7 @@ export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query OTIMIZADA para buscar dados da carteira 
+  // Query SUPER OTIMIZADA para buscar dados da carteira 
   const {
     data: carteiraData,
     isLoading: loading,
@@ -76,10 +76,10 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    staleTime: 120000, // Cache por 2 minutos (aumentado)
-    gcTime: 300000, // Manter em cache por 5 minutos
+    staleTime: 300000, // Cache por 5 minutos (aumentado ainda mais)
+    gcTime: 600000, // Manter em cache por 10 minutos
     refetchOnWindowFocus: false, // Não refazer quando janela ganha foco
-    refetchOnMount: true, // Só buscar na primeira montagem
+    refetchOnMount: false, // IMPORTANTE: Não buscar na montagem se já tem cache
     refetchInterval: false, // Desabilitar polling automático
     retry: 1, // Reduzir tentativas de retry
     retryDelay: 2000 // Delay entre retries
@@ -156,7 +156,7 @@ export const useCarteira = () => {
       return data;
     },
     onSuccess: () => {
-      // OTIMIZAÇÃO: Invalidar apenas carteira específica, não todas as queries
+      // OTIMIZAÇÃO CRUCIAL: Invalidar apenas carteira específica, não todas as queries
       console.log('🔄 [useCarteira] Invalidando cache específico da carteira...');
       queryClient.invalidateQueries({ 
         queryKey: ['carteira', user?.id], 
@@ -261,6 +261,74 @@ export const useCarteira = () => {
     return carteiraData?.carteira ? Number(carteiraData.carteira.saldo_atual) >= valor : false;
   };
 
+  // Função centralizada para compra de pacotes (migrada do CarteiraContext)
+  const comprarPacote = async (pacoteId: string): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para comprar Girinhas.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      // Buscar dados do pacote
+      const { data: pacote, error: pacoteError } = await supabase
+        .from('pacotes_girinhas')
+        .select('*')
+        .eq('id', pacoteId)
+        .single();
+
+      if (pacoteError || !pacote) {
+        throw new Error('Pacote não encontrado');
+      }
+
+      // Simular processamento de pagamento (sempre aprovado para demo)
+      const paymentId = `demo_${Date.now()}`;
+
+      // Criar registro da compra
+      const { error: compraError } = await supabase
+        .from('compras_girinhas')
+        .insert({
+          user_id: user.id,
+          pacote_id: pacoteId,
+          valor_pago: pacote.valor_real,
+          girinhas_recebidas: pacote.valor_girinhas,
+          status: 'aprovado',
+          payment_id: paymentId
+        });
+
+      if (compraError) throw compraError;
+
+      // Adicionar Girinhas à carteira via transação
+      const sucesso = await adicionarTransacao(
+        'compra',
+        pacote.valor_girinhas,
+        `Compra de pacote: ${pacote.nome}`
+      );
+
+      if (sucesso) {
+        toast({
+          title: "💳 Compra realizada!",
+          description: `${pacote.valor_girinhas} Girinhas adicionadas à sua carteira!`,
+        });
+      }
+
+      return sucesso;
+    } catch (err) {
+      console.error('Erro ao processar compra:', err);
+      
+      toast({
+        title: "Erro na compra",
+        description: "Não foi possível processar a compra. Tente novamente.",
+        variant: "destructive",
+      });
+      
+      return false;
+    }
+  };
+
   return {
     carteira: carteiraData?.carteira || null,
     transacoes: carteiraData?.transacoes || [],
@@ -272,6 +340,21 @@ export const useCarteira = () => {
     saldo: carteiraData?.carteira ? Number(carteiraData.carteira.saldo_atual) : 0,
     totalRecebido: carteiraData?.carteira ? Number(carteiraData.carteira.total_recebido) : 0,
     totalGasto: carteiraData?.carteira ? Number(carteiraData.carteira.total_gasto) : 0,
-    isAddingTransaction: adicionarTransacaoMutation.isPending
+    isAddingTransaction: adicionarTransacaoMutation.isPending,
+    comprarPacote, // Função migrada do CarteiraContext
+    
+    // Métodos compatíveis com CarteiraContext para facilitar migração
+    transferirGirinhas: (valor: number, para: string, itemId: number, descricao: string): boolean => {
+      if (!verificarSaldo(valor)) {
+        return false;
+      }
+      // Para compatibilidade - na prática seria implementado via mutations
+      adicionarTransacao('gasto', valor, `${descricao} - para ${para}`, String(itemId));
+      return true;
+    },
+    receberGirinhas: (valor: number, de: string, itemId: number, descricao: string) => {
+      adicionarTransacao('recebido', valor, `${descricao} - de ${de}`, String(itemId));
+    },
+    recarregarSaldo: () => refetch()
   };
 };

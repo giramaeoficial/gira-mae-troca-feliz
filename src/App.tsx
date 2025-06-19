@@ -5,7 +5,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { CarteiraProvider } from "@/contexts/CarteiraContext";
 import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
 import AuthGuard from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
@@ -43,107 +42,105 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <RecompensasProvider>
-              <CarteiraProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/cadastro" element={<Cadastro />} />
-                    <Route
-                      path="/feed"
-                      element={
-                        <AuthGuard>
-                          <Feed />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/publicar"
-                      element={
-                        <AuthGuard>
-                          <PublicarItem />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/item/:id"
-                      element={
-                        <AuthGuard>
-                          <DetalhesItem />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/reservas"
-                      element={
-                        <AuthGuard>
-                          <MinhasReservas />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/mensagens"
-                      element={
-                        <AuthGuard>
-                          <Mensagens />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/perfil"
-                      element={
-                        <AuthGuard>
-                          <Perfil />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/mae/:id"
-                      element={
-                        <AuthGuard>
-                          <PerfilPublicoMae />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/carteira"
-                      element={
-                        <AuthGuard>
-                          <Carteira />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/comprar-girinhas"
-                      element={
-                        <AuthGuard>
-                          <ComprarGirinhas />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/indicacoes"
-                      element={
-                        <AuthGuard>
-                          <Indicacoes />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route
-                      path="/admin"
-                      element={
-                        <AuthGuard>
-                          <AdminDashboard />
-                        </AuthGuard>
-                      }
-                    />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-              </CarteiraProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/cadastro" element={<Cadastro />} />
+                  <Route
+                    path="/feed"
+                    element={
+                      <AuthGuard>
+                        <Feed />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/publicar"
+                    element={
+                      <AuthGuard>
+                        <PublicarItem />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/item/:id"
+                    element={
+                      <AuthGuard>
+                        <DetalhesItem />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/reservas"
+                    element={
+                      <AuthGuard>
+                        <MinhasReservas />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/mensagens"
+                    element={
+                      <AuthGuard>
+                        <Mensagens />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/perfil"
+                    element={
+                      <AuthGuard>
+                        <Perfil />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/mae/:id"
+                    element={
+                      <AuthGuard>
+                        <PerfilPublicoMae />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/carteira"
+                    element={
+                      <AuthGuard>
+                        <Carteira />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/comprar-girinhas"
+                    element={
+                      <AuthGuard>
+                        <ComprarGirinhas />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/indicacoes"
+                    element={
+                      <AuthGuard>
+                        <Indicacoes />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route
+                    path="/admin"
+                    element={
+                      <AuthGuard>
+                        <AdminDashboard />
+                      </AuthGuard>
+                    }
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
             </RecompensasProvider>
           </AuthProvider>
         </TooltipProvider>
