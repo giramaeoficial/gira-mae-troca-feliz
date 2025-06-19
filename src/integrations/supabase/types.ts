@@ -1217,6 +1217,14 @@ export type Database = {
         Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
         Returns: string
       }
+      processar_compra_segura: {
+        Args: {
+          p_user_id: string
+          p_quantidade: number
+          p_idempotency_key?: string
+        }
+        Returns: Json
+      }
       processar_expiracao_girinhas: {
         Args: Record<PropertyKey, never>
         Returns: number

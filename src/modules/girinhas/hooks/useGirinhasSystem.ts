@@ -26,6 +26,24 @@ interface SimulacaoMarkup {
   preco_final: number;
 }
 
+interface AjusteMarkupResponse {
+  markup_anterior: number;
+  markup_novo: number;
+  cotacao_atual: number;
+  preco_resultante: number;
+  mensagem: string;
+}
+
+interface CompraSeguraResponse {
+  transacao_id: string;
+  quantidade: number;
+  preco_unitario: number;
+  valor_total: number;
+  cotacao_mercado: number;
+  sucesso: boolean;
+  mensagem: string;
+}
+
 export const useGirinhasSystem = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -133,6 +151,42 @@ export const useGirinhasSystem = () => {
     enabled: !!user,
   });
 
+  // Mutation para compra segura server-side
+  const compraSeguraMutation = useMutation({
+    mutationFn: async ({ quantidade }: { quantidade: number }): Promise<CompraSeguraResponse> => {
+      if (!user) throw new Error('Usuário não autenticado');
+      
+      const idempotencyKey = `compra_${user.id}_${Date.now()}_${Math.random()}`;
+      
+      const { data, error } = await supabase.rpc('processar_compra_segura', {
+        p_user_id: user.id,
+        p_quantidade: quantidade,
+        p_idempotency_key: idempotencyKey
+      });
+
+      if (error) throw error;
+      return data as CompraSeguraResponse;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['carteira'] });
+      queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
+      queryClient.invalidateQueries({ queryKey: ['preco-emissao'] });
+      queryClient.invalidateQueries({ queryKey: ['simulacao-markup'] });
+      
+      toast({
+        title: "Compra realizada com sucesso! 🎉",
+        description: `${data.quantidade} Girinhas adicionadas por R$ ${data.valor_total.toFixed(2)}`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro na compra",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Mutation para recalcular cotação
   const recalcularCotacaoMutation = useMutation({
     mutationFn: async () => {
@@ -150,12 +204,12 @@ export const useGirinhasSystem = () => {
 
   // Mutation para ajustar markup manualmente
   const ajustarMarkupMutation = useMutation({
-    mutationFn: async (novoMarkup: number) => {
+    mutationFn: async (novoMarkup: number): Promise<AjusteMarkupResponse> => {
       const { data, error } = await supabase.rpc('ajustar_markup_emissao', {
         novo_markup: novoMarkup
       });
       if (error) throw error;
-      return data;
+      return data as AjusteMarkupResponse;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['preco-emissao'] });
@@ -219,8 +273,10 @@ export const useGirinhasSystem = () => {
     loadingCotacao,
     isTransferindo: transferirP2PMutation.isPending,
     isAjustandoMarkup: ajustarMarkupMutation.isPending,
+    isComprandoSeguro: compraSeguraMutation.isPending,
     
     // Ações
+    compraSegura: compraSeguraMutation.mutate,
     recalcularCotacao: recalcularCotacaoMutation.mutate,
     ajustarMarkup: ajustarMarkupMutation.mutate,
     transferirP2P: transferirP2PMutation.mutate,
