@@ -20,6 +20,8 @@ export const usePacotesGirinhasOptimized = () => {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 [usePacotesGirinhas] Buscando pacotes disponíveis...');
+
       const { data, error: fetchError } = await supabase
         .from('pacotes_girinhas')
         .select('*')
@@ -28,9 +30,10 @@ export const usePacotesGirinhasOptimized = () => {
 
       if (fetchError) throw fetchError;
 
+      console.log(`✅ [usePacotesGirinhas] ${data?.length || 0} pacotes carregados`);
       setPacotes(data || []);
     } catch (err) {
-      console.error('❌ Erro ao buscar pacotes:', err);
+      console.error('❌ [usePacotesGirinhas] Erro ao buscar pacotes:', err);
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
@@ -49,7 +52,7 @@ export const usePacotesGirinhasOptimized = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('💳 Processando compra de Girinhas:', {
+      console.log('💳 [usePacotesGirinhas] Processando compra:', {
         pacoteId,
         valorGirinhas: pacote.valor_girinhas,
         valorReal: pacote.valor_real,
@@ -94,14 +97,15 @@ export const usePacotesGirinhasOptimized = () => {
         throw transacaoError;
       }
 
-      // OTIMIZAÇÃO: Invalidar apenas a carteira específica do usuário
-      console.log('🔄 Invalidando cache da carteira...');
+      // OTIMIZAÇÃO CRUCIAL: Invalidar apenas a carteira específica do usuário
+      console.log('🔄 [usePacotesGirinhas] Invalidando APENAS cache da carteira do usuário...');
       await queryClient.invalidateQueries({ 
         queryKey: ['carteira', user.id], 
         exact: true 
       });
       
-      console.log('✅ Cache invalidado com sucesso');
+      // NÃO invalidar queries gerais ou fazer refetch desnecessários
+      console.log('✅ [usePacotesGirinhas] Cache invalidado com precisão');
 
       toast({
         title: "💳 Compra realizada com sucesso!",
@@ -110,7 +114,7 @@ export const usePacotesGirinhasOptimized = () => {
 
       return true;
     } catch (err) {
-      console.error('❌ Erro completo ao processar compra:', err);
+      console.error('❌ [usePacotesGirinhas] Erro completo ao processar compra:', err);
       
       let errorMessage = "Não foi possível processar a compra.";
       

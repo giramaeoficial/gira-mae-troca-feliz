@@ -18,7 +18,7 @@ export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query para buscar dados da carteira com otimizações
+  // Query OTIMIZADA para buscar dados da carteira 
   const {
     data: carteiraData,
     isLoading: loading,
@@ -29,7 +29,7 @@ export const useCarteira = () => {
     queryFn: async (): Promise<CarteiraData> => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('Buscando dados da carteira para usuário:', user.id);
+      console.log('🔍 [useCarteira] Buscando dados da carteira para usuário:', user.id);
 
       // Buscar carteira
       const { data: carteiraData, error: carteiraError } = await supabase
@@ -39,14 +39,14 @@ export const useCarteira = () => {
         .maybeSingle();
 
       if (carteiraError) {
-        console.error('Erro ao buscar carteira:', carteiraError);
+        console.error('❌ Erro ao buscar carteira:', carteiraError);
         throw carteiraError;
       }
 
       // Se não existe carteira, criar uma
       let carteira = carteiraData;
       if (!carteira) {
-        console.log('Carteira não encontrada, criando nova...');
+        console.log('💡 Carteira não encontrada, criando nova...');
         carteira = await criarCarteiraInicial(user.id);
       }
 
@@ -59,13 +59,13 @@ export const useCarteira = () => {
         .limit(50);
 
       if (transacoesError) {
-        console.error('Erro ao buscar transações:', transacoesError);
+        console.error('❌ Erro ao buscar transações:', transacoesError);
         throw transacoesError;
       }
 
       const transacoes = transacoesData || [];
 
-      console.log('Dados carregados:', {
+      console.log('✅ [useCarteira] Dados carregados:', {
         carteira: carteira,
         totalTransacoes: transacoes.length
       });
@@ -76,24 +76,29 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    staleTime: 30000, // Cache por 30 segundos
-    gcTime: 60000, // Manter em cache por 1 minuto
-    retry: 2, // Reduzir tentativas de retry
-    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 5000)
+    staleTime: 120000, // Cache por 2 minutos (aumentado)
+    gcTime: 300000, // Manter em cache por 5 minutos
+    refetchOnWindowFocus: false, // Não refazer quando janela ganha foco
+    refetchOnMount: true, // Só buscar na primeira montagem
+    refetchInterval: false, // Desabilitar polling automático
+    retry: 1, // Reduzir tentativas de retry
+    retryDelay: 2000 // Delay entre retries
   });
 
-  // Tratamento de erros usando useEffect (otimizado)
+  // Tratamento de erros usando useEffect (otimizado com dependência específica)
   useEffect(() => {
     if (error) {
-      console.error('Erro ao carregar carteira:', error);
+      console.error('❌ [useCarteira] Erro ao carregar carteira:', error);
       
-      if (error.message?.includes('não autenticado')) {
+      const errorMessage = error?.message || '';
+      
+      if (errorMessage.includes('não autenticado')) {
         toast({
           title: "Erro de Autenticação",
           description: "Você precisa estar logado para acessar sua carteira.",
           variant: "destructive",
         });
-      } else if (error.message?.includes('network')) {
+      } else if (errorMessage.includes('network')) {
         toast({
           title: "Erro de Conexão",
           description: "Verifique sua conexão com a internet e tente novamente.",
@@ -107,9 +112,9 @@ export const useCarteira = () => {
         });
       }
     }
-  }, [error]);
+  }, [error?.message]); // Dependência específica para evitar re-execuções
 
-  // Mutation para adicionar transação (otimizada)
+  // Mutation OTIMIZADA para adicionar transação
   const adicionarTransacaoMutation = useMutation({
     mutationFn: async ({
       tipo,
@@ -130,6 +135,8 @@ export const useCarteira = () => {
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      console.log('💳 [useCarteira] Adicionando transação:', { tipo, valor, descricao });
+
       const { data, error } = await supabase
         .from('transacoes')
         .insert({
@@ -149,8 +156,12 @@ export const useCarteira = () => {
       return data;
     },
     onSuccess: () => {
-      // Invalidar apenas carteira, não outras queries
-      queryClient.invalidateQueries({ queryKey: ['carteira', user?.id] });
+      // OTIMIZAÇÃO: Invalidar apenas carteira específica, não todas as queries
+      console.log('🔄 [useCarteira] Invalidando cache específico da carteira...');
+      queryClient.invalidateQueries({ 
+        queryKey: ['carteira', user?.id], 
+        exact: true 
+      });
       
       toast({
         title: "Transação Realizada",
@@ -158,7 +169,7 @@ export const useCarteira = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Erro ao adicionar transação:', error);
+      console.error('❌ [useCarteira] Erro ao adicionar transação:', error);
       
       if (error.message?.includes('insufficient_funds')) {
         toast({
@@ -178,6 +189,8 @@ export const useCarteira = () => {
 
   // Função auxiliar para criar carteira inicial
   const criarCarteiraInicial = async (userId: string): Promise<Carteira> => {
+    console.log('🏦 [useCarteira] Criando carteira inicial para:', userId);
+    
     // Criar carteira inicial
     const { data: carteiraData, error: carteiraError } = await supabase
       .from('carteiras')
@@ -214,7 +227,7 @@ export const useCarteira = () => {
       .from('transacoes')
       .insert(transacoesIniciais);
 
-    if (transacoesError) console.error('Erro ao criar transações iniciais:', transacoesError);
+    if (transacoesError) console.error('⚠️ Erro ao criar transações iniciais:', transacoesError);
 
     return carteiraData;
   };
