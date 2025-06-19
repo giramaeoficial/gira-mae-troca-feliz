@@ -18,7 +18,7 @@ export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query SUPER OTIMIZADA - Cache agressivo para minimizar requests
+  // Query OTIMIZADA - Cache menos agressivo para permitir atualizações após transações
   const {
     data: carteiraData,
     isLoading: loading,
@@ -76,11 +76,11 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    // OTIMIZAÇÃO EXTREMA: Cache muito agressivo para reduzir requests
-    staleTime: 1000 * 60 * 10, // 10 minutos sem refetch
-    gcTime: 1000 * 60 * 20, // 20 minutos em cache
-    refetchOnWindowFocus: false, // Nunca refetch no foco da janela
-    refetchOnMount: false, // Nunca refetch na montagem se tem cache
+    // CORREÇÃO: Cache menos agressivo para permitir atualizações após compras
+    staleTime: 1000 * 30, // 30 segundos apenas
+    gcTime: 1000 * 60 * 5, // 5 minutos em cache
+    refetchOnWindowFocus: true, // Permitir refetch no foco
+    refetchOnMount: true, // Sempre refetch na montagem
     refetchInterval: false, // Sem polling automático
     retry: 1, // Minimizar retries
     retryDelay: 2000 // Delay entre retries
@@ -138,6 +138,11 @@ export const useCarteira = () => {
 
       console.log('💳 [useCarteira] Adicionando transação:', { tipo, valor, descricao });
 
+      // Para compras, definir data de expiração de 12 meses
+      const dataExpiracao = tipo === 'compra' 
+        ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        : null;
+
       const { data, error } = await supabase
         .from('transacoes')
         .insert({
@@ -148,7 +153,8 @@ export const useCarteira = () => {
           item_id: itemId || null,
           usuario_origem: usuarioOrigem || null,
           cotacao_utilizada: cotacaoUtilizada || null,
-          quantidade_girinhas: quantidadeGirinhas || null
+          quantidade_girinhas: quantidadeGirinhas || null,
+          data_expiracao: dataExpiracao
         })
         .select()
         .single();
@@ -157,16 +163,31 @@ export const useCarteira = () => {
       return data;
     },
     onSuccess: () => {
-      // OTIMIZAÇÃO CRUCIAL: Invalidar apenas carteira específica, não todas as queries
-      console.log('🔄 [useCarteira] Invalidando cache específico da carteira...');
+      // CORREÇÃO CRUCIAL: Invalidar cache imediatamente e forçar refetch
+      console.log('🔄 [useCarteira] Invalidando e refetchando dados...');
+      
+      // Invalidar todas as queries relacionadas
       queryClient.invalidateQueries({ 
         queryKey: ['carteira', user?.id], 
-        exact: true 
+        exact: true,
+        refetchType: 'active' 
       });
       
+      // Também invalidar dados de expiração
+      queryClient.invalidateQueries({ 
+        queryKey: ['girinhas-expiracao', user?.id], 
+        exact: true,
+        refetchType: 'active'
+      });
+      
+      // Forçar refetch imediato
+      setTimeout(() => {
+        refetch();
+      }, 100);
+      
       toast({
-        title: "Transação Realizada",
-        description: "Sua transação foi processada com sucesso!",
+        title: "💳 Transação Realizada",
+        description: "Sua transação foi processada com sucesso! Saldo atualizado.",
       });
     },
     onError: (error: any) => {
@@ -312,7 +333,7 @@ export const useCarteira = () => {
       if (sucesso) {
         toast({
           title: "💳 Compra realizada!",
-          description: `${pacote.valor_girinhas} Girinhas adicionadas à sua carteira!`,
+          description: `${pacote.valor_girinhas} Girinhas adicionadas à sua carteira com validade de 12 meses!`,
         });
       }
 

@@ -73,9 +73,9 @@ const Carteira = () => {
               <AlertTriangle className={`h-4 w-4 ${expiracao.total_expirando_7_dias > 0 ? 'text-red-600' : 'text-yellow-600'}`} />
               <AlertDescription className={expiracao.total_expirando_7_dias > 0 ? 'text-red-800' : 'text-yellow-800'}>
                 {expiracao.total_expirando_7_dias > 0 ? (
-                  <>⚠️ <strong>Urgente!</strong> {expiracao.total_expirando_7_dias} Girinhas expiram nos próximos 7 dias. Use antes de perder!</>
+                  <>⚠️ <strong>Urgente!</strong> {expiracao.total_expirando_7_dias.toFixed(0)} Girinhas expiram nos próximos 7 dias. Use antes de perder!</>
                 ) : (
-                  <>📅 {expiracao.total_expirando_30_dias} Girinhas expiram nos próximos 30 dias. Fique atenta às validades.</>
+                  <>📅 {expiracao.total_expirando_30_dias.toFixed(0)} Girinhas expiram nos próximos 30 dias. Fique atenta às validades.</>
                 )}
               </AlertDescription>
             </Alert>
@@ -94,7 +94,7 @@ const Carteira = () => {
               <CardContent>
                 <div className="text-center">
                   <p className="text-4xl font-bold text-primary mb-2">
-                    {saldo}
+                    {saldo.toFixed(0)}
                   </p>
                   <p className="text-gray-600">Girinhas disponíveis</p>
                   
@@ -103,7 +103,7 @@ const Carteira = () => {
                     <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded-lg">
                       <p className="text-sm text-red-700 font-medium flex items-center gap-1">
                         <AlertTriangle className="w-4 h-4" />
-                        {expiracao.total_expirando_7_dias} expirando em 7 dias
+                        {expiracao.total_expirando_7_dias.toFixed(0)} expirando em 7 dias
                       </p>
                     </div>
                   )}
@@ -111,7 +111,7 @@ const Carteira = () => {
                     <div className="mt-3 p-2 bg-yellow-100 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-700 font-medium flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {expiracao.total_expirando_30_dias} expirando em 30 dias
+                        {expiracao.total_expirando_30_dias.toFixed(0)} expirando em 30 dias
                       </p>
                     </div>
                   )}
@@ -119,11 +119,11 @@ const Carteira = () => {
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <div className="text-center p-2 bg-white/50 rounded-lg">
                     <p className="text-sm text-gray-600">Total Recebido</p>
-                    <p className="font-bold text-green-600">{totalRecebido}</p>
+                    <p className="font-bold text-green-600">{totalRecebido.toFixed(0)}</p>
                   </div>
                   <div className="text-center p-2 bg-white/50 rounded-lg">
                     <p className="text-sm text-gray-600">Total Gasto</p>
-                    <p className="font-bold text-red-600">{totalGasto}</p>
+                    <p className="font-bold text-red-600">{totalGasto.toFixed(0)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -210,6 +210,12 @@ const Carteira = () => {
                               <p className="text-sm text-gray-500">
                                 {new Date(transacao.created_at).toLocaleString('pt-BR')}
                               </p>
+                              {/* Mostrar data de expiração para compras */}
+                              {transacao.tipo === 'compra' && transacao.data_expiracao && (
+                                <p className="text-xs text-blue-600">
+                                  Expira em: {new Date(transacao.data_expiracao).toLocaleDateString('pt-BR')}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="text-right">

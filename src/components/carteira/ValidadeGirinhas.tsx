@@ -50,7 +50,7 @@ const ValidadeGirinhas = () => {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            ⚠️ <strong>{expiracao.total_expirando_7_dias} Girinhas</strong> expiram nos próximos 7 dias! 
+            ⚠️ <strong>{expiracao.total_expirando_7_dias.toFixed(0)} Girinhas</strong> expiram nos próximos 7 dias! 
             Use antes de perder.
           </AlertDescription>
         </Alert>
@@ -60,7 +60,7 @@ const ValidadeGirinhas = () => {
         <Alert className="border-yellow-200 bg-yellow-50">
           <Clock className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            📅 <strong>{expiracao.total_expirando_30_dias} Girinhas</strong> expiram nos próximos 30 dias.
+            📅 <strong>{expiracao.total_expirando_30_dias.toFixed(0)} Girinhas</strong> expiram nos próximos 30 dias.
           </AlertDescription>
         </Alert>
       )}
@@ -69,7 +69,7 @@ const ValidadeGirinhas = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Calendar className="w-5 h-5 text-primary" />
-            Suas Girinhas por Validade
+            Girinhas com Validade de 12 Meses
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -125,7 +125,7 @@ const ValidadeGirinhas = () => {
                 <strong>Próxima expiração:</strong> {formatarData(expiracao.proxima_expiracao)}
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                ℹ️ Girinhas têm validade de 12 meses após a compra
+                ℹ️ Girinhas compradas têm validade de 12 meses após a compra
               </p>
             </div>
           )}

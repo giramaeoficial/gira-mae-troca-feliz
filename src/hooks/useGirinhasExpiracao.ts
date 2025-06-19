@@ -48,11 +48,32 @@ export const useGirinhasExpiracao = () => {
 
       console.log('✅ [useGirinhasExpiracao] Dados carregados:', resultado);
 
+      // Correção do TypeScript: garantir que detalhes_expiracao seja sempre um array
+      let detalhesExpiracao: Array<{
+        valor: number;
+        data_compra: string;
+        data_expiracao: string;
+        dias_restantes: number;
+      }> = [];
+
+      if (resultado.detalhes_expiracao) {
+        if (Array.isArray(resultado.detalhes_expiracao)) {
+          detalhesExpiracao = resultado.detalhes_expiracao;
+        } else if (typeof resultado.detalhes_expiracao === 'string') {
+          try {
+            const parsed = JSON.parse(resultado.detalhes_expiracao);
+            detalhesExpiracao = Array.isArray(parsed) ? parsed : [];
+          } catch {
+            detalhesExpiracao = [];
+          }
+        }
+      }
+
       return {
         total_expirando_7_dias: Number(resultado.total_expirando_7_dias || 0),
         total_expirando_30_dias: Number(resultado.total_expirando_30_dias || 0),
         proxima_expiracao: resultado.proxima_expiracao,
-        detalhes_expiracao: resultado.detalhes_expiracao || []
+        detalhes_expiracao: detalhesExpiracao
       };
     },
     enabled: !!user,
