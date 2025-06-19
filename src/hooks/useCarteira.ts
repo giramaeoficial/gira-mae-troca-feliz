@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +17,7 @@ export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query OTIMIZADA - Cache menos agressivo para permitir atualizações após transações
+  // Query OTIMIZADA - Cache MUITO menos agressivo para permitir atualizações imediatas
   const {
     data: carteiraData,
     isLoading: loading,
@@ -67,7 +66,8 @@ export const useCarteira = () => {
 
       console.log('✅ [useCarteira] Dados carregados:', {
         carteira: carteira,
-        totalTransacoes: transacoes.length
+        totalTransacoes: transacoes.length,
+        saldoAtual: carteira?.saldo_atual
       });
 
       return {
@@ -76,14 +76,14 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    // CORREÇÃO: Cache menos agressivo para permitir atualizações após compras
-    staleTime: 1000 * 30, // 30 segundos apenas
-    gcTime: 1000 * 60 * 5, // 5 minutos em cache
-    refetchOnWindowFocus: true, // Permitir refetch no foco
-    refetchOnMount: true, // Sempre refetch na montagem
-    refetchInterval: false, // Sem polling automático
-    retry: 1, // Minimizar retries
-    retryDelay: 2000 // Delay entre retries
+    // CORREÇÃO CRÍTICA: Cache extremamente reduzido para transações
+    staleTime: 0, // Sem cache stale - sempre buscar dados frescos
+    gcTime: 1000 * 30, // 30 segundos apenas em cache
+    refetchOnWindowFocus: true, 
+    refetchOnMount: true, 
+    refetchInterval: false, 
+    retry: 1,
+    retryDelay: 1000
   });
 
   // Tratamento de erros usando useEffect (otimizado com dependência específica)
@@ -162,28 +162,37 @@ export const useCarteira = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      // CORREÇÃO CRUCIAL: Invalidar cache imediatamente e forçar refetch
-      console.log('🔄 [useCarteira] Invalidando e refetchando dados...');
+    onSuccess: async () => {
+      // CORREÇÃO CRUCIAL: Invalidação e refetch AGRESSIVOS
+      console.log('🔄 [useCarteira] Transação bem-sucedida - Invalidando TODOS os caches...');
       
-      // Invalidar todas as queries relacionadas
-      queryClient.invalidateQueries({ 
+      // Invalidar cache da carteira
+      await queryClient.invalidateQueries({ 
         queryKey: ['carteira', user?.id], 
-        exact: true,
-        refetchType: 'active' 
+        exact: true 
       });
       
-      // Também invalidar dados de expiração
-      queryClient.invalidateQueries({ 
+      // Invalidar cache de expiração
+      await queryClient.invalidateQueries({ 
         queryKey: ['girinhas-expiracao', user?.id], 
-        exact: true,
-        refetchType: 'active'
+        exact: true 
       });
       
-      // Forçar refetch imediato
-      setTimeout(() => {
-        refetch();
-      }, 100);
+      // Forçar refetch IMEDIATO da carteira
+      await refetch();
+      
+      // Aguardar um pouco e refetch novamente para garantir
+      setTimeout(async () => {
+        console.log('🔄 [useCarteira] Segundo refetch de segurança...');
+        await queryClient.refetchQueries({ 
+          queryKey: ['carteira', user?.id], 
+          exact: true 
+        });
+        await queryClient.refetchQueries({ 
+          queryKey: ['girinhas-expiracao', user?.id], 
+          exact: true 
+        });
+      }, 500);
       
       toast({
         title: "💳 Transação Realizada",

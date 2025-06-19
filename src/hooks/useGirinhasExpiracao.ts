@@ -48,7 +48,7 @@ export const useGirinhasExpiracao = () => {
 
       console.log('✅ [useGirinhasExpiracao] Dados carregados:', resultado);
 
-      // Correção do TypeScript: garantir que detalhes_expiracao seja sempre um array
+      // Correção do TypeScript: processar detalhes_expiracao adequadamente
       let detalhesExpiracao: Array<{
         valor: number;
         data_compra: string;
@@ -57,15 +57,24 @@ export const useGirinhasExpiracao = () => {
       }> = [];
 
       if (resultado.detalhes_expiracao) {
-        if (Array.isArray(resultado.detalhes_expiracao)) {
-          detalhesExpiracao = resultado.detalhes_expiracao;
-        } else if (typeof resultado.detalhes_expiracao === 'string') {
-          try {
+        try {
+          // Se é uma string JSON, fazer parse
+          if (typeof resultado.detalhes_expiracao === 'string') {
             const parsed = JSON.parse(resultado.detalhes_expiracao);
             detalhesExpiracao = Array.isArray(parsed) ? parsed : [];
-          } catch {
-            detalhesExpiracao = [];
+          } 
+          // Se é um array (Json[]), converter cada item
+          else if (Array.isArray(resultado.detalhes_expiracao)) {
+            detalhesExpiracao = resultado.detalhes_expiracao.map((item: any) => ({
+              valor: Number(item.valor || 0),
+              data_compra: String(item.data_compra || ''),
+              data_expiracao: String(item.data_expiracao || ''),
+              dias_restantes: Number(item.dias_restantes || 0)
+            }));
           }
+        } catch (parseError) {
+          console.error('Erro ao processar detalhes_expiracao:', parseError);
+          detalhesExpiracao = [];
         }
       }
 
@@ -77,9 +86,11 @@ export const useGirinhasExpiracao = () => {
       };
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 5, // 5 minutos
-    gcTime: 1000 * 60 * 10, // 10 minutos em cache
-    refetchOnWindowFocus: false,
+    // CORREÇÃO: Cache muito menos agressivo para permitir atualizações
+    staleTime: 0, // Sem cache stale
+    gcTime: 1000 * 60 * 2, // 2 minutos apenas
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
     retry: 1
   });
 

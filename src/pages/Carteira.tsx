@@ -64,7 +64,7 @@ const Carteira = () => {
               <Wallet className="w-8 h-8 text-primary" />
               Minha Carteira
             </h1>
-            <p className="text-gray-600">Gerencie suas Girinhas, veja cotações e faça transferências</p>
+            <p className="text-gray-600">Gerencie suas Girinhas com validade de 12 meses, veja cotações e faça transferências</p>
           </div>
 
           {/* Alerta global de expiração */}
@@ -96,7 +96,7 @@ const Carteira = () => {
                   <p className="text-4xl font-bold text-primary mb-2">
                     {saldo.toFixed(0)}
                   </p>
-                  <p className="text-gray-600">Girinhas disponíveis</p>
+                  <p className="text-gray-600">Girinhas com validade de 12 meses</p>
                   
                   {/* Informação de expiração no saldo */}
                   {expiracao.total_expirando_7_dias > 0 && (
@@ -225,11 +225,11 @@ const Carteira = () => {
                                 : 'text-red-600'
                             }`}>
                               {['recebido', 'bonus', 'transferencia_p2p_entrada'].includes(transacao.tipo) ? '+' : '-'}
-                              {Number(transacao.valor).toFixed(2)}
+                              {Number(transacao.valor).toFixed(0)}
                             </p>
                             {transacao.cotacao_utilizada && (
                               <p className="text-xs text-gray-500">
-                                Cotação: R$ {Number(transacao.cotacao_utilizada).toFixed(4)}
+                                Cotação: R$ {Number(transacao.cotacao_utilizada).toFixed(2)}
                               </p>
                             )}
                           </div>

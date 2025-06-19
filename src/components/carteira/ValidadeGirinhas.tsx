@@ -69,7 +69,7 @@ const ValidadeGirinhas = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Calendar className="w-5 h-5 text-primary" />
-            Girinhas com Validade de 12 Meses
+            Controle de Validade das Girinhas
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -125,7 +125,7 @@ const ValidadeGirinhas = () => {
                 <strong>Próxima expiração:</strong> {formatarData(expiracao.proxima_expiracao)}
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                ℹ️ Girinhas compradas têm validade de 12 meses após a compra
+                ℹ️ Todas as Girinhas compradas têm validade de 12 meses após a compra
               </p>
             </div>
           )}
