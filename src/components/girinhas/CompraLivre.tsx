@@ -22,7 +22,7 @@ const CompraLivre: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { cotacao } = useGirinhasSystem();
-  const { adicionarTransacao, refetch } = useCarteira();
+  const { refetch } = useCarteira();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -76,6 +76,18 @@ const CompraLivre: React.FC = () => {
 
     setIsLoading(true);
     try {
+      console.log('🛒 [CompraLivre] Iniciando compra:', {
+        quantidade: quantidadeNum,
+        precoEmissao,
+        valorTotal,
+        cotacaoMercado
+      });
+
+      // Obter data de expiração configurada
+      const { data: dataExpiracao } = await supabase.rpc('obter_data_expiracao');
+      
+      console.log('📅 [CompraLivre] Data de expiração obtida:', dataExpiracao);
+
       // Simular processamento de pagamento (sempre aprovado para demo)
       const paymentId = `demo_${Date.now()}`;
 
@@ -91,35 +103,47 @@ const CompraLivre: React.FC = () => {
           pacote_id: null // Compra livre, sem pacote
         });
 
-      if (compraError) throw compraError;
+      if (compraError) {
+        console.error('❌ Erro ao criar compra:', compraError);
+        throw compraError;
+      }
 
-      // Adicionar Girinhas à carteira
-      const sucesso = await adicionarTransacao(
-        'compra',
-        quantidadeNum,
-        `Compra de ${quantidadeNum} Girinhas`,
-        undefined,
-        undefined,
-        precoEmissao,
-        quantidadeNum
-      );
+      console.log('✅ [CompraLivre] Compra registrada com sucesso');
 
-      if (sucesso) {
-        // Atualizar cotação se houve impacto
-        if (temImpacto) {
-          await supabase.rpc('calcular_cotacao_dinamica');
-        }
-
-        toast({
-          title: "✅ Compra realizada com sucesso!",
-          description: `${quantidadeNum} Girinhas foram adicionadas à sua carteira por R$ ${valorTotal.toFixed(2)}`,
+      // Inserir transação diretamente (o trigger irá atualizar a carteira e cotação automaticamente)
+      const { error: transacaoError } = await supabase
+        .from('transacoes')
+        .insert({
+          user_id: user.id,
+          tipo: 'compra',
+          valor: quantidadeNum,
+          descricao: `Compra de ${quantidadeNum} Girinhas`,
+          cotacao_utilizada: precoEmissao,
+          quantidade_girinhas: quantidadeNum,
+          data_expiracao: dataExpiracao
         });
 
-        setQuantidade('');
-        await refetch();
+      if (transacaoError) {
+        console.error('❌ Erro ao criar transação:', transacaoError);
+        throw transacaoError;
       }
+
+      console.log('✅ [CompraLivre] Transação criada com sucesso - trigger irá processar automaticamente');
+
+      toast({
+        title: "✅ Compra realizada com sucesso!",
+        description: `${quantidadeNum} Girinhas foram adicionadas à sua carteira por R$ ${valorTotal.toFixed(2)}`,
+      });
+
+      setQuantidade('');
+      
+      // Aguardar um pouco para o trigger processar
+      setTimeout(async () => {
+        await refetch();
+      }, 1000);
+      
     } catch (error) {
-      console.error('Erro ao processar compra:', error);
+      console.error('❌ [CompraLivre] Erro ao processar compra:', error);
       toast({
         title: "Erro na compra",
         description: "Não foi possível processar a compra. Tente novamente.",
@@ -293,10 +317,10 @@ const CompraLivre: React.FC = () => {
         </Button>
 
         <div className="text-xs text-gray-500 space-y-1 bg-gray-50 p-3 rounded-lg">
-          <p>✅ Girinhas sem prazo de validade</p>
+          <p>✅ Girinhas com validade de 12 meses</p>
           <p>✅ Uso imediato após a compra</p>
           <p>✅ Preço baseado na cotação + markup configurado</p>
-          <p>✅ Pagamento seguro (demo)</p>
+          <p>✅ Cotação atualizada automaticamente</p>
         </div>
       </CardContent>
     </Card>

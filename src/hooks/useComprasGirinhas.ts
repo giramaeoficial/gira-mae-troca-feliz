@@ -60,6 +60,8 @@ export const useComprasGirinhas = () => {
     if (!user) return false;
 
     try {
+      console.log('🛒 [useComprasGirinhas] Iniciando compra de pacote:', pacoteId);
+
       // Buscar dados do pacote
       const { data: pacote, error: pacoteError } = await supabase
         .from('pacotes_girinhas')
@@ -70,6 +72,8 @@ export const useComprasGirinhas = () => {
       if (pacoteError || !pacote) {
         throw new Error('Pacote não encontrado');
       }
+
+      console.log('📦 [useComprasGirinhas] Pacote encontrado:', pacote);
 
       // Simular processamento de pagamento (sempre aprovado para demo)
       const paymentId = `demo_${Date.now()}`;
@@ -88,19 +92,33 @@ export const useComprasGirinhas = () => {
         .select()
         .single();
 
-      if (compraError) throw compraError;
+      if (compraError) {
+        console.error('❌ Erro ao criar compra:', compraError);
+        throw compraError;
+      }
 
-      // Adicionar Girinhas à carteira via transação
+      console.log('✅ [useComprasGirinhas] Compra registrada:', compra);
+
+      // Obter data de expiração configurada
+      const { data: dataExpiracao } = await supabase.rpc('obter_data_expiracao');
+
+      // Inserir transação diretamente (o trigger irá processar automaticamente)
       const { error: transacaoError } = await supabase
         .from('transacoes')
         .insert({
           user_id: user.id,
           tipo: 'compra',
           valor: pacote.valor_girinhas,
-          descricao: `Compra de pacote: ${pacote.nome}`
+          descricao: `Compra de pacote: ${pacote.nome}`,
+          data_expiracao: dataExpiracao
         });
 
-      if (transacaoError) throw transacaoError;
+      if (transacaoError) {
+        console.error('❌ Erro ao criar transação:', transacaoError);
+        throw transacaoError;
+      }
+
+      console.log('✅ [useComprasGirinhas] Transação criada - trigger processará automaticamente');
 
       // Mostrar celebração especial para compras
       const economiaTexto = pacote.desconto_percentual > 0 
@@ -118,7 +136,7 @@ export const useComprasGirinhas = () => {
       // Toast imediato
       toast({
         title: "💳 Compra realizada!",
-        description: `${pacote.valor_girinhas} Girinhas adicionadas à sua carteira!`,
+        description: `${pacote.valor_girinhas} Girinhas adicionadas à sua carteira com validade de 12 meses!`,
       });
 
       // Recarregar dados
@@ -126,7 +144,7 @@ export const useComprasGirinhas = () => {
       
       return true;
     } catch (err) {
-      console.error('Erro ao processar compra:', err);
+      console.error('❌ [useComprasGirinhas] Erro ao processar compra:', err);
       setError(err instanceof Error ? err.message : 'Erro ao processar compra');
       
       toast({
