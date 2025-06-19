@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, Info, AlertTriangle, CheckCircle, Shield, Sparkles } from 'lucide-react';
+import { ShoppingCart, Info, AlertTriangle, CheckCircle, Shield, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,7 +22,8 @@ interface ConfigCompra {
 const CompraLivre: React.FC = () => {
   const [quantidade, setQuantidade] = useState('');
   const [configuracoes, setConfiguracoes] = useState<ConfigCompra>({ min: 10, max: 999000 });
-  const [precoFixo] = useState(1.00); // Preço fixo de R$ 1,00 por Girinha
+  const [precoEmissao, setPrecoEmissao] = useState<number | null>(null);
+  const precoReferencia = 1.00; // Preço de referência sempre R$ 1,00
   
   const { 
     compraSegura, 
@@ -34,9 +35,10 @@ const CompraLivre: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Carregar configurações
+  // Carregar configurações e preço real de emissão
   useEffect(() => {
-    const carregarConfiguracoes = async () => {
+    const carregarDados = async () => {
+      // Carregar configurações
       const { data: configs } = await supabase
         .from('config_sistema')
         .select('chave, valor')
@@ -56,14 +58,35 @@ const CompraLivre: React.FC = () => {
           }
         });
       }
+
+      // Carregar preço real de emissão (com markup)
+      try {
+        const { data: preco, error } = await supabase.rpc('obter_preco_emissao');
+        if (!error && preco) {
+          setPrecoEmissao(Number(preco));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preço de emissão:', error);
+        setPrecoEmissao(precoReferencia); // Fallback para preço de referência
+      }
     };
 
-    carregarConfiguracoes();
+    carregarDados();
   }, []);
 
   const quantidadeNum = parseFloat(quantidade) || 0;
-  const valorTotal = quantidadeNum * precoFixo;
+  const precoReal = precoEmissao || precoReferencia;
+  const valorTotal = quantidadeNum * precoReal;
   
+  // Calcular percentual de diferença
+  const calcularPercentualDiferenca = () => {
+    if (!precoEmissao || precoEmissao === precoReferencia) return null;
+    
+    const diferenca = ((precoEmissao - precoReferencia) / precoReferencia) * 100;
+    return diferenca;
+  };
+
+  const percentualDiferenca = calcularPercentualDiferenca();
   const isQuantidadeValida = quantidadeNum >= configuracoes.min && quantidadeNum <= configuracoes.max;
   const temImpacto = quantidadeNum >= 100;
 
@@ -88,21 +111,43 @@ const CompraLivre: React.FC = () => {
           <ShoppingCart className="w-6 h-6 text-purple-500" />
           Comprar Girinhas
         </CardTitle>
-        <p className="text-sm text-gray-600 mt-1">
-          1 Girinha = R$ 1,00 • Sistema seguro e confiável
-        </p>
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            Sistema seguro e confiável
+          </p>
+          {percentualDiferenca !== null && (
+            <div className="flex items-center justify-center gap-2">
+              {percentualDiferenca > 0 ? (
+                <Badge variant="outline" className="text-orange-700 border-orange-200 bg-orange-50">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  +{percentualDiferenca.toFixed(1)}% acima do valor base
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
+                  <TrendingDown className="w-3 h-3 mr-1" />
+                  {Math.abs(percentualDiferenca).toFixed(1)}% de desconto
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Preço fixo */}
+        {/* Preço atual */}
         <div className="bg-white p-4 rounded-lg border">
           <div className="flex items-center justify-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
             <span className="text-lg font-bold text-purple-600">
-              R$ 1,00 por Girinha
+              R$ {precoReal.toFixed(2)} por Girinha
             </span>
           </div>
-          <p className="text-xs text-gray-500 text-center mt-1">Preço fixo • Sem taxas ocultas</p>
+          <p className="text-xs text-gray-500 text-center mt-1">
+            {percentualDiferenca === null ? 
+              'Preço padrão • Sem taxas ocultas' : 
+              `Preço atual • ${percentualDiferenca > 0 ? 'Valorizada' : 'Promocional'}`
+            }
+          </p>
         </div>
 
         {/* Alerta de segurança */}
@@ -150,7 +195,7 @@ const CompraLivre: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Preço unitário:</span>
-                  <span className="font-bold">R$ 1,00</span>
+                  <span className="font-bold">R$ {precoReal.toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between items-center text-lg">
@@ -208,7 +253,7 @@ const CompraLivre: React.FC = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Preço fixo de R$ 1,00 por Girinha</span>
+                  <span>Preço transparente e justo</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -223,6 +268,15 @@ const CompraLivre: React.FC = () => {
                   <span>Créditos disponíveis imediatamente</span>
                 </div>
               </div>
+
+              {percentualDiferenca !== null && (
+                <div className="bg-purple-50 p-3 rounded-lg mt-4">
+                  <p className="text-sm text-purple-800">
+                    <span className="font-medium">💡 Preço atual:</span> O valor está{' '}
+                    {percentualDiferenca > 0 ? 'valorizado' : 'em promoção'} baseado na dinâmica da comunidade.
+                  </p>
+                </div>
+              )}
 
               <div className="bg-purple-50 p-3 rounded-lg mt-4">
                 <p className="text-sm text-purple-800">
