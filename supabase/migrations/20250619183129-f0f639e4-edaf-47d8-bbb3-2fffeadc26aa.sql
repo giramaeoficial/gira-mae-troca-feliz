@@ -26,6 +26,11 @@ BEGIN
     WHERE user_id = NEW.user_id;
   END IF;
   
+  -- ✅ CORREÇÃO CRÍTICA: Recalcular cotação para operações que afetam mercado
+  IF NEW.tipo IN ('compra', 'gasto', 'recebido', 'queima') THEN
+    PERFORM calcular_cotacao_dinamica();
+  END IF;
+  
   RETURN NEW;
 END;
 $$;

@@ -1111,6 +1111,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      obter_data_expiracao: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       obter_estatisticas_seguidor: {
         Args: { p_usuario_id: string }
         Returns: {
@@ -1141,6 +1145,10 @@ export type Database = {
       obter_ou_criar_conversa_livre: {
         Args: { p_usuario1_id: string; p_usuario2_id: string }
         Returns: string
+      }
+      obter_preco_venda_girinhas: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       obter_valor_bonus: {
         Args: { p_tipo_bonus: string }
