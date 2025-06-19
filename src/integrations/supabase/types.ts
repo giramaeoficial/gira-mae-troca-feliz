@@ -151,6 +151,39 @@ export type Database = {
           },
         ]
       }
+      config_categorias: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          created_at: string
+          descricao: string | null
+          id: string
+          updated_at: string
+          valor_maximo: number
+          valor_minimo: number
+        }
+        Insert: {
+          ativo?: boolean
+          categoria: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor_maximo?: number
+          valor_minimo?: number
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string
+          valor_maximo?: number
+          valor_minimo?: number
+        }
+        Relationships: []
+      }
       config_sistema: {
         Row: {
           chave: string
@@ -1352,6 +1385,10 @@ export type Database = {
           p_quantidade: number
         }
         Returns: string
+      }
+      validar_valor_item_categoria: {
+        Args: { p_categoria: string; p_valor: number }
+        Returns: boolean
       }
       verificar_metas_usuario: {
         Args: { p_user_id: string }

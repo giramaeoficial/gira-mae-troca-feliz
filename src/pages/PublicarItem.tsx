@@ -27,6 +27,8 @@ import ImageUpload from '@/components/ui/image-upload';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, User, School } from 'lucide-react';
+import PriceSuggestions from '@/components/ui/price-suggestions';
+import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 
 const formSchema = z.object({
   titulo: z.string().min(3, {
@@ -56,6 +58,7 @@ const PublicarItem = () => {
   const { user } = useAuth();
   const { publicarItem } = useItens();
   const { filhos } = useProfile();
+  const { getFaixaValores, validarValorCategoria } = useConfigCategorias();
   const navigate = useNavigate();
   const [fotos, setFotos] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,8 +79,19 @@ const PublicarItem = () => {
     },
   });
 
+  const categoriaSelecionada = form.watch('categoria');
+  const estadoSelecionado = form.watch('estado_conservacao');
+  const valorAtual = form.watch('valor_girinhas');
   const filhoSelecionado = form.watch('filho_id');
   const escolaDoFilho = filhos.find(f => f.id === filhoSelecionado)?.escolas_inep;
+
+  // Obter configuração da categoria selecionada
+  const faixaValores = categoriaSelecionada ? getFaixaValores(categoriaSelecionada) : null;
+
+  // Validar valor em tempo real
+  const validacaoValor = categoriaSelecionada && valorAtual 
+    ? validarValorCategoria(categoriaSelecionada, valorAtual)
+    : { valido: true };
 
   // Função para calcular idade
   const calcularIdade = (dataNascimento: string) => {
@@ -108,6 +122,17 @@ const PublicarItem = () => {
       toast({
         title: "Erro",
         description: "Adicione pelo menos uma foto",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validação de valor por categoria
+    const validacao = validarValorCategoria(values.categoria, values.valor_girinhas);
+    if (!validacao.valido) {
+      toast({
+        title: "Valor inválido",
+        description: validacao.mensagem,
         variant: "destructive"
       });
       return;
@@ -314,16 +339,31 @@ const PublicarItem = () => {
                           <Input 
                             type="number" 
                             placeholder="10" 
-                            className="h-12"
+                            className={`h-12 ${!validacaoValor.valido ? 'border-red-500' : ''}`}
                             {...field}
                             onChange={(e) => field.onChange(Number(e.target.value))}
                           />
                         </FormControl>
                         <FormMessage />
+                        {!validacaoValor.valido && (
+                          <p className="text-sm text-red-600">{validacaoValor.mensagem}</p>
+                        )}
                       </FormItem>
                     )}
                   />
                 </div>
+
+                {/* Sugestões de Preços */}
+                {faixaValores && categoriaSelecionada && (
+                  <PriceSuggestions
+                    categoria={categoriaSelecionada}
+                    estadoConservacao={estadoSelecionado}
+                    valorMinimo={faixaValores.minimo}
+                    valorMaximo={faixaValores.maximo}
+                    valorAtual={valorAtual}
+                    onSuggestionClick={(valor) => form.setValue('valor_girinhas', valor)}
+                  />
+                )}
               </CardContent>
             </Card>
 
@@ -457,7 +497,7 @@ const PublicarItem = () => {
             {/* Botão de Publicar */}
             <Button 
               type="submit" 
-              disabled={loading} 
+              disabled={loading || !validacaoValor.valido} 
               className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
               size="lg"
             >

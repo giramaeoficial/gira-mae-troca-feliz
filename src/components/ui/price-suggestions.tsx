@@ -1,85 +1,127 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Sparkles, TrendingUp, Target } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface PriceSuggestionsProps {
   categoria: string;
-  onSelectPrice: (price: number) => void;
-  currentPrice: number;
-  className?: string;
+  estadoConservacao: string;
+  valorMinimo: number;
+  valorMaximo: number;
+  valorAtual?: number;
+  onSuggestionClick: (valor: number) => void;
 }
 
 const PriceSuggestions: React.FC<PriceSuggestionsProps> = ({
   categoria,
-  onSelectPrice,
-  currentPrice,
-  className
+  estadoConservacao,
+  valorMinimo,
+  valorMaximo,
+  valorAtual,
+  onSuggestionClick
 }) => {
-  const getSuggestions = (cat: string) => {
-    const suggestions: Record<string, { min: number; mid: number; max: number; popular: number[] }> = {
-      roupa: { min: 5, mid: 15, max: 35, popular: [10, 15, 20, 25] },
-      brinquedo: { min: 8, mid: 25, max: 60, popular: [15, 25, 35, 45] },
-      calcado: { min: 10, mid: 20, max: 50, popular: [15, 20, 30, 40] },
-      acessorio: { min: 3, mid: 12, max: 25, popular: [5, 10, 15, 20] },
-      kit: { min: 15, mid: 35, max: 80, popular: [20, 30, 40, 50] },
-      outro: { min: 5, mid: 20, max: 40, popular: [10, 15, 25, 30] }
+  // Calcular sugestões baseadas no estado de conservação
+  const calcularSugestoes = () => {
+    const faixa = valorMaximo - valorMinimo;
+    let multiplicador = 0.5; // Valor médio por padrão
+
+    switch (estadoConservacao) {
+      case 'novo':
+        multiplicador = 0.8; // 80% da faixa
+        break;
+      case 'otimo':
+        multiplicador = 0.65; // 65% da faixa
+        break;
+      case 'bom':
+        multiplicador = 0.45; // 45% da faixa
+        break;
+      case 'razoavel':
+        multiplicador = 0.25; // 25% da faixa
+        break;
+    }
+
+    const valorSugerido = valorMinimo + (faixa * multiplicador);
+    
+    return {
+      sugerido: Math.round(valorSugerido),
+      minimo: valorMinimo,
+      maximo: valorMaximo,
+      baixo: Math.round(valorMinimo + (faixa * 0.2)),
+      alto: Math.round(valorMinimo + (faixa * 0.8))
     };
-    return suggestions[cat] || suggestions.outro;
   };
 
-  if (!categoria) return null;
+  const sugestoes = calcularSugestoes();
 
-  const { min, mid, max, popular } = getSuggestions(categoria);
+  const isValorForaDaFaixa = valorAtual && (valorAtual < valorMinimo || valorAtual > valorMaximo);
+  const isValorBaixo = valorAtual && valorAtual < sugestoes.sugerido * 0.8;
+  const isValorAlto = valorAtual && valorAtual > sugestoes.sugerido * 1.2;
 
   return (
-    <div className={cn('space-y-3', className)}>
-      <div className="flex items-center gap-2 text-sm text-gray-600">
-        <TrendingUp className="w-4 h-4" />
-        <span>Sugestões de preço para {categoria}</span>
-      </div>
+    <div className="space-y-3">
+      {/* Informação da faixa permitida */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>Faixa permitida para {categoria}:</strong> {valorMinimo} - {valorMaximo} Girinhas
+        </AlertDescription>
+      </Alert>
 
-      {/* Faixas de preço */}
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div className="text-center p-2 bg-green-50 rounded border">
-          <div className="text-green-600 font-medium">{min} Girinhas</div>
-          <div className="text-gray-500">Econômico</div>
-        </div>
-        <div className="text-center p-2 bg-blue-50 rounded border">
-          <div className="text-blue-600 font-medium">{mid} Girinhas</div>
-          <div className="text-gray-500">Equilibrado</div>
-        </div>
-        <div className="text-center p-2 bg-purple-50 rounded border">
-          <div className="text-purple-600 font-medium">{max} Girinhas</div>
-          <div className="text-gray-500">Premium</div>
-        </div>
-      </div>
+      {/* Alerta se valor está fora da faixa */}
+      {isValorForaDaFaixa && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            ⚠️ Valor deve estar entre {valorMinimo} e {valorMaximo} Girinhas
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {/* Preços populares */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Target className="w-4 h-4" />
-          <span>Preços mais usados</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {popular.map(price => (
-            <Button
-              key={price}
-              variant={currentPrice === price ? "default" : "outline"}
-              size="sm"
-              onClick={() => onSelectPrice(price)}
-              className={cn(
-                "text-xs h-8",
-                currentPrice === price && "bg-primary text-white"
-              )}
+      {/* Sugestões baseadas no estado */}
+      {estadoConservacao && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            Sugestões para itens em estado <strong>{estadoConservacao}</strong>:
+          </p>
+          
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant="outline"
+              className="cursor-pointer hover:bg-primary hover:text-white transition-colors"
+              onClick={() => onSuggestionClick(sugestoes.sugerido)}
             >
-              <Sparkles className="w-3 h-3 mr-1" />
-              {price}
-            </Button>
-          ))}
+              Recomendado: {sugestoes.sugerido}
+            </Badge>
+            
+            <Badge
+              variant="outline"
+              className="cursor-pointer hover:bg-blue-500 hover:text-white transition-colors"
+              onClick={() => onSuggestionClick(sugestoes.baixo)}
+            >
+              <TrendingDown className="w-3 h-3 mr-1" />
+              Econômico: {sugestoes.baixo}
+            </Badge>
+            
+            <Badge
+              variant="outline"
+              className="cursor-pointer hover:bg-orange-500 hover:text-white transition-colors"
+              onClick={() => onSuggestionClick(sugestoes.alto)}
+            >
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Premium: {sugestoes.alto}
+            </Badge>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Feedback sobre o valor atual */}
+      {valorAtual && !isValorForaDaFaixa && (
+        <div className="text-xs text-gray-500">
+          {isValorBaixo && "💰 Preço competitivo - pode atrair mais interessados"}
+          {isValorAlto && "⭐ Preço premium - certifique-se que justifica a qualidade"}
+          {!isValorBaixo && !isValorAlto && "✅ Preço equilibrado para esta categoria"}
+        </div>
+      )}
     </div>
   );
 };
