@@ -11,7 +11,7 @@ DECLARE
   v_saldo_atual DECIMAL(10,2);
   v_item_status TEXT;
   v_nova_posicao INTEGER;
-  v_resultado JSON;
+  v_reserva_id UUID;
 BEGIN
   -- DEBUG: Log dos parâmetros recebidos
   RAISE NOTICE 'DEBUG entrar_fila_espera - Item: %, Usuario: %, Valor: %', p_item_id, p_usuario_id, p_valor_girinhas;
@@ -55,9 +55,9 @@ BEGIN
   
   -- Se item está disponível, fazer reserva direta
   IF v_item_status = 'disponivel' THEN
-    -- Usar função existente de processar reserva
-    SELECT public.processar_reserva(p_item_id, p_usuario_id, p_valor_girinhas) INTO v_resultado;
-    RETURN json_build_object('tipo', 'reserva_direta', 'reserva_id', v_resultado);
+    -- Usar função existente de processar reserva e capturar o UUID retornado
+    SELECT public.processar_reserva(p_item_id, p_usuario_id, p_valor_girinhas) INTO v_reserva_id;
+    RETURN json_build_object('tipo', 'reserva_direta', 'reserva_id', v_reserva_id);
   END IF;
   
   -- Se item está reservado, adicionar à fila
