@@ -975,6 +975,7 @@ export type Database = {
           user_id: string
           usuario_origem: string | null
           valor: number
+          valor_real: number | null
         }
         Insert: {
           cotacao_utilizada?: number | null
@@ -988,6 +989,7 @@ export type Database = {
           user_id: string
           usuario_origem?: string | null
           valor: number
+          valor_real?: number | null
         }
         Update: {
           cotacao_utilizada?: number | null
@@ -1001,6 +1003,7 @@ export type Database = {
           user_id?: string
           usuario_origem?: string | null
           valor?: number
+          valor_real?: number | null
         }
         Relationships: [
           {
