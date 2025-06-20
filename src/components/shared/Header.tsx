@@ -65,12 +65,15 @@ const Header: React.FC<HeaderProps> = ({
             {user ? (
               <Link to="/perfil">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.avatar_url || ""} />
-                  <AvatarFallback>{user.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={user.user_metadata?.avatar_url || ""} />
+                  <AvatarFallback>
+                    {user.user_metadata?.name?.substring(0, 2).toUpperCase() || 
+                     user.email?.substring(0, 2).toUpperCase() || "U"}
+                  </AvatarFallback>
                 </Avatar>
               </Link>
             ) : (
-              <Link to="/login">
+              <Link to="/auth">
                 <Button size="sm">Entrar</Button>
               </Link>
             )}
