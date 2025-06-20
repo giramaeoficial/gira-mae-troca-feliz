@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, MessageCircle, User, Trophy } from 'lucide-react';
+import { Home, Plus, MessageCircle, User, Trophy, Wallet, Package, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useMissoes } from '@/hooks/useMissoes';
@@ -15,6 +15,9 @@ const DesktopNav: React.FC = () => {
     { icon: Plus, label: "Publicar", path: "/publicar" },
     { icon: Trophy, label: "Missões", path: "/missoes" },
     { icon: MessageCircle, label: "Chat", path: "/mensagens" },
+    { icon: Wallet, label: "Carteira", path: "/carteira" },
+    { icon: Package, label: "Reservas", path: "/minhas-reservas" },
+    { icon: Users, label: "Indicações", path: "/indicacoes" },
     { icon: User, label: "Perfil", path: "/perfil" }
   ];
 

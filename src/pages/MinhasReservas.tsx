@@ -1,5 +1,5 @@
-
 import Header from "@/components/shared/Header";
+import QuickNav from "@/components/shared/QuickNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Package, CheckCircle } from "lucide-react";
@@ -56,7 +56,7 @@ const MinhasReservas = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col pb-24 md:pb-8">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8 pb-32 md:pb-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
             Minhas Reservas
@@ -205,6 +205,7 @@ const MinhasReservas = () => {
           )}
         </div>
       </main>
+      <QuickNav />
     </div>
   );
 };

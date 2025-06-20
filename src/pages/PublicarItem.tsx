@@ -1,489 +1,286 @@
-
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { PriceSuggestions } from "@/components/ui/price-suggestions";
 import { Badge } from "@/components/ui/badge";
-import { X, Upload, Camera, Plus, MapPin, Star, AlertCircle, User, School } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Upload, MapPin, Tag, Calendar, Info } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useItens } from '@/hooks/useItens';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { useProfile } from '@/hooks/useProfile';
-import { useEscolas } from '@/hooks/useEscolas';
+import { FormProgress } from '@/components/ui/form-progress';
+import { toast } from "sonner";
+import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
-import ImageUpload from '@/components/ui/image-upload';
-import EscolaPicker from '@/components/escolas/EscolaPicker';
-import PriceSuggestions from '@/components/ui/price-suggestions';
-import { toast } from 'sonner';
 
-const formSchema = z.object({
-  titulo: z.string().min(3, {
-    message: 'Título deve ter pelo menos 3 caracteres.',
-  }),
-  categoria: z.string().min(1, {
-    message: 'Selecione uma categoria.',
-  }),
-  descricao: z.string().min(10, {
-    message: 'Descrição deve ter pelo menos 10 caracteres.',
-  }),
-  estado_conservacao: z.string().min(1, {
-    message: 'Selecione o estado de conservação.',
-  }),
-  tamanho: z.string().optional(),
-  valor_girinhas: z.number({
-    invalid_type_error: 'Valor deve ser um número.',
-  }).min(1, {
-    message: 'Valor deve ser maior que zero.',
-  }),
-  filho_id: z.string().optional(),
-  estado_manual: z.string().optional(),
-  cidade_manual: z.string().optional(),
-});
+interface FormData {
+  nome: string;
+  categoria_id: string;
+  preco: string;
+  descricao: string;
+  localizacao: string;
+  tags: string;
+  data_disponivel: string;
+  imagens: File[];
+}
+
+const validateForm = (formData: FormData): { [key: string]: string } => {
+  const errors: { [key: string]: string } = {};
+
+  if (!formData.nome) {
+    errors.nome = "O nome do item é obrigatório.";
+  }
+
+  if (!formData.categoria_id) {
+    errors.categoria_id = "A categoria é obrigatória.";
+  }
+
+  if (!formData.preco) {
+    errors.preco = "O preço é obrigatório.";
+  } else if (isNaN(Number(formData.preco))) {
+    errors.preco = "O preço deve ser um número.";
+  }
+
+  if (!formData.descricao) {
+    errors.descricao = "A descrição é obrigatória.";
+  }
+
+  if (!formData.localizacao) {
+    errors.localizacao = "A localização é obrigatória.";
+  }
+
+  if (!formData.data_disponivel) {
+    errors.data_disponivel = "A data de disponibilidade é obrigatória.";
+  }
+
+  if (!formData.imagens || formData.imagens.length === 0) {
+    errors.imagens = "Pelo menos uma imagem é obrigatória.";
+  }
+
+  return errors;
+};
 
 const PublicarItem = () => {
-  const { user } = useAuth();
-  const { publicarItem } = useItens();
-  const { filhos } = useProfile();
-  const { getFaixaValores, validarValorCategoria } = useConfigCategorias();
-  const { escolas } = useEscolas();
   const navigate = useNavigate();
-  const [fotos, setFotos] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [usarFilho, setUsarFilho] = useState(true);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      titulo: '',
-      categoria: '',
-      descricao: '',
-      estado_conservacao: '',
-      tamanho: '',
-      valor_girinhas: 1,
-      filho_id: '',
-      estado_manual: '',
-      cidade_manual: '',
-    },
+  const { user } = useAuth();
+  const { categorias } = useConfigCategorias();
+  const { criarItem, isLoading } = useItens();
+  const [formData, setFormData] = useState<FormData>({
+    nome: '',
+    categoria_id: '',
+    preco: '',
+    descricao: '',
+    localizacao: '',
+    tags: '',
+    data_disponivel: '',
+    imagens: []
   });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [progress, setProgress] = useState(0);
 
-  const categoriaSelecionada = form.watch('categoria');
-  const estadoSelecionado = form.watch('estado_conservacao');
-  const valorAtual = form.watch('valor_girinhas');
-  const filhoSelecionado = form.watch('filho_id');
-  const escolaDoFilho = filhos.find(f => f.id === filhoSelecionado)?.escolas_inep;
-
-  // Obter configuração da categoria selecionada
-  const faixaValores = categoriaSelecionada ? getFaixaValores(categoriaSelecionada) : null;
-
-  // Validar valor em tempo real
-  const validacaoValor = categoriaSelecionada && valorAtual 
-    ? validarValorCategoria(categoriaSelecionada, valorAtual)
-    : { valido: true };
-
-  // Função para calcular idade
-  const calcularIdade = (dataNascimento: string) => {
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const mesAtual = hoje.getMonth();
-    const mesNascimento = nascimento.getMonth();
-    
-    if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < nascimento.getDate())) {
-      idade--;
-    }
-    
-    return idade;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!user) {
-      toast.error("Você precisa estar logado para publicar um item");
-      return;
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({ ...prev, categoria_id: value }));
+  };
+
+  const handleImageUpload = (files: File[]) => {
+    setFormData(prev => ({ ...prev, imagens: files }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const validationErrors = validateForm(formData);
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length === 0) {
+      try {
+        const itemData = {
+          ...formData,
+          preco: parseFloat(formData.preco),
+          usuario_id: user?.id,
+        };
+
+        setProgress(30);
+
+        await criarItem(itemData, {
+          onSuccess: () => {
+            setProgress(100);
+            toast.success("Item publicado com sucesso!");
+            navigate('/feed');
+          },
+          onError: (error: any) => {
+            console.error("Erro ao criar item:", error);
+            toast.error("Erro ao publicar o item. Tente novamente.");
+            setProgress(0);
+          },
+        });
+      } catch (error: any) {
+        console.error("Erro ao criar item:", error);
+        toast.error("Erro ao publicar o item. Tente novamente.");
+        setProgress(0);
+      }
+    } else {
+      toast.error("Por favor, corrija os erros no formulário.");
     }
+  };
 
-    if (fotos.length === 0) {
-      toast.error("Adicione pelo menos uma foto");
-      return;
-    }
+  const handlePriceSuggestion = (price: number) => {
+    setFormData(prev => ({ ...prev, preco: String(price) }));
+  };
 
-    // Validação de valor por categoria
-    const validacao = validarValorCategoria(values.categoria, values.valor_girinhas);
-    if (!validacao.valido) {
-      toast.error(validacao.mensagem);
-      return;
-    }
-
-    // Validar se está usando filho e tem filho selecionado
-    if (usarFilho && (!values.filho_id || values.filho_id === '')) {
-      toast.error("Selecione um filho ou use localização manual");
-      return;
-    }
-
-    // Validar se está usando localização manual e tem dados preenchidos
-    if (!usarFilho && (!values.estado_manual || !values.cidade_manual || 
-                       values.estado_manual.trim() === '' || values.cidade_manual.trim() === '')) {
-      toast.error("Informe estado e cidade quando usar localização manual");
-      return;
-    }
-
-    setLoading(true);
-
-    const itemData = {
-      titulo: values.titulo,
-      categoria: values.categoria,
-      descricao: values.descricao,
-      estado_conservacao: values.estado_conservacao,
-      tamanho: values.tamanho || null,
-      valor_girinhas: values.valor_girinhas,
-      publicado_por: user.id,
-      status: 'disponivel',
-      filho_id: usarFilho && values.filho_id ? values.filho_id : null,
-      estado_manual: !usarFilho && values.estado_manual ? values.estado_manual.trim() : null,
-      cidade_manual: !usarFilho && values.cidade_manual ? values.cidade_manual.trim() : null,
-    };
-
-    console.log('Dados do item a serem enviados:', itemData);
-
-    const sucesso = await publicarItem(itemData, fotos);
-    
-    if (sucesso) {
-      navigate('/');
-    }
-    
-    setLoading(false);
+  const formatDateForInput = (dateString: string): string => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8">
-      <Header />
-      
-      <div className="container max-w-lg mx-auto py-4 px-4 pb-24">
-        {/* Cabeçalho */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Publicar Item</h1>
-          <p className="text-sm text-gray-600">Compartilhe algo especial com outras mães</p>
-        </div>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            
-            {/* Upload de Fotos */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Fotos do Item</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ImageUpload
-                  value={fotos}
-                  onChange={setFotos}
-                  maxFiles={3}
-                  maxSizeKB={5000}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Informações Básicas */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Informações Básicas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="titulo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Título</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Ex: Tênis Nike tamanho 32" 
-                          className="h-12"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="categoria"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-12">
-                              <SelectValue placeholder="Categoria" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="roupa">Roupas</SelectItem>
-                            <SelectItem value="calcado">Calçados</SelectItem>
-                            <SelectItem value="brinquedo">Brinquedos</SelectItem>
-                            <SelectItem value="livro">Livros</SelectItem>
-                            <SelectItem value="acessorio">Acessórios</SelectItem>
-                            <SelectItem value="utensilio">Utensílios</SelectItem>
-                            <SelectItem value="outro">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="tamanho"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Tamanho</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="P, M, 32..." 
-                            className="h-12"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="descricao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descrição</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Descreva o item: cor, marca, estado, história..."
-                          className="resize-none min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="estado_conservacao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estado</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="h-12">
-                              <SelectValue placeholder="Estado" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="novo">Novo</SelectItem>
-                            <SelectItem value="otimo">Ótimo</SelectItem>
-                            <SelectItem value="bom">Bom</SelectItem>
-                            <SelectItem value="razoavel">Razoável</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="valor_girinhas"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Girinhas</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="10" 
-                            className={`h-12 ${!validacaoValor.valido ? 'border-red-500' : ''}`}
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        {!validacaoValor.valido && (
-                          <p className="text-sm text-red-600">{validacaoValor.mensagem}</p>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Sugestões de Preços */}
-                {faixaValores && categoriaSelecionada && (
-                  <PriceSuggestions
-                    categoria={categoriaSelecionada}
-                    estadoConservacao={estadoSelecionado}
-                    valorMinimo={faixaValores.minimo}
-                    valorMaximo={faixaValores.maximo}
-                    valorAtual={valorAtual}
-                    onSuggestionClick={(valor) => form.setValue('valor_girinhas', valor)}
-                  />
+    <AuthGuard>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8 pb-32 md:pb-8">
+          <Card className="max-w-3xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold">Publicar Novo Item</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {progress > 0 && (
+                  <FormProgress value={progress} />
                 )}
-              </CardContent>
-            </Card>
 
-            {/* Localização */}
-            <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  Localização
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Toggle entre Filho e Manual */}
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={usarFilho ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setUsarFilho(true);
-                      // Limpar campos manuais quando trocar para filho
-                      form.setValue('estado_manual', '');
-                      form.setValue('cidade_manual', '');
-                    }}
-                    className="flex-1"
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    Meu Filho
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={!usarFilho ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setUsarFilho(false);
-                      // Limpar campo de filho quando trocar para manual
-                      form.setValue('filho_id', '');
-                    }}
-                    className="flex-1"
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Manual
-                  </Button>
+                <div>
+                  <Label htmlFor="nome">Nome do Item</Label>
+                  <Input
+                    type="text"
+                    id="nome"
+                    name="nome"
+                    value={formData.nome}
+                    onChange={handleChange}
+                    placeholder="Ex: Vestido de festa, Livro usado..."
+                  />
+                  {errors.nome && <p className="text-red-500 text-sm">{errors.nome}</p>}
                 </div>
 
-                {usarFilho ? (
-                  <div className="space-y-3">
-                    <FormField
-                      control={form.control}
-                      name="filho_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Selecione o filho</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="h-12">
-                                <SelectValue placeholder="Escolha um filho" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {filhos.map((filho) => (
-                                <SelectItem key={filho.id} value={filho.id}>
-                                  {filho.nome} - {calcularIdade(filho.data_nascimento)} anos
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <div>
+                  <Label htmlFor="categoria_id">Categoria</Label>
+                  <Select onValueChange={handleSelectChange}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categorias?.map(categoria => (
+                        <SelectItem key={categoria.id} value={categoria.id}>
+                          {categoria.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.categoria_id && <p className="text-red-500 text-sm">{errors.categoria_id}</p>}
+                </div>
 
-                    {escolaDoFilho && (
-                      <div className="bg-blue-50 p-3 rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <School className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-900">Escola Detectada</span>
-                        </div>
-                        <p className="text-sm text-blue-800">{escolaDoFilho.escola}</p>
-                        <p className="text-xs text-blue-600">
-                          {escolaDoFilho.municipio}, {escolaDoFilho.uf}
-                        </p>
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          Facilita filtros para outras mães
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-3">
-                    <FormField
-                      control={form.control}
-                      name="estado_manual"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Estado *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="SP" 
-                              className="h-12"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                <div>
+                  <Label htmlFor="preco">Preço (Girinhas)</Label>
+                  <Input
+                    type="number"
+                    id="preco"
+                    name="preco"
+                    value={formData.preco}
+                    onChange={handleChange}
+                    placeholder="Ex: 25"
+                  />
+                  {errors.preco && <p className="text-red-500 text-sm">{errors.preco}</p>}
+                  <PriceSuggestions onSuggest={handlePriceSuggestion} />
+                </div>
 
-                    <FormField
-                      control={form.control}
-                      name="cidade_manual"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cidade *</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="São Paulo" 
-                              className="h-12"
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <div>
+                  <Label htmlFor="descricao">Descrição</Label>
+                  <Textarea
+                    id="descricao"
+                    name="descricao"
+                    value={formData.descricao}
+                    onChange={handleChange}
+                    placeholder="Descreva o item detalhadamente..."
+                  />
+                  {errors.descricao && <p className="text-red-500 text-sm">{errors.descricao}</p>}
+                </div>
 
-            {/* Botão de Publicar */}
-            <Button 
-              type="submit" 
-              disabled={loading || !validacaoValor.valido} 
-              className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
-              size="lg"
-            >
-              {loading ? 'Publicando...' : 'Publicar Item'}
-            </Button>
-          </form>
-        </Form>
+                <div>
+                  <Label htmlFor="localizacao">Localização</Label>
+                  <Input
+                    type="text"
+                    id="localizacao"
+                    name="localizacao"
+                    value={formData.localizacao}
+                    onChange={handleChange}
+                    placeholder="Ex: São Paulo, SP"
+                  />
+                  {errors.localizacao && <p className="text-red-500 text-sm">{errors.localizacao}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                  <Input
+                    type="text"
+                    id="tags"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleChange}
+                    placeholder="Ex: usado, livro, infantil"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="data_disponivel">Data de Disponibilidade</Label>
+                  <Input
+                    type="date"
+                    id="data_disponivel"
+                    name="data_disponivel"
+                    value={formData.data_disponivel}
+                    onChange={handleChange}
+                  />
+                  {errors.data_disponivel && <p className="text-red-500 text-sm">{errors.data_disponivel}</p>}
+                </div>
+
+                <div>
+                  <Label>Imagens</Label>
+                  <ImageUpload onUpload={handleImageUpload} />
+                  {errors.imagens && <p className="text-red-500 text-sm">{errors.imagens}</p>}
+                </div>
+
+                <Button disabled={isLoading} className="w-full">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Publicando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Publicar Item
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </main>
+        <QuickNav />
       </div>
-
-      <QuickNav />
-    </div>
+    </AuthGuard>
   );
 };
 

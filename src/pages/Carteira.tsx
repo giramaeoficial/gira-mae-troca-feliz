@@ -1,4 +1,5 @@
 import Header from "@/components/shared/Header";
+import QuickNav from "@/components/shared/QuickNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ const Carteira = () => {
             <p className="text-gray-600">Carregando carteira...</p>
           </div>
         </main>
+        <QuickNav />
       </div>
     );
   }
@@ -58,7 +60,7 @@ const Carteira = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
+      <main className="flex-grow container mx-auto px-4 py-8 pb-32 md:pb-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -281,6 +283,7 @@ const Carteira = () => {
           </Tabs>
         </div>
       </main>
+      <QuickNav />
     </div>
   );
 };
