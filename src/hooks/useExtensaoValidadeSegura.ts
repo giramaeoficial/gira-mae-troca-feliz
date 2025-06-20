@@ -75,8 +75,8 @@ export const useExtensaoValidadeSegura = () => {
       return false;
     }
 
-    // Tratar o retorno como objeto e fazer type assertion segura
-    const resultado = data as PodeEstenderResponse;
+    // Type assertion segura com conversão via unknown
+    const resultado = data as unknown as PodeEstenderResponse;
     return resultado?.pode_estender ?? false;
   };
 
