@@ -18,7 +18,8 @@ const QuickNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+    // Mostrar apenas no mobile (md:hidden)
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
       <div className="grid grid-cols-5 h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;

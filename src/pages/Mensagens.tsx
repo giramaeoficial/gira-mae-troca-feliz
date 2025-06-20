@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import ChatModal from '@/components/chat/ChatModal';
 import MessageText from '@/components/mensagens/MessageText';
 import MentionInput from '@/components/mensagens/MentionInput';
 import { toast } from "sonner";
+import QuickNav from '@/components/shared/QuickNav';
 
 const Mensagens = () => {
   const { conversaId } = useParams();
@@ -112,7 +112,7 @@ const Mensagens = () => {
   const renderMobile = () => {
     if (conversaId) {
       return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-col h-screen bg-background pb-16"> {/* pb-16 para espaço do QuickNav */}
           <Header />
           
           <div className="flex items-center bg-secondary px-4 py-2 border-b">
@@ -164,7 +164,7 @@ const Mensagens = () => {
     }
 
     return (
-      <div className="flex flex-col h-screen bg-background">
+      <div className="flex flex-col h-screen bg-background pb-16"> {/* pb-16 para espaço do QuickNav */}
         <Header />
         
         <div className="p-4">
@@ -206,7 +206,7 @@ const Mensagens = () => {
   };
 
   const renderDesktop = () => (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background"> {/* Sem padding bottom no desktop */}
       <Header />
       
       <div className="flex h-full">
@@ -320,6 +320,7 @@ const Mensagens = () => {
       <div className="hidden md:block">
         {renderDesktop()}
       </div>
+      <QuickNav />
     </>
   );
 };
