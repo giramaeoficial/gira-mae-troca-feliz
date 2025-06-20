@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +12,7 @@ import CotacaoWidget from "@/modules/girinhas/components/CotacaoWidget";
 import TransferenciaP2P from "@/modules/girinhas/components/TransferenciaP2P";
 import CompraComImpacto from "@/modules/girinhas/components/CompraComImpacto";
 import ValidadeGirinhas from "@/components/carteira/ValidadeGirinhas";
+import BonusDiarioWidget from '@/components/carteira/BonusDiarioWidget';
 import { useConfigSistema } from "@/hooks/useConfigSistema";
 
 const Carteira = () => {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,7 @@ import EmissionChart from '@/components/admin/EmissionChart';
 import CotacaoChart from '@/components/admin/CotacaoChart';
 import SystemConfig from '@/components/admin/SystemConfig';
 import MissoesAdmin from '@/components/admin/MissoesAdmin';
+import ConfigBonusDiario from '@/components/admin/ConfigBonusDiario';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -36,13 +36,14 @@ const AdminDashboard = () => {
 
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="users">Usuários</TabsTrigger>
               <TabsTrigger value="categories">Categorias</TabsTrigger>
               <TabsTrigger value="girinhas">Girinhas</TabsTrigger>
               <TabsTrigger value="cotacao">Cotação</TabsTrigger>
               <TabsTrigger value="system">Sistema</TabsTrigger>
+              <TabsTrigger value="bonus">Bônus</TabsTrigger>
               <TabsTrigger value="missoes">Missões</TabsTrigger>
             </TabsList>
 
@@ -71,6 +72,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="system">
               <SystemConfig />
+            </TabsContent>
+
+            <TabsContent value="bonus">
+              <ConfigBonusDiario />
             </TabsContent>
 
             <TabsContent value="missoes">
