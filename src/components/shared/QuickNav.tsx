@@ -1,30 +1,26 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, MessageCircle, User, Trophy, Wallet, Package, Users } from 'lucide-react';
+import { Home, Plus, Trophy, Menu } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useMissoes } from '@/hooks/useMissoes';
+import MoreMenu from './MoreMenu';
 
 const QuickNav: React.FC = () => {
   const location = useLocation();
   const { missoesCompletas } = useMissoes();
 
-  const navItems = [
+  const mainItems = [
     { icon: Home, label: "Feed", path: "/feed" },
     { icon: Plus, label: "Publicar", path: "/publicar" },
-    { icon: Trophy, label: "Missões", path: "/missoes" },
-    { icon: MessageCircle, label: "Chat", path: "/mensagens" },
-    { icon: Wallet, label: "Carteira", path: "/carteira" },
-    { icon: Package, label: "Reservas", path: "/minhas-reservas" },
-    { icon: Users, label: "Indicações", path: "/indicacoes" },
-    { icon: User, label: "Perfil", path: "/perfil" }
+    { icon: Trophy, label: "Missões", path: "/missoes" }
   ];
 
   return (
     // Mostrar apenas no mobile (md:hidden)
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
       <div className="grid grid-cols-4 h-16">
-        {navItems.slice(0, 4).map((item) => {
+        {mainItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
           
@@ -50,29 +46,14 @@ const QuickNav: React.FC = () => {
             </Link>
           );
         })}
-      </div>
-      
-      {/* Segunda linha para os menus adicionais no mobile */}
-      <div className="grid grid-cols-4 h-12 bg-gray-50 border-t border-gray-100">
-        {navItems.slice(4).map((item) => {
-          const isActive = location.pathname === item.path;
-          const Icon = item.icon;
-          
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center space-y-0.5 ${
-                isActive 
-                  ? 'text-primary bg-primary/5' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
-          );
-        })}
+        
+        {/* Menu "Mais" */}
+        <MoreMenu>
+          <div className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-gray-700 cursor-pointer">
+            <Menu className="h-5 w-5" />
+            <span className="text-xs font-medium">Mais</span>
+          </div>
+        </MoreMenu>
       </div>
     </nav>
   );
