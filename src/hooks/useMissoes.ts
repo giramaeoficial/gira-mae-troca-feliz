@@ -45,6 +45,8 @@ export const useMissoes = () => {
   const { data: missoes = [], isLoading } = useQuery({
     queryKey: ['missoes', user?.id],
     queryFn: async () => {
+      console.log('🔍 Buscando missões para usuário:', user?.id);
+      
       if (!user?.id) return [];
 
       const { data, error } = await supabase
@@ -62,7 +64,12 @@ export const useMissoes = () => {
         .order('tipo_missao')
         .order('recompensa_girinhas', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar missões:', error);
+        throw error;
+      }
+
+      console.log('✅ Missões encontradas:', data?.length);
 
       return data.map(missao => ({
         ...missao,
@@ -97,17 +104,47 @@ export const useMissoes = () => {
   // Coletar recompensa
   const coletarRecompensa = useMutation({
     mutationFn: async (missaoId: string) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
+      console.log('🎁 Tentando coletar recompensa da missão:', missaoId);
+      console.log('👤 Usuário:', user?.id);
+      
+      if (!user?.id) {
+        console.error('❌ Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
 
+      // Verificar se a missão existe e está completa
+      const missao = missoes.find(m => m.id === missaoId);
+      console.log('📋 Dados da missão encontrada:', missao);
+      
+      if (!missao) {
+        console.error('❌ Missão não encontrada:', missaoId);
+        throw new Error('Missão não encontrada');
+      }
+
+      if (missao.status !== 'completa') {
+        console.error('❌ Missão não está completa. Status atual:', missao.status);
+        throw new Error('Missão não está completa');
+      }
+
+      console.log('🚀 Chamando função do Supabase: coletar_recompensa_missao');
+      
       const { data, error } = await supabase.rpc('coletar_recompensa_missao', {
         p_user_id: user.id,
         p_missao_id: missaoId
       });
 
-      if (error) throw error;
+      console.log('📥 Resposta da função:', { data, error });
+
+      if (error) {
+        console.error('❌ Erro na função do Supabase:', error);
+        throw error;
+      }
+      
       return data as unknown as ColetarRecompensaResponse;
     },
     onSuccess: (data) => {
+      console.log('🎉 Sucesso ao coletar recompensa:', data);
+      
       if (data.sucesso) {
         toast({
           title: "🎉 Recompensa coletada!",
@@ -118,25 +155,41 @@ export const useMissoes = () => {
         queryClient.invalidateQueries({ queryKey: ['limite-missoes'] });
         queryClient.invalidateQueries({ queryKey: ['carteira'] });
       } else {
+        console.error('❌ Falha ao coletar:', data.erro);
         toast({
           title: "Erro ao coletar recompensa",
-          description: data.erro,
+          description: data.erro || "Erro desconhecido",
           variant: "destructive",
         });
       }
+    },
+    onError: (error: any) => {
+      console.error('❌ Erro ao coletar recompensa:', error);
+      toast({
+        title: "Erro ao coletar recompensa",
+        description: error.message || "Tente novamente em alguns instantes",
+        variant: "destructive",
+      });
     }
   });
 
   // Verificar progresso
   const verificarProgresso = useMutation({
     mutationFn: async () => {
+      console.log('🔄 Verificando progresso das missões');
+      
       if (!user?.id) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase.rpc('verificar_progresso_missoes', {
         p_user_id: user.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao verificar progresso:', error);
+        throw error;
+      }
+      
+      console.log('✅ Progresso verificado com sucesso');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missoes'] });
@@ -155,6 +208,13 @@ export const useMissoes = () => {
     maximo: limite.limite_maximo,
     percentual: Math.round((limite.total_girinhas_coletadas / limite.limite_maximo) * 100)
   } : null;
+
+  console.log('📊 Estatísticas das missões:', {
+    total: missoes.length,
+    completas: missoesCompletas,
+    coletadas: missoesColetadas,
+    disponiveisParaColetar: totalGirinhasDisponiveis
+  });
 
   return {
     missoes,

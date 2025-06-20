@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +38,18 @@ const MissionCard: React.FC<{ missao: any }> = ({ missao }) => {
   };
 
   const progressPercentual = Math.round((missao.progresso_atual / missao.progresso_necessario) * 100);
+
+  const handleColetar = async () => {
+    console.log('🎯 Clique no botão coletar - Missão:', missao.id, missao.titulo);
+    console.log('📊 Status da missão:', missao.status);
+    console.log('🔄 Loading state:', coletarRecompensa.isPending);
+    
+    try {
+      await coletarRecompensa.mutateAsync(missao.id);
+    } catch (error) {
+      console.error('💥 Erro capturado no handleColetar:', error);
+    }
+  };
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -82,12 +95,15 @@ const MissionCard: React.FC<{ missao: any }> = ({ missao }) => {
             {missao.status === 'completa' && (
               <Button
                 size="sm"
-                onClick={() => coletarRecompensa.mutate(missao.id)}
+                onClick={handleColetar}
                 disabled={coletarRecompensa.isPending}
                 className="w-full mt-1 h-8 text-xs"
               >
                 {coletarRecompensa.isPending ? (
-                  <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                  <>
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-1" />
+                    Coletando...
+                  </>
                 ) : (
                   <>
                     <Gift className="w-3 h-3 mr-1" />
