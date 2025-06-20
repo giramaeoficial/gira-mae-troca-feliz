@@ -127,20 +127,41 @@ export const useMissoes = () => {
       }
 
       console.log('🚀 Chamando função do Supabase: coletar_recompensa_missao');
-      
-      const { data, error } = await supabase.rpc('coletar_recompensa_missao', {
+      console.log('📊 Parâmetros enviados:', {
         p_user_id: user.id,
         p_missao_id: missaoId
       });
-
-      console.log('📥 Resposta da função:', { data, error });
-
-      if (error) {
-        console.error('❌ Erro na função do Supabase:', error);
-        throw error;
-      }
       
-      return data as unknown as ColetarRecompensaResponse;
+      try {
+        const { data, error } = await supabase.rpc('coletar_recompensa_missao', {
+          p_user_id: user.id,
+          p_missao_id: missaoId
+        });
+
+        console.log('📥 Resposta da função:', { data, error });
+
+        if (error) {
+          console.error('❌ Erro na função do Supabase:', error);
+          console.error('🔍 Detalhes do erro:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          
+          // Se o erro for relacionado a constraint, dar uma mensagem mais clara
+          if (error.message?.includes('transacoes_tipo_check') || error.message?.includes('violates check constraint')) {
+            throw new Error('Erro no tipo de transação. Por favor, contate o suporte.');
+          }
+          
+          throw error;
+        }
+        
+        return data as unknown as ColetarRecompensaResponse;
+      } catch (functionError) {
+        console.error('💥 Erro capturado ao chamar função RPC:', functionError);
+        throw functionError;
+      }
     },
     onSuccess: (data) => {
       console.log('🎉 Sucesso ao coletar recompensa:', data);
@@ -165,9 +186,18 @@ export const useMissoes = () => {
     },
     onError: (error: any) => {
       console.error('❌ Erro ao coletar recompensa:', error);
+      
+      let errorMessage = "Tente novamente em alguns instantes";
+      
+      if (error.message?.includes('transacoes_tipo_check') || error.message?.includes('violates check constraint')) {
+        errorMessage = "Erro no tipo de transação. A configuração do sistema precisa ser ajustada.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erro ao coletar recompensa",
-        description: error.message || "Tente novamente em alguns instantes",
+        description: errorMessage,
         variant: "destructive",
       });
     }
