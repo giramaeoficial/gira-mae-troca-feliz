@@ -12,6 +12,8 @@ interface GirinhasExpiracao {
     data_compra: string;
     data_expiracao: string;
     dias_restantes: number;
+    tipo: string;
+    descricao: string;
   }>;
 }
 
@@ -48,12 +50,14 @@ export const useGirinhasExpiracao = () => {
 
       console.log('✅ [useGirinhasExpiracao] Dados carregados:', resultado);
 
-      // Correção do TypeScript: processar detalhes_expiracao adequadamente
+      // Processar detalhes_expiracao adequadamente
       let detalhesExpiracao: Array<{
         valor: number;
         data_compra: string;
         data_expiracao: string;
         dias_restantes: number;
+        tipo: string;
+        descricao: string;
       }> = [];
 
       if (resultado.detalhes_expiracao) {
@@ -69,7 +73,9 @@ export const useGirinhasExpiracao = () => {
               valor: Number(item.valor || 0),
               data_compra: String(item.data_compra || ''),
               data_expiracao: String(item.data_expiracao || ''),
-              dias_restantes: Number(item.dias_restantes || 0)
+              dias_restantes: Number(item.dias_restantes || 0),
+              tipo: String(item.tipo || ''),
+              descricao: String(item.descricao || '')
             }));
           }
         } catch (parseError) {
@@ -86,7 +92,7 @@ export const useGirinhasExpiracao = () => {
       };
     },
     enabled: !!user,
-    // CORREÇÃO: Cache muito menos agressivo para permitir atualizações
+    // Cache muito menos agressivo para permitir atualizações
     staleTime: 0, // Sem cache stale
     gcTime: 1000 * 60 * 2, // 2 minutos apenas
     refetchOnWindowFocus: true,
