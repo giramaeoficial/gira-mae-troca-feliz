@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -85,6 +86,11 @@ const Carteira = () => {
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Widget de Bônus Diário - Destacado no topo */}
+          <div className="mb-6">
+            <BonusDiarioWidget />
+          </div>
 
           {/* Widgets superiores */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
