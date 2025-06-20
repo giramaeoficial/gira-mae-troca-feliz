@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, AlertTriangle, Clock } from "lucide-react";
+import { Calendar, AlertTriangle, Clock, Gift, Trophy, Star } from "lucide-react";
 import { useGirinhasExpiracao } from "@/hooks/useGirinhasExpiracao";
 
 const ValidadeGirinhas = () => {
@@ -43,6 +43,31 @@ const ValidadeGirinhas = () => {
     return <Calendar className="w-4 h-4" />;
   };
 
+  const getIconePorTipo = (tipo: string) => {
+    switch (tipo) {
+      case 'compra':
+        return <Calendar className="w-4 h-4 text-blue-600" />;
+      case 'bonus':
+        return <Gift className="w-4 h-4 text-green-600" />;
+      case 'missao':
+        return <Trophy className="w-4 h-4 text-purple-600" />;
+      case 'missao_recompensa':
+        return <Star className="w-4 h-4 text-yellow-600" />;
+      default:
+        return <Calendar className="w-4 h-4 text-gray-600" />;
+    }
+  };
+
+  const formatarTipo = (tipo: string) => {
+    const tipos = {
+      'compra': 'Compra',
+      'bonus': 'Bônus',
+      'missao': 'Missão',
+      'missao_recompensa': 'Recompensa'
+    };
+    return tipos[tipo as keyof typeof tipos] || tipo;
+  };
+
   return (
     <div className="space-y-4">
       {/* Alerta de Girinhas expirando */}
@@ -78,13 +103,14 @@ const ValidadeGirinhas = () => {
               <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">Nenhuma Girinha com validade encontrada</p>
               <p className="text-sm text-gray-400 mt-1">
-                Compre Girinhas para ver as informações de validade aqui
+                Compre Girinhas ou complete missões para ver as informações de validade aqui
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="grid grid-cols-4 gap-2 text-sm font-medium text-gray-600 pb-2 border-b">
-                <span>Data da Compra</span>
+              <div className="grid grid-cols-5 gap-2 text-sm font-medium text-gray-600 pb-2 border-b">
+                <span>Tipo</span>
+                <span>Data</span>
                 <span>Quantidade</span>
                 <span>Expira em</span>
                 <span>Status</span>
@@ -95,8 +121,14 @@ const ValidadeGirinhas = () => {
                 .map((item, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-4 gap-2 items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="grid grid-cols-5 gap-2 items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
+                  <div className="flex items-center gap-2">
+                    {getIconePorTipo(item.tipo)}
+                    <span className="text-sm font-medium text-gray-700">
+                      {formatarTipo(item.tipo)}
+                    </span>
+                  </div>
                   <span className="text-sm text-gray-700">
                     {formatarData(item.data_compra)}
                   </span>
@@ -125,7 +157,7 @@ const ValidadeGirinhas = () => {
                 <strong>Próxima expiração:</strong> {formatarData(expiracao.proxima_expiracao)}
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                ℹ️ Todas as Girinhas compradas têm validade de 12 meses após a compra
+                ℹ️ Todas as Girinhas (compras, bônus e missões) têm validade de 12 meses após receção
               </p>
             </div>
           )}
