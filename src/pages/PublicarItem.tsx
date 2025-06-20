@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -6,15 +7,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ImageUpload } from "@/components/ui/image-upload";
-import { PriceSuggestions } from "@/components/ui/price-suggestions";
+import ImageUpload from "@/components/ui/image-upload";
+import PriceSuggestions from "@/components/ui/price-suggestions";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Upload, MapPin, Tag, Calendar, Info } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useItens } from '@/hooks/useItens';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { FormProgress } from '@/components/ui/form-progress';
+import FormProgress from '@/components/ui/form-progress';
 import { toast } from "sonner";
 import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
@@ -70,8 +71,8 @@ const validateForm = (formData: FormData): { [key: string]: string } => {
 const PublicarItem = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { categorias } = useConfigCategorias();
-  const { criarItem, isLoading } = useItens();
+  const { configuracoes } = useConfigCategorias();
+  const { criarItem, loading } = useItens();
   const [formData, setFormData] = useState<FormData>({
     nome: '',
     categoria_id: '',
@@ -147,6 +148,21 @@ const PublicarItem = () => {
     return `${year}-${month}-${day}`;
   };
 
+  // Calcular progresso do formulário
+  const calculateProgress = () => {
+    const steps = [
+      { label: "Nome", completed: !!formData.nome, required: true },
+      { label: "Categoria", completed: !!formData.categoria_id, required: true },
+      { label: "Preço", completed: !!formData.preco, required: true },
+      { label: "Descrição", completed: !!formData.descricao, required: true },
+      { label: "Localização", completed: !!formData.localizacao, required: true },
+      { label: "Data", completed: !!formData.data_disponivel, required: true },
+      { label: "Imagens", completed: formData.imagens.length > 0, required: true },
+      { label: "Tags", completed: !!formData.tags, required: false }
+    ];
+    return steps;
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
@@ -159,7 +175,7 @@ const PublicarItem = () => {
             <CardContent className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {progress > 0 && (
-                  <FormProgress value={progress} />
+                  <FormProgress steps={calculateProgress()} />
                 )}
 
                 <div>
@@ -182,9 +198,9 @@ const PublicarItem = () => {
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categorias?.map(categoria => (
+                      {configuracoes?.map(categoria => (
                         <SelectItem key={categoria.id} value={categoria.id}>
-                          {categoria.nome}
+                          {categoria.categoria}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -257,12 +273,12 @@ const PublicarItem = () => {
 
                 <div>
                   <Label>Imagens</Label>
-                  <ImageUpload onUpload={handleImageUpload} />
+                  <ImageUpload value={formData.imagens} onChange={handleImageUpload} />
                   {errors.imagens && <p className="text-red-500 text-sm">{errors.imagens}</p>}
                 </div>
 
-                <Button disabled={isLoading} className="w-full">
-                  {isLoading ? (
+                <Button disabled={loading} className="w-full">
+                  {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Publicando...
