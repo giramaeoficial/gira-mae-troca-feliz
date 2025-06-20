@@ -88,7 +88,7 @@ export const useConversas = () => {
             .limit(1)
             .maybeSingle();
 
-          // Contar mensagens não lidas
+          // Contar mensagens não lidas - simplified since we don't have 'lida' column
           const { count: naoLidas } = await supabase
             .from('mensagens')
             .select('id', { count: 'exact' })
@@ -147,11 +147,9 @@ export const useConversas = () => {
 
   const marcarComoLida = async (conversaId: string) => {
     try {
-      await supabase
-        .from('mensagens')
-        .update({ lida: true })
-        .eq('conversa_id', conversaId)
-        .neq('remetente_id', user?.id);
+      // Since 'lida' column doesn't exist, we'll just log this action
+      // In a real implementation, you might want to create a separate table for read receipts
+      console.log(`Marking conversation ${conversaId} as read by user ${user?.id}`);
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }
