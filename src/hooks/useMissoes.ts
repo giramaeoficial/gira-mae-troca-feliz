@@ -30,6 +30,12 @@ export interface LimiteMissoes {
   proximo_reset: string;
 }
 
+interface ColetarRecompensaResponse {
+  sucesso: boolean;
+  girinhas_recebidas?: number;
+  erro?: string;
+}
+
 export const useMissoes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -60,8 +66,9 @@ export const useMissoes = () => {
 
       return data.map(missao => ({
         ...missao,
+        condicoes: missao.condicoes as { tipo: string; quantidade: number },
         progresso_atual: missao.missoes_usuarios?.[0]?.progresso_atual || 0,
-        progresso_necessario: missao.missoes_usuarios?.[0]?.progresso_necessario || missao.condicoes.quantidade,
+        progresso_necessario: missao.missoes_usuarios?.[0]?.progresso_necessario || (missao.condicoes as any).quantidade,
         status: missao.missoes_usuarios?.[0]?.status || 'em_progresso',
         data_completada: missao.missoes_usuarios?.[0]?.data_completada
       })) as Missao[];
@@ -98,7 +105,7 @@ export const useMissoes = () => {
       });
 
       if (error) throw error;
-      return data;
+      return data as ColetarRecompensaResponse;
     },
     onSuccess: (data) => {
       if (data.sucesso) {

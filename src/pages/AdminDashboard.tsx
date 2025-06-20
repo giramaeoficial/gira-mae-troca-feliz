@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +18,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <AuthGuard requireAuth>
+    <AuthGuard>
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

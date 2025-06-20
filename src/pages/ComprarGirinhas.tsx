@@ -11,7 +11,7 @@ import CompraLivre from "@/components/girinhas/CompraLivre";
 const ComprarGirinhas = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 md:pb-8">
-      <Header activePage="comprar-girinhas" />
+      <Header />
       
       <main className="flex-grow container mx-auto px-4 py-6">
         <div className="max-w-2xl mx-auto">

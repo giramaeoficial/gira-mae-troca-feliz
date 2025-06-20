@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,7 @@ const FormMissao: React.FC<{
     defaultValues: missao || {
       titulo: '',
       descricao: '',
-      tipo_missao: 'basic',
+      tipo_missao: 'basic' as const,
       categoria: 'perfil',
       icone: 'trophy',
       recompensa_girinhas: 10,
@@ -53,7 +52,7 @@ const FormMissao: React.FC<{
 
         <div>
           <Label htmlFor="tipo_missao">Tipo de Missão</Label>
-          <Select onValueChange={(value) => setValue('tipo_missao', value)}>
+          <Select onValueChange={(value: 'basic' | 'engagement' | 'social') => setValue('tipo_missao', value)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>

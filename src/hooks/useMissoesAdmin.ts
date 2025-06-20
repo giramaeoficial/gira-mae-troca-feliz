@@ -36,7 +36,11 @@ export const useMissoesAdmin = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as MissaoAdmin[];
+      
+      return data.map(missao => ({
+        ...missao,
+        condicoes: missao.condicoes as { tipo: string; quantidade: number }
+      })) as MissaoAdmin[];
     }
   });
 
