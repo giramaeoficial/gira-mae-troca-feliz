@@ -27,6 +27,10 @@ const BonusDiarioWidget: React.FC = () => {
   const validadeHoras = config.validade_horas;
   const progressoHoras = horasRestantes > 0 ? ((validadeHoras - horasRestantes) / validadeHoras) * 100 : 100;
 
+  const handleColetarBonus = () => {
+    coletarBonus();
+  };
+
   return (
     <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 shadow-lg">
       <CardHeader className="pb-3">
@@ -57,7 +61,7 @@ const BonusDiarioWidget: React.FC = () => {
             </div>
 
             <Button 
-              onClick={coletarBonus}
+              onClick={handleColetarBonus}
               disabled={isColetando}
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 text-lg shadow-lg transform hover:scale-105 transition-all duration-200"
             >

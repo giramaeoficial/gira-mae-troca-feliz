@@ -18,6 +18,12 @@ interface StatusBonusDiario {
   ja_coletou_hoje: boolean;
 }
 
+interface ConfigValue {
+  ativo?: boolean;
+  girinhas?: number;
+  horas?: number;
+}
+
 export const useBonusDiario = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -39,10 +45,14 @@ export const useBonusDiario = () => {
         return acc;
       }, {} as any);
 
+      const ativoConfig = configObj.bonus_diario_ativo as ConfigValue;
+      const valorConfig = configObj.bonus_diario_valor as ConfigValue;
+      const validadeConfig = configObj.bonus_diario_validade as ConfigValue;
+
       return {
-        ativo: configObj.bonus_diario_ativo?.ativo ?? true,
-        valor_girinhas: configObj.bonus_diario_valor?.girinhas ?? 5,
-        validade_horas: configObj.bonus_diario_validade?.horas ?? 24
+        ativo: ativoConfig?.ativo ?? true,
+        valor_girinhas: valorConfig?.girinhas ?? 5,
+        validade_horas: validadeConfig?.horas ?? 24
       };
     },
     staleTime: 60000, // 1 minuto
@@ -128,12 +138,22 @@ export const useBonusDiario = () => {
 
       if (error) throw error;
 
+      // Buscar carteira atual
+      const { data: carteiraAtual } = await supabase
+        .from('carteiras')
+        .select('saldo_atual, total_recebido')
+        .eq('user_id', user.id)
+        .single();
+
+      const saldoAtual = carteiraAtual?.saldo_atual || 0;
+      const totalRecebidoAtual = carteiraAtual?.total_recebido || 0;
+
       // Atualizar carteira
       const { error: carteiraError } = await supabase
         .from('carteiras')
         .update({
-          saldo_atual: supabase.rpc('coalesce', { value: 0 }) + valorGirinhas,
-          total_recebido: supabase.rpc('coalesce', { value: 0 }) + valorGirinhas
+          saldo_atual: Number(saldoAtual) + valorGirinhas,
+          total_recebido: Number(totalRecebidoAtual) + valorGirinhas
         })
         .eq('user_id', user.id);
 

@@ -9,6 +9,12 @@ import { Gift, Save, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface ConfigValue {
+  ativo?: boolean;
+  girinhas?: number;
+  horas?: number;
+}
+
 const ConfigBonusDiario: React.FC = () => {
   const [config, setConfig] = useState({
     ativo: true,
@@ -33,15 +39,16 @@ const ConfigBonusDiario: React.FC = () => {
 
       if (configs) {
         configs.forEach(config => {
+          const configValue = config.valor as ConfigValue;
           switch (config.chave) {
             case 'bonus_diario_ativo':
-              setConfig(prev => ({ ...prev, ativo: config.valor?.ativo ?? true }));
+              setConfig(prev => ({ ...prev, ativo: configValue?.ativo ?? true }));
               break;
             case 'bonus_diario_valor':
-              setConfig(prev => ({ ...prev, valorGirinhas: config.valor?.girinhas ?? 5 }));
+              setConfig(prev => ({ ...prev, valorGirinhas: configValue?.girinhas ?? 5 }));
               break;
             case 'bonus_diario_validade':
-              setConfig(prev => ({ ...prev, validadeHoras: config.valor?.horas ?? 24 }));
+              setConfig(prev => ({ ...prev, validadeHoras: configValue?.horas ?? 24 }));
               break;
           }
         });
