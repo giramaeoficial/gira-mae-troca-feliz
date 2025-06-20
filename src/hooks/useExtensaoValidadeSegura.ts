@@ -20,6 +20,11 @@ interface ResultadoExtensao {
   girinhas_salvas?: number;
 }
 
+interface PodeEstenderResponse {
+  pode_estender: boolean;
+  motivo: string;
+}
+
 export const useExtensaoValidadeSegura = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -70,7 +75,9 @@ export const useExtensaoValidadeSegura = () => {
       return false;
     }
 
-    return data?.pode_estender ?? false;
+    // Tratar o retorno como objeto e fazer type assertion segura
+    const resultado = data as PodeEstenderResponse;
+    return resultado?.pode_estender ?? false;
   };
 
   // Mutation para estender validade (usando função segura do backend)
@@ -92,7 +99,9 @@ export const useExtensaoValidadeSegura = () => {
       }
 
       console.log('✅ [ExtensãoSegura] Resultado do backend:', data);
-      return data as ResultadoExtensao;
+      
+      // Type assertion segura para o resultado
+      return data as unknown as ResultadoExtensao;
     },
     onSuccess: (resultado) => {
       if (resultado.sucesso) {
