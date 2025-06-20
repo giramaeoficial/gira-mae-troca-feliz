@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ const PublicarItem = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { configuracoes } = useConfigCategorias();
-  const { criarItem, loading } = useItens();
+  const { publicarItem, loading } = useItens();
   const [formData, setFormData] = useState<FormData>({
     nome: '',
     categoria_id: '',
@@ -107,25 +108,28 @@ const PublicarItem = () => {
     if (Object.keys(validationErrors).length === 0) {
       try {
         const itemData = {
-          ...formData,
-          preco: parseFloat(formData.preco),
-          usuario_id: user?.id,
+          titulo: formData.nome,
+          descricao: formData.descricao,
+          categoria: formData.categoria_id,
+          valor_girinhas: parseFloat(formData.preco),
+          publicado_por: user?.id,
+          estado_manual: formData.localizacao,
+          data_disponivel: formData.data_disponivel,
+          status: 'disponivel'
         };
 
         setProgress(30);
 
-        await criarItem(itemData, {
-          onSuccess: () => {
-            setProgress(100);
-            toast.success("Item publicado com sucesso!");
-            navigate('/feed');
-          },
-          onError: (error: any) => {
-            console.error("Erro ao criar item:", error);
-            toast.error("Erro ao publicar o item. Tente novamente.");
-            setProgress(0);
-          },
-        });
+        const success = await publicarItem(itemData, formData.imagens);
+        
+        if (success) {
+          setProgress(100);
+          toast.success("Item publicado com sucesso!");
+          navigate('/feed');
+        } else {
+          toast.error("Erro ao publicar o item. Tente novamente.");
+          setProgress(0);
+        }
       } catch (error: any) {
         console.error("Erro ao criar item:", error);
         toast.error("Erro ao publicar o item. Tente novamente.");
@@ -162,6 +166,9 @@ const PublicarItem = () => {
     ];
     return steps;
   };
+
+  // Obter categoria selecionada
+  const categoriaSelecionada = configuracoes?.find(c => c.id === formData.categoria_id);
 
   return (
     <AuthGuard>
@@ -219,7 +226,16 @@ const PublicarItem = () => {
                     placeholder="Ex: 25"
                   />
                   {errors.preco && <p className="text-red-500 text-sm">{errors.preco}</p>}
-                  <PriceSuggestions onSuggest={handlePriceSuggestion} />
+                  {categoriaSelecionada && (
+                    <PriceSuggestions 
+                      categoria={categoriaSelecionada.categoria}
+                      estadoConservacao="bom"
+                      valorMinimo={categoriaSelecionada.valor_minimo}
+                      valorMaximo={categoriaSelecionada.valor_maximo}
+                      valorAtual={formData.preco ? Number(formData.preco) : undefined}
+                      onSuggestionClick={handlePriceSuggestion}
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -301,3 +317,4 @@ const PublicarItem = () => {
 };
 
 export default PublicarItem;
+
