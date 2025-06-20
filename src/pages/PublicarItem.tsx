@@ -1,34 +1,26 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-
-import { Button } from "@/components/ui/button"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X, Upload, Camera, Plus, MapPin, Star, AlertCircle } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useItens } from '@/hooks/useItens';
-import { toast } from '@/hooks/use-toast';
-import { useProfile } from '@/hooks/useProfile';
-import Header from '@/components/shared/Header';
-import QuickNav from '@/components/shared/QuickNav';
-import ImageUpload from '@/components/ui/image-upload';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, User, School } from 'lucide-react';
-import PriceSuggestions from '@/components/ui/price-suggestions';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { useProfile } from '@/hooks/useProfile';
+import { useEscolas } from '@/hooks/useEscolas';
+import Header from '@/components/shared/Header';
+import ImageUpload from '@/components/ui/image-upload';
+import EscolaPicker from '@/components/escolas/EscolaPicker';
+import PriceSuggestions from '@/components/ui/price-suggestions';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   titulo: z.string().min(3, {
@@ -59,6 +51,7 @@ const PublicarItem = () => {
   const { publicarItem } = useItens();
   const { filhos } = useProfile();
   const { getFaixaValores, validarValorCategoria } = useConfigCategorias();
+  const { escolas } = useEscolas();
   const navigate = useNavigate();
   const [fotos, setFotos] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -187,8 +180,8 @@ const PublicarItem = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
-      <Header activePage="publicar" />
+    <div className="min-h-screen bg-background pb-24 md:pb-8">
+      <Header />
       
       <div className="container max-w-lg mx-auto py-4 px-4 pb-24">
         {/* Cabeçalho */}

@@ -105,7 +105,7 @@ export const useMissoes = () => {
       });
 
       if (error) throw error;
-      return data as ColetarRecompensaResponse;
+      return data as unknown as ColetarRecompensaResponse;
     },
     onSuccess: (data) => {
       if (data.sucesso) {
