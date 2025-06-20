@@ -368,6 +368,57 @@ export type Database = {
         }
         Relationships: []
       }
+      extensoes_validade: {
+        Row: {
+          created_at: string | null
+          custo_extensao: number
+          data_expiracao_nova: string
+          data_expiracao_original: string
+          dias_adicionados: number
+          id: string
+          transacao_id: string
+          user_id: string
+          valor_original: number
+        }
+        Insert: {
+          created_at?: string | null
+          custo_extensao: number
+          data_expiracao_nova: string
+          data_expiracao_original: string
+          dias_adicionados: number
+          id?: string
+          transacao_id: string
+          user_id: string
+          valor_original: number
+        }
+        Update: {
+          created_at?: string | null
+          custo_extensao?: number
+          data_expiracao_nova?: string
+          data_expiracao_original?: string
+          dias_adicionados?: number
+          id?: string
+          transacao_id?: string
+          user_id?: string
+          valor_original?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extensoes_validade_transacao_id_fkey"
+            columns: ["transacao_id"]
+            isOneToOne: true
+            referencedRelation: "transacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "extensoes_validade_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favoritos: {
         Row: {
           created_at: string
@@ -1357,6 +1408,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      estender_validade_girinhas_seguro: {
+        Args: { p_user_id: string; p_transacao_id: string }
+        Returns: Json
+      }
       get_municipios_por_uf: {
         Args: { uf_param: string }
         Returns: string[]
@@ -1412,6 +1467,15 @@ export type Database = {
           detalhes_expiracao: Json
         }[]
       }
+      obter_girinhas_expiracao_seguro: {
+        Args: { p_user_id: string }
+        Returns: {
+          total_expirando_7_dias: number
+          total_expirando_30_dias: number
+          proxima_expiracao: string
+          detalhes_expiracao: Json
+        }[]
+      }
       obter_ou_criar_conversa: {
         Args: { p_reserva_id: string }
         Returns: string
@@ -1436,9 +1500,17 @@ export type Database = {
         Args: { p_tipo_bonus: string }
         Returns: number
       }
+      pode_estender_transacao: {
+        Args: { p_user_id: string; p_transacao_id: string }
+        Returns: Json
+      }
       preco_emissao: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      processar_bonus_diario: {
+        Args: { p_user_id: string; p_valor_girinhas: number }
+        Returns: boolean
       }
       processar_bonus_indicacao: {
         Args: { p_indicado_id: string; p_tipo_bonus: string }
