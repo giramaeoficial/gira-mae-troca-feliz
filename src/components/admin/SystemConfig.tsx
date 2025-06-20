@@ -9,6 +9,7 @@ import { Save, Settings, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import ConfigCompraGirinhas from './ConfigCompraGirinhas';
+import ConfigExtensaoValidade from './ConfigExtensaoValidade';
 
 const SystemConfig: React.FC = () => {
   const [config, setConfig] = useState({
@@ -133,9 +134,10 @@ const SystemConfig: React.FC = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="sistema" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="sistema">Sistema Geral</TabsTrigger>
           <TabsTrigger value="compras">Compra de Girinhas</TabsTrigger>
+          <TabsTrigger value="extensao">Extensão de Validade</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sistema">
@@ -260,6 +262,10 @@ const SystemConfig: React.FC = () => {
 
         <TabsContent value="compras">
           <ConfigCompraGirinhas />
+        </TabsContent>
+
+        <TabsContent value="extensao">
+          <ConfigExtensaoValidade />
         </TabsContent>
       </Tabs>
     </div>

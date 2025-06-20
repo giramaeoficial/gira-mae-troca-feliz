@@ -1294,6 +1294,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      calcular_custo_extensao: {
+        Args: { p_valor_expirando: number }
+        Returns: number
+      }
       calcular_markup_para_preco_alvo: {
         Args: { preco_alvo: number }
         Returns: Json
@@ -1344,6 +1348,14 @@ export type Database = {
           p_valor_girinhas: number
         }
         Returns: Json
+      }
+      estender_validade_girinhas: {
+        Args: {
+          p_user_id: string
+          p_valor_expirando: number
+          p_nova_data_expiracao: string
+        }
+        Returns: boolean
       }
       get_municipios_por_uf: {
         Args: { uf_param: string }

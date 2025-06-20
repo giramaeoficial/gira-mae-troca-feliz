@@ -5,8 +5,7 @@ import QuickNav from "@/components/shared/QuickNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Wallet, History, ShoppingCart, Send, Sparkles, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
+import { Wallet, History, ShoppingCart, Send, Sparkles, TrendingUp, Calendar } from "lucide-react";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useGirinhasExpiracao } from "@/hooks/useGirinhasExpiracao";
 import CotacaoWidget from "@/modules/girinhas/components/CotacaoWidget";
@@ -14,6 +13,7 @@ import TransferenciaP2P from "@/modules/girinhas/components/TransferenciaP2P";
 import CompraComImpacto from "@/modules/girinhas/components/CompraComImpacto";
 import ValidadeGirinhas from "@/components/carteira/ValidadeGirinhas";
 import BonusDiarioWidget from '@/components/carteira/BonusDiarioWidget';
+import AlertaExpiracaoComExtensao from '@/components/carteira/AlertaExpiracaoComExtensao';
 import { useConfigSistema } from "@/hooks/useConfigSistema";
 
 const Carteira = () => {
@@ -45,7 +45,8 @@ const Carteira = () => {
       'queima': 'Queima',
       'transferencia_p2p_saida': 'Transferência Enviada',
       'transferencia_p2p_entrada': 'Transferência Recebida',
-      'taxa': 'Taxa'
+      'taxa': 'Taxa',
+      'extensao_validade': 'Extensão de Validade'
     };
     return tipos[tipo as keyof typeof tipos] || tipo;
   };
@@ -54,7 +55,7 @@ const Carteira = () => {
     if (['recebido', 'bonus', 'transferencia_p2p_entrada'].includes(tipo)) {
       return 'text-green-600 bg-green-50';
     }
-    if (['gasto', 'queima', 'transferencia_p2p_saida', 'taxa'].includes(tipo)) {
+    if (['gasto', 'queima', 'transferencia_p2p_saida', 'taxa', 'extensao_validade'].includes(tipo)) {
       return 'text-red-600 bg-red-50';
     }
     return 'text-blue-600 bg-blue-50';
@@ -73,19 +74,14 @@ const Carteira = () => {
             <p className="text-gray-600">Gerencie suas Girinhas com validade de 12 meses, veja cotações e faça transferências</p>
           </div>
 
-          {/* Alerta global de expiração */}
-          {expiracao.total_expirando_30_dias > 0 && (
-            <Alert className={`mb-6 ${expiracao.total_expirando_7_dias > 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}>
-              <AlertTriangle className={`h-4 w-4 ${expiracao.total_expirando_7_dias > 0 ? 'text-red-600' : 'text-yellow-600'}`} />
-              <AlertDescription className={expiracao.total_expirando_7_dias > 0 ? 'text-red-800' : 'text-yellow-800'}>
-                {expiracao.total_expirando_7_dias > 0 ? (
-                  <>⚠️ <strong>Urgente!</strong> {expiracao.total_expirando_7_dias.toFixed(0)} Girinhas expiram nos próximos 7 dias. Use antes de perder!</>
-                ) : (
-                  <>📅 {expiracao.total_expirando_30_dias.toFixed(0)} Girinhas expiram nos próximos 30 dias. Fique atenta às validades.</>
-                )}
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Alerta global de expiração com extensão */}
+          <div className="mb-6">
+            <AlertaExpiracaoComExtensao
+              totalExpirando7Dias={expiracao.total_expirando_7_dias}
+              totalExpirando30Dias={expiracao.total_expirando_30_dias}
+              proximaExpiracao={expiracao.proxima_expiracao}
+            />
+          </div>
 
           {/* Widget de Bônus Diário - Destacado no topo */}
           <div className="mb-6">
@@ -113,7 +109,7 @@ const Carteira = () => {
                   {expiracao.total_expirando_7_dias > 0 && (
                     <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded-lg">
                       <p className="text-sm text-red-700 font-medium flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4" />
+                        <Calendar className="w-4 h-4" />
                         {expiracao.total_expirando_7_dias.toFixed(0)} expirando em 7 dias
                       </p>
                     </div>
