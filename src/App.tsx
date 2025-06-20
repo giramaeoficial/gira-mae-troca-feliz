@@ -1,151 +1,53 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { RecompensasProvider } from "@/components/recompensas/ProviderRecompensas";
-import AuthGuard from "@/components/auth/AuthGuard";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import Login from "./pages/Login";
-import Cadastro from "./pages/Cadastro";
-import Feed from "./pages/Feed";
-import PublicarItem from "./pages/PublicarItem";
-import DetalhesItem from "./pages/DetalhesItem";
-import MinhasReservas from "./pages/MinhasReservas";
-import Perfil from "./pages/Perfil";
-import PerfilPublicoMae from "./pages/PerfilPublicoMae";
-import Carteira from "./pages/Carteira";
-import ComprarGirinhas from "./pages/ComprarGirinhas";
-import Indicacoes from "./pages/Indicacoes";
-import Mensagens from "./pages/Mensagens";
-import AdminDashboard from "./pages/AdminDashboard";
-import NotFound from "./pages/NotFound";
-import ErrorBoundary from "./components/error/ErrorBoundary";
+import Index from '@/pages/Index';
+import Login from '@/pages/Login';
+import Cadastro from '@/pages/Cadastro';
+import FeedOptimized from '@/pages/FeedOptimized';
+import PublicarItem from '@/pages/PublicarItem';
+import Mensagens from '@/pages/Mensagens';
+import Perfil from '@/pages/Perfil';
+import PerfilPublicoMae from '@/pages/PerfilPublicoMae';
+import Carteira from '@/pages/Carteira';
+import ComprarGirinhas from '@/pages/ComprarGirinhas';
+import Indicacoes from '@/pages/Indicacoes';
+import DetalhesItem from '@/pages/DetalhesItem';
+import MinhasReservas from '@/pages/MinhasReservas';
+import AdminDashboard from '@/pages/AdminDashboard';
+import NotFound from '@/pages/NotFound';
+import Missoes from '@/pages/Missoes';
 
-// Criar uma única instância do QueryClient
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AuthProvider>
-            <RecompensasProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/cadastro" element={<Cadastro />} />
-                  <Route
-                    path="/feed"
-                    element={
-                      <AuthGuard>
-                        <Feed />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/publicar"
-                    element={
-                      <AuthGuard>
-                        <PublicarItem />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/item/:id"
-                    element={
-                      <AuthGuard>
-                        <DetalhesItem />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/reservas"
-                    element={
-                      <AuthGuard>
-                        <MinhasReservas />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/mensagens"
-                    element={
-                      <AuthGuard>
-                        <Mensagens />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/perfil"
-                    element={
-                      <AuthGuard>
-                        <Perfil />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/mae/:id"
-                    element={
-                      <AuthGuard>
-                        <PerfilPublicoMae />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/carteira"
-                    element={
-                      <AuthGuard>
-                        <Carteira />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/comprar-girinhas"
-                    element={
-                      <AuthGuard>
-                        <ComprarGirinhas />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/indicacoes"
-                    element={
-                      <AuthGuard>
-                        <Indicacoes />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route
-                    path="/admin"
-                    element={
-                      <AuthGuard>
-                        <AdminDashboard />
-                      </AuthGuard>
-                    }
-                  />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </RecompensasProvider>
-          </AuthProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <Toaster />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/feed" element={<FeedOptimized />} />
+          <Route path="/publicar" element={<PublicarItem />} />
+          <Route path="/missoes" element={<Missoes />} />
+          <Route path="/mensagens" element={<Mensagens />} />
+          <Route path="/mensagens/:conversaId" element={<Mensagens />} />
+          <Route path="/perfil" element={<Perfil />} />
+          <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
+          <Route path="/carteira" element={<Carteira />} />
+          <Route path="/comprar-girinhas" element={<ComprarGirinhas />} />
+          <Route path="/indicacoes" element={<Indicacoes />} />
+          <Route path="/item/:id" element={<DetalhesItem />} />
+          <Route path="/minhas-reservas" element={<MinhasReservas />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

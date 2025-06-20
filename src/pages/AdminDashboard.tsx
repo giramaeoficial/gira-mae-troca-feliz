@@ -1,70 +1,84 @@
-import { useState } from 'react';
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Header from '@/components/shared/Header';
-import QuickNav from '@/components/shared/QuickNav';
-import MetricsOverview from '@/components/admin/MetricsOverview';
+import React, { useState } from 'react';
+import AuthGuard from '@/components/auth/AuthGuard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Shield,
+} from "lucide-react";
 import UserManagement from '@/components/admin/UserManagement';
-import CotacaoChart from '@/components/admin/CotacaoChart';
-import EmissionChart from '@/components/admin/EmissionChart';
-import SystemConfig from '@/components/admin/SystemConfig';
-import ConfigCompraGirinhas from '@/components/admin/ConfigCompraGirinhas';
+import MetricsOverview from '@/components/admin/MetricsOverview';
 import ConfigCategorias from '@/components/admin/ConfigCategorias';
+import ConfigCompraGirinhas from '@/components/admin/ConfigCompraGirinhas';
+import EmissionChart from '@/components/admin/EmissionChart';
+import CotacaoChart from '@/components/admin/CotacaoChart';
+import SystemConfig from '@/components/admin/SystemConfig';
+import MissoesAdmin from '@/components/admin/MissoesAdmin';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header activePage="admin" />
-      
-      <div className="container max-w-6xl mx-auto py-6 px-4 pb-24">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Administrativo</h1>
-          <p className="text-gray-600">Gerencie o sistema GiraMãe</p>
+    <AuthGuard requireAuth>
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div className="flex items-center">
+                <Shield className="h-8 w-8 text-blue-600 mr-3" />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                  <p className="text-sm text-gray-500">Painel de administração da plataforma</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="users">Usuários</TabsTrigger>
-            <TabsTrigger value="girinhas">Girinhas</TabsTrigger>
-            <TabsTrigger value="categorias">Categorias</TabsTrigger>
-            <TabsTrigger value="system">Sistema</TabsTrigger>
-            <TabsTrigger value="emission">Emissão</TabsTrigger>
-          </TabsList>
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-7">
+              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+              <TabsTrigger value="users">Usuários</TabsTrigger>
+              <TabsTrigger value="categories">Categorias</TabsTrigger>
+              <TabsTrigger value="girinhas">Girinhas</TabsTrigger>
+              <TabsTrigger value="cotacao">Cotação</TabsTrigger>
+              <TabsTrigger value="system">Sistema</TabsTrigger>
+              <TabsTrigger value="missoes">Missões</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="overview">
-            <MetricsOverview />
-          </TabsContent>
+            <TabsContent value="overview">
+              <MetricsOverview />
+            </TabsContent>
 
-          <TabsContent value="users">
-            <UserManagement />
-          </TabsContent>
+            <TabsContent value="users">
+              <UserManagement />
+            </TabsContent>
 
-          <TabsContent value="girinhas">
-            <div className="space-y-6">
+            <TabsContent value="categories">
+              <ConfigCategorias />
+            </TabsContent>
+
+            <TabsContent value="girinhas">
+              <div className="grid gap-6">
+                <ConfigCompraGirinhas />
+                <EmissionChart />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="cotacao">
               <CotacaoChart />
-              <EmissionChart />
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="categorias">
-            <ConfigCategorias />
-          </TabsContent>
+            <TabsContent value="system">
+              <SystemConfig />
+            </TabsContent>
 
-          <TabsContent value="system">
-            <SystemConfig />
-          </TabsContent>
-
-          <TabsContent value="emission">
-            <ConfigCompraGirinhas />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="missoes">
+              <MissoesAdmin />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
-
-      <QuickNav />
-    </div>
+    </AuthGuard>
   );
 };
 

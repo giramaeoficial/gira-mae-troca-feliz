@@ -643,6 +643,39 @@ export type Database = {
           },
         ]
       }
+      limites_missoes_usuarios: {
+        Row: {
+          created_at: string | null
+          id: string
+          limite_maximo: number | null
+          periodo_inicio: string | null
+          proximo_reset: string | null
+          total_girinhas_coletadas: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          limite_maximo?: number | null
+          periodo_inicio?: string | null
+          proximo_reset?: string | null
+          total_girinhas_coletadas?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          limite_maximo?: number | null
+          periodo_inicio?: string | null
+          proximo_reset?: string | null
+          total_girinhas_coletadas?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       mencoes_mensagens: {
         Row: {
           created_at: string
@@ -759,6 +792,110 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      missoes: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          condicoes: Json
+          created_at: string | null
+          descricao: string
+          icone: string | null
+          id: string
+          limite_por_usuario: number | null
+          prazo_dias: number | null
+          recompensa_girinhas: number
+          tipo_missao: string
+          titulo: string
+          updated_at: string | null
+          validade_recompensa_meses: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: string
+          condicoes: Json
+          created_at?: string | null
+          descricao: string
+          icone?: string | null
+          id?: string
+          limite_por_usuario?: number | null
+          prazo_dias?: number | null
+          recompensa_girinhas: number
+          tipo_missao: string
+          titulo: string
+          updated_at?: string | null
+          validade_recompensa_meses?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          condicoes?: Json
+          created_at?: string | null
+          descricao?: string
+          icone?: string | null
+          id?: string
+          limite_por_usuario?: number | null
+          prazo_dias?: number | null
+          recompensa_girinhas?: number
+          tipo_missao?: string
+          titulo?: string
+          updated_at?: string | null
+          validade_recompensa_meses?: number | null
+        }
+        Relationships: []
+      }
+      missoes_usuarios: {
+        Row: {
+          created_at: string | null
+          data_coletada: string | null
+          data_completada: string | null
+          data_expiracao: string | null
+          data_inicio: string | null
+          id: string
+          missao_id: string
+          progresso_atual: number | null
+          progresso_necessario: number
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_coletada?: string | null
+          data_completada?: string | null
+          data_expiracao?: string | null
+          data_inicio?: string | null
+          id?: string
+          missao_id: string
+          progresso_atual?: number | null
+          progresso_necessario: number
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_coletada?: string | null
+          data_completada?: string | null
+          data_expiracao?: string | null
+          data_inicio?: string | null
+          id?: string
+          missao_id?: string
+          progresso_atual?: number | null
+          progresso_necessario?: number
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missoes_usuarios_missao_id_fkey"
+            columns: ["missao_id"]
+            isOneToOne: false
+            referencedRelation: "missoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pacotes_girinhas: {
         Row: {
@@ -899,6 +1036,44 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recompensas_missoes: {
+        Row: {
+          data_coleta: string | null
+          data_expiracao_girinhas: string | null
+          girinhas_recebidas: number
+          id: string
+          missao_id: string
+          transacao_id: string | null
+          user_id: string
+        }
+        Insert: {
+          data_coleta?: string | null
+          data_expiracao_girinhas?: string | null
+          girinhas_recebidas: number
+          id?: string
+          missao_id: string
+          transacao_id?: string | null
+          user_id: string
+        }
+        Update: {
+          data_coleta?: string | null
+          data_expiracao_girinhas?: string | null
+          girinhas_recebidas?: number
+          id?: string
+          missao_id?: string
+          transacao_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recompensas_missoes_missao_id_fkey"
+            columns: ["missao_id"]
+            isOneToOne: false
+            referencedRelation: "missoes"
             referencedColumns: ["id"]
           },
         ]
@@ -1127,6 +1302,10 @@ export type Database = {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
       }
+      coletar_recompensa_missao: {
+        Args: { p_user_id: string; p_missao_id: string }
+        Returns: Json
+      }
       confirmar_entrega: {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
@@ -1169,6 +1348,10 @@ export type Database = {
       get_municipios_por_uf: {
         Args: { uf_param: string }
         Returns: string[]
+      }
+      inicializar_limites_missoes: {
+        Args: { p_user_id: string }
+        Returns: undefined
       }
       inicializar_metas_usuario: {
         Args: { p_user_id: string }
@@ -1391,6 +1574,10 @@ export type Database = {
         Returns: boolean
       }
       verificar_metas_usuario: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      verificar_progresso_missoes: {
         Args: { p_user_id: string }
         Returns: undefined
       }
