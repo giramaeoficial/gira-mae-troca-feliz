@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Upload, Camera, Plus, MapPin, Star, AlertCircle } from "lucide-react";
+import { X, Upload, Camera, Plus, MapPin, Star, AlertCircle, User, School } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useItens } from '@/hooks/useItens';
@@ -17,6 +18,7 @@ import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useProfile } from '@/hooks/useProfile';
 import { useEscolas } from '@/hooks/useEscolas';
 import Header from '@/components/shared/Header';
+import QuickNav from '@/components/shared/QuickNav';
 import ImageUpload from '@/components/ui/image-upload';
 import EscolaPicker from '@/components/escolas/EscolaPicker';
 import PriceSuggestions from '@/components/ui/price-suggestions';
@@ -103,52 +105,32 @@ const PublicarItem = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) {
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para publicar um item",
-        variant: "destructive"
-      });
+      toast.error("Você precisa estar logado para publicar um item");
       return;
     }
 
     if (fotos.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Adicione pelo menos uma foto",
-        variant: "destructive"
-      });
+      toast.error("Adicione pelo menos uma foto");
       return;
     }
 
     // Validação de valor por categoria
     const validacao = validarValorCategoria(values.categoria, values.valor_girinhas);
     if (!validacao.valido) {
-      toast({
-        title: "Valor inválido",
-        description: validacao.mensagem,
-        variant: "destructive"
-      });
+      toast.error(validacao.mensagem);
       return;
     }
 
     // Validar se está usando filho e tem filho selecionado
     if (usarFilho && (!values.filho_id || values.filho_id === '')) {
-      toast({
-        title: "Erro",
-        description: "Selecione um filho ou use localização manual",
-        variant: "destructive"
-      });
+      toast.error("Selecione um filho ou use localização manual");
       return;
     }
 
     // Validar se está usando localização manual e tem dados preenchidos
     if (!usarFilho && (!values.estado_manual || !values.cidade_manual || 
                        values.estado_manual.trim() === '' || values.cidade_manual.trim() === '')) {
-      toast({
-        title: "Erro",
-        description: "Informe estado e cidade quando usar localização manual",
-        variant: "destructive"
-      });
+      toast.error("Informe estado e cidade quando usar localização manual");
       return;
     }
 

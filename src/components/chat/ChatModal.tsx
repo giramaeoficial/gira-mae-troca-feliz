@@ -13,12 +13,12 @@ import { ptBR } from "date-fns/locale";
 interface ChatModalProps {
   isOpen: boolean;
   onClose: () => void;
-  reservaId: string;
-  outraMae: {
+  reservaId?: string;
+  outraMae?: {
     nome: string;
     avatar: string;
   };
-  item: {
+  item?: {
     titulo: string;
     imagem: string;
   };
@@ -96,14 +96,14 @@ const ChatModal = ({ isOpen, onClose, reservaId, outraMae, item }: ChatModalProp
             <div className="flex-grow">
               <div className="flex items-center gap-2">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={outraMae.avatar} />
+                  <AvatarImage src={outraMae?.avatar} />
                   <AvatarFallback className="text-xs">
-                    {outraMae.nome.split(' ').map(n => n[0]).join('')}
+                    {outraMae?.nome?.split(' ').map(n => n[0]).join('') || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">{outraMae.nome}</p>
-                  <p className="text-xs text-gray-500">sobre: {item.titulo}</p>
+                  <p className="text-sm font-medium text-gray-800">{outraMae?.nome || 'Nova Conversa'}</p>
+                  {item && <p className="text-xs text-gray-500">sobre: {item.titulo}</p>}
                 </div>
               </div>
             </div>
@@ -165,7 +165,7 @@ const ChatModal = ({ isOpen, onClose, reservaId, outraMae, item }: ChatModalProp
                           
                           {!isMinhas && (
                             <Avatar className="w-6 h-6 order-1 mr-2 mt-1">
-                              <AvatarImage src={mensagem.remetente?.avatar_url || outraMae.avatar} />
+                              <AvatarImage src={mensagem.remetente?.avatar_url || outraMae?.avatar} />
                               <AvatarFallback className="text-xs">
                                 {mensagem.remetente?.nome?.split(' ').map((n: string) => n[0]).join('') || 'U'}
                               </AvatarFallback>

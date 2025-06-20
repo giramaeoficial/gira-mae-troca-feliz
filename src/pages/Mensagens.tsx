@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, Search, MessageCircle, Clock, Star } from "lucide-react";
+import { ArrowLeft, Send, Search, MessageCircle, Clock, Star, Plus } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useConversas } from '@/hooks/useConversas';
@@ -31,7 +32,8 @@ const Mensagens = () => {
     conversaAtiva,
     criarConversa,
     marcarComoLida,
-    isLoading: loadingConversas
+    isLoading: loadingConversas,
+    setConversaAtiva
   } = useConversas();
 
   const {
@@ -51,10 +53,14 @@ const Mensagens = () => {
   }, [mensagens, conversaId, marcarMensagensComoLidas]);
 
   useEffect(() => {
-    if (conversaAtiva) {
-      marcarComoLida(conversaAtiva.id);
+    if (conversaId && conversas.length > 0) {
+      const conversa = conversas.find(c => c.id === conversaId);
+      if (conversa) {
+        setConversaAtiva(conversa);
+        marcarComoLida(conversa.id);
+      }
     }
-  }, [conversaAtiva, marcarComoLida]);
+  }, [conversaId, conversas, marcarComoLida, setConversaAtiva]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -66,7 +72,7 @@ const Mensagens = () => {
 
   const handleEnviarMensagem = async () => {
     if (novaMensagem.trim() !== '' && conversaId) {
-      await enviarMensagem(conversaId, novaMensagem);
+      await enviarMensagem(novaMensagem);
       setNovaMensagem('');
       scrollToBottom();
     }
@@ -100,9 +106,7 @@ const Mensagens = () => {
 
   const conversasFiltradas = conversas?.filter(conversa => {
     if (!searchTerm) return true;
-    return conversa.participantes.some(p =>
-      p.nome.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return conversa.participante.nome.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const renderMobile = () => {
@@ -117,11 +121,11 @@ const Mensagens = () => {
             </Button>
             <div className="flex items-center space-x-2">
               <Avatar>
-                <AvatarImage src={conversaAtiva?.participantes.find(p => p.id !== user?.id)?.imagemUrl || ""} />
-                <AvatarFallback>{conversaAtiva?.participantes.find(p => p.id !== user?.id)?.nome.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={conversaAtiva?.participante?.avatar_url || ""} />
+                <AvatarFallback>{conversaAtiva?.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-semibold">{conversaAtiva?.participantes.find(p => p.id !== user?.id)?.nome}</div>
+                <div className="font-semibold">{conversaAtiva?.participante?.nome}</div>
                 <div className="text-xs text-muted-foreground">Online</div>
               </div>
             </div>
@@ -131,7 +135,7 @@ const Mensagens = () => {
             {mensagens?.map(msg => (
               <div key={msg.id} className={`mb-2 flex flex-col ${msg.remetente_id === user?.id ? 'items-end' : 'items-start'}`}>
                 <div className={`rounded-lg px-3 py-2 text-sm ${msg.remetente_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
-                  <MessageText message={msg.conteudo} />
+                  <MessageText>{msg.conteudo}</MessageText>
                 </div>
                 <span className="text-xs text-muted-foreground mt-1">
                   {formatarData(msg.created_at)}
@@ -181,16 +185,16 @@ const Mensagens = () => {
             >
               <CardContent className="flex items-center space-x-4 p-3">
                 <Avatar>
-                  <AvatarImage src={conversa.participantes.find(p => p.id !== user?.id)?.imagemUrl || ""} />
-                  <AvatarFallback>{conversa.participantes.find(p => p.id !== user?.id)?.nome.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={conversa.participante?.avatar_url || ""} />
+                  <AvatarFallback>{conversa.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-semibold">{conversa.participantes.find(p => p.id !== user?.id)?.nome}</div>
+                  <div className="font-semibold">{conversa.participante?.nome}</div>
                   <div className="text-sm text-muted-foreground">
-                    {conversa.ultima_mensagem?.conteudo}
+                    {conversa.ultimaMensagem?.conteudo}
                   </div>
                 </div>
-                {!conversa.lida && (
+                {conversa.naoLidas > 0 && (
                   <Badge variant="secondary" className="ml-auto">Nova</Badge>
                 )}
               </CardContent>
@@ -226,16 +230,16 @@ const Mensagens = () => {
               >
                 <CardContent className="flex items-center space-x-4 p-3">
                   <Avatar>
-                    <AvatarImage src={conversa.participantes.find(p => p.id !== user?.id)?.imagemUrl || ""} />
-                    <AvatarFallback>{conversa.participantes.find(p => p.id !== user?.id)?.nome.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={conversa.participante?.avatar_url || ""} />
+                    <AvatarFallback>{conversa.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-semibold">{conversa.participantes.find(p => p.id !== user?.id)?.nome}</div>
+                    <div className="font-semibold">{conversa.participante?.nome}</div>
                     <div className="text-sm text-muted-foreground">
-                      {conversa.ultima_mensagem?.conteudo}
+                      {conversa.ultimaMensagem?.conteudo}
                     </div>
                   </div>
-                  {!conversa.lida && (
+                  {conversa.naoLidas > 0 && (
                     <Badge variant="secondary" className="ml-auto">Nova</Badge>
                   )}
                 </CardContent>
@@ -250,11 +254,11 @@ const Mensagens = () => {
             <div className="flex items-center bg-secondary px-4 py-2 border-b">
               <div className="flex items-center space-x-2">
                 <Avatar>
-                  <AvatarImage src={conversaAtiva?.participantes.find(p => p.id !== user?.id)?.imagemUrl || ""} />
-                  <AvatarFallback>{conversaAtiva?.participantes.find(p => p.id !== user?.id)?.nome.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={conversaAtiva?.participante?.avatar_url || ""} />
+                  <AvatarFallback>{conversaAtiva?.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-semibold">{conversaAtiva?.participantes.find(p => p.id !== user?.id)?.nome}</div>
+                  <div className="font-semibold">{conversaAtiva?.participante?.nome}</div>
                   <div className="text-xs text-muted-foreground">Online</div>
                 </div>
               </div>
@@ -264,7 +268,7 @@ const Mensagens = () => {
               {mensagens?.map(msg => (
                 <div key={msg.id} className={`mb-2 flex flex-col ${msg.remetente_id === user?.id ? 'items-end' : 'items-start'}`}>
                   <div className={`rounded-lg px-3 py-2 text-sm ${msg.remetente_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
-                    <MessageText message={msg.conteudo} />
+                    <MessageText>{msg.conteudo}</MessageText>
                   </div>
                   <span className="text-xs text-muted-foreground mt-1">
                     {formatarData(msg.created_at)}
@@ -309,7 +313,7 @@ const Mensagens = () => {
 
   return (
     <>
-      <ChatModal open={showChatModal} setOpen={setShowChatModal} onCreate={criarConversa} />
+      <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
       <div className="md:hidden">
         {renderMobile()}
       </div>

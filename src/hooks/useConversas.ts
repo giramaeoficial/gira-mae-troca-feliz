@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ConversaCompleta {
   id: string;
@@ -33,9 +33,9 @@ interface ConversaCompleta {
 
 export const useConversas = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [conversas, setConversas] = useState<ConversaCompleta[]>([]);
   const [loading, setLoading] = useState(false);
+  const [conversaAtiva, setConversaAtiva] = useState<ConversaCompleta | null>(null);
 
   const carregarConversas = async () => {
     if (!user) return;
@@ -118,13 +118,42 @@ export const useConversas = () => {
       setConversas(conversasCompletas);
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
-      toast({
-        title: "Erro ao carregar conversas",
-        description: "Não foi possível carregar suas conversas.",
-        variant: "destructive",
-      });
+      toast.error("Erro ao carregar conversas");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const criarConversa = async (outroUsuarioId: string) => {
+    if (!user) return null;
+
+    try {
+      const { data, error } = await supabase
+        .rpc('obter_ou_criar_conversa_livre', { 
+          p_usuario1_id: user.id, 
+          p_usuario2_id: outroUsuarioId 
+        });
+
+      if (error) throw error;
+
+      await carregarConversas();
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar conversa:', error);
+      toast.error("Erro ao criar conversa");
+      return null;
+    }
+  };
+
+  const marcarComoLida = async (conversaId: string) => {
+    try {
+      await supabase
+        .from('mensagens')
+        .update({ lida: true })
+        .eq('conversa_id', conversaId)
+        .neq('remetente_id', user?.id);
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error);
     }
   };
 
@@ -136,7 +165,12 @@ export const useConversas = () => {
 
   return {
     conversas,
+    conversaAtiva,
     loading,
-    refetch: carregarConversas
+    isLoading: loading,
+    criarConversa,
+    marcarComoLida,
+    refetch: carregarConversas,
+    setConversaAtiva
   };
 };
