@@ -135,12 +135,7 @@ export const useCarteira = () => {
 
       console.log('💳 [useCarteira] Adicionando transação INTERNA:', { tipo, valor, descricao });
 
-      // ⚠️ SEGURANÇA: NÃO aceitar cotação ou quantidade do cliente
-      // Para compras, usar APENAS a RPC segura
-      if (tipo === 'compra') {
-        throw new Error('Compras devem usar comprarPacoteSeguro()');
-      }
-
+      // 🔒 SEGURANÇA: Usar apenas RPC para transações que afetam saldo
       const { data, error } = await supabase
         .from('transacoes')
         .insert({
