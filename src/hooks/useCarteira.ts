@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -115,33 +116,30 @@ export const useCarteira = () => {
     }
   }, [error?.message]);
 
-  // Mutation OTIMIZADA para adicionar transação
+  // 🔒 SEGURANÇA: Mutation APENAS para transações internas (não compras)
   const adicionarTransacaoMutation = useMutation({
     mutationFn: async ({
       tipo,
       valor,
       descricao,
       itemId,
-      usuarioOrigem,
-      cotacaoUtilizada,
-      quantidadeGirinhas
+      usuarioOrigem
     }: {
-      tipo: 'recebido' | 'gasto' | 'bonus' | 'compra' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa';
+      tipo: 'recebido' | 'gasto' | 'bonus' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa' | 'extensao_validade';
       valor: number;
       descricao: string;
       itemId?: string;
       usuarioOrigem?: string;
-      cotacaoUtilizada?: number;
-      quantidadeGirinhas?: number;
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('💳 [useCarteira] Adicionando transação:', { tipo, valor, descricao });
+      console.log('💳 [useCarteira] Adicionando transação INTERNA:', { tipo, valor, descricao });
 
-      // Para compras, definir data de expiração de 12 meses
-      const dataExpiracao = tipo === 'compra' 
-        ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        : null;
+      // ⚠️ SEGURANÇA: NÃO aceitar cotação ou quantidade do cliente
+      // Para compras, usar APENAS a RPC segura
+      if (tipo === 'compra') {
+        throw new Error('Compras devem usar comprarPacoteSeguro()');
+      }
 
       const { data, error } = await supabase
         .from('transacoes')
@@ -152,9 +150,10 @@ export const useCarteira = () => {
           descricao,
           item_id: itemId || null,
           usuario_origem: usuarioOrigem || null,
-          cotacao_utilizada: cotacaoUtilizada || null,
-          quantidade_girinhas: quantidadeGirinhas || null,
-          data_expiracao: dataExpiracao
+          // Deixar trigger preencher automaticamente
+          cotacao_utilizada: null,
+          quantidade_girinhas: null,
+          data_expiracao: null
         })
         .select()
         .single();
@@ -218,6 +217,75 @@ export const useCarteira = () => {
     }
   });
 
+  // 🔒 SEGURANÇA: Mutation para compras seguras via RPC
+  const comprarPacoteSeguroMutation = useMutation({
+    mutationFn: async (pacoteId: string) => {
+      if (!user) throw new Error('Usuário não autenticado');
+
+      console.log('🔒 [useCarteira] Comprando pacote SEGURO via RPC:', pacoteId);
+
+      // Buscar dados do pacote
+      const { data: pacote, error: pacoteError } = await supabase
+        .from('pacotes_girinhas')
+        .select('*')
+        .eq('id', pacoteId)
+        .single();
+
+      if (pacoteError || !pacote) {
+        throw new Error('Pacote não encontrado');
+      }
+
+      // Usar RPC segura que calcula cotação no servidor
+      const { data, error } = await supabase.rpc('processar_compra_segura', {
+        p_user_id: user.id,
+        p_quantidade: pacote.valor_girinhas,
+        p_idempotency_key: `pacote_${pacoteId}_${Date.now()}`
+      });
+
+      if (error) throw error;
+
+      // Registrar compra na tabela de compras
+      const { error: compraError } = await supabase
+        .from('compras_girinhas')
+        .insert({
+          user_id: user.id,
+          pacote_id: pacoteId,
+          valor_pago: pacote.valor_real,
+          girinhas_recebidas: pacote.valor_girinhas,
+          status: 'aprovado',
+          payment_id: `demo_${Date.now()}`
+        });
+
+      if (compraError) {
+        console.error('⚠️ Erro ao registrar compra (mas transação foi processada):', compraError);
+      }
+
+      return data;
+    },
+    onSuccess: async () => {
+      console.log('✅ [useCarteira] Compra segura bem-sucedida');
+      
+      // Invalidar todos os caches
+      await queryClient.invalidateQueries({ queryKey: ['carteira'] });
+      await queryClient.invalidateQueries({ queryKey: ['girinhas-expiracao'] });
+      await refetch();
+      
+      toast({
+        title: "💰 Compra Realizada!",
+        description: "Girinhas adicionadas à sua carteira com segurança!",
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ [useCarteira] Erro na compra segura:', error);
+      
+      toast({
+        title: "Erro na compra",
+        description: error.message || "Não foi possível processar a compra. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Função auxiliar para criar carteira inicial
   const criarCarteiraInicial = async (userId: string): Promise<Carteira> => {
     console.log('🏦 [useCarteira] Criando carteira inicial para:', userId);
@@ -263,14 +331,13 @@ export const useCarteira = () => {
     return carteiraData;
   };
 
+  // 🔒 SEGURANÇA: Função simplificada - SEM parâmetros de cotação
   const adicionarTransacao = async (
-    tipo: 'recebido' | 'gasto' | 'bonus' | 'compra' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa',
+    tipo: 'recebido' | 'gasto' | 'bonus' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa' | 'extensao_validade',
     valor: number,
     descricao: string,
     itemId?: string,
-    usuarioOrigem?: string,
-    cotacaoUtilizada?: number,
-    quantidadeGirinhas?: number
+    usuarioOrigem?: string
   ) => {
     try {
       await adicionarTransacaoMutation.mutateAsync({
@@ -278,9 +345,7 @@ export const useCarteira = () => {
         valor,
         descricao,
         itemId,
-        usuarioOrigem,
-        cotacaoUtilizada,
-        quantidadeGirinhas
+        usuarioOrigem
       });
       return true;
     } catch {
@@ -292,7 +357,7 @@ export const useCarteira = () => {
     return carteiraData?.carteira ? Number(carteiraData.carteira.saldo_atual) >= valor : false;
   };
 
-  // Função centralizada para compra de pacotes (migrada do CarteiraContext)
+  // 🔒 SEGURANÇA: Função de compra usando RPC segura
   const comprarPacote = async (pacoteId: string): Promise<boolean> => {
     if (!user) {
       toast({
@@ -304,58 +369,9 @@ export const useCarteira = () => {
     }
 
     try {
-      // Buscar dados do pacote
-      const { data: pacote, error: pacoteError } = await supabase
-        .from('pacotes_girinhas')
-        .select('*')
-        .eq('id', pacoteId)
-        .single();
-
-      if (pacoteError || !pacote) {
-        throw new Error('Pacote não encontrado');
-      }
-
-      // Simular processamento de pagamento (sempre aprovado para demo)
-      const paymentId = `demo_${Date.now()}`;
-
-      // Criar registro da compra
-      const { error: compraError } = await supabase
-        .from('compras_girinhas')
-        .insert({
-          user_id: user.id,
-          pacote_id: pacoteId,
-          valor_pago: pacote.valor_real,
-          girinhas_recebidas: pacote.valor_girinhas,
-          status: 'aprovado',
-          payment_id: paymentId
-        });
-
-      if (compraError) throw compraError;
-
-      // Adicionar Girinhas à carteira via transação
-      const sucesso = await adicionarTransacao(
-        'compra',
-        pacote.valor_girinhas,
-        `Compra de pacote: ${pacote.nome}`
-      );
-
-      if (sucesso) {
-        toast({
-          title: "💳 Compra realizada!",
-          description: `${pacote.valor_girinhas} Girinhas adicionadas à sua carteira com validade de 12 meses!`,
-        });
-      }
-
-      return sucesso;
-    } catch (err) {
-      console.error('Erro ao processar compra:', err);
-      
-      toast({
-        title: "Erro na compra",
-        description: "Não foi possível processar a compra. Tente novamente.",
-        variant: "destructive",
-      });
-      
+      await comprarPacoteSeguroMutation.mutateAsync(pacoteId);
+      return true;
+    } catch {
       return false;
     }
   };

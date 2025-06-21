@@ -63,33 +63,47 @@ export const useGirinhasSystem = () => {
     enabled: !!user,
   });
 
-  // Mutation para compra segura server-side
+  // 🔒 SEGURANÇA: Mutation para compra 100% server-side
   const compraSeguraMutation = useMutation({
     mutationFn: async ({ quantidade }: { quantidade: number }): Promise<CompraSeguraResponse> => {
       if (!user) throw new Error('Usuário não autenticado');
       
+      console.log('🔒 [GirinhasSystem] Iniciando compra SEGURA server-side:', quantidade);
+      
+      // Gerar chave de idempotência única
       const idempotencyKey = `compra_${user.id}_${Date.now()}_${Math.random()}`;
       
+      // 🔒 Usar RPC que calcula TUDO no servidor
       const { data, error } = await supabase.rpc('processar_compra_segura', {
         p_user_id: user.id,
         p_quantidade: quantidade,
         p_idempotency_key: idempotencyKey
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro na compra segura:', error);
+        throw error;
+      }
+      
+      console.log('✅ [GirinhasSystem] Compra segura processada:', data);
       
       const resultado = data as unknown as CompraSeguraResponse;
       return resultado;
     },
     onSuccess: (data) => {
+      // Invalidar TODOS os caches relacionados
       queryClient.invalidateQueries({ queryKey: ['carteira'] });
+      queryClient.invalidateQueries({ queryKey: ['girinhas-expiracao'] });
+      queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
       
       toast({
-        title: "Compra realizada com sucesso! 🎉",
+        title: "🎉 Compra realizada com sucesso!",
         description: `${data.quantidade} Girinhas adicionadas por R$ ${data.valor_total.toFixed(2)}`,
       });
     },
     onError: (error: any) => {
+      console.error('❌ Erro na compra:', error);
+      
       toast({
         title: "Erro na compra",
         description: error.message,
@@ -98,10 +112,12 @@ export const useGirinhasSystem = () => {
     },
   });
 
-  // Mutation para transferência P2P
+  // 🔒 SEGURANÇA: Mutation para transferência P2P server-side
   const transferirP2PMutation = useMutation({
     mutationFn: async (dados: TransferenciaP2P) => {
       if (!user) throw new Error('Usuário não autenticado');
+      
+      console.log('🔒 [GirinhasSystem] Transferência P2P SEGURA:', dados);
       
       if (!dados.destinatario_id || !dados.quantidade) {
         throw new Error('Dados obrigatórios não informados');
@@ -115,6 +131,7 @@ export const useGirinhasSystem = () => {
         throw new Error('Quantidade máxima: 10.000 Girinhas por transferência');
       }
       
+      // 🔒 Usar Edge Function que calcula taxa no servidor
       const { data: authData } = await supabase.auth.getSession();
       if (!authData.session?.access_token) {
         throw new Error('Sessão expirada. Faça login novamente.');
@@ -141,8 +158,10 @@ export const useGirinhasSystem = () => {
       return result;
     },
     onSuccess: (data) => {
+      // Invalidar TODOS os caches relacionados
       queryClient.invalidateQueries({ queryKey: ['carteira'] });
       queryClient.invalidateQueries({ queryKey: ['transferencias-p2p'] });
+      queryClient.invalidateQueries({ queryKey: ['girinhas-expiracao'] });
       
       toast({
         title: "✅ Transferência realizada!",
@@ -185,7 +204,7 @@ export const useGirinhasSystem = () => {
     isTransferindo: transferirP2PMutation.isPending,
     isComprandoSeguro: compraSeguraMutation.isPending,
     
-    // Ações
+    // 🔒 Ações SEGURAS
     compraSegura: compraSeguraMutation.mutate,
     transferirP2P: transferirP2PMutation.mutate,
     refetchCotacao,

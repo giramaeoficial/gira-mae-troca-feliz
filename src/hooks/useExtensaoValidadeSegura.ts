@@ -20,11 +20,6 @@ interface ResultadoExtensao {
   girinhas_salvas?: number;
 }
 
-interface PodeEstenderResponse {
-  pode_estender: boolean;
-  motivo: string;
-}
-
 export const useExtensaoValidadeSegura = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -55,39 +50,21 @@ export const useExtensaoValidadeSegura = () => {
     staleTime: 60000, // 1 minuto
   });
 
-  // Função para calcular custo de extensão
+  // Função para calcular custo de extensão (apenas para visualização)
   const calcularCustoExtensao = (valorExpirando: number): number => {
     const percentual = config?.percentual ?? 20;
     return Math.max(Math.round(valorExpirando * (percentual / 100)), 1);
   };
 
-  // Verificar se transação pode ser estendida
-  const verificarPodeEstender = async (transacaoId: string): Promise<boolean> => {
-    if (!user?.id) return false;
-    
-    const { data, error } = await supabase.rpc('pode_estender_transacao', {
-      p_user_id: user.id,
-      p_transacao_id: transacaoId
-    });
-
-    if (error) {
-      console.error('Erro ao verificar se pode estender:', error);
-      return false;
-    }
-
-    // Type assertion segura com conversão via unknown
-    const resultado = data as unknown as PodeEstenderResponse;
-    return resultado?.pode_estender ?? false;
-  };
-
-  // Mutation para estender validade (usando função segura do backend)
+  // 🔒 SEGURANÇA: Mutation usando APENAS RPC server-side
   const estenderValidadeMutation = useMutation({
     mutationFn: async (transacaoId: string): Promise<ResultadoExtensao> => {
       if (!user?.id) throw new Error('Usuário não autenticado');
       if (!config?.ativo) throw new Error('Extensão de validade está desativada');
 
-      console.log('🔒 [ExtensãoSegura] Chamando função segura do backend para transação:', transacaoId);
+      console.log('🔒 [ExtensãoSegura] Chamando RPC server-side para transação:', transacaoId);
 
+      // 🔒 Usar APENAS RPC que calcula tudo no servidor
       const { data, error } = await supabase.rpc('estender_validade_girinhas_seguro', {
         p_user_id: user.id,
         p_transacao_id: transacaoId
@@ -116,6 +93,7 @@ export const useExtensaoValidadeSegura = () => {
 
         // Invalidar queries relacionadas
         queryClient.invalidateQueries({ queryKey: ['girinhas-expiracao'] });
+        queryClient.invalidateQueries({ queryKey: ['girinhas-expiracao-segura'] });
         queryClient.invalidateQueries({ queryKey: ['carteira'] });
       } else {
         toast({
@@ -138,7 +116,6 @@ export const useExtensaoValidadeSegura = () => {
   return {
     config,
     calcularCustoExtensao,
-    verificarPodeEstender,
     estenderValidade: estenderValidadeMutation.mutate,
     isExtendendo: estenderValidadeMutation.isPending,
     podeEstender: config?.ativo ?? false
