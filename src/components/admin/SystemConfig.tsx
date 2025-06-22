@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Save, Settings, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { usePrecoManual } from '@/hooks/usePrecoManual';
 import ConfigCompraGirinhas from './ConfigCompraGirinhas';
 import ConfigExtensaoValidade from './ConfigExtensaoValidade';
 
@@ -15,14 +16,17 @@ const SystemConfig: React.FC = () => {
   const [config, setConfig] = useState({
     taxaTransacao: 5.0,
     taxaTransferencia: 1.0,
-    markupEmissao: 0.0,
     validadeGirinhas: 12,
-    cotacaoMin: 0.80,
-    cotacaoMax: 1.30
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { precoManual, atualizarPreco, isAtualizando } = usePrecoManual();
+  const [precoTemp, setPrecoTemp] = useState(precoManual);
+
+  useEffect(() => {
+    setPrecoTemp(precoManual);
+  }, [precoManual]);
 
   useEffect(() => {
     carregarConfiguracoes();
@@ -46,21 +50,9 @@ const SystemConfig: React.FC = () => {
               const taxaTransferencia = config.valor as { percentual: number };
               setConfig(prev => ({ ...prev, taxaTransferencia: taxaTransferencia.percentual }));
               break;
-            case 'markup_emissao':
-              const markupEmissao = config.valor as { percentual: number };
-              setConfig(prev => ({ ...prev, markupEmissao: markupEmissao.percentual }));
-              break;
             case 'validade_girinhas':
               const validadeGirinhas = config.valor as { meses: number };
               setConfig(prev => ({ ...prev, validadeGirinhas: validadeGirinhas.meses }));
-              break;
-            case 'cotacao_min_max':
-              const cotacao = config.valor as { min: number; max: number };
-              setConfig(prev => ({ 
-                ...prev, 
-                cotacaoMin: cotacao.min,
-                cotacaoMax: cotacao.max
-              }));
               break;
           }
         });
@@ -90,16 +82,8 @@ const SystemConfig: React.FC = () => {
           valor: { percentual: config.taxaTransferencia }
         },
         {
-          chave: 'markup_emissao',
-          valor: { percentual: config.markupEmissao }
-        },
-        {
           chave: 'validade_girinhas',
           valor: { meses: config.validadeGirinhas }
-        },
-        {
-          chave: 'cotacao_min_max',
-          valor: { min: config.cotacaoMin, max: config.cotacaoMax }
         }
       ];
 
@@ -127,6 +111,12 @@ const SystemConfig: React.FC = () => {
     }
   };
 
+  const handleAtualizarPreco = () => {
+    if (precoTemp && precoTemp > 0) {
+      atualizarPreco(precoTemp);
+    }
+  };
+
   if (isLoading) {
     return <div>Carregando configurações...</div>;
   }
@@ -141,123 +131,123 @@ const SystemConfig: React.FC = () => {
         </TabsList>
 
         <TabsContent value="sistema">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Configurações do Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Taxas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="taxaTransacao">Taxa de Transação (%)</Label>
-                  <Input
-                    id="taxaTransacao"
-                    type="number"
-                    step="0.1"
-                    value={config.taxaTransacao}
-                    onChange={(e) => setConfig(prev => ({ 
-                      ...prev, 
-                      taxaTransacao: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Taxa cobrada sobre transações do marketplace
+          <div className="space-y-6">
+            {/* Preço Manual das Girinhas */}
+            <Card className="border-purple-200 bg-purple-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-purple-600" />
+                  Preço Manual das Girinhas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label htmlFor="precoManual">Preço por Girinha (R$)</Label>
+                    <Input
+                      id="precoManual"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max="100.00"
+                      value={precoTemp}
+                      onChange={(e) => setPrecoTemp(parseFloat(e.target.value) || 1.00)}
+                      className="text-lg font-bold"
+                    />
+                    <p className="text-xs text-purple-700">
+                      Preço atual: <strong>R$ {precoManual.toFixed(2)}</strong>
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleAtualizarPreco}
+                    disabled={isAtualizando || !precoTemp || precoTemp <= 0}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isAtualizando ? 'Salvando...' : 'Atualizar Preço'}
+                  </Button>
+                </div>
+                <div className="bg-white p-3 rounded border">
+                  <p className="text-sm text-gray-700">
+                    💡 <strong>Importante:</strong> Este preço será usado para todas as compras de Girinhas. 
+                    Use o Painel de Saúde para orientar suas decisões de preço.
                   </p>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="taxaTransferencia">Taxa de Transferência P2P (%)</Label>
-                  <Input
-                    id="taxaTransferencia"
-                    type="number"
-                    step="0.1"
-                    value={config.taxaTransferencia}
-                    onChange={(e) => setConfig(prev => ({ 
-                      ...prev, 
-                      taxaTransferencia: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Taxa sobre transferências entre usuárias
-                  </p>
-                </div>
-              </div>
+            {/* Outras Configurações */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Configurações do Sistema
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Taxas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="taxaTransacao">Taxa de Transação (%)</Label>
+                    <Input
+                      id="taxaTransacao"
+                      type="number"
+                      step="0.1"
+                      value={config.taxaTransacao}
+                      onChange={(e) => setConfig(prev => ({ 
+                        ...prev, 
+                        taxaTransacao: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Taxa cobrada sobre transações do marketplace
+                    </p>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cotacaoMin">Cotação Mínima (R$)</Label>
-                  <Input
-                    id="cotacaoMin"
-                    type="number"
-                    step="0.01"
-                    value={config.cotacaoMin}
-                    onChange={(e) => setConfig(prev => ({ 
-                      ...prev, 
-                      cotacaoMin: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cotacaoMax">Cotação Máxima (R$)</Label>
-                  <Input
-                    id="cotacaoMax"
-                    type="number"
-                    step="0.01"
-                    value={config.cotacaoMax}
-                    onChange={(e) => setConfig(prev => ({ 
-                      ...prev, 
-                      cotacaoMax: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="markupEmissao">Markup de Emissão (%)</Label>
-                  <Input
-                    id="markupEmissao"
-                    type="number"
-                    step="0.1"
-                    value={config.markupEmissao}
-                    onChange={(e) => setConfig(prev => ({ 
-                      ...prev, 
-                      markupEmissao: parseFloat(e.target.value) || 0 
-                    }))}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Margem sobre cotação para emissão
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="taxaTransferencia">Taxa de Transferência P2P (%)</Label>
+                    <Input
+                      id="taxaTransferencia"
+                      type="number"
+                      step="0.1"
+                      value={config.taxaTransferencia}
+                      onChange={(e) => setConfig(prev => ({ 
+                        ...prev, 
+                        taxaTransferencia: parseFloat(e.target.value) || 0 
+                      }))}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Taxa sobre transferências entre usuárias
+                    </p>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="validadeGirinhas">Validade das Girinhas (meses)</Label>
-                  <Input
-                    id="validadeGirinhas"
-                    type="number"
-                    value={config.validadeGirinhas}
-                    onChange={(e) => setConfig(prev => ({ 
-                      ...prev, 
-                      validadeGirinhas: parseInt(e.target.value) || 0 
-                    }))}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="validadeGirinhas">Validade das Girinhas (meses)</Label>
+                    <Input
+                      id="validadeGirinhas"
+                      type="number"
+                      value={config.validadeGirinhas}
+                      onChange={(e) => setConfig(prev => ({ 
+                        ...prev, 
+                        validadeGirinhas: parseInt(e.target.value) || 0 
+                      }))}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <Button 
-                onClick={salvarConfiguracoes}
-                disabled={isSaving}
-                className="w-full md:w-auto"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {isSaving ? 'Salvando...' : 'Salvar Configurações'}
-              </Button>
-            </CardContent>
-          </Card>
+                <Button 
+                  onClick={salvarConfiguracoes}
+                  disabled={isSaving}
+                  className="w-full md:w-auto"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {isSaving ? 'Salvando...' : 'Salvar Configurações'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="compras">

@@ -5,10 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface ConfigSistema {
   taxa_transferencia: { percentual: number };
   taxa_transacao: { percentual: number };
-  cotacao_min_max: { min: number; max: number };
-  markup_emissao: { percentual: number };
   validade_girinhas: { meses: number };
   queima_por_transacao: { quantidade: number };
+  preco_manual_girinhas: { valor: number };
 }
 
 export const useConfigSistema = () => {
@@ -30,10 +29,9 @@ export const useConfigSistema = () => {
       return {
         taxa_transferencia: configObj.taxa_transferencia || { percentual: 1.0 },
         taxa_transacao: configObj.taxa_transacao || { percentual: 5.0 },
-        cotacao_min_max: configObj.cotacao_min_max || { min: 0.80, max: 1.30 },
-        markup_emissao: configObj.markup_emissao || { percentual: 30.0 },
         validade_girinhas: configObj.validade_girinhas || { meses: 12 },
-        queima_por_transacao: configObj.queima_por_transacao || { quantidade: 1.0 }
+        queima_por_transacao: configObj.queima_por_transacao || { quantidade: 1.0 },
+        preco_manual_girinhas: configObj.preco_manual_girinhas || { valor: 1.00 }
       };
     },
     staleTime: 60000, // 1 minuto
@@ -42,11 +40,13 @@ export const useConfigSistema = () => {
 
   const taxaTransferencia = config?.taxa_transferencia?.percentual || 1.0;
   const taxaTransacao = config?.taxa_transacao?.percentual || 5.0;
+  const precoManual = config?.preco_manual_girinhas?.valor || 1.00;
 
   return {
     config,
     taxaTransferencia,
     taxaTransacao,
+    precoManual,
     isLoadingConfig: isLoading,
     refetchConfig: refetch,
   };

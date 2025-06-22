@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +10,7 @@ import MetricsOverview from '@/components/admin/MetricsOverview';
 import ConfigCategorias from '@/components/admin/ConfigCategorias';
 import ConfigCompraGirinhas from '@/components/admin/ConfigCompraGirinhas';
 import EmissionChart from '@/components/admin/EmissionChart';
-import CotacaoChart from '@/components/admin/CotacaoChart';
+import PainelSaudeGirinha from '@/components/admin/PainelSaudeGirinha';
 import SystemConfig from '@/components/admin/SystemConfig';
 import MissoesAdmin from '@/components/admin/MissoesAdmin';
 import ConfigBonusDiario from '@/components/admin/ConfigBonusDiario';
@@ -41,7 +42,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="users">Usuários</TabsTrigger>
               <TabsTrigger value="categories">Categorias</TabsTrigger>
               <TabsTrigger value="girinhas">Girinhas</TabsTrigger>
-              <TabsTrigger value="cotacao">Cotação</TabsTrigger>
+              <TabsTrigger value="saude">Painel Saúde</TabsTrigger>
               <TabsTrigger value="system">Sistema</TabsTrigger>
               <TabsTrigger value="bonus">Bônus</TabsTrigger>
               <TabsTrigger value="missoes">Missões</TabsTrigger>
@@ -66,8 +67,8 @@ const AdminDashboard = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="cotacao">
-              <CotacaoChart />
+            <TabsContent value="saude">
+              <PainelSaudeGirinha />
             </TabsContent>
 
             <TabsContent value="system">

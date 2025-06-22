@@ -1324,10 +1324,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      ajustar_markup_emissao: {
-        Args: { novo_markup: number }
-        Returns: Json
-      }
       atualizar_reputacao: {
         Args: { p_usuario_id: string; p_nova_nota: number }
         Returns: undefined
@@ -1341,16 +1337,12 @@ export type Database = {
           avatar_url: string
         }[]
       }
-      calcular_cotacao_dinamica: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       calcular_custo_extensao: {
         Args: { p_valor_expirando: number }
         Returns: number
       }
-      calcular_markup_para_preco_alvo: {
-        Args: { preco_alvo: number }
+      calcular_metricas_saude: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       cancelar_reserva: {
@@ -1484,7 +1476,7 @@ export type Database = {
         Args: { p_usuario1_id: string; p_usuario2_id: string }
         Returns: string
       }
-      obter_preco_emissao: {
+      obter_preco_manual: {
         Args: Record<PropertyKey, never>
         Returns: number
       }
@@ -1519,6 +1511,14 @@ export type Database = {
       processar_compra_girinhas: {
         Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
         Returns: string
+      }
+      processar_compra_manual: {
+        Args: {
+          p_user_id: string
+          p_quantidade: number
+          p_idempotency_key?: string
+        }
+        Returns: Json
       }
       processar_compra_segura: {
         Args: {
@@ -1622,19 +1622,6 @@ export type Database = {
           markup_seria: number
           preco_seria: number
           explicacao: string
-        }[]
-      }
-      simular_preco_emissao: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          cotacao_atual: number
-          markup_atual: number
-          preco_com_markup_atual: number
-          preco_minimo: number
-          preco_maximo: number
-          precisa_ajuste: boolean
-          markup_necessario: number
-          preco_final: number
         }[]
       }
       testar_precos_tela: {

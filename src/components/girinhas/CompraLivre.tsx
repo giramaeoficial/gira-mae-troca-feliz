@@ -4,15 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, Info, AlertTriangle, CheckCircle, Shield, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
+import { ShoppingCart, Info, CheckCircle, Shield, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useCarteira } from '@/hooks/useCarteira';
-import { useGirinhasSystem } from '@/modules/girinhas/hooks/useGirinhasSystem';
+import { usePrecoManual } from '@/hooks/usePrecoManual';
 
 interface ConfigCompra {
   min: number;
@@ -22,23 +21,16 @@ interface ConfigCompra {
 const CompraLivre: React.FC = () => {
   const [quantidade, setQuantidade] = useState('');
   const [configuracoes, setConfiguracoes] = useState<ConfigCompra>({ min: 10, max: 999000 });
-  const [precoEmissao, setPrecoEmissao] = useState<number | null>(null);
-  const precoReferencia = 1.00; // Preço de referência sempre R$ 1,00
+  const [isComprandoManual, setIsComprandoManual] = useState(false);
   
-  const { 
-    compraSegura, 
-    isComprandoSeguro,
-    refetchCotacao,
-    refetchPrecoEmissao 
-  } = useGirinhasSystem();
+  const { precoManual } = usePrecoManual();
   const { refetch } = useCarteira();
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Carregar configurações e preço real de emissão
+  // Carregar configurações
   useEffect(() => {
     const carregarDados = async () => {
-      // Carregar configurações
       const { data: configs } = await supabase
         .from('config_sistema')
         .select('chave, valor')
@@ -58,49 +50,56 @@ const CompraLivre: React.FC = () => {
           }
         });
       }
-
-      // Carregar preço real de emissão (com markup)
-      try {
-        const { data: preco, error } = await supabase.rpc('obter_preco_emissao');
-        if (!error && preco) {
-          setPrecoEmissao(Number(preco));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar preço de emissão:', error);
-        setPrecoEmissao(precoReferencia); // Fallback para preço de referência
-      }
     };
 
     carregarDados();
   }, []);
 
   const quantidadeNum = parseFloat(quantidade) || 0;
-  const precoReal = precoEmissao || precoReferencia;
-  const valorTotal = quantidadeNum * precoReal;
-  
-  // Calcular percentual de diferença
-  const calcularPercentualDiferenca = () => {
-    if (!precoEmissao || precoEmissao === precoReferencia) return null;
-    
-    const diferenca = ((precoEmissao - precoReferencia) / precoReferencia) * 100;
-    return diferenca;
-  };
-
-  const percentualDiferenca = calcularPercentualDiferenca();
+  const valorTotal = quantidadeNum * precoManual;
   const isQuantidadeValida = quantidadeNum >= configuracoes.min && quantidadeNum <= configuracoes.max;
-  const temImpacto = quantidadeNum >= 100;
 
-  const realizarCompraSegura = async () => {
+  const realizarCompraManual = async () => {
     if (!user || !isQuantidadeValida || quantidadeNum <= 0) return;
 
+    setIsComprandoManual(true);
     try {
-      compraSegura({ quantidade: quantidadeNum });
+      console.log('🔒 [CompraLivre] Iniciando compra manual:', quantidadeNum);
+      
+      // Gerar chave de idempotência única
+      const idempotencyKey = `compra_manual_${user.id}_${Date.now()}_${Math.random()}`;
+      
+      // Usar RPC que processa com preço manual
+      const { data, error } = await supabase.rpc('processar_compra_manual', {
+        p_user_id: user.id,
+        p_quantidade: quantidadeNum,
+        p_idempotency_key: idempotencyKey
+      });
+
+      if (error) {
+        console.error('❌ Erro na compra manual:', error);
+        throw error;
+      }
+      
+      console.log('✅ [CompraLivre] Compra manual processada:', data);
+      
       await refetch();
-      await refetchCotacao();
-      await refetchPrecoEmissao();
       setQuantidade('');
+      
+      toast({
+        title: "🎉 Compra realizada com sucesso!",
+        description: `${quantidadeNum} Girinhas adicionadas por R$ ${valorTotal.toFixed(2)}`,
+      });
     } catch (error: any) {
-      console.error('Erro na compra segura:', error);
+      console.error('❌ Erro na compra manual:', error);
+      
+      toast({
+        title: "Erro na compra",
+        description: error.message || "Não foi possível processar a compra. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsComprandoManual(false);
     }
   };
 
@@ -113,23 +112,8 @@ const CompraLivre: React.FC = () => {
         </CardTitle>
         <div className="space-y-2">
           <p className="text-sm text-gray-600">
-            Sistema seguro e confiável
+            Sistema seguro e preço fixo
           </p>
-          {percentualDiferenca !== null && (
-            <div className="flex items-center justify-center gap-2">
-              {percentualDiferenca > 0 ? (
-                <Badge variant="outline" className="text-orange-700 border-orange-200 bg-orange-50">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  +{percentualDiferenca.toFixed(1)}% acima do valor base
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-green-700 border-green-200 bg-green-50">
-                  <TrendingDown className="w-3 h-3 mr-1" />
-                  {Math.abs(percentualDiferenca).toFixed(1)}% de desconto
-                </Badge>
-              )}
-            </div>
-          )}
         </div>
       </CardHeader>
       
@@ -139,14 +123,11 @@ const CompraLivre: React.FC = () => {
           <div className="flex items-center justify-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-500" />
             <span className="text-lg font-bold text-purple-600">
-              R$ {precoReal.toFixed(2)} por Girinha
+              R$ {precoManual.toFixed(2)} por Girinha
             </span>
           </div>
           <p className="text-xs text-gray-500 text-center mt-1">
-            {percentualDiferenca === null ? 
-              'Preço padrão • Sem taxas ocultas' : 
-              `Preço atual • ${percentualDiferenca > 0 ? 'Valorizada' : 'Promocional'}`
-            }
+            Preço fixo • Sem variações • Transparente
           </p>
         </div>
 
@@ -157,7 +138,7 @@ const CompraLivre: React.FC = () => {
             <div className="space-y-1">
               <p className="font-medium">🔒 Compra 100% segura!</p>
               <p className="text-sm">
-                Sistema protegido contra fraudes com validação server-side.
+                Preço fixo e transparente, sem surpresas ou taxas ocultas.
               </p>
             </div>
           </AlertDescription>
@@ -195,7 +176,7 @@ const CompraLivre: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Preço unitário:</span>
-                  <span className="font-bold">R$ {precoReal.toFixed(2)}</span>
+                  <span className="font-bold">R$ {precoManual.toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between items-center text-lg">
@@ -205,25 +186,15 @@ const CompraLivre: React.FC = () => {
                     </span>
                   </div>
                 </div>
-
-                {temImpacto && (
-                  <Alert className="border-blue-200 bg-blue-50">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800">
-                      <span className="font-medium">Compra grande!</span> 
-                      Quantidades acima de 100 Girinhas ajudam a sustentar a comunidade.
-                    </AlertDescription>
-                  </Alert>
-                )}
               </div>
             )}
 
             <Button
-              onClick={realizarCompraSegura}
-              disabled={!isQuantidadeValida || isComprandoSeguro || quantidadeNum <= 0}
+              onClick={realizarCompraManual}
+              disabled={!isQuantidadeValida || isComprandoManual || quantidadeNum <= 0}
               className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
             >
-              {isComprandoSeguro ? (
+              {isComprandoManual ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Processando compra...
@@ -253,11 +224,11 @@ const CompraLivre: React.FC = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Preço transparente e justo</span>
+                  <span>Preço fixo e transparente</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Sem taxas ocultas ou surpresas</span>
+                  <span>Sem flutuações ou surpresas</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -269,19 +240,17 @@ const CompraLivre: React.FC = () => {
                 </div>
               </div>
 
-              {percentualDiferenca !== null && (
-                <div className="bg-purple-50 p-3 rounded-lg mt-4">
-                  <p className="text-sm text-purple-800">
-                    <span className="font-medium">💡 Preço atual:</span> O valor está{' '}
-                    {percentualDiferenca > 0 ? 'valorizado' : 'em promoção'} baseado na dinâmica da comunidade.
-                  </p>
-                </div>
-              )}
+              <div className="bg-purple-50 p-3 rounded-lg mt-4">
+                <p className="text-sm text-purple-800">
+                  <span className="font-medium">💡 Preço controlado:</span> O valor é definido manualmente 
+                  pela administração, garantindo estabilidade e previsibilidade.
+                </p>
+              </div>
 
               <div className="bg-purple-50 p-3 rounded-lg mt-4">
                 <p className="text-sm text-purple-800">
-                  <span className="font-medium">💡 Dica:</span> As Girinhas não expiram e podem ser usadas 
-                  para trocar qualquer item na plataforma!
+                  <span className="font-medium">💡 Dica:</span> As Girinhas têm validade de 12 meses e podem ser usadas 
+                  para qualquer item na plataforma!
                 </p>
               </div>
             </div>

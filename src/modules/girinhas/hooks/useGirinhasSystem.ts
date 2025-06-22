@@ -9,7 +9,7 @@ interface TransferenciaP2P {
   quantidade: number;
 }
 
-interface CompraSeguraResponse {
+interface CompraManualResponse {
   transacao_id: string;
   quantidade: number;
   preco_unitario: number;
@@ -63,38 +63,37 @@ export const useGirinhasSystem = () => {
     enabled: !!user,
   });
 
-  // 🔒 SEGURANÇA: Mutation para compra 100% server-side
-  const compraSeguraMutation = useMutation({
-    mutationFn: async ({ quantidade }: { quantidade: number }): Promise<CompraSeguraResponse> => {
+  // 🔒 SEGURANÇA: Mutation para compra manual server-side
+  const compraManualMutation = useMutation({
+    mutationFn: async ({ quantidade }: { quantidade: number }): Promise<CompraManualResponse> => {
       if (!user) throw new Error('Usuário não autenticado');
       
-      console.log('🔒 [GirinhasSystem] Iniciando compra SEGURA server-side:', quantidade);
+      console.log('🔒 [GirinhasSystem] Iniciando compra MANUAL server-side:', quantidade);
       
       // Gerar chave de idempotência única
-      const idempotencyKey = `compra_${user.id}_${Date.now()}_${Math.random()}`;
+      const idempotencyKey = `compra_manual_${user.id}_${Date.now()}_${Math.random()}`;
       
-      // 🔒 Usar RPC que calcula TUDO no servidor
-      const { data, error } = await supabase.rpc('processar_compra_segura', {
+      // 🔒 Usar RPC que usa preço manual
+      const { data, error } = await supabase.rpc('processar_compra_manual', {
         p_user_id: user.id,
         p_quantidade: quantidade,
         p_idempotency_key: idempotencyKey
       });
 
       if (error) {
-        console.error('❌ Erro na compra segura:', error);
+        console.error('❌ Erro na compra manual:', error);
         throw error;
       }
       
-      console.log('✅ [GirinhasSystem] Compra segura processada:', data);
+      console.log('✅ [GirinhasSystem] Compra manual processada:', data);
       
-      const resultado = data as unknown as CompraSeguraResponse;
+      const resultado = data as unknown as CompraManualResponse;
       return resultado;
     },
     onSuccess: (data) => {
       // Invalidar TODOS os caches relacionados
       queryClient.invalidateQueries({ queryKey: ['carteira'] });
       queryClient.invalidateQueries({ queryKey: ['girinhas-expiracao'] });
-      queryClient.invalidateQueries({ queryKey: ['cotacao-girinhas'] });
       
       toast({
         title: "🎉 Compra realizada com sucesso!",
@@ -191,10 +190,6 @@ export const useGirinhasSystem = () => {
     },
   });
 
-  // Funções vazias para compatibilidade (usadas apenas no admin)
-  const refetchCotacao = () => Promise.resolve();
-  const refetchPrecoEmissao = () => Promise.resolve();
-
   return {
     // Dados
     transferencias,
@@ -202,12 +197,10 @@ export const useGirinhasSystem = () => {
     
     // Estados
     isTransferindo: transferirP2PMutation.isPending,
-    isComprandoSeguro: compraSeguraMutation.isPending,
+    isComprandoManual: compraManualMutation.isPending,
     
     // 🔒 Ações SEGURAS
-    compraSegura: compraSeguraMutation.mutate,
+    compraManual: compraManualMutation.mutate,
     transferirP2P: transferirP2PMutation.mutate,
-    refetchCotacao,
-    refetchPrecoEmissao,
   };
 };
