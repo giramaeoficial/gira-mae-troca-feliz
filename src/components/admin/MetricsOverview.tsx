@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Users, Coins, DollarSign, Activity } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useGirinhasAdmin } from "@/modules/girinhas/hooks/useGirinhasAdmin";
+import { usePrecoManual } from "@/hooks/usePrecoManual";
 
 const MetricsOverview = () => {
-  const { cotacao } = useGirinhasAdmin();
+  const { precoManual } = usePrecoManual();
 
   // Query para estatísticas reais
   const { data: stats } = useQuery({
@@ -21,12 +21,12 @@ const MetricsOverview = () => {
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
         supabase.from('transacoes').select('*', { count: 'exact', head: true }),
-        supabase.from('compras_girinhas').select('valor_pago, girinhas_recebidas').eq('status', 'aprovado'),
+        supabase.from('transacoes').select('valor, valor_real').eq('tipo', 'compra'),
         supabase.from('queimas_girinhas').select('quantidade')
       ]);
 
-      const totalArrecadado = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.valor_pago), 0) || 0;
-      const girinhasEmitidas = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.girinhas_recebidas), 0) || 0;
+      const totalArrecadado = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.valor_real || 0), 0) || 0;
+      const girinhasEmitidas = comprasGirinhas?.reduce((sum, compra) => sum + Number(compra.valor), 0) || 0;
       const girinhasQueimadas = totalQueimas?.reduce((sum, q) => sum + Number(q.quantidade), 0) || 0;
       const girinhasCirculacao = girinhasEmitidas - girinhasQueimadas;
 
@@ -44,10 +44,10 @@ const MetricsOverview = () => {
 
   const metrics = [
     {
-      title: "Cotação Atual (Admin)",
-      value: `R$ ${cotacao?.cotacao_atual?.toFixed(4) || '1.0000'}`,
-      change: "+0.25%",
-      trend: "up",
+      title: "Preço Manual Atual",
+      value: `R$ ${precoManual.toFixed(2)}`,
+      change: "Fixo",
+      trend: "neutral",
       icon: DollarSign,
       description: "Por Girinha"
     },
@@ -68,12 +68,12 @@ const MetricsOverview = () => {
       description: "Usuárias registradas"
     },
     {
-      title: "Volume 24h (Admin)",
-      value: cotacao?.volume_24h?.toLocaleString() || "0",
-      change: "-3.1%",
-      trend: "down",
+      title: "Transações Totais",
+      value: stats?.totalTransactions?.toLocaleString() || "0",
+      change: "+15.3%",
+      trend: "up",
       icon: Activity,
-      description: "Girinhas negociadas"
+      description: "Todas as transações"
     },
     {
       title: "Total Arrecadado",
@@ -107,10 +107,10 @@ const MetricsOverview = () => {
               <div className="text-2xl font-bold">{metric.value}</div>
               <div className="flex items-center gap-2 mt-1">
                 <Badge 
-                  variant={metric.trend === "up" ? "default" : "destructive"}
+                  variant={metric.trend === "up" ? "default" : metric.trend === "down" ? "destructive" : "secondary"}
                   className="text-xs"
                 >
-                  {metric.trend === "up" ? "↗" : "↘"} {metric.change}
+                  {metric.trend === "up" ? "↗" : metric.trend === "down" ? "↘" : "•"} {metric.change}
                 </Badge>
                 <p className="text-xs text-muted-foreground">{metric.description}</p>
               </div>
