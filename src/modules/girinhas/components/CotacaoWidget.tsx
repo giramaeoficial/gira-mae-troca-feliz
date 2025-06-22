@@ -12,7 +12,7 @@ const CotacaoWidget: React.FC = () => {
   useEffect(() => {
     const carregarPrecoEmissao = async () => {
       try {
-        const { data: preco, error } = await supabase.rpc('obter_preco_emissao');
+        const { data: preco, error } = await supabase.rpc('obter_preco_manual');
         if (!error && preco) {
           setPrecoEmissao(Number(preco));
         }
