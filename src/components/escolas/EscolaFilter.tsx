@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useEscolas, Escola } from '@/hooks/useEscolas';
+import { useEscolas, EscolaEssencial } from '@/hooks/useEscolas';
 
 interface EscolaFilterProps {
-  value?: Escola | null;
-  onChange: (escola: Escola | null) => void;
+  value?: EscolaEssencial | null;
+  onChange: (escola: EscolaEssencial | null) => void;
   preSelectedLocation?: { estado: string; cidade: string } | null;
 }
 
@@ -33,7 +33,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange, preSelecte
     await buscarEscolas(nomeEscola, preSelectedLocation.estado, preSelectedLocation.cidade);
   };
 
-  const handleSelecionarEscola = (escola: Escola) => {
+  const handleSelecionarEscola = (escola: EscolaEssencial) => {
     onChange(escola);
     setIsOpen(false);
   };
@@ -43,7 +43,7 @@ const EscolaFilter: React.FC<EscolaFilterProps> = ({ value, onChange, preSelecte
     setNomeEscola('');
   };
 
-  const formatarEndereco = (escola: Escola) => {
+  const formatarEndereco = (escola: EscolaEssencial) => {
     const partes = [escola.municipio, escola.uf].filter(Boolean);
     return partes.join(', ');
   };

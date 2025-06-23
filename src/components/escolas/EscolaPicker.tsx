@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEscolas, Escola } from '@/hooks/useEscolas';
+import { useEscolas, EscolaEssencial } from '@/hooks/useEscolas';
 import { ESTADOS_BRASIL } from '@/constants/estados';
 
 interface EscolaPickerProps {
-  value?: Escola | null;
-  onChange: (escola: Escola | null) => void;
+  value?: EscolaEssencial | null;
+  onChange: (escola: EscolaEssencial | null) => void;
   placeholder?: string;
   className?: string;
 }
@@ -70,7 +70,7 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
     setMostrarResultados(true);
   };
 
-  const handleSelecionarEscola = (escola: Escola) => {
+  const handleSelecionarEscola = (escola: EscolaEssencial) => {
     onChange(escola);
     setMostrarResultados(false);
   };
@@ -83,7 +83,7 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
     setMostrarResultados(false);
   };
 
-  const formatarEndereco = (escola: Escola) => {
+  const formatarEndereco = (escola: EscolaEssencial) => {
     const partes = [escola.municipio, escola.uf].filter(Boolean);
     return partes.join(', ');
   };
