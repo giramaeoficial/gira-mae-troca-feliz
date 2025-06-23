@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Index from '@/pages/Index';
+import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
 import Cadastro from '@/pages/Cadastro';
 import FeedOptimized from '@/pages/FeedOptimized';
@@ -31,7 +32,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/feed" element={<FeedOptimized />} />
           <Route path="/publicar" element={<PublicarItem />} />

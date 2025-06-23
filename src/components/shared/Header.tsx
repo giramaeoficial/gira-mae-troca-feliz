@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, Search, Menu, Sparkles, MessageSquare, Wallet } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import DesktopNav from './DesktopNav';
+import MoreMenu from './MoreMenu';
 
 interface HeaderProps {
   onSearch?: (term: string) => void;
@@ -76,9 +78,10 @@ const Header: React.FC<HeaderProps> = ({
                 
                 {/* Seção do Usuário (Girinhas e Avatar) */}
                 <div className="flex items-center space-x-2">
-                    <div className="hidden sm:flex items-center gap-1 text-pink-700 font-bold bg-pink-100 px-2 py-1 rounded-full text-xs">
-                        <Sparkles className="w-4 h-4" />
-                        <span>{profile?.saldo_girinhas || 0}</span>
+                    {/* Girinhas - agora visível no mobile também */}
+                    <div className="flex items-center gap-1 text-pink-700 font-bold bg-pink-100 px-2 py-1 rounded-full text-xs">
+                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm">{profile?.saldo_girinhas || 0}</span>
                     </div>
 
                     <DropdownMenu>
@@ -103,11 +106,13 @@ const Header: React.FC<HeaderProps> = ({
                     </DropdownMenu>
                 </div>
 
-                {/* Botão do Menu Mobile */}
+                {/* Menu Mobile usando MoreMenu */}
                 <div className="md:hidden">
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                  </Button>
+                  <MoreMenu>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </MoreMenu>
                 </div>
               </>
             ) : (
