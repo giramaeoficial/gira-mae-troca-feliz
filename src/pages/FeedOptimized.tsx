@@ -27,6 +27,10 @@ const FeedOptimized = () => {
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [location, setLocation] = useState<{ estado: string; cidade: string; bairro?: string } | null>(null);
   const [filters, setFilters] = useState({
+    busca: '',
+    categoria: 'todas',
+    ordem: 'recentes',
+    escola: null,
     mesmaEscola: false,
     mesmoBairro: false,
     paraFilhos: false,
@@ -48,6 +52,16 @@ const FeedOptimized = () => {
     }
   }, [profile, user, showLocationPrompt]);
 
+  // Sync local state with filters
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      busca,
+      categoria,
+      ordem
+    }));
+  }, [busca, categoria, ordem]);
+
   // Buscar itens próximos
   const { 
     data: itens = [], 
@@ -57,7 +71,9 @@ const FeedOptimized = () => {
   } = useItensProximos({
     location,
     filters: {
-      ...filters,
+      mesmaEscola: filters.mesmaEscola,
+      mesmoBairro: filters.mesmoBairro,
+      paraFilhos: filters.paraFilhos,
       categoria: categoria !== 'todas' ? categoria : undefined,
       ordem
     }
@@ -83,6 +99,17 @@ const FeedOptimized = () => {
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    
+    // Update local state for immediate UI feedback
+    if (newFilters.categoria !== undefined) {
+      setCategoria(newFilters.categoria);
+    }
+    if (newFilters.ordem !== undefined) {
+      setOrdem(newFilters.ordem);
+    }
+    if (newFilters.busca !== undefined) {
+      setBusca(newFilters.busca);
+    }
   };
 
   if (!user) {
@@ -220,7 +247,14 @@ const FeedOptimized = () => {
                 !location?.cidade ? handleConfigureLocation : () => {
                   setBusca('');
                   setCategoria('todas');
-                  setFilters({ mesmaEscola: false, mesmoBairro: false, paraFilhos: false });
+                  setFilters(prev => ({ 
+                    ...prev, 
+                    mesmaEscola: false, 
+                    mesmoBairro: false, 
+                    paraFilhos: false,
+                    busca: '',
+                    categoria: 'todas'
+                  }));
                 }
               }
             />
