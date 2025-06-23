@@ -9,6 +9,89 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      acoes_missoes: {
+        Row: {
+          ativo: boolean | null
+          condicoes: Json | null
+          created_at: string | null
+          id: string
+          missao_id: string | null
+          parametros: Json | null
+          tipo_evento: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          condicoes?: Json | null
+          created_at?: string | null
+          id?: string
+          missao_id?: string | null
+          parametros?: Json | null
+          tipo_evento: string
+        }
+        Update: {
+          ativo?: boolean | null
+          condicoes?: Json | null
+          created_at?: string | null
+          id?: string
+          missao_id?: string | null
+          parametros?: Json | null
+          tipo_evento?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acoes_missoes_missao_id_fkey"
+            columns: ["missao_id"]
+            isOneToOne: false
+            referencedRelation: "missoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      analytics_missoes: {
+        Row: {
+          detalhes: Json | null
+          evento: string
+          id: string
+          missao_id: string | null
+          segmento_aplicado: Json | null
+          timestamp_evento: string | null
+          user_id: string | null
+        }
+        Insert: {
+          detalhes?: Json | null
+          evento: string
+          id?: string
+          missao_id?: string | null
+          segmento_aplicado?: Json | null
+          timestamp_evento?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          detalhes?: Json | null
+          evento?: string
+          id?: string
+          missao_id?: string | null
+          segmento_aplicado?: Json | null
+          timestamp_evento?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_missoes_missao_id_fkey"
+            columns: ["missao_id"]
+            isOneToOne: false
+            referencedRelation: "missoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_missoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avaliacoes: {
         Row: {
           avaliado_id: string
@@ -846,10 +929,15 @@ export type Database = {
       }
       missoes: {
         Row: {
+          acoes_eventos: Json | null
           ativo: boolean | null
           categoria: string
           condicoes: Json
+          configuracao_temporal: Json | null
           created_at: string | null
+          criterios_segmentacao: Json | null
+          data_fim: string | null
+          data_inicio: string | null
           descricao: string
           icone: string | null
           id: string
@@ -859,13 +947,19 @@ export type Database = {
           tipo_missao: string
           titulo: string
           updated_at: string | null
+          usuarios_elegíveis_cache: number | null
           validade_recompensa_meses: number | null
         }
         Insert: {
+          acoes_eventos?: Json | null
           ativo?: boolean | null
           categoria: string
           condicoes: Json
+          configuracao_temporal?: Json | null
           created_at?: string | null
+          criterios_segmentacao?: Json | null
+          data_fim?: string | null
+          data_inicio?: string | null
           descricao: string
           icone?: string | null
           id?: string
@@ -875,13 +969,19 @@ export type Database = {
           tipo_missao: string
           titulo: string
           updated_at?: string | null
+          usuarios_elegíveis_cache?: number | null
           validade_recompensa_meses?: number | null
         }
         Update: {
+          acoes_eventos?: Json | null
           ativo?: boolean | null
           categoria?: string
           condicoes?: Json
+          configuracao_temporal?: Json | null
           created_at?: string | null
+          criterios_segmentacao?: Json | null
+          data_fim?: string | null
+          data_inicio?: string | null
           descricao?: string
           icone?: string | null
           id?: string
@@ -891,6 +991,7 @@ export type Database = {
           tipo_missao?: string
           titulo?: string
           updated_at?: string | null
+          usuarios_elegíveis_cache?: number | null
           validade_recompensa_meses?: number | null
         }
         Relationships: []
@@ -987,8 +1088,10 @@ export type Database = {
           avatar_url: string | null
           bairro: string | null
           bio: string | null
+          categorias_favoritas: string[] | null
           cidade: string | null
           created_at: string | null
+          dados_segmentacao: Json | null
           data_nascimento: string | null
           email: string | null
           endereco: string | null
@@ -1002,6 +1105,7 @@ export type Database = {
           reputacao: number | null
           saldo_girinhas: number | null
           telefone: string | null
+          ultima_atividade: string | null
           ultimo_calculo_cotacao: string | null
           updated_at: string | null
           username: string
@@ -1011,8 +1115,10 @@ export type Database = {
           avatar_url?: string | null
           bairro?: string | null
           bio?: string | null
+          categorias_favoritas?: string[] | null
           cidade?: string | null
           created_at?: string | null
+          dados_segmentacao?: Json | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -1026,6 +1132,7 @@ export type Database = {
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
+          ultima_atividade?: string | null
           ultimo_calculo_cotacao?: string | null
           updated_at?: string | null
           username: string
@@ -1035,8 +1142,10 @@ export type Database = {
           avatar_url?: string | null
           bairro?: string | null
           bio?: string | null
+          categorias_favoritas?: string[] | null
           cidade?: string | null
           created_at?: string | null
+          dados_segmentacao?: Json | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
@@ -1050,6 +1159,7 @@ export type Database = {
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
+          ultima_atividade?: string | null
           ultimo_calculo_cotacao?: string | null
           updated_at?: string | null
           username?: string
@@ -1221,6 +1331,80 @@ export type Database = {
           },
         ]
       }
+      subcategorias_itens: {
+        Row: {
+          ativo: boolean | null
+          categoria_pai: string
+          created_at: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria_pai: string
+          created_at?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria_pai?: string
+          created_at?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      templates_segmentacao: {
+        Row: {
+          created_at: string | null
+          criado_por: string | null
+          criterios: Json
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+          uso_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          criado_por?: string | null
+          criterios: Json
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+          uso_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          criado_por?: string | null
+          criterios?: Json
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string | null
+          uso_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "templates_segmentacao_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transacoes: {
         Row: {
           cotacao_utilizada: number | null
@@ -1344,6 +1528,10 @@ export type Database = {
       calcular_metricas_saude: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      calcular_usuarios_elegiveis: {
+        Args: { criterios_segmentacao: Json }
+        Returns: number
       }
       cancelar_reserva: {
         Args: { p_reserva_id: string; p_usuario_id: string }
@@ -1548,6 +1736,15 @@ export type Database = {
         Args: { p_user_id: string; p_quantidade: number; p_motivo: string }
         Returns: boolean
       }
+      registrar_analytics_missao: {
+        Args: {
+          p_missao_id: string
+          p_user_id: string
+          p_evento: string
+          p_detalhes?: Json
+        }
+        Returns: string
+      }
       registrar_indicacao: {
         Args: { p_indicador_id: string; p_indicado_id: string }
         Returns: boolean
@@ -1640,6 +1837,10 @@ export type Database = {
         }
         Returns: string
       }
+      usuario_elegivel_missao: {
+        Args: { user_id: string; missao_id: string }
+        Returns: boolean
+      }
       validar_valor_item_categoria: {
         Args: { p_categoria: string; p_valor: number }
         Returns: boolean
@@ -1649,6 +1850,10 @@ export type Database = {
         Returns: undefined
       }
       verificar_progresso_missoes: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      verificar_progresso_missoes_segmentadas: {
         Args: { p_user_id: string }
         Returns: undefined
       }

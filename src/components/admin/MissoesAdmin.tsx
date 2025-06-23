@@ -1,17 +1,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Trophy, Plus, Edit, BarChart3, Users, Gift } from 'lucide-react';
+import { Trophy, Plus, Edit, BarChart3, Users, Gift, Target, Zap } from 'lucide-react';
 import { useMissoesAdmin, MissaoAdmin } from '@/hooks/useMissoesAdmin';
 import { useForm } from 'react-hook-form';
+import MissoesSegmentadasAdmin from './MissoesSegmentadasAdmin';
+import AnalyticsSegmentacao from './AnalyticsSegmentacao';
 
 const FormMissao: React.FC<{ 
   missao?: MissaoAdmin; 
@@ -222,6 +219,11 @@ const MissoesAdmin: React.FC = () => {
     }
   };
 
+  // Filtrar missões simples (sem segmentação avançada)
+  const missoesSimples = missoes.filter(missao => 
+    !missao.criterios_segmentacao || Object.keys(missao.criterios_segmentacao).length === 0
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -229,36 +231,52 @@ const MissoesAdmin: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900">Gerenciar Missões</h2>
           <p className="text-gray-600">Configure e monitore as missões da plataforma</p>
         </div>
-        
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Missão
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {missaoEditando ? 'Editar Missão' : 'Nova Missão'}
-              </DialogTitle>
-            </DialogHeader>
-            <FormMissao
-              missao={missaoEditando}
-              onSubmit={handleSubmit}
-              isLoading={criarMissao.isPending || atualizarMissao.isPending}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
-      <Tabs defaultValue="lista" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="lista">Lista de Missões</TabsTrigger>
-          <TabsTrigger value="estatisticas">Estatísticas</TabsTrigger>
+      <Tabs defaultValue="simples" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="simples" className="flex items-center gap-2">
+            <Trophy className="w-4 h-4" />
+            Missões Simples
+          </TabsTrigger>
+          <TabsTrigger value="segmentadas" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Segmentadas
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="estatisticas" className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Estatísticas
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="lista" className="space-y-4">
+        <TabsContent value="simples" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nova Missão Simples
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    {missaoEditando ? 'Editar Missão' : 'Nova Missão'}
+                  </DialogTitle>
+                </DialogHeader>
+                <FormMissao
+                  missao={missaoEditando}
+                  onSubmit={handleSubmit}
+                  isLoading={criarMissao.isPending || atualizarMissao.isPending}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
+
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
@@ -267,7 +285,7 @@ const MissoesAdmin: React.FC = () => {
             </div>
           ) : (
             <div className="grid gap-4">
-              {missoes.map((missao) => (
+              {missoesSimples.map((missao) => (
                 <Card key={missao.id}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
@@ -317,6 +335,14 @@ const MissoesAdmin: React.FC = () => {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="segmentadas">
+          <MissoesSegmentadasAdmin />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <AnalyticsSegmentacao />
         </TabsContent>
 
         <TabsContent value="estatisticas">
