@@ -1089,6 +1089,80 @@ export type Database = {
           },
         ]
       }
+      notification_logs: {
+        Row: {
+          canal: string
+          created_at: string | null
+          dados_envio: Json | null
+          erro_mensagem: string | null
+          id: string
+          status: string
+          template_tipo: string
+          user_id: string | null
+        }
+        Insert: {
+          canal: string
+          created_at?: string | null
+          dados_envio?: Json | null
+          erro_mensagem?: string | null
+          id?: string
+          status: string
+          template_tipo: string
+          user_id?: string | null
+        }
+        Update: {
+          canal?: string
+          created_at?: string | null
+          dados_envio?: Json | null
+          erro_mensagem?: string | null
+          id?: string
+          status?: string
+          template_tipo?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_templates: {
+        Row: {
+          ativo: boolean | null
+          corpo: string
+          created_at: string | null
+          id: string
+          tipo: string
+          titulo: string
+          updated_at: string | null
+          variaveis: Json | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          corpo: string
+          created_at?: string | null
+          id?: string
+          tipo: string
+          titulo: string
+          updated_at?: string | null
+          variaveis?: Json | null
+        }
+        Update: {
+          ativo?: boolean | null
+          corpo?: string
+          created_at?: string | null
+          id?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string | null
+          variaveis?: Json | null
+        }
+        Relationships: []
+      }
       pacotes_girinhas: {
         Row: {
           ativo: boolean | null
