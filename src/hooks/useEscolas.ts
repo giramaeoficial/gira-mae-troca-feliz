@@ -23,11 +23,15 @@ export const useEscolas = (params?: UseEscolasParams) => {
   const queryResult = useQuery({
     queryKey: ['escolas', params],
     queryFn: async () => {
+      if (!params?.searchTerm || params.searchTerm.length < 3) {
+        return [];
+      }
+
       let query = supabase
         .from('escolas_inep')
         .select('*') // Select all fields to match the Escola type
         .order('escola')
-        .limit(1000);
+        .limit(100); // Reduzir limite para melhor performance
 
       // Aplicar filtros se fornecidos
       if (params?.uf) {
@@ -44,10 +48,16 @@ export const useEscolas = (params?: UseEscolasParams) => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar escolas:', error);
+        throw error;
+      }
+      
       return data as Escola[];
     },
-    enabled: !!(params?.searchTerm && params.searchTerm.length >= 3)
+    enabled: !!(params?.searchTerm && params.searchTerm.length >= 3),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    cacheTime: 10 * 60 * 1000, // 10 minutos
   });
 
   const buscarEscolas = async (nome: string, estado: string, cidade: string) => {

@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { Check, ChevronsUpDown, School, X } from 'lucide-react';
+import { Check, ChevronsUpDown, School, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useEscolas, type Escola } from '@/hooks/useEscolas';
+import { useFilhosPorEscola } from '@/hooks/useFilhosPorEscola';
 
 interface SchoolSelectProps {
   value?: Escola | null;
@@ -26,8 +27,17 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [mostrarTodasEscolas, setMostrarTodasEscolas] = useState(false);
   
-  const { escolas, isLoading } = useEscolas();
+  const { getEscolasDosMeusFilhos } = useFilhosPorEscola();
+  const escolasDosMeusFilhos = getEscolasDosMeusFilhos();
+  
+  // Hook para buscar outras escolas quando necessário
+  const { escolas, isLoading } = useEscolas({
+    searchTerm: mostrarTodasEscolas && searchTerm.length >= 3 ? searchTerm : undefined,
+    uf: estadoFiltro,
+    municipio: cidadeFiltro
+  });
 
   const handleSelect = (escola: Escola) => {
     onChange(escola);
@@ -39,9 +49,8 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
     onChange(null);
   };
 
-  const formatSchoolDisplay = (escola: Escola) => {
+  const formatSchoolDisplay = (escola: any) => {
     const nome = escola.escola || 'Escola sem nome';
-    const endereco = escola.endereco || '';
     const municipio = escola.municipio || '';
     const uf = escola.uf || '';
     
@@ -52,15 +61,28 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
     return nome;
   };
 
-  // Filtrar escolas com base nos critérios
-  const escolasFiltradas = escolas.filter(escola => {
-    const matchesSearch = !searchTerm || 
-      escola.escola?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesEstado = !estadoFiltro || escola.uf === estadoFiltro;
-    const matchesCidade = !cidadeFiltro || escola.municipio === cidadeFiltro;
-    
-    return matchesSearch && matchesEstado && matchesCidade;
-  });
+  const handleToggleTodasEscolas = () => {
+    setMostrarTodasEscolas(!mostrarTodasEscolas);
+    setSearchTerm('');
+  };
+
+  // Filtrar escolas baseado no estado atual
+  let escolasParaMostrar: any[] = [];
+  
+  if (!mostrarTodasEscolas) {
+    // Mostrar apenas escolas dos filhos
+    escolasParaMostrar = escolasDosMeusFilhos;
+  } else {
+    // Mostrar resultado da busca geral
+    escolasParaMostrar = escolas.filter(escola => {
+      const matchesSearch = !searchTerm || 
+        escola.escola?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesEstado = !estadoFiltro || escola.uf === estadoFiltro;
+      const matchesCidade = !cidadeFiltro || escola.municipio === cidadeFiltro;
+      
+      return matchesSearch && matchesEstado && matchesCidade;
+    });
+  }
 
   return (
     <div className="space-y-2">
@@ -92,37 +114,103 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
         </PopoverTrigger>
         <PopoverContent className="w-full p-0" align="start">
           <Command>
-            <CommandInput
-              placeholder="Buscar escola..."
-              value={searchTerm}
-              onValueChange={setSearchTerm}
-            />
+            {mostrarTodasEscolas && (
+              <CommandInput
+                placeholder="Buscar escola (mín. 3 caracteres)..."
+                value={searchTerm}
+                onValueChange={setSearchTerm}
+              />
+            )}
             <CommandList>
-              <CommandEmpty>
-                {isLoading ? "Carregando..." : "Nenhuma escola encontrada."}
-              </CommandEmpty>
-              <CommandGroup>
-                {escolasFiltradas?.map((escola) => (
-                  <CommandItem
-                    key={escola.codigo_inep}
-                    onSelect={() => handleSelect(escola)}
-                    className="cursor-pointer"
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        value?.codigo_inep === escola.codigo_inep ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{escola.escola}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {escola.endereco} - {escola.municipio}/{escola.uf}
-                      </span>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
+              {!mostrarTodasEscolas ? (
+                <>
+                  {/* Mostrar escolas dos filhos */}
+                  <CommandGroup heading="Escolas dos seus filhos">
+                    {escolasDosMeusFilhos.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        Nenhum filho com escola cadastrada
+                      </div>
+                    ) : (
+                      escolasDosMeusFilhos.map((escola) => (
+                        <CommandItem
+                          key={escola.codigo_inep}
+                          onSelect={() => handleSelect(escola)}
+                          className="cursor-pointer"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              value?.codigo_inep === escola.codigo_inep ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{escola.escola}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {escola.municipio}/{escola.uf}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))
+                    )}
+                  </CommandGroup>
+                  
+                  {/* Opção para buscar outras escolas */}
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={handleToggleTodasEscolas}
+                      className="cursor-pointer text-primary"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      <span>Buscar outra escola</span>
+                    </CommandItem>
+                  </CommandGroup>
+                </>
+              ) : (
+                <>
+                  {/* Voltar para escolas dos filhos */}
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={handleToggleTodasEscolas}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      <School className="mr-2 h-4 w-4" />
+                      <span>← Voltar para escolas dos filhos</span>
+                    </CommandItem>
+                  </CommandGroup>
+
+                  {/* Resultado da busca geral */}
+                  <CommandEmpty>
+                    {isLoading ? "Carregando..." : 
+                     searchTerm.length < 3 ? "Digite pelo menos 3 caracteres para buscar" :
+                     "Nenhuma escola encontrada."}
+                  </CommandEmpty>
+                  
+                  {searchTerm.length >= 3 && (
+                    <CommandGroup heading="Resultados da busca">
+                      {escolasParaMostrar?.map((escola) => (
+                        <CommandItem
+                          key={escola.codigo_inep}
+                          onSelect={() => handleSelect(escola)}
+                          className="cursor-pointer"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              value?.codigo_inep === escola.codigo_inep ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{escola.escola}</span>
+                            <span className="text-sm text-muted-foreground">
+                              {escola.endereco} - {escola.municipio}/{escola.uf}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )}
+                </>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>
