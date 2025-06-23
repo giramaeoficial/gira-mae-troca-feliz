@@ -5,6 +5,8 @@ import { Plus, Search, Filter, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Header from '@/components/shared/Header';
+import QuickNav from '@/components/shared/QuickNav';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
@@ -121,23 +123,41 @@ const FeedOptimized = () => {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-screen">
+          <LoadingSpinner />
+        </div>
+        <QuickNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header fixo */}
-      <div className="sticky top-0 bg-white border-b shadow-sm z-40">
-        <div className="p-4 space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-6">
+        {/* Hero Section */}
+        {location && (
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
+              Encontre Tesouros em {location.cidade}
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Descubra itens incríveis com filtros inteligentes
+            </p>
+          </div>
+        )}
+
+        {/* Filtros principais em card */}
+        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
           {/* Título e localização atual */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-xl font-bold text-gray-800">
-                Roupinhas Próximas
-              </h1>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Filtros Inteligentes
+              </h2>
               {location?.cidade && (
                 <p className="text-sm text-gray-500 flex items-center mt-1">
                   <MapPin className="w-3 h-3 mr-1" />
@@ -163,7 +183,7 @@ const FeedOptimized = () => {
             <Button
               onClick={() => navigate('/publicar')}
               size="sm"
-              className="bg-pink-500 hover:bg-pink-600 text-white"
+              className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white"
             >
               <Plus className="w-4 h-4 mr-1" />
               Publicar
@@ -171,7 +191,7 @@ const FeedOptimized = () => {
           </div>
 
           {/* Barra de busca */}
-          <div className="relative">
+          <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               placeholder="Buscar roupinha, brinquedo..."
@@ -223,10 +243,7 @@ const FeedOptimized = () => {
             />
           </div>
         </div>
-      </div>
 
-      {/* Conteúdo principal */}
-      <div className="pb-20">
         {/* Prompt de localização */}
         {showLocationPrompt && (
           <LocationPrompt
@@ -237,8 +254,8 @@ const FeedOptimized = () => {
 
         {/* Loading state */}
         {isLoading && (
-          <div className="grid grid-cols-2 gap-4 p-4">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
               <ItemCardSkeleton key={i} />
             ))}
           </div>
@@ -246,50 +263,46 @@ const FeedOptimized = () => {
 
         {/* Error state */}
         {error && (
-          <div className="p-4">
-            <EmptyState
-              type="generic"
-              title="Erro ao carregar itens"
-              description="Tente novamente em alguns instantes"
-              actionLabel="Tentar novamente"
-              onAction={() => refetch()}
-            />
-          </div>
+          <EmptyState
+            type="generic"
+            title="Erro ao carregar itens"
+            description="Tente novamente em alguns instantes"
+            actionLabel="Tentar novamente"
+            onAction={() => refetch()}
+          />
         )}
 
         {/* Empty state */}
         {!isLoading && !error && itensFiltrados.length === 0 && (
-          <div className="p-4">
-            <EmptyState
-              type="search"
-              title={location?.cidade ? 
-                `Nenhum item encontrado em ${location.cidade}` : 
-                "Nenhum item encontrado"
-              }
-              description={
-                filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
-                "Tente remover alguns filtros para ver mais opções" :
-                location?.cidade ? 
-                  "Tente expandir sua busca ou verifique outras cidades próximas" :
-                  "Configure sua localização para ver itens próximos"
-              }
-              actionLabel={
-                filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
-                  "Limpar filtros" :
-                  !location?.cidade ? "Configurar localização" : "Limpar filtros"
-              }
-              onAction={
-                filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
-                  limparFiltros :
-                  !location?.cidade ? handleConfigureLocation : limparFiltros
-              }
-            />
-          </div>
+          <EmptyState
+            type="search"
+            title={location?.cidade ? 
+              `Nenhum item encontrado em ${location.cidade}` : 
+              "Nenhum item encontrado"
+            }
+            description={
+              filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
+              "Tente remover alguns filtros para ver mais opções" :
+              location?.cidade ? 
+                "Tente expandir sua busca ou verifique outras cidades próximas" :
+                "Configure sua localização para ver itens próximos"
+            }
+            actionLabel={
+              filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
+                "Limpar filtros" :
+                !location?.cidade ? "Configurar localização" : "Limpar filtros"
+            }
+            onAction={
+              filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
+                limparFiltros :
+                !location?.cidade ? handleConfigureLocation : limparFiltros
+            }
+          />
         )}
 
         {/* Grid de itens */}
         {!isLoading && !error && itensFiltrados.length > 0 && (
-          <div className="grid grid-cols-2 gap-4 p-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {itensFiltrados.map((item) => (
               <ItemCard
                 key={item.id}
@@ -299,7 +312,9 @@ const FeedOptimized = () => {
             ))}
           </div>
         )}
-      </div>
+      </main>
+      
+      <QuickNav />
     </div>
   );
 };
