@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,343 +16,68 @@ import AddressInput from "@/components/address/AddressInput";
 import SchoolSelect from "@/components/address/SchoolSelect";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Upload, MapPin, Tag, Calendar, Info, Home, School, Navigation } from "lucide-react";
-import { useAuth } from '@/hooks/useAuth';
-import { useItens } from '@/hooks/useItens';
+import { Loader2, Upload, MapPin, Info, Home, School, Navigation } from "lucide-react";
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { useUserAddress } from '@/hooks/useUserAddress';
 import { useFilhosPorEscola } from '@/hooks/useFilhosPorEscola';
-import { type Address } from '@/hooks/useAddress';
+import { usePublicarItemForm } from '@/hooks/usePublicarItemForm';
 import FormProgress from '@/components/ui/form-progress';
-import { toast } from "sonner";
 import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
 
-interface FormData {
-  nome: string;
-  categoria_id: string;
-  estado_conservacao: string;
-  tamanho: string;
-  preco: string;
-  descricao: string;
-  imagens: File[];
-  // Campos de endereço
-  endereco_tipo: 'meu' | 'escola' | 'outro';
-  escola_selecionada: any;
-  endereco_personalizado: Partial<Address>;
-  aceita_entrega: boolean;
-  raio_entrega_km: number;
-  instrucoes_retirada: string;
-}
-
-const validateForm = (formData: FormData): { [key: string]: string } => {
-  const errors: { [key: string]: string } = {};
-
-  if (!formData.nome) {
-    errors.nome = "O nome do item é obrigatório.";
-  }
-
-  if (!formData.categoria_id) {
-    errors.categoria_id = "A categoria é obrigatória.";
-  }
-
-  if (!formData.estado_conservacao) {
-    errors.estado_conservacao = "O estado de conservação é obrigatório.";
-  }
-
-  if (!formData.preco) {
-    errors.preco = "O preço é obrigatório.";
-  } else if (isNaN(Number(formData.preco))) {
-    errors.preco = "O preço deve ser um número.";
-  }
-
-  if (!formData.descricao) {
-    errors.descricao = "A descrição é obrigatória.";
-  }
-
-  if (!formData.imagens || formData.imagens.length === 0) {
-    errors.imagens = "Pelo menos uma imagem é obrigatória.";
-  }
-
-  return errors;
-};
-
-const validateAddress = (formData: FormData, userAddress: any): { [key: string]: string } => {
-  const errors: { [key: string]: string } = {};
-
-  // Validação específica para cada tipo de endereço
-  if (formData.endereco_tipo === 'meu') {
-    if (!userAddress) {
-      errors.endereco = "Você precisa cadastrar seu endereço principal no perfil para usar esta opção.";
-    } else if (!userAddress.cep || !userAddress.endereco || !userAddress.cidade || !userAddress.estado) {
-      errors.endereco = "Seu endereço principal está incompleto. Complete seu perfil primeiro.";
-    }
-  } else if (formData.endereco_tipo === 'escola') {
-    if (!formData.escola_selecionada) {
-      errors.endereco = "Selecione uma escola.";
-    } else if (!formData.escola_selecionada.municipio || !formData.escola_selecionada.uf) {
-      errors.endereco = "A escola selecionada não possui dados de localização completos.";
-    }
-  } else if (formData.endereco_tipo === 'outro') {
-    const endereco = formData.endereco_personalizado;
-    if (!endereco.cep || !endereco.endereco || !endereco.cidade || !endereco.estado) {
-      errors.endereco = "Preencha todos os campos obrigatórios do endereço.";
-    }
-  }
-
-  if (formData.aceita_entrega && !formData.raio_entrega_km) {
-    errors.raio_entrega = "Defina o raio de entrega.";
-  }
-
-  return errors;
-};
-
-const extrairBairroEscola = (escola: any): string => {
-  // Se já tiver um campo bairro explícito, use-o
-  if (escola.bairro) {
-    return escola.bairro.trim();
-  }
-
-  // Se não tiver endereço, retorna vazio
-  if (!escola.endereco) {
-    return '';
-  }
-
-  const endereco = escola.endereco.trim();
-  
-  // Tenta diferentes padrões comuns de endereços de escolas
-  const padroes = [
-    // Padrão: "Rua/Av Nome, Número, Bairro, Cidade"
-    /^[^,]+,\s*[^,]*,\s*([^,]+),/,
-    // Padrão: "Rua/Av Nome, Bairro"
-    /^[^,]+,\s*([^,]+)$/,
-    // Padrão: "Nome da Rua - Bairro"
-    /^[^-]+-\s*([^-]+)$/,
-    // Padrão: busca por palavras indicativas de bairro
-    /(?:bairro|distrito|vila|jardim|centro)\s+([^,\-]+)/i,
-  ];
-
-  for (const padrao of padroes) {
-    const match = endereco.match(padrao);
-    if (match && match[1]) {
-      let bairro = match[1].trim();
-      
-      // Remove números que possam ter sido capturados
-      bairro = bairro.replace(/^\d+\s*/, '');
-      
-      // Remove palavras muito comuns que não são bairros
-      const palavrasExcluir = ['rua', 'avenida', 'av', 'r', 'número', 'nº', 'n'];
-      const palavrasBairro = bairro.split(/\s+/).filter(palavra => 
-        !palavrasExcluir.includes(palavra.toLowerCase()) && palavra.length > 1
-      );
-      
-      if (palavrasBairro.length > 0) {
-        return palavrasBairro.join(' ');
-      }
-    }
-  }
-
-  // Se nenhum padrão funcionou, tenta o método anterior como fallback
-  const enderecoPartes = endereco.split(',').map(parte => parte.trim());
-  if (enderecoPartes.length > 1) {
-    let bairro = enderecoPartes[1];
-    
-    // Remove números no início
-    bairro = bairro.replace(/^\d+\s*/, '');
-    
-    if (bairro && bairro.length > 2) {
-      return bairro;
-    }
-  }
-
-  // Se tudo falhar, retorna vazio em vez de dados incorretos
-  return '';
-};
-
 const PublicarItem = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const { configuracoes } = useConfigCategorias();
-  const { publicarItem, loading } = useItens();
-  const { userAddress } = useUserAddress();
   const { filhos } = useFilhosPorEscola();
-
-  const [formData, setFormData] = useState<FormData>({
-    nome: '',
-    categoria_id: '',
-    estado_conservacao: '',
-    tamanho: '',
-    preco: '',
-    descricao: '',
-    imagens: [],
-    endereco_tipo: 'meu',
-    escola_selecionada: null,
-    endereco_personalizado: {},
-    aceita_entrega: false,
-    raio_entrega_km: 5,
-    instrucoes_retirada: ''
-  });
-
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [progress, setProgress] = useState(0);
+  const {
+    formData,
+    updateFormData,
+    errors,
+    progress,
+    loading,
+    handleSubmit,
+    calculateProgress,
+    userAddress
+  } = usePublicarItemForm();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    updateFormData({ [name]: value });
   };
 
   const handleSelectChange = (name: string) => (value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    updateFormData({ [name]: value });
   };
 
   const handleImageUpload = (files: File[]) => {
-    setFormData(prev => ({ ...prev, imagens: files }));
+    updateFormData({ imagens: files });
   };
 
   const handleEnderecoTipoChange = (tipo: 'meu' | 'escola' | 'outro') => {
-    setFormData(prev => ({ 
-      ...prev, 
+    updateFormData({ 
       endereco_tipo: tipo,
       escola_selecionada: null,
       endereco_personalizado: {}
-    }));
+    });
   };
 
   const handleEscolaSelect = (escola: any) => {
-    setFormData(prev => ({ ...prev, escola_selecionada: escola }));
+    updateFormData({ escola_selecionada: escola });
   };
 
-  const handleEnderecoPersonalizadoChange = (endereco: Address) => {
-    setFormData(prev => ({ ...prev, endereco_personalizado: endereco }));
+  const handleEnderecoPersonalizadoChange = (endereco: any) => {
+    updateFormData({ endereco_personalizado: endereco });
   };
 
   const handleSwitchChange = (checked: boolean) => {
-    setFormData(prev => ({ ...prev, aceita_entrega: checked }));
+    updateFormData({ aceita_entrega: checked });
   };
 
   const handleRaioChange = (value: number[]) => {
-    setFormData(prev => ({ ...prev, raio_entrega_km: value[0] }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validação básica
-    const basicErrors = validateForm(formData);
-    
-    // Validação de endereço
-    const addressErrors = validateAddress(formData, userAddress);
-    
-    // Combinar todos os erros
-    const allErrors = { ...basicErrors, ...addressErrors };
-    setErrors(allErrors);
-
-    if (Object.keys(allErrors).length === 0) {
-      try {
-        const categoriaSelecionada = configuracoes?.find(c => c.id === formData.categoria_id);
-        
-        if (!categoriaSelecionada) {
-          toast.error("Categoria não encontrada.");
-          return;
-        }
-
-        // Preparar dados de endereço baseado no tipo selecionado
-        let enderecoData: any = {};
-
-        if (formData.endereco_tipo === 'meu' && userAddress) {
-          enderecoData = {
-            endereco_cep: userAddress.cep,
-            endereco_rua: userAddress.endereco,
-            endereco_bairro: userAddress.bairro,
-            endereco_cidade: userAddress.cidade,
-            endereco_estado: userAddress.estado,
-            endereco_complemento: userAddress.complemento,
-            ponto_referencia: userAddress.ponto_referencia
-          };
-        } else if (formData.endereco_tipo === 'escola' && formData.escola_selecionada) {
-          const escola = formData.escola_selecionada;
-          
-          // Usar a nova função robusta para extrair o bairro
-          const bairro = extrairBairroEscola(escola);
-          
-          enderecoData = {
-            escola_id: escola.codigo_inep,
-            endereco_rua: escola.endereco || '',
-            endereco_bairro: bairro,
-            endereco_cidade: escola.municipio,
-            endereco_estado: escola.uf,
-            ponto_referencia: `Escola: ${escola.escola}`
-          };
-        } else if (formData.endereco_tipo === 'outro') {
-          const endereco = formData.endereco_personalizado;
-          enderecoData = {
-            endereco_cep: endereco.cep,
-            endereco_rua: endereco.endereco,
-            endereco_bairro: endereco.bairro,
-            endereco_cidade: endereco.cidade,
-            endereco_estado: endereco.estado,
-            endereco_complemento: endereco.complemento,
-            ponto_referencia: endereco.ponto_referencia
-          };
-        }
-
-        const itemData = {
-          titulo: formData.nome,
-          descricao: formData.descricao,
-          categoria: categoriaSelecionada.categoria,
-          estado_conservacao: formData.estado_conservacao,
-          tamanho: formData.tamanho || null,
-          valor_girinhas: parseFloat(formData.preco),
-          publicado_por: user?.id,
-          status: 'disponivel',
-          aceita_entrega: formData.aceita_entrega,
-          raio_entrega_km: formData.aceita_entrega ? formData.raio_entrega_km : null,
-          instrucoes_retirada: formData.instrucoes_retirada || null,
-          ...enderecoData
-        };
-
-        setProgress(30);
-
-        const success = await publicarItem(itemData, formData.imagens);
-        
-        if (success) {
-          setProgress(100);
-          toast.success("Item publicado com sucesso!");
-          navigate('/feed');
-        } else {
-          toast.error("Erro ao publicar o item. Tente novamente.");
-          setProgress(0);
-        }
-      } catch (error: any) {
-        console.error("Erro ao criar item:", error);
-        toast.error("Erro ao publicar o item. Tente novamente.");
-        setProgress(0);
-      }
-    } else {
-      toast.error("Por favor, corrija os erros no formulário.");
-    }
+    updateFormData({ raio_entrega_km: value[0] });
   };
 
   const handlePriceSuggestion = (price: number) => {
-    setFormData(prev => ({ ...prev, preco: String(price) }));
-  };
-
-  // Calcular progresso do formulário
-  const calculateProgress = () => {
-    const steps = [
-      { label: "Nome", completed: !!formData.nome, required: true },
-      { label: "Categoria", completed: !!formData.categoria_id, required: true },
-      { label: "Estado", completed: !!formData.estado_conservacao, required: true },
-      { label: "Preço", completed: !!formData.preco, required: true },
-      { label: "Descrição", completed: !!formData.descricao, required: true },
-      { label: "Localização", completed: formData.endereco_tipo === 'meu' ? !!userAddress : 
-        formData.endereco_tipo === 'escola' ? !!formData.escola_selecionada :
-        !!(formData.endereco_personalizado.cep && formData.endereco_personalizado.cidade), required: true },
-      { label: "Imagens", completed: formData.imagens.length > 0, required: true },
-      { label: "Tamanho", completed: !!formData.tamanho, required: false }
-    ];
-    return steps;
+    updateFormData({ preco: String(price) });
   };
 
   const categoriaSelecionada = configuracoes?.find(c => c.id === formData.categoria_id);

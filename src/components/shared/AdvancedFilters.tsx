@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,60 +11,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useFeedFilters } from '@/contexts/FeedFiltersContext';
 
 interface AdvancedFiltersProps {
-  filters: {
-    busca: string;
-    categoria: string;
-    ordem: string;
-    escola: any;
-    mesmaEscola?: boolean;
-    mesmoBairro?: boolean;
-    paraFilhos?: boolean;
-    apenasFavoritos?: boolean;
-    apenasSeguidoras?: boolean;
-  };
-  onFilterChange: (filters: any) => void;
   onSearch?: () => void;
-  location?: { estado: string; cidade: string; bairro?: string } | null;
 }
 
-const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
-  filters,
-  onFilterChange,
-  onSearch,
-  location
-}) => {
+const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo(({ onSearch }) => {
+  const { filters, updateFilter, updateFilters, resetFilters, getActiveFiltersCount } = useFeedFilters();
   const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleFilterUpdate = (key: string, value: any) => {
-    onFilterChange({ [key]: value });
-  };
-
-  const getActiveFiltersCount = () => {
-    let count = 0;
-    if (filters.mesmaEscola) count++;
-    if (filters.mesmoBairro) count++;
-    if (filters.paraFilhos) count++;
-    if (filters.apenasFavoritos) count++;
-    if (filters.apenasSeguidoras) count++;
-    if (filters.categoria !== 'todas') count++;
-    return count;
-  };
-
-  const limparFiltros = () => {
-    onFilterChange({
-      busca: '',
-      categoria: 'todas',
-      ordem: 'recentes',
-      escola: null,
-      mesmaEscola: false,
-      mesmoBairro: false,
-      paraFilhos: false,
-      apenasFavoritos: false,
-      apenasSeguidoras: false,
-    });
-  };
 
   const activeFiltersCount = getActiveFiltersCount();
 
@@ -77,14 +32,17 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <Input
             placeholder="Buscar roupinha, brinquedo..."
             value={filters.busca}
-            onChange={(e) => handleFilterUpdate('busca', e.target.value)}
+            onChange={(e) => updateFilter('busca', e.target.value)}
             className="pl-10 h-12 text-base"
           />
         </div>
 
         {/* Filtros rápidos - sempre visíveis */}
         <div className="flex flex-wrap gap-2">
-          <Select value={filters.categoria} onValueChange={(value) => handleFilterUpdate('categoria', value)}>
+          <Select 
+            value={filters.categoria} 
+            onValueChange={(value) => updateFilter('categoria', value)}
+          >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
@@ -98,7 +56,10 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </SelectContent>
           </Select>
 
-          <Select value={filters.ordem} onValueChange={(value) => handleFilterUpdate('ordem', value)}>
+          <Select 
+            value={filters.ordem} 
+            onValueChange={(value) => updateFilter('ordem', value)}
+          >
             <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Ordenar" />
             </SelectTrigger>
@@ -115,7 +76,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <Button
             variant={filters.apenasFavoritos ? "default" : "outline"}
             size="sm"
-            onClick={() => handleFilterUpdate('apenasFavoritos', !filters.apenasFavoritos)}
+            onClick={() => updateFilter('apenasFavoritos', !filters.apenasFavoritos)}
             className="h-10 text-xs font-medium"
           >
             <Heart className={`w-4 h-4 mr-2 ${filters.apenasFavoritos ? 'fill-current' : ''}`} />
@@ -125,7 +86,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           <Button
             variant={filters.apenasSeguidoras ? "default" : "outline"}
             size="sm"
-            onClick={() => handleFilterUpdate('apenasSeguidoras', !filters.apenasSeguidoras)}
+            onClick={() => updateFilter('apenasSeguidoras', !filters.apenasSeguidoras)}
             className="h-10 text-xs font-medium"
           >
             <Users className="w-4 h-4 mr-2" />
@@ -156,7 +117,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           
           <CollapsibleContent className="space-y-3 mt-3">
             {/* Filtros de localização */}
-            {location && (
+            {filters.location && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                   <MapPin className="w-4 h-4" />
@@ -167,12 +128,12 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   <Button
                     variant={filters.mesmoBairro ? "default" : "outline"}
                     size="sm"
-                    onClick={() => handleFilterUpdate('mesmoBairro', !filters.mesmoBairro)}
+                    onClick={() => updateFilter('mesmoBairro', !filters.mesmoBairro)}
                     className="justify-start h-10"
-                    disabled={!location.bairro}
+                    disabled={!filters.location.bairro}
                   >
                     <MapPin className="w-4 h-4 mr-2" />
-                    Mesmo bairro {location.bairro && `(${location.bairro})`}
+                    Mesmo bairro {filters.location.bairro && `(${filters.location.bairro})`}
                   </Button>
                 </div>
               </div>
@@ -188,7 +149,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               <Button
                 variant={filters.mesmaEscola ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleFilterUpdate('mesmaEscola', !filters.mesmaEscola)}
+                onClick={() => updateFilter('mesmaEscola', !filters.mesmaEscola)}
                 className="justify-start h-10 w-full"
               >
                 <School className="w-4 h-4 mr-2" />
@@ -206,7 +167,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               <Button
                 variant={filters.paraFilhos ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleFilterUpdate('paraFilhos', !filters.paraFilhos)}
+                onClick={() => updateFilter('paraFilhos', !filters.paraFilhos)}
                 className="justify-start h-10 w-full"
               >
                 Para meus filhos
@@ -230,7 +191,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
           {activeFiltersCount > 0 && (
             <Button
               variant="outline"
-              onClick={limparFiltros}
+              onClick={resetFilters}
               className="h-12 px-4"
             >
               <X className="w-4 h-4" />
@@ -249,7 +210,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   variant="ghost"
                   size="sm"
                   className="ml-1 h-auto p-0"
-                  onClick={() => handleFilterUpdate('apenasFavoritos', false)}
+                  onClick={() => updateFilter('apenasFavoritos', false)}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -264,7 +225,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   variant="ghost"
                   size="sm"
                   className="ml-1 h-auto p-0"
-                  onClick={() => handleFilterUpdate('apenasSeguidoras', false)}
+                  onClick={() => updateFilter('apenasSeguidoras', false)}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -279,7 +240,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   variant="ghost"
                   size="sm"
                   className="ml-1 h-auto p-0"
-                  onClick={() => handleFilterUpdate('mesmaEscola', false)}
+                  onClick={() => updateFilter('mesmaEscola', false)}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -294,7 +255,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   variant="ghost"
                   size="sm"
                   className="ml-1 h-auto p-0"
-                  onClick={() => handleFilterUpdate('mesmoBairro', false)}
+                  onClick={() => updateFilter('mesmoBairro', false)}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -308,7 +269,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   variant="ghost"
                   size="sm"
                   className="ml-1 h-auto p-0"
-                  onClick={() => handleFilterUpdate('paraFilhos', false)}
+                  onClick={() => updateFilter('paraFilhos', false)}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -322,7 +283,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                   variant="ghost"
                   size="sm"
                   className="ml-1 h-auto p-0"
-                  onClick={() => handleFilterUpdate('categoria', 'todas')}
+                  onClick={() => updateFilter('categoria', 'todas')}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -333,6 +294,8 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
+
+AdvancedFilters.displayName = 'AdvancedFilters';
 
 export default AdvancedFilters;
