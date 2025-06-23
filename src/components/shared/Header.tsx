@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Menu, MessageSquare } from 'lucide-react'; // Removido Search, Sparkles não usados aqui
+import { Bell, Menu, MessageSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -13,22 +13,14 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import DesktopNav from './DesktopNav';
+import { useCarteira } from '@/hooks/useCarteira';
+import { useConversas } from '@/hooks/useConversas';
 
-// A interface pode ser simplificada se onSearch não for mais necessário globalmente
-interface HeaderProps {
-  onSearch?: (term: string) => void;
-  searchPlaceholder?: string;
-  showSearch?: boolean;
-}
-
-const Header: React.FC<HeaderProps> = ({ 
-  // Props mantidas para consistência, podem ser removidas se não usadas
-  onSearch, 
-  searchPlaceholder = "Buscar...", 
-  showSearch = false 
-}) => {
+const Header: React.FC = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
+  const { saldo } = useCarteira();
+  const { totalUnread } = useConversas();
 
   const userInitial = profile?.nome?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'G';
 
@@ -36,7 +28,6 @@ const Header: React.FC<HeaderProps> = ({
     <header className="bg-white/80 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          
           {/* AJUSTE 1: LOGOTIPO CORRETO */}
           <Link to="/feed" className="flex items-center space-x-2 group">
             <svg
@@ -52,7 +43,10 @@ const Header: React.FC<HeaderProps> = ({
               className="h-8 w-8 text-primary transition-colors duration-200 group-hover:text-pink-500"
             >
               <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
-              <path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" />
+              <path d="M20 3v4" />
+              <path d="M22 5h-4" />
+              <path d="M4 17v2" />
+              <path d="M5 18H3" />
             </svg>
             <span className="font-bold text-xl bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent transition-all duration-200 group-hover:from-pink-500 group-hover:to-purple-500">
               GiraMãe
@@ -63,10 +57,9 @@ const Header: React.FC<HeaderProps> = ({
           <div className="hidden md:block">
             <DesktopNav />
           </div>
-          
+
           {/* Right Side */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Ícones do Desktop */}
             <div className="hidden md:flex items-center space-x-3">
                 <Link to="/mensagens" title="Chat">
                     <MessageSquare className="w-5 h-5 text-gray-600 hover:text-pink-600" />
@@ -109,8 +102,8 @@ const Header: React.FC<HeaderProps> = ({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                
-                {/* AJUSTE 2: Bloco de texto ao lado do avatar foi REMOVIDO */}
+
+                {/* AJUSTE 2: TEXTO REDUNDANTE REMOVIDO */}
               </div>
             ) : (
               <div className="flex items-center space-x-2">
