@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useEscolas, Escola } from '@/hooks/useEscolas';
+import { ESTADOS_BRASIL } from '@/constants/estados';
 
 interface EscolaPickerProps {
   value?: Escola | null;
@@ -14,36 +15,6 @@ interface EscolaPickerProps {
   placeholder?: string;
   className?: string;
 }
-
-const ESTADOS_BRASIL = [
-  { sigla: 'AC', nome: 'Acre' },
-  { sigla: 'AL', nome: 'Alagoas' },
-  { sigla: 'AP', nome: 'Amapá' },
-  { sigla: 'AM', nome: 'Amazonas' },
-  { sigla: 'BA', nome: 'Bahia' },
-  { sigla: 'CE', nome: 'Ceará' },
-  { sigla: 'DF', nome: 'Distrito Federal' },
-  { sigla: 'ES', nome: 'Espírito Santo' },
-  { sigla: 'GO', nome: 'Goiás' },
-  { sigla: 'MA', nome: 'Maranhão' },
-  { sigla: 'MT', nome: 'Mato Grosso' },
-  { sigla: 'MS', nome: 'Mato Grosso do Sul' },
-  { sigla: 'MG', nome: 'Minas Gerais' },
-  { sigla: 'PA', nome: 'Pará' },
-  { sigla: 'PB', nome: 'Paraíba' },
-  { sigla: 'PR', nome: 'Paraná' },
-  { sigla: 'PE', nome: 'Pernambuco' },
-  { sigla: 'PI', nome: 'Piauí' },
-  { sigla: 'RJ', nome: 'Rio de Janeiro' },
-  { sigla: 'RN', nome: 'Rio Grande do Norte' },
-  { sigla: 'RS', nome: 'Rio Grande do Sul' },
-  { sigla: 'RO', nome: 'Rondônia' },
-  { sigla: 'RR', nome: 'Roraima' },
-  { sigla: 'SC', nome: 'Santa Catarina' },
-  { sigla: 'SP', nome: 'São Paulo' },
-  { sigla: 'SE', nome: 'Sergipe' },
-  { sigla: 'TO', nome: 'Tocantins' }
-];
 
 const EscolaPicker: React.FC<EscolaPickerProps> = ({
   value,
@@ -66,15 +37,13 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
     buscarMunicipios 
   } = useEscolas();
 
-  // Carregar municípios quando estado mudar
   useEffect(() => {
     if (estado) {
       buscarMunicipios(estado);
-      setCidade(''); // Limpar cidade quando estado muda
+      setCidade('');
     }
   }, [estado, buscarMunicipios]);
 
-  // Fechar dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -121,7 +90,6 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      {/* Escola selecionada */}
       {value && (
         <div className="mb-4">
           <Card className="border-primary">
@@ -154,14 +122,12 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
         </div>
       )}
 
-      {/* Formulário de busca - Mobile First */}
       {!value && (
         <div className="space-y-4">
           <div className="text-sm text-gray-600 mb-3 px-1">
             Para buscar uma escola, primeiro selecione o estado e cidade, depois digite parte do nome da escola.
           </div>
           
-          {/* Estado e Cidade - Stack vertical em mobile */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2 text-gray-700">Estado *</label>
@@ -212,7 +178,6 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
             </div>
           </div>
 
-          {/* Nome da escola */}
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700">Nome da Escola *</label>
             <div className="space-y-3">
@@ -242,7 +207,6 @@ const EscolaPicker: React.FC<EscolaPickerProps> = ({
         </div>
       )}
 
-      {/* Resultados da busca - Mobile optimized */}
       {mostrarResultados && !value && (
         <Card className="absolute top-full left-0 right-0 z-50 mt-1 max-h-80 overflow-y-auto bg-white shadow-lg">
           <CardContent className="p-2">

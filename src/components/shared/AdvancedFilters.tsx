@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Filter, X } from 'lucide-react';
-import LocationFilter from './LocationFilter';
 
 interface AdvancedFiltersProps {
   filters: {
@@ -101,7 +100,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         </SheetHeader>
         
         <div className="space-y-6 py-6">
-          {/* Filtros de Produto */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Produto</CardTitle>
@@ -110,14 +108,13 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               <div>
                 <Label htmlFor="categoria">Categoria</Label>
                 <Select
-                  value={localFilters.categoria}
-                  onValueChange={(value) => updateLocalFilter('categoria', value)}
+                  value={localFilters.categoria === 'todas' ? '' : localFilters.categoria}
+                  onValueChange={(value) => updateLocalFilter('categoria', value || 'todas')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas as categorias" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todas">Todas as categorias</SelectItem>
                     {categorias.map(cat => (
                       <SelectItem key={cat} value={cat}>
                         {cat.replace('_', ' ')}
@@ -137,7 +134,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                     <SelectValue placeholder="Qualquer estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Qualquer estado</SelectItem>
                     {estadosConservacao.map(estado => (
                       <SelectItem key={estado} value={estado}>
                         {estado.replace('_', ' ')}
@@ -159,7 +155,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             </CardContent>
           </Card>
 
-          {/* Filtros de Preço */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Preço (Girinhas)</CardTitle>

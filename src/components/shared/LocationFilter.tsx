@@ -2,6 +2,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin } from 'lucide-react';
+import { ESTADOS_BRASIL, CIDADES_PRINCIPAIS } from '@/constants/estados';
 
 interface LocationFilterProps {
   value: { estado: string; cidade: string } | null;
@@ -9,54 +10,36 @@ interface LocationFilterProps {
 }
 
 const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
-  const estados = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-  ];
+  const handleEstadoChange = (estado: string) => {
+    onChange({ estado, cidade: value?.cidade || '' });
+  };
 
-  const cidades = [
-    'São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Brasília',
-    'Salvador', 'Fortaleza', 'Manaus', 'Curitiba', 'Recife',
-    'Goiânia', 'Belém', 'Porto Alegre'
-  ];
+  const handleCidadeChange = (cidade: string) => {
+    onChange({ estado: value?.estado || '', cidade });
+  };
 
   return (
     <div className="flex items-center gap-2">
       <MapPin className="w-4 h-4 text-muted-foreground" />
-      <Select
-        value={value?.estado || ''}
-        onValueChange={(estado) => {
-          if (estado && value?.cidade) {
-            onChange({ estado, cidade: value.cidade });
-          }
-        }}
-      >
+      <Select value={value?.estado || ''} onValueChange={handleEstadoChange}>
         <SelectTrigger className="w-20">
           <SelectValue placeholder="UF" />
         </SelectTrigger>
         <SelectContent>
-          {estados.map(estado => (
-            <SelectItem key={estado} value={estado}>
-              {estado}
+          {ESTADOS_BRASIL.map(estado => (
+            <SelectItem key={estado.sigla} value={estado.sigla}>
+              {estado.sigla}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
-      <Select
-        value={value?.cidade || ''}
-        onValueChange={(cidade) => {
-          if (cidade && value?.estado) {
-            onChange({ estado: value.estado, cidade });
-          }
-        }}
-      >
+      <Select value={value?.cidade || ''} onValueChange={handleCidadeChange}>
         <SelectTrigger className="w-40">
           <SelectValue placeholder="Cidade" />
         </SelectTrigger>
         <SelectContent>
-          {cidades.map(cidade => (
+          {CIDADES_PRINCIPAIS.map(cidade => (
             <SelectItem key={cidade} value={cidade}>
               {cidade}
             </SelectItem>
