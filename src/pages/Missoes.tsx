@@ -6,16 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trophy, Target, Users, Sparkles, Gift, Clock, CheckCircle, Star } from 'lucide-react';
+import { Trophy, Target, Users, Sparkles, Gift, Clock, CheckCircle, Star, Zap } from 'lucide-react';
 import { useMissoes } from '@/hooks/useMissoes';
+import { useMissoesSegmentadas } from '@/hooks/useMissoesSegmentadas';
 import { useAuth } from '@/hooks/useAuth';
 import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
 
-const MissionCard: React.FC<{ missao: any }> = ({ missao }) => {
-  const { coletarRecompensa } = useMissoes();
-  
+const MissionCard: React.FC<{ missao: any; onColetar: (id: string) => void; isCollecting: boolean }> = ({ 
+  missao, 
+  onColetar, 
+  isCollecting 
+}) => {
   const getIconByCategory = (categoria: string) => {
     switch (categoria) {
       case 'perfil': return Star;
@@ -41,14 +44,7 @@ const MissionCard: React.FC<{ missao: any }> = ({ missao }) => {
 
   const handleColetar = async () => {
     console.log('🎯 Clique no botão coletar - Missão:', missao.id, missao.titulo);
-    console.log('📊 Status da missão:', missao.status);
-    console.log('🔄 Loading state:', coletarRecompensa.isPending);
-    
-    try {
-      await coletarRecompensa.mutateAsync(missao.id);
-    } catch (error) {
-      console.error('💥 Erro capturado no handleColetar:', error);
-    }
+    await onColetar(missao.id);
   };
 
   return (
@@ -96,10 +92,112 @@ const MissionCard: React.FC<{ missao: any }> = ({ missao }) => {
               <Button
                 size="sm"
                 onClick={handleColetar}
-                disabled={coletarRecompensa.isPending}
+                disabled={isCollecting}
                 className="w-full mt-1 h-8 text-xs"
               >
-                {coletarRecompensa.isPending ? (
+                {isCollecting ? (
+                  <>
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-1" />
+                    Coletando...
+                  </>
+                ) : (
+                  <>
+                    <Gift className="w-3 h-3 mr-1" />
+                    Coletar
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {missao.status === 'coletada' && (
+              <div className="flex items-center text-xs text-gray-500">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Coletada
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const MissaoSegmentadaCard: React.FC<{ missao: any; onColetar: (id: string) => void; onExecutarAcao: (missaoId: string, eventoId: string) => void; isCollecting: boolean }> = ({ 
+  missao, 
+  onColetar, 
+  onExecutarAcao, 
+  isCollecting 
+}) => {
+  const progressPercentual = Math.round((missao.progresso_atual / missao.progresso_necessario) * 100);
+  const temEventos = missao.acoes_eventos && missao.acoes_eventos.length > 0;
+
+  return (
+    <Card className="hover:shadow-md transition-shadow border-l-4 border-l-purple-500">
+      <CardContent className="p-4">
+        <div className="flex items-start space-x-3">
+          <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+            <Zap className="w-6 h-6 text-purple-600" />
+          </div>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-medium text-sm text-gray-900">{missao.titulo}</h3>
+              <Badge variant="outline" className="text-xs">Segmentada</Badge>
+            </div>
+            <p className="text-xs text-gray-500 mb-2">{missao.descricao}</p>
+            
+            {/* Eventos/Ações personalizadas */}
+            {temEventos && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {missao.acoes_eventos.slice(0, 2).map((evento: any, index: number) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => onExecutarAcao(missao.id, evento.id)}
+                  >
+                    {evento.tipo_evento === 'navigate_to_page' && '🔗'}
+                    {evento.tipo_evento === 'external_link' && '🌐'}
+                    {evento.tipo_evento === 'trigger_notification' && '🔔'}
+                    {evento.tipo_evento === 'open_modal' && '📋'}
+                    {evento.parametros?.titulo || evento.tipo_evento}
+                  </Button>
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-500">
+                  {missao.progresso_atual}/{missao.progresso_necessario}
+                </span>
+                <span className="text-xs font-medium text-purple-700">
+                  {progressPercentual}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div 
+                  className="h-1.5 rounded-full bg-purple-500 transition-all"
+                  style={{ width: `${Math.min(progressPercentual, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="text-right">
+            <Badge className="text-xs mb-2 bg-purple-100 text-purple-800">
+              +{missao.recompensa_girinhas}
+            </Badge>
+            
+            {missao.status === 'completa' && (
+              <Button
+                size="sm"
+                onClick={() => onColetar(missao.id)}
+                disabled={isCollecting}
+                className="w-full mt-1 h-8 text-xs bg-purple-600 hover:bg-purple-700"
+              >
+                {isCollecting ? (
                   <>
                     <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-1" />
                     Coletando...
@@ -129,22 +227,53 @@ const MissionCard: React.FC<{ missao: any }> = ({ missao }) => {
 const Missoes: React.FC = () => {
   const [filtroTipo, setFiltroTipo] = useState<string>('todos');
   const { 
-    missoes, 
-    isLoading, 
+    missoes: missoesSimples, 
+    isLoading: loadingSimples, 
     progressoTotal, 
-    missoesCompletas,
-    totalGirinhasDisponiveis,
-    verificarProgresso 
+    missoesCompletas: missoesCompletasSimples,
+    totalGirinhasDisponiveis: girinhasDisponiveisSimples,
+    verificarProgresso,
+    coletarRecompensa
   } = useMissoes();
 
+  const {
+    missoes: missoesSegmentadas,
+    isLoading: loadingSegmentadas,
+    executarAcao,
+    coletarRecompensaSegmentada,
+    missoesCompletas: missoesCompletasSegmentadas,
+    totalGirinhasDisponiveis: girinhasDisponiveisSegmentadas
+  } = useMissoesSegmentadas();
+
+  // Combinar missões
+  const todasMissoes = [...missoesSimples, ...missoesSegmentadas];
+  const missoesCompletas = missoesCompletasSimples + missoesCompletasSegmentadas;
+  const totalGirinhasDisponiveis = girinhasDisponiveisSimples + girinhasDisponiveisSegmentadas;
+  const isLoading = loadingSimples || loadingSegmentadas;
+
   const missoesFiltradas = filtroTipo === 'todos' 
-    ? missoes 
-    : missoes.filter(m => m.tipo_missao === filtroTipo);
+    ? todasMissoes 
+    : todasMissoes.filter(m => m.tipo_missao === filtroTipo);
 
   const missoesPorTipo = {
-    basic: missoes.filter(m => m.tipo_missao === 'basic'),
-    engagement: missoes.filter(m => m.tipo_missao === 'engagement'),
-    social: missoes.filter(m => m.tipo_missao === 'social')
+    basic: todasMissoes.filter(m => m.tipo_missao === 'basic'),
+    engagement: todasMissoes.filter(m => m.tipo_missao === 'engagement'),
+    social: todasMissoes.filter(m => m.tipo_missao === 'social')
+  };
+
+  const handleColetarRecompensa = async (missaoId: string) => {
+    // Verificar se é missão segmentada ou simples
+    const missaoSegmentada = missoesSegmentadas.find(m => m.id === missaoId);
+    
+    if (missaoSegmentada) {
+      await coletarRecompensaSegmentada.mutateAsync(missaoId);
+    } else {
+      await coletarRecompensa.mutateAsync(missaoId);
+    }
+  };
+
+  const handleExecutarAcao = async (missaoId: string, eventoId: string) => {
+    await executarAcao.mutateAsync({ missaoId, eventoId });
   };
 
   if (isLoading) {
@@ -170,7 +299,7 @@ const Missoes: React.FC = () => {
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-xl font-bold text-gray-800 flex items-center justify-center gap-2">
                 <Trophy className="w-6 h-6 text-purple-500" />
-                Missões
+                Missões GiraMãe
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -199,6 +328,17 @@ const Missoes: React.FC = () => {
                 </Alert>
               )}
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/60 p-3 rounded-lg text-center">
+                  <div className="text-lg font-bold text-blue-600">{missoesSimples.length}</div>
+                  <div className="text-xs text-gray-600">Missões Básicas</div>
+                </div>
+                <div className="bg-white/60 p-3 rounded-lg text-center">
+                  <div className="text-lg font-bold text-purple-600">{missoesSegmentadas.length}</div>
+                  <div className="text-xs text-gray-600">Missões Segmentadas</div>
+                </div>
+              </div>
+
               <Button
                 onClick={() => verificarProgresso.mutate()}
                 disabled={verificarProgresso.isPending}
@@ -226,9 +366,30 @@ const Missoes: React.FC = () => {
             </TabsList>
 
             <TabsContent value="todos" className="space-y-3">
-              {missoesFiltradas.map(missao => (
-                <MissionCard key={missao.id} missao={missao} />
-              ))}
+              {missoesFiltradas.map(missao => {
+                const isSegmentada = missoesSegmentadas.some(m => m.id === missao.id);
+                
+                if (isSegmentada) {
+                  return (
+                    <MissaoSegmentadaCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      onExecutarAcao={handleExecutarAcao}
+                      isCollecting={coletarRecompensaSegmentada.isPending}
+                    />
+                  );
+                } else {
+                  return (
+                    <MissionCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      isCollecting={coletarRecompensa.isPending}
+                    />
+                  );
+                }
+              })}
             </TabsContent>
 
             <TabsContent value="basic" className="space-y-3">
@@ -236,9 +397,30 @@ const Missoes: React.FC = () => {
                 <h3 className="font-medium text-blue-900 text-sm">🎯 Missões Básicas</h3>
                 <p className="text-xs text-blue-700">Primeiros passos na plataforma</p>
               </div>
-              {missoesPorTipo.basic.map(missao => (
-                <MissionCard key={missao.id} missao={missao} />
-              ))}
+              {missoesPorTipo.basic.map(missao => {
+                const isSegmentada = missoesSegmentadas.some(m => m.id === missao.id);
+                
+                if (isSegmentada) {
+                  return (
+                    <MissaoSegmentadaCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      onExecutarAcao={handleExecutarAcao}
+                      isCollecting={coletarRecompensaSegmentada.isPending}
+                    />
+                  );
+                } else {
+                  return (
+                    <MissionCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      isCollecting={coletarRecompensa.isPending}
+                    />
+                  );
+                }
+              })}
             </TabsContent>
 
             <TabsContent value="engagement" className="space-y-3">
@@ -246,9 +428,30 @@ const Missoes: React.FC = () => {
                 <h3 className="font-medium text-purple-900 text-sm">🚀 Missões de Engajamento</h3>
                 <p className="text-xs text-purple-700">Atividades avançadas na comunidade</p>
               </div>
-              {missoesPorTipo.engagement.map(missao => (
-                <MissionCard key={missao.id} missao={missao} />
-              ))}
+              {missoesPorTipo.engagement.map(missao => {
+                const isSegmentada = missoesSegmentadas.some(m => m.id === missao.id);
+                
+                if (isSegmentada) {
+                  return (
+                    <MissaoSegmentadaCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      onExecutarAcao={handleExecutarAcao}
+                      isCollecting={coletarRecompensaSegmentada.isPending}
+                    />
+                  );
+                } else {
+                  return (
+                    <MissionCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      isCollecting={coletarRecompensa.isPending}
+                    />
+                  );
+                }
+              })}
             </TabsContent>
 
             <TabsContent value="social" className="space-y-3">
@@ -256,9 +459,30 @@ const Missoes: React.FC = () => {
                 <h3 className="font-medium text-green-900 text-sm">👥 Missões Sociais</h3>
                 <p className="text-xs text-green-700">Construa sua rede na comunidade</p>
               </div>
-              {missoesPorTipo.social.map(missao => (
-                <MissionCard key={missao.id} missao={missao} />
-              ))}
+              {missoesPorTipo.social.map(missao => {
+                const isSegmentada = missoesSegmentadas.some(m => m.id === missao.id);
+                
+                if (isSegmentada) {
+                  return (
+                    <MissaoSegmentadaCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      onExecutarAcao={handleExecutarAcao}
+                      isCollecting={coletarRecompensaSegmentada.isPending}
+                    />
+                  );
+                } else {
+                  return (
+                    <MissionCard 
+                      key={missao.id} 
+                      missao={missao} 
+                      onColetar={handleColetarRecompensa}
+                      isCollecting={coletarRecompensa.isPending}
+                    />
+                  );
+                }
+              })}
             </TabsContent>
           </Tabs>
 
