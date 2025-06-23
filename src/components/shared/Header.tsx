@@ -12,12 +12,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import DesktopNav from './DesktopNav'; // Mantém o import do seu nav
-import { useCarteira } from '@/hooks/useCarteira'; // Hook para o saldo
-import { useConversas } from '@/hooks/useConversas'; // Hook para mensagens não lidas
+import DesktopNav from './DesktopNav';
+import { useCarteira } from '@/hooks/useCarteira';
+import { useConversas } from '@/hooks/useConversas';
 
 const Header: React.FC = () => {
-  const { user, signOut } = useAuth(); // Adicionado signOut
+  const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { saldo } = useCarteira();
   const { totalUnread } = useConversas();
@@ -26,13 +26,32 @@ const Header: React.FC = () => {
 
   return (
     <header className="flex items-center justify-between bg-white px-6 py-3 shadow-md sticky top-0 z-50">
-      {/* Logo */}
-      <Link to="/" className="flex items-center gap-2">
-        <div className="text-pink-600 font-bold text-2xl">✶</div>
-        <div className="text-pink-600 font-extrabold text-lg tracking-tight">GiraMãe</div>
+      {/* Logo CORRIGIDO */}
+      <Link to="/" className="flex items-center gap-3">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-8 w-8 text-primary"
+        >
+          <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+          <path d="M20 3v4"></path>
+          <path d="M22 5h-4"></path>
+          <path d="M4 17v2"></path>
+          <path d="M5 18H3"></path>
+        </svg>
+        <span className="text-xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+          GiraMãe
+        </span>
       </Link>
 
-      {/* Bloco Central: Navegação (apenas para usuários logados) */}
+      {/* Bloco Central: Navegação */}
       {user && (
         <div className="flex-1 flex justify-center">
           <DesktopNav />
@@ -67,9 +86,7 @@ const Header: React.FC = () => {
             {/* Notificação */}
             <button className="relative" title="Notificações">
               <Bell className="w-5 h-5 text-gray-600 hover:text-pink-600" />
-              <span className="absolute top-0 right-0 bg-pink-500 text-white rounded-full text-[10px] w-4 h-4 flex items-center justify-center">
-                1 {/* Exemplo estático */}
-              </span>
+              <span className="absolute top-0 right-0 bg-pink-500 text-white rounded-full text-[10px] w-4 h-4 flex items-center justify-center">1</span>
             </button>
 
             {/* Menu do Perfil Dropdown */}
@@ -89,7 +106,7 @@ const Header: React.FC = () => {
                   <Link to="/perfil">Ver perfil</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/editar-perfil">Editar</Link>
+                  <Link to="/perfil/editar">Editar</Link> {/* CORRIGIDO */}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={signOut} className="text-red-500 focus:bg-red-50 focus:text-red-600">
