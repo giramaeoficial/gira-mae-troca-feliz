@@ -47,6 +47,53 @@ export type Database = {
           },
         ]
       }
+      admin_notifications: {
+        Row: {
+          action_text: string | null
+          action_url: string | null
+          created_at: string | null
+          id: string
+          message: string
+          sent_by: string | null
+          sent_count: number | null
+          target_type: string
+          target_users: string[] | null
+          title: string
+        }
+        Insert: {
+          action_text?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          id?: string
+          message: string
+          sent_by?: string | null
+          sent_count?: number | null
+          target_type: string
+          target_users?: string[] | null
+          title: string
+        }
+        Update: {
+          action_text?: string | null
+          action_url?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          sent_by?: string | null
+          sent_count?: number | null
+          target_type?: string
+          target_users?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notifications_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analytics_missoes: {
         Row: {
           detalhes: Json | null
@@ -1163,6 +1210,50 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          id: string
+          message: string
+          read: boolean | null
+          sent_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean | null
+          sent_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean | null
+          sent_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pacotes_girinhas: {
         Row: {
           ativo: boolean | null
@@ -1682,54 +1773,51 @@ export type Database = {
           },
         ]
       }
-      user_location_notifications: {
+      user_notification_preferences: {
         Row: {
           ativo: boolean | null
           created_at: string | null
-          frequencia: string | null
-          horario_resumo: string | null
+          girinhas: boolean | null
           id: string
-          items_mesma_escola: boolean | null
-          items_mesmo_bairro: boolean | null
-          items_raio_km: number | null
-          novas_maes_bairro: boolean | null
-          novas_maes_escola: boolean | null
+          mensagens: boolean | null
+          push_enabled: boolean | null
+          push_subscription: Json | null
+          reservas: boolean | null
+          sistema: boolean | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           ativo?: boolean | null
           created_at?: string | null
-          frequencia?: string | null
-          horario_resumo?: string | null
+          girinhas?: boolean | null
           id?: string
-          items_mesma_escola?: boolean | null
-          items_mesmo_bairro?: boolean | null
-          items_raio_km?: number | null
-          novas_maes_bairro?: boolean | null
-          novas_maes_escola?: boolean | null
+          mensagens?: boolean | null
+          push_enabled?: boolean | null
+          push_subscription?: Json | null
+          reservas?: boolean | null
+          sistema?: boolean | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           ativo?: boolean | null
           created_at?: string | null
-          frequencia?: string | null
-          horario_resumo?: string | null
+          girinhas?: boolean | null
           id?: string
-          items_mesma_escola?: boolean | null
-          items_mesmo_bairro?: boolean | null
-          items_raio_km?: number | null
-          novas_maes_bairro?: boolean | null
-          novas_maes_escola?: boolean | null
+          mensagens?: boolean | null
+          push_enabled?: boolean | null
+          push_subscription?: Json | null
+          reservas?: boolean | null
+          sistema?: boolean | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "user_location_notifications_user_id_fkey"
+            foreignKeyName: "user_notification_preferences_user_id_fkey"
             columns: ["user_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1800,6 +1888,16 @@ export type Database = {
       cotacao_mercado: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      create_notification: {
+        Args: {
+          p_user_id: string
+          p_type: string
+          p_title: string
+          p_message: string
+          p_data?: Json
+        }
+        Returns: string
       }
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>

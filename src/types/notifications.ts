@@ -1,5 +1,14 @@
 
-export type NotificationType = 'boas_vindas' | 'reserva_confirmada' | 'nova_mensagem' | 'item_disponivel';
+export type NotificationType = 
+  | 'nova_mensagem'
+  | 'item_reservado' 
+  | 'reserva_expirando'
+  | 'reserva_confirmada'
+  | 'reserva_cancelada'
+  | 'girinhas_expirando'
+  | 'girinhas_recebidas'
+  | 'missao_completada'
+  | 'sistema';
 
 export type NotificationChannel = 'push' | 'email' | 'in_app';
 
@@ -48,4 +57,23 @@ export interface InAppNotification {
   timestamp: Date;
   read: boolean;
   data?: any;
+}
+
+export interface NotificationPreferences {
+  mensagens: boolean;
+  reservas: boolean;
+  girinhas: boolean;
+  sistema: boolean;
+  push_enabled: boolean;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data: Record<string, any>;
+  read: boolean;
+  created_at: string;
 }
