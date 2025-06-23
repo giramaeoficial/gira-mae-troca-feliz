@@ -2,15 +2,10 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
 
-export interface Escola {
-  codigo_inep: number;
-  escola: string;
-  uf: string;
-  municipio: string;
-  endereco: string;
-  categoria_administrativa?: string;
-}
+// Use the proper Supabase type for schools
+export type Escola = Tables<'escolas_inep'>;
 
 interface UseEscolasParams {
   searchTerm?: string;

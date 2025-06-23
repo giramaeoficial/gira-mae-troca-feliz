@@ -5,10 +5,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useEscolas } from '@/hooks/useEscolas';
-import type { Tables } from '@/integrations/supabase/types';
-
-type Escola = Tables<'escolas_inep'>;
+import { useEscolas, type Escola } from '@/hooks/useEscolas';
 
 interface SchoolSelectProps {
   value?: Escola | null;

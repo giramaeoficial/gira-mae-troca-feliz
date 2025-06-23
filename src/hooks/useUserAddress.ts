@@ -7,7 +7,7 @@ import type { Address } from './useAddress';
 export const useUserAddress = () => {
   const { user } = useAuth();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['user-address', user?.id],
     queryFn: async (): Promise<Address | null> => {
       if (!user?.id) return null;
@@ -35,4 +35,10 @@ export const useUserAddress = () => {
     },
     enabled: !!user?.id
   });
+
+  return {
+    userAddress: query.data,
+    isLoading: query.isLoading,
+    error: query.error
+  };
 };
