@@ -24,7 +24,7 @@ const DesktopNav: React.FC = () => {
     <nav className="flex gap-8 items-center text-sm font-medium">
       {/* Bloco de Ações Principais */}
       <NavLink to="/feed">Feed</NavLink>
-      <NavLink to="/publicar">Publicar</NavLink> {/* Corrigido de /publicar */}
+      <NavLink to="/publicar">Publicar</NavLink> {/* CORRIGIDO */}
       <NavLink to="/minhas-reservas">Reservas</NavLink>
 
       {/* Separador Vertical */}
