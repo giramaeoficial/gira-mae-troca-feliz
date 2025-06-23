@@ -11,16 +11,25 @@ import { Filter, X } from 'lucide-react';
 import LocationFilter from './LocationFilter';
 
 interface AdvancedFiltersProps {
-  onFiltersChange: (filters: any) => void;
-  currentFilters: any;
+  filters: {
+    busca: string;
+    categoria: string;
+    ordem: string;
+    escola: any;
+  };
+  onFilterChange: (filters: any) => void;
+  onSearch?: () => void;
+  location?: { estado: string; cidade: string } | null;
 }
 
 const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ 
-  onFiltersChange, 
-  currentFilters 
+  filters,
+  onFilterChange,
+  onSearch,
+  location
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [localFilters, setLocalFilters] = useState(currentFilters);
+  const [localFilters, setLocalFilters] = useState(filters);
 
   const categorias = [
     'roupas', 'calcados', 'brinquedos', 'livros', 
@@ -37,31 +46,29 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   };
 
   const applyFilters = () => {
-    onFiltersChange(localFilters);
+    onFilterChange(localFilters);
+    if (onSearch) onSearch();
     setIsOpen(false);
   };
 
   const clearFilters = () => {
     const clearedFilters = {
-      categoria: '',
-      estadoConservacao: '',
+      busca: '',
+      categoria: 'todas',
+      ordem: 'recentes',
+      escola: null,
       valorMin: '',
       valorMax: '',
       tamanho: '',
-      // Manter filtros de localização
-      apenasProximos: localFilters.apenasProximos,
-      raioKm: localFilters.raioKm,
-      mesmaEscola: localFilters.mesmaEscola,
-      mesmoBairro: localFilters.mesmoBairro,
-      paraMeusFilhos: localFilters.paraMeusFilhos
+      estadoConservacao: ''
     };
     setLocalFilters(clearedFilters);
-    onFiltersChange(clearedFilters);
+    onFilterChange(clearedFilters);
   };
 
   const getActiveFiltersCount = () => {
-    return Object.values(currentFilters).filter(value => 
-      value && value !== '' && value !== false
+    return Object.values(filters).filter(value => 
+      value && value !== '' && value !== false && value !== 'todas' && value !== 'recentes'
     ).length;
   };
 
@@ -84,9 +91,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         </SheetHeader>
         
         <div className="space-y-6 py-6">
-          {/* Filtros de Localização */}
-          <LocationFilter />
-
           {/* Filtros de Produto */}
           <Card>
             <CardHeader>
@@ -103,7 +107,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                     <SelectValue placeholder="Todas as categorias" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as categorias</SelectItem>
+                    <SelectItem value="todas">Todas as categorias</SelectItem>
                     {categorias.map(cat => (
                       <SelectItem key={cat} value={cat}>
                         {cat.replace('_', ' ')}
@@ -116,7 +120,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
               <div>
                 <Label htmlFor="estado">Estado de Conservação</Label>
                 <Select
-                  value={localFilters.estadoConservacao}
+                  value={localFilters.estadoConservacao || ''}
                   onValueChange={(value) => updateLocalFilter('estadoConservacao', value)}
                 >
                   <SelectTrigger>
@@ -138,7 +142,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                 <Input
                   id="tamanho"
                   placeholder="Ex: 2-3 anos, 36, M"
-                  value={localFilters.tamanho}
+                  value={localFilters.tamanho || ''}
                   onChange={(e) => updateLocalFilter('tamanho', e.target.value)}
                 />
               </div>
@@ -158,7 +162,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                     id="valor-min"
                     type="number"
                     placeholder="0"
-                    value={localFilters.valorMin}
+                    value={localFilters.valorMin || ''}
                     onChange={(e) => updateLocalFilter('valorMin', e.target.value)}
                   />
                 </div>
@@ -168,7 +172,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                     id="valor-max"
                     type="number"
                     placeholder="100"
-                    value={localFilters.valorMax}
+                    value={localFilters.valorMax || ''}
                     onChange={(e) => updateLocalFilter('valorMax', e.target.value)}
                   />
                 </div>

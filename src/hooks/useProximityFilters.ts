@@ -30,10 +30,8 @@ export const useProximityFilters = () => {
 
     // Filtro por mesma escola
     if (filters.mesmaEscola && escolasDosMeusFilhos.length > 0) {
-      const escolaIds = escolasDosMeusFilhos.map(escola => escola.codigo_inep);
-      
       query = query.or(
-        escolaIds.map(id => `escola_id.eq.${id}`).join(',')
+        escolasDosMeusFilhos.map(escolaId => `escola_id.eq.${escolaId}`).join(',')
       );
     }
 

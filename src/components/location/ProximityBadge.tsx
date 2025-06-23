@@ -6,7 +6,7 @@ import { MapPin, School, Home, Car } from 'lucide-react';
 interface ProximityBadgeProps {
   type: 'escola' | 'bairro' | 'distancia' | 'entrega';
   value?: string | number;
-  variant?: 'default' | 'secondary' | 'success' | 'warning';
+  variant?: 'default' | 'secondary' | 'outline' | 'destructive';
 }
 
 const ProximityBadge: React.FC<ProximityBadgeProps> = ({ 
