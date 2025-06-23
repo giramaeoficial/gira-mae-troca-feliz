@@ -25,7 +25,7 @@ export const useEscolas = (params?: UseEscolasParams) => {
     queryFn: async () => {
       let query = supabase
         .from('escolas_inep')
-        .select('codigo_inep, escola, uf, municipio, endereco, categoria_administrativa')
+        .select('*') // Select all fields to match the Escola type
         .order('escola')
         .limit(1000);
 
@@ -57,7 +57,7 @@ export const useEscolas = (params?: UseEscolasParams) => {
     try {
       let query = supabase
         .from('escolas_inep')
-        .select('codigo_inep, escola, uf, municipio, endereco, categoria_administrativa')
+        .select('*') // Select all fields to match the Escola type
         .eq('uf', estado)
         .eq('municipio', cidade)
         .order('escola')
