@@ -47,7 +47,7 @@ function App() {
           <Route path="/item/:id" element={<DetalhesItem />} />
           <Route path="/minhas-reservas" element={<MinhasReservas />} />
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*">{<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
