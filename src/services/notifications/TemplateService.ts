@@ -17,7 +17,17 @@ export class TemplateService {
         return null;
       }
 
-      return data;
+      // Converter os dados do banco para o tipo correto
+      return {
+        id: data.id,
+        tipo: data.tipo as NotificationType,
+        titulo: data.titulo,
+        corpo: data.corpo,
+        variaveis: data.variaveis as Record<string, string>,
+        ativo: data.ativo,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
     } catch (error) {
       console.error('Erro ao buscar template:', error);
       return null;
