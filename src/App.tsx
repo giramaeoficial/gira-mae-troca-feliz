@@ -11,6 +11,7 @@ import FeedOptimized from '@/pages/FeedOptimized';
 import PublicarItem from '@/pages/PublicarItem';
 import Mensagens from '@/pages/Mensagens';
 import Perfil from '@/pages/Perfil';
+import EditarPerfil from '@/pages/EditarPerfil';
 import PerfilPublicoMae from '@/pages/PerfilPublicoMae';
 import Carteira from '@/pages/Carteira';
 import ComprarGirinhas from '@/pages/ComprarGirinhas';
@@ -38,6 +39,7 @@ function App() {
           <Route path="/mensagens" element={<Mensagens />} />
           <Route path="/mensagens/:conversaId" element={<Mensagens />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/perfil/editar" element={<EditarPerfil />} />
           <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
           <Route path="/carteira" element={<Carteira />} />
           <Route path="/comprar-girinhas" element={<ComprarGirinhas />} />
@@ -45,7 +47,7 @@ function App() {
           <Route path="/item/:id" element={<DetalhesItem />} />
           <Route path="/minhas-reservas" element={<MinhasReservas />} />
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*">{<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

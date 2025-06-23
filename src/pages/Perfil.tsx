@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -18,14 +19,12 @@ import EmptyState from "@/components/loading/EmptyState";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import FriendlyError from "@/components/error/FriendlyError";
 import LazyImage from "@/components/ui/lazy-image";
-import EditarPerfil from "@/components/perfil/EditarPerfil";
 
 const Perfil = () => {
     const { user } = useAuth();
     const { profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useProfile();
     const { buscarMeusItens, loading: itensLoading, error: itensError, itens: meusItens } = useItens();
     const [activeTab, setActiveTab] = useState("ativos");
-    const [editandoPerfil, setEditandoPerfil] = useState(false);
 
     // Carregar meus itens quando o usuário estiver disponível
     useEffect(() => {
@@ -33,16 +32,6 @@ const Perfil = () => {
             buscarMeusItens(user.id);
         }
     }, [user, buscarMeusItens]);
-
-    const handleEditarPerfil = () => {
-        setEditandoPerfil(true);
-    };
-
-    const handleFecharEditar = () => {
-        setEditandoPerfil(false);
-        // Recarregar dados do perfil após edição
-        refetchProfile();
-    };
 
     if (!user) {
         return (
@@ -192,11 +181,13 @@ const Perfil = () => {
                                     </div>
 
                                     <Button 
-                                        onClick={handleEditarPerfil}
+                                        asChild
                                         className="w-full mb-4 bg-gradient-to-r from-primary to-pink-500"
                                     >
-                                        <Edit3 className="w-4 h-4 mr-2" />
-                                        Editar Perfil
+                                        <Link to="/perfil/editar">
+                                            <Edit3 className="w-4 h-4 mr-2" />
+                                            Editar Perfil
+                                        </Link>
                                     </Button>
                                 </div>
 
@@ -351,11 +342,6 @@ const Perfil = () => {
                     </div>
                 </div>
             </main>
-
-            {/* Modal de Editar Perfil */}
-            {editandoPerfil && (
-                <EditarPerfil onClose={handleFecharEditar} />
-            )}
 
             <QuickNav />
         </div>

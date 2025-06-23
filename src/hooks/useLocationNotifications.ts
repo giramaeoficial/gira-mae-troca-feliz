@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
-type LocationNotifications = Tables<'user_location_notifications'>;
+type LocationNotification = Tables<'user_location_notifications'>;
 
 export const useLocationNotifications = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<LocationNotifications | null>(null);
+  const [notifications, setNotifications] = useState<LocationNotification | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,11 +26,15 @@ export const useLocationNotifications = () => {
         .from('user_location_notifications')
         .select('*')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
 
-      if (!data) {
+      if (data) {
+        setNotifications(data);
+      } else {
         // Criar preferências padrão
         const defaultPrefs = {
           user_id: user.id,
@@ -52,17 +56,16 @@ export const useLocationNotifications = () => {
 
         if (insertError) throw insertError;
         setNotifications(newData);
-      } else {
-        setNotifications(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar preferências:', error);
+      console.error('Erro ao carregar preferências de notificação:', error);
+      toast.error('Erro ao carregar preferências de notificação');
     } finally {
       setLoading(false);
     }
   };
 
-  const atualizarPreferencias = async (updates: Partial<LocationNotifications>) => {
+  const atualizarPreferencias = async (updates: Partial<LocationNotification>) => {
     if (!user || !notifications) return;
 
     try {
@@ -79,17 +82,10 @@ export const useLocationNotifications = () => {
       if (error) throw error;
 
       setNotifications(data);
-      toast({
-        title: "Preferências atualizadas",
-        description: "Suas preferências de notificação foram salvas com sucesso"
-      });
+      toast.success('Preferências atualizadas!');
     } catch (error) {
       console.error('Erro ao atualizar preferências:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar preferências",
-        variant: "destructive"
-      });
+      toast.error('Erro ao atualizar preferências');
     }
   };
 
