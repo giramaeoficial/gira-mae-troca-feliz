@@ -30,11 +30,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { data: escolas, isLoading } = useEscolas({
-    searchTerm,
-    uf: estadoFiltro,
-    municipio: cidadeFiltro
-  });
+  const { escolas, isLoading } = useEscolas();
 
   const handleSelect = (escola: Escola) => {
     onChange(escola);
@@ -58,6 +54,16 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
     
     return nome;
   };
+
+  // Filtrar escolas com base nos critérios
+  const escolasFiltradas = escolas.filter(escola => {
+    const matchesSearch = !searchTerm || 
+      escola.escola?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesEstado = !estadoFiltro || escola.uf === estadoFiltro;
+    const matchesCidade = !cidadeFiltro || escola.municipio === cidadeFiltro;
+    
+    return matchesSearch && matchesEstado && matchesCidade;
+  });
 
   return (
     <div className="space-y-2">
@@ -99,7 +105,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
                 {isLoading ? "Carregando..." : "Nenhuma escola encontrada."}
               </CommandEmpty>
               <CommandGroup>
-                {escolas?.map((escola) => (
+                {escolasFiltradas?.map((escola) => (
                   <CommandItem
                     key={escola.codigo_inep}
                     onSelect={() => handleSelect(escola)}

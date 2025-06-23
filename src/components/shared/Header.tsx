@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, Search, Menu, Sparkles } from 'lucide-react';
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import DesktopNav from './DesktopNav';
 
 interface HeaderProps {
@@ -19,6 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   showSearch = false 
 }) => {
   const { user } = useAuth();
+  const { data: profile } = useProfile();
 
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-40">
@@ -107,17 +110,17 @@ const Header: React.FC<HeaderProps> = ({
                 <div className="hidden sm:flex items-center space-x-1 bg-gradient-to-r from-purple-100 to-pink-100 px-3 py-1 rounded-full">
                   <Sparkles className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium text-purple-700">
-                    {user.saldo_girinhas || 0}
+                    {profile?.saldo_girinhas || 0}
                   </span>
                 </div>
 
                 {/* User Avatar */}
                 <Link to="/perfil" className="flex items-center space-x-2 group">
                   <Avatar className="h-8 w-8 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-                    <AvatarImage src={user.user_metadata?.avatar_url || user.foto_perfil || ""} />
+                    <AvatarImage src={user.user_metadata?.avatar_url || profile?.avatar_url || ""} />
                     <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-white text-xs">
                       {user.user_metadata?.name?.substring(0, 2).toUpperCase() || 
-                       user.nome?.substring(0, 2).toUpperCase() ||
+                       profile?.nome?.substring(0, 2).toUpperCase() ||
                        user.email?.substring(0, 2).toUpperCase() || "GM"}
                     </AvatarFallback>
                   </Avatar>
@@ -125,7 +128,7 @@ const Header: React.FC<HeaderProps> = ({
                   {/* Nome do usuário (desktop) */}
                   <div className="hidden lg:block">
                     <div className="text-sm font-medium text-gray-900 group-hover:text-primary transition-colors">
-                      {user.user_metadata?.name || user.nome || 'Mãe'}
+                      {user.user_metadata?.name || profile?.nome || 'Mãe'}
                     </div>
                     <div className="text-xs text-gray-500">
                       Ver perfil

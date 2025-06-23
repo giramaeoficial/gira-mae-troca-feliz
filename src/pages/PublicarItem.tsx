@@ -21,8 +21,9 @@ import { Loader2, Upload, MapPin, Tag, Calendar, Info, Home, School, Navigation 
 import { useAuth } from '@/hooks/useAuth';
 import { useItens } from '@/hooks/useItens';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { useUserAddress, type Address } from '@/hooks/useAddress';
+import { useUserAddress } from '@/hooks/useUserAddress';
 import { useFilhosPorEscola } from '@/hooks/useFilhosPorEscola';
+import { type Address } from '@/hooks/useAddress';
 import FormProgress from '@/components/ui/form-progress';
 import { toast } from "sonner";
 import AuthGuard from '@/components/auth/AuthGuard';
@@ -100,7 +101,7 @@ const PublicarItem = () => {
   const { configuracoes } = useConfigCategorias();
   const { publicarItem, loading } = useItens();
   const { data: userAddress } = useUserAddress();
-  const { data: filhosComEscolas } = useFilhosPorEscola();
+  const { filhos } = useFilhosPorEscola();
 
   const [formData, setFormData] = useState<FormData>({
     nome: '',
@@ -412,7 +413,7 @@ const PublicarItem = () => {
                       <Label htmlFor="endereco-escola" className="flex items-center gap-2">
                         <School className="h-4 w-4" />
                         Endereço da escola
-                        {(!filhosComEscolas || filhosComEscolas.length === 0) && (
+                        {(!filhos || filhos.length === 0) && (
                           <Badge variant="secondary" className="text-xs">
                             Sem escolas
                           </Badge>
@@ -457,7 +458,7 @@ const PublicarItem = () => {
 
                   {formData.endereco_tipo === 'escola' && (
                     <div className="mt-4">
-                      {filhosComEscolas && filhosComEscolas.length > 0 ? (
+                      {filhos && filhos.length > 0 ? (
                         <SchoolSelect
                           value={formData.escola_selecionada}
                           onChange={handleEscolaSelect}
