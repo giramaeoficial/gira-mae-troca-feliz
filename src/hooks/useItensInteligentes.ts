@@ -3,101 +3,157 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useFavoritos } from '@/hooks/useFavoritos';
+import { useSeguidores } from '@/hooks/useSeguidores';
 
-interface FiltrosInteligentes {
+interface ItensInteligentesFiltros {
   location?: { estado: string; cidade: string; bairro?: string } | null;
   mesmaEscola?: boolean;
   mesmoBairro?: boolean;
   paraFilhos?: boolean;
+  apenasFavoritos?: boolean;
+  apenasSeguidoras?: boolean;
   categoria?: string;
   ordem?: string;
   busca?: string;
 }
 
-export const useItensInteligentes = (filtros: FiltrosInteligentes) => {
+export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { favoritos } = useFavoritos();
+  const { buscarItensDasMinhasSeguidas } = useSeguidores();
 
   return useQuery({
-    queryKey: ['itens-inteligentes', filtros, user?.id, profile?.cidade],
+    queryKey: ['itens-inteligentes', filtros, user?.id, favoritos.length],
     queryFn: async () => {
-      console.log('🔍 Buscando itens com filtros:', filtros);
+      console.log('🔍 Buscando itens inteligentes com filtros:', filtros);
 
+      if (!user) {
+        console.log('❌ Usuário não logado');
+        return [];
+      }
+
+      // Se é apenas favoritos, buscar apenas os IDs dos favoritos
+      if (filtros.apenasFavoritos) {
+        if (favoritos.length === 0) {
+          console.log('❤️ Nenhum favorito encontrado');
+          return [];
+        }
+
+        const favoritosIds = favoritos.map(fav => fav.item_id);
+        console.log('❤️ Buscando itens favoritos:', favoritosIds);
+
+        let query = supabase
+          .from('itens')
+          .select(`
+            *,
+            publicado_por_profile:profiles!publicado_por(*),
+            escolas_inep!escola_id(*)
+          `)
+          .in('id', favoritosIds)
+          .eq('status', 'disponivel');
+
+        // Aplicar filtros adicionais
+        if (filtros.categoria && filtros.categoria !== 'todas') {
+          query = query.eq('categoria', filtros.categoria);
+        }
+
+        // Ordenação
+        switch (filtros.ordem) {
+          case 'menor-preco':
+            query = query.order('valor_girinhas', { ascending: true });
+            break;
+          case 'maior-preco':
+            query = query.order('valor_girinhas', { ascending: false });
+            break;
+          default:
+            query = query.order('created_at', { ascending: false });
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+      }
+
+      // Se é apenas das seguidas
+      if (filtros.apenasSeguidoras) {
+        console.log('👥 Buscando itens das seguidas');
+        const itensSeguidas = await buscarItensDasMinhasSeguidas();
+        
+        // Aplicar filtros adicionais aos itens das seguidas
+        let itensFiltrados = itensSeguidas;
+
+        if (filtros.categoria && filtros.categoria !== 'todas') {
+          itensFiltrados = itensFiltrados.filter(item => item.categoria === filtros.categoria);
+        }
+
+        if (filtros.busca) {
+          const buscaLower = filtros.busca.toLowerCase();
+          itensFiltrados = itensFiltrados.filter(item =>
+            item.titulo.toLowerCase().includes(buscaLower) ||
+            item.descricao?.toLowerCase().includes(buscaLower)
+          );
+        }
+
+        // Ordenação
+        itensFiltrados.sort((a, b) => {
+          switch (filtros.ordem) {
+            case 'menor-preco':
+              return a.valor_girinhas - b.valor_girinhas;
+            case 'maior-preco':
+              return b.valor_girinhas - a.valor_girinhas;
+            default:
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+        });
+
+        return itensFiltrados;
+      }
+
+      // Busca geral com filtros inteligentes
       let query = supabase
         .from('itens')
         .select(`
           *,
-          publicado_por_profile:profiles!publicado_por(nome, bairro, cidade, avatar_url, reputacao),
-          escolas_inep!escola_id(escola, municipio)
+          publicado_por_profile:profiles!publicado_por(*),
+          escolas_inep!escola_id(*)
         `)
         .eq('status', 'disponivel')
-        .neq('publicado_por', user?.id || '');
+        .neq('publicado_por', user.id);
 
-      // 1. FILTRO DE LOCALIZAÇÃO INTELIGENTE
-      const cidadeParaBuscar = filtros.location?.cidade || profile?.cidade;
-      if (cidadeParaBuscar) {
-        console.log('📍 Filtrando por cidade:', cidadeParaBuscar);
-        query = query.eq('endereco_cidade', cidadeParaBuscar);
+      // Filtro por localização
+      if (filtros.location?.estado) {
+        query = query.eq('endereco_estado', filtros.location.estado);
+      }
+      if (filtros.location?.cidade) {
+        query = query.eq('endereco_cidade', filtros.location.cidade);
       }
 
-      // 2. FILTRO DE MESMO BAIRRO
-      if (filtros.mesmoBairro && profile?.bairro) {
-        console.log('🏘️ Filtrando por mesmo bairro:', profile.bairro);
-        query = query.eq('endereco_bairro', profile.bairro);
+      // Filtro mesmo bairro
+      if (filtros.mesmoBairro && filtros.location?.bairro) {
+        query = query.eq('endereco_bairro', filtros.location.bairro);
       }
 
-      // 3. FILTRO DE MESMA ESCOLA
-      if (filtros.mesmaEscola) {
-        console.log('🏫 Aplicando filtro de mesma escola...');
-        
-        // Buscar escolas dos filhos do usuário
-        const { data: filhos } = await supabase
-          .from('filhos')
-          .select('escola_id')
-          .eq('mae_id', user?.id || '')
-          .not('escola_id', 'is', null);
-
-        const escolasFilhos = filhos?.map(f => f.escola_id).filter(Boolean);
-        
-        if (escolasFilhos && escolasFilhos.length > 0) {
-          console.log('🎒 Escolas dos filhos encontradas:', escolasFilhos);
-          query = query.in('escola_id', escolasFilhos);
-        } else {
-          console.log('❌ Usuário não tem filhos com escola cadastrada');
-          return [];
-        }
-      }
-
-      // 4. FILTRO PARA OS FILHOS (tamanhos compatíveis)
-      if (filtros.paraFilhos) {
-        console.log('👶 Aplicando filtro para filhos...');
-        
-        const { data: filhos } = await supabase
-          .from('filhos')
-          .select('tamanho_roupas, tamanho_calcados')
-          .eq('mae_id', user?.id || '');
-
-        const tamanhos = filhos?.flatMap(f => [
-          f.tamanho_roupas,
-          f.tamanho_calcados
-        ]).filter(Boolean);
-
-        if (tamanhos && tamanhos.length > 0) {
-          console.log('📏 Tamanhos dos filhos:', tamanhos);
-          query = query.in('tamanho', tamanhos);
-        } else {
-          console.log('❌ Usuário não tem filhos com tamanhos cadastrados');
-          return [];
-        }
-      }
-
-      // 5. FILTRO DE CATEGORIA
+      // Filtro por categoria
       if (filtros.categoria && filtros.categoria !== 'todas') {
-        console.log('🏷️ Filtrando por categoria:', filtros.categoria);
         query = query.eq('categoria', filtros.categoria);
       }
 
-      // 6. ORDENAÇÃO
+      // Filtro por busca
+      if (filtros.busca) {
+        query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
+      }
+
+      // Filtro mesma escola (se implementado no futuro)
+      if (filtros.mesmaEscola && profile?.escola_id) {
+        query = query.eq('escola_id', profile.escola_id);
+      }
+
+      // Filtro para filhos (se implementado no futuro)
+      // Este filtro precisaria de lógica adicional baseada na idade dos filhos, etc.
+
+      // Ordenação
       switch (filtros.ordem) {
         case 'menor-preco':
           query = query.order('valor_girinhas', { ascending: true });
@@ -110,17 +166,13 @@ export const useItensInteligentes = (filtros: FiltrosInteligentes) => {
       }
 
       const { data, error } = await query;
+      if (error) throw error;
 
-      if (error) {
-        console.error('❌ Erro ao buscar itens:', error);
-        throw error;
-      }
-
-      console.log(`✅ Encontrados ${data?.length || 0} itens`);
+      console.log('✅ Itens encontrados:', data?.length || 0);
       return data || [];
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 2, // 2 minutos
-    gcTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 30000, // 30 segundos
+    refetchOnWindowFocus: false,
   });
 };

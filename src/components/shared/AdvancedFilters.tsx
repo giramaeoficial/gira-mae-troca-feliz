@@ -1,18 +1,16 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { Filter, X, School, Home, Users } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, Filter, X, Heart, Users, School, MapPin } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface AdvancedFiltersProps {
   filters: {
@@ -20,293 +18,320 @@ interface AdvancedFiltersProps {
     categoria: string;
     ordem: string;
     escola: any;
-    estadoConservacao?: string;
-    tamanho?: string;
-    valorMin?: string;
-    valorMax?: string;
-    estado?: string;
-    cidade?: string;
-    bairro?: string;
     mesmaEscola?: boolean;
     mesmoBairro?: boolean;
     paraFilhos?: boolean;
-    proximidade?: {
-      enabled: boolean;
-      maxDistance: number;
-    };
+    apenasFavoritos?: boolean;
+    apenasSeguidoras?: boolean;
   };
   onFilterChange: (filters: any) => void;
   onSearch?: () => void;
-  location?: { estado: string; cidade: string } | null;
+  location?: { estado: string; cidade: string; bairro?: string } | null;
 }
 
-const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ 
+const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   filters,
   onFilterChange,
   onSearch,
   location
 }) => {
-  const { user } = useAuth();
-  const { profile } = useProfile();
-  const [isOpen, setIsOpen] = useState(false);
-  const [localFilters, setLocalFilters] = useState({
-    ...filters,
-    estadoConservacao: filters.estadoConservacao || '',
-    tamanho: filters.tamanho || '',
-    valorMin: filters.valorMin || '',
-    valorMax: filters.valorMax || '',
-    mesmaEscola: filters.mesmaEscola || false,
-    mesmoBairro: filters.mesmoBairro || false,
-    paraFilhos: filters.paraFilhos || false,
-    proximidade: filters.proximidade || { enabled: false, maxDistance: 10 }
-  });
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const categorias = [
-    'roupas', 'calcados', 'brinquedos', 'livros', 
-    'material_escolar', 'acessorios', 'mobiliario', 'eletronicos'
-  ];
-
-  const estadosConservacao = [
-    'novo', 'semi_novo', 'usado_bom', 'usado_regular'
-  ];
-
-  const updateLocalFilter = (key: string, value: any) => {
-    if (key.includes('.')) {
-      const [parent, child] = key.split('.');
-      setLocalFilters(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent as keyof typeof prev],
-          [child]: value
-        }
-      }));
-    } else {
-      setLocalFilters(prev => ({ ...prev, [key]: value }));
-    }
+  const handleFilterUpdate = (key: string, value: any) => {
+    onFilterChange({ [key]: value });
   };
 
-  const applyFilters = () => {
-    onFilterChange(localFilters);
-    if (onSearch) onSearch();
-    setIsOpen(false);
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.mesmaEscola) count++;
+    if (filters.mesmoBairro) count++;
+    if (filters.paraFilhos) count++;
+    if (filters.apenasFavoritos) count++;
+    if (filters.apenasSeguidoras) count++;
+    if (filters.categoria !== 'todas') count++;
+    return count;
   };
 
-  const clearFilters = () => {
-    const clearedFilters = {
+  const limparFiltros = () => {
+    onFilterChange({
       busca: '',
       categoria: 'todas',
       ordem: 'recentes',
       escola: null,
-      valorMin: '',
-      valorMax: '',
-      tamanho: '',
-      estadoConservacao: '',
       mesmaEscola: false,
       mesmoBairro: false,
       paraFilhos: false,
-      proximidade: { enabled: false, maxDistance: 10 }
-    };
-    setLocalFilters(clearedFilters);
-    onFilterChange(clearedFilters);
+      apenasFavoritos: false,
+      apenasSeguidoras: false,
+    });
   };
 
-  const getActiveFiltersCount = () => {
-    return Object.values(localFilters).filter(value => {
-      if (typeof value === 'boolean') return value;
-      if (typeof value === 'object' && value?.enabled) return true;
-      return value && value !== '' && value !== false && value !== 'todas' && value !== 'recentes';
-    }).length;
-  };
+  const activeFiltersCount = getActiveFiltersCount();
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="relative">
-          <Filter className="w-4 h-4 mr-2" />
-          Filtros
-          {getActiveFiltersCount() > 0 && (
-            <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
-              {getActiveFiltersCount()}
-            </Badge>
-          )}
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Filtros Avançados</SheetTitle>
-        </SheetHeader>
-        
-        <div className="space-y-6 py-6">
-          {/* Filtros de Proximidade */}
-          {user && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Proximidade
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Apenas itens próximos</Label>
-                  <Switch 
-                    checked={localFilters.proximidade.enabled}
-                    onCheckedChange={(checked) => 
-                      updateLocalFilter('proximidade.enabled', checked)
-                    }
-                  />
-                </div>
-                
-                {localFilters.proximidade.enabled && (
-                  <div>
-                    <Label>Distância máxima: {localFilters.proximidade.maxDistance}km</Label>
-                    <Slider
-                      value={[localFilters.proximidade.maxDistance]}
-                      onValueChange={([value]) => 
-                        updateLocalFilter('proximidade.maxDistance', value)
-                      }
-                      max={50}
-                      min={1}
-                      step={1}
-                      className="mt-2"
-                    />
-                  </div>
+    <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-sm mb-4">
+      <CardContent className="p-4 space-y-4">
+        {/* Barra de busca principal - sempre visível */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Buscar roupinha, brinquedo..."
+            value={filters.busca}
+            onChange={(e) => handleFilterUpdate('busca', e.target.value)}
+            className="pl-10 h-12 text-base"
+          />
+        </div>
+
+        {/* Filtros rápidos - sempre visíveis */}
+        <div className="flex flex-wrap gap-2">
+          <Select value={filters.categoria} onValueChange={(value) => handleFilterUpdate('categoria', value)}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas</SelectItem>
+              <SelectItem value="roupas">Roupas</SelectItem>
+              <SelectItem value="calcados">Calçados</SelectItem>
+              <SelectItem value="brinquedos">Brinquedos</SelectItem>
+              <SelectItem value="livros">Livros</SelectItem>
+              <SelectItem value="acessorios">Acessórios</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.ordem} onValueChange={(value) => handleFilterUpdate('ordem', value)}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Ordenar" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recentes">Mais recentes</SelectItem>
+              <SelectItem value="menor-preco">Menor preço</SelectItem>
+              <SelectItem value="maior-preco">Maior preço</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Filtros especiais - destaque mobile */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={filters.apenasFavoritos ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleFilterUpdate('apenasFavoritos', !filters.apenasFavoritos)}
+            className="h-10 text-xs font-medium"
+          >
+            <Heart className={`w-4 h-4 mr-2 ${filters.apenasFavoritos ? 'fill-current' : ''}`} />
+            Favoritos
+          </Button>
+
+          <Button
+            variant={filters.apenasSeguidoras ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleFilterUpdate('apenasSeguidoras', !filters.apenasSeguidoras)}
+            className="h-10 text-xs font-medium"
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Seguidas
+          </Button>
+        </div>
+
+        {/* Filtros avançados - colapsáveis */}
+        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  Filtros Avançados
+                </span>
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {activeFiltersCount}
+                  </Badge>
                 )}
+              </div>
+              <span className="text-xs text-gray-500">
+                {isExpanded ? 'Ocultar' : 'Mostrar'}
+              </span>
+            </Button>
+          </CollapsibleTrigger>
+          
+          <CollapsibleContent className="space-y-3 mt-3">
+            {/* Filtros de localização */}
+            {location && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>Filtros de localização</span>
+                </div>
                 
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <Checkbox 
-                      checked={localFilters.mesmaEscola}
-                      onCheckedChange={(checked) => 
-                        updateLocalFilter('mesmaEscola', checked)
-                      }
-                    />
-                    <School className="w-4 h-4" />
-                    Mesma escola dos meus filhos
-                  </Label>
-                  
-                  <Label className="flex items-center gap-2">
-                    <Checkbox 
-                      checked={localFilters.mesmoBairro}
-                      onCheckedChange={(checked) => 
-                        updateLocalFilter('mesmoBairro', checked)
-                      }
-                    />
-                    <Home className="w-4 h-4" />
-                    Mesmo bairro que eu
-                  </Label>
-                  
-                  <Label className="flex items-center gap-2">
-                    <Checkbox 
-                      checked={localFilters.paraFilhos}
-                      onCheckedChange={(checked) => 
-                        updateLocalFilter('paraFilhos', checked)
-                      }
-                    />
-                    <Users className="w-4 h-4" />
-                    Itens que servem para meus filhos
-                  </Label>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant={filters.mesmoBairro ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFilterUpdate('mesmoBairro', !filters.mesmoBairro)}
+                    className="justify-start h-10"
+                    disabled={!location.bairro}
+                  >
+                    <MapPin className="w-4 h-4 mr-2" />
+                    Mesmo bairro {location.bairro && `(${location.bairro})`}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
+
+            {/* Filtros de escola */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <School className="w-4 h-4" />
+                <span>Filtros de escola</span>
+              </div>
+              
+              <Button
+                variant={filters.mesmaEscola ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleFilterUpdate('mesmaEscola', !filters.mesmaEscola)}
+                className="justify-start h-10 w-full"
+              >
+                <School className="w-4 h-4 mr-2" />
+                Mesma escola
+              </Button>
+            </div>
+
+            {/* Filtros personalizados */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                <Filter className="w-4 h-4" />
+                <span>Filtros personalizados</span>
+              </div>
+              
+              <Button
+                variant={filters.paraFilhos ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleFilterUpdate('paraFilhos', !filters.paraFilhos)}
+                className="justify-start h-10 w-full"
+              >
+                Para meus filhos
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Botões de ação */}
+        <div className="flex gap-2 pt-2">
+          {onSearch && (
+            <Button 
+              onClick={onSearch}
+              className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Buscar Itens
+            </Button>
           )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Produto</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="categoria">Categoria</Label>
-                <Select
-                  value={localFilters.categoria === 'todas' ? '' : localFilters.categoria}
-                  onValueChange={(value) => updateLocalFilter('categoria', value || 'todas')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todas as categorias" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categorias.map(cat => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat.replace('_', ' ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="estado">Estado de Conservação</Label>
-                <Select
-                  value={localFilters.estadoConservacao || ''}
-                  onValueChange={(value) => updateLocalFilter('estadoConservacao', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Qualquer estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {estadosConservacao.map(estado => (
-                      <SelectItem key={estado} value={estado}>
-                        {estado.replace('_', ' ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="tamanho">Tamanho</Label>
-                <Input
-                  id="tamanho"
-                  placeholder="Ex: 2-3 anos, 36, M"
-                  value={localFilters.tamanho || ''}
-                  onChange={(e) => updateLocalFilter('tamanho', e.target.value)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Preço (Girinhas)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="valor-min">Mínimo</Label>
-                  <Input
-                    id="valor-min"
-                    type="number"
-                    placeholder="0"
-                    value={localFilters.valorMin || ''}
-                    onChange={(e) => updateLocalFilter('valorMin', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="valor-max">Máximo</Label>
-                  <Input
-                    id="valor-max"
-                    type="number"
-                    placeholder="100"
-                    value={localFilters.valorMax || ''}
-                    onChange={(e) => updateLocalFilter('valorMax', e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="outline"
+              onClick={limparFiltros}
+              className="h-12 px-4"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
 
-        <div className="flex gap-2 pt-4">
-          <Button onClick={applyFilters} className="flex-1">
-            Aplicar Filtros
-          </Button>
-          <Button variant="outline" onClick={clearFilters}>
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+        {/* Tags de filtros ativos */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2 border-t">
+            {filters.apenasFavoritos && (
+              <Badge variant="secondary" className="text-xs">
+                <Heart className="w-3 h-3 mr-1 fill-current" />
+                Favoritos
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => handleFilterUpdate('apenasFavoritos', false)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+            
+            {filters.apenasSeguidoras && (
+              <Badge variant="secondary" className="text-xs">
+                <Users className="w-3 h-3 mr-1" />
+                Seguidas
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => handleFilterUpdate('apenasSeguidoras', false)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+            
+            {filters.mesmaEscola && (
+              <Badge variant="secondary" className="text-xs">
+                <School className="w-3 h-3 mr-1" />
+                Mesma escola
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => handleFilterUpdate('mesmaEscola', false)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+            
+            {filters.mesmoBairro && (
+              <Badge variant="secondary" className="text-xs">
+                <MapPin className="w-3 h-3 mr-1" />
+                Mesmo bairro
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => handleFilterUpdate('mesmoBairro', false)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+            
+            {filters.paraFilhos && (
+              <Badge variant="secondary" className="text-xs">
+                Para meus filhos
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => handleFilterUpdate('paraFilhos', false)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+            
+            {filters.categoria !== 'todas' && (
+              <Badge variant="secondary" className="text-xs">
+                {filters.categoria}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => handleFilterUpdate('categoria', 'todas')}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
