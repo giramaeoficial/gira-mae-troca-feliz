@@ -25,7 +25,7 @@ const FeedOptimized = () => {
   const [categoria, setCategoria] = useState('todas');
   const [ordem, setOrdem] = useState('recentes');
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [location, setLocation] = useState<{ estado?: string; cidade?: string; bairro?: string } | null>(null);
+  const [location, setLocation] = useState<{ estado: string; cidade: string; bairro?: string } | null>(null);
   const [filters, setFilters] = useState({
     mesmaEscola: false,
     mesmoBairro: false,

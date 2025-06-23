@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
 interface UseItensProximosParams {
-  location?: { estado?: string; cidade?: string; bairro?: string } | null;
+  location?: { estado: string; cidade: string; bairro?: string } | null;
   filters?: {
     mesmaEscola?: boolean;
     mesmoBairro?: boolean;
