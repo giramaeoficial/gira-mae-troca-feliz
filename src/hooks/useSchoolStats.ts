@@ -24,21 +24,22 @@ export const useSchoolStats = () => {
 
       if (error) throw error;
 
-      // Contar mães únicas por escola
-      const stats: SchoolStats = {};
+      // Contar mães únicas por escola usando Map para Sets temporários
+      const tempStats: { [key: number]: Set<string> } = {};
       data?.forEach(filho => {
         if (filho.escola_id) {
-          if (!stats[filho.escola_id]) {
-            stats[filho.escola_id] = new Set();
+          if (!tempStats[filho.escola_id]) {
+            tempStats[filho.escola_id] = new Set();
           }
-          stats[filho.escola_id].add(filho.mae_id);
+          tempStats[filho.escola_id].add(filho.mae_id);
         }
       });
 
       // Converter Sets para contadores
       const finalStats: SchoolStats = {};
-      Object.keys(stats).forEach(escolaId => {
-        finalStats[parseInt(escolaId)] = stats[parseInt(escolaId)].size;
+      Object.keys(tempStats).forEach(escolaId => {
+        const escolaIdNum = parseInt(escolaId);
+        finalStats[escolaIdNum] = tempStats[escolaIdNum].size;
       });
 
       setSchoolStats(finalStats);
