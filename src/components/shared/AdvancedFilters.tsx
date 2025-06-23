@@ -16,6 +16,10 @@ interface AdvancedFiltersProps {
     categoria: string;
     ordem: string;
     escola: any;
+    estadoConservacao?: string;
+    tamanho?: string;
+    valorMin?: string;
+    valorMax?: string;
   };
   onFilterChange: (filters: any) => void;
   onSearch?: () => void;
@@ -29,7 +33,13 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   location
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [localFilters, setLocalFilters] = useState(filters);
+  const [localFilters, setLocalFilters] = useState({
+    ...filters,
+    estadoConservacao: filters.estadoConservacao || '',
+    tamanho: filters.tamanho || '',
+    valorMin: filters.valorMin || '',
+    valorMax: filters.valorMax || ''
+  });
 
   const categorias = [
     'roupas', 'calcados', 'brinquedos', 'livros', 
@@ -67,7 +77,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   };
 
   const getActiveFiltersCount = () => {
-    return Object.values(filters).filter(value => 
+    return Object.values(localFilters).filter(value => 
       value && value !== '' && value !== false && value !== 'todas' && value !== 'recentes'
     ).length;
   };
