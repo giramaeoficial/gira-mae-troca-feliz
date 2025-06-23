@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useCarteira } from '@/hooks/useCarteira';
 import DesktopNav from './DesktopNav';
 import MoreMenu from './MoreMenu';
 
@@ -30,6 +31,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
+  const { saldoTotal } = useCarteira();
 
   const userInitial = profile?.nome?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'G';
 
@@ -38,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          {/* Logotipo com fonte corrigida */}
+          {/* Logotipo */}
           <Link to="/feed" className="flex items-center space-x-2 group">
             <svg
               xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -78,10 +80,10 @@ const Header: React.FC<HeaderProps> = ({
                 
                 {/* Seção do Usuário (Girinhas e Avatar) */}
                 <div className="flex items-center space-x-2">
-                    {/* Girinhas - agora visível no mobile também */}
+                    {/* Girinhas - visível no mobile e desktop */}
                     <div className="flex items-center gap-1 text-pink-700 font-bold bg-pink-100 px-2 py-1 rounded-full text-xs">
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="text-xs sm:text-sm">{profile?.saldo_girinhas || 0}</span>
+                        <span className="text-xs sm:text-sm">{saldoTotal?.toFixed(0) || '0'}</span>
                     </div>
 
                     <DropdownMenu>
