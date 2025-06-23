@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -109,6 +108,68 @@ const validateAddress = (formData: FormData, userAddress: any): { [key: string]:
   return errors;
 };
 
+const extrairBairroEscola = (escola: any): string => {
+  // Se já tiver um campo bairro explícito, use-o
+  if (escola.bairro) {
+    return escola.bairro.trim();
+  }
+
+  // Se não tiver endereço, retorna vazio
+  if (!escola.endereco) {
+    return '';
+  }
+
+  const endereco = escola.endereco.trim();
+  
+  // Tenta diferentes padrões comuns de endereços de escolas
+  const padroes = [
+    // Padrão: "Rua/Av Nome, Número, Bairro, Cidade"
+    /^[^,]+,\s*[^,]*,\s*([^,]+),/,
+    // Padrão: "Rua/Av Nome, Bairro"
+    /^[^,]+,\s*([^,]+)$/,
+    // Padrão: "Nome da Rua - Bairro"
+    /^[^-]+-\s*([^-]+)$/,
+    // Padrão: busca por palavras indicativas de bairro
+    /(?:bairro|distrito|vila|jardim|centro)\s+([^,\-]+)/i,
+  ];
+
+  for (const padrao of padroes) {
+    const match = endereco.match(padrao);
+    if (match && match[1]) {
+      let bairro = match[1].trim();
+      
+      // Remove números que possam ter sido capturados
+      bairro = bairro.replace(/^\d+\s*/, '');
+      
+      // Remove palavras muito comuns que não são bairros
+      const palavrasExcluir = ['rua', 'avenida', 'av', 'r', 'número', 'nº', 'n'];
+      const palavrasBairro = bairro.split(/\s+/).filter(palavra => 
+        !palavrasExcluir.includes(palavra.toLowerCase()) && palavra.length > 1
+      );
+      
+      if (palavrasBairro.length > 0) {
+        return palavrasBairro.join(' ');
+      }
+    }
+  }
+
+  // Se nenhum padrão funcionou, tenta o método anterior como fallback
+  const enderecoPartes = endereco.split(',').map(parte => parte.trim());
+  if (enderecoPartes.length > 1) {
+    let bairro = enderecoPartes[1];
+    
+    // Remove números no início
+    bairro = bairro.replace(/^\d+\s*/, '');
+    
+    if (bairro && bairro.length > 2) {
+      return bairro;
+    }
+  }
+
+  // Se tudo falhar, retorna vazio em vez de dados incorretos
+  return '';
+};
+
 const PublicarItem = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -212,15 +273,8 @@ const PublicarItem = () => {
         } else if (formData.endereco_tipo === 'escola' && formData.escola_selecionada) {
           const escola = formData.escola_selecionada;
           
-          // Correção: Melhor extração do bairro e tratamento de dados da escola
-          let bairro = '';
-          if (escola.endereco) {
-            // Tentar extrair bairro do endereço da escola de forma mais robusta
-            const enderecoPartes = escola.endereco.split(',').map(parte => parte.trim());
-            if (enderecoPartes.length > 1) {
-              bairro = enderecoPartes[1];
-            }
-          }
+          // Usar a nova função robusta para extrair o bairro
+          const bairro = extrairBairroEscola(escola);
           
           enderecoData = {
             escola_id: escola.codigo_inep,
