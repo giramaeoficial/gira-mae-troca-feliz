@@ -29,9 +29,9 @@ export const useEscolas = (params?: UseEscolasParams) => {
 
       let query = supabase
         .from('escolas_inep')
-        .select('*') // Select all fields to match the Escola type
+        .select('*')
         .order('escola')
-        .limit(100); // Reduzir limite para melhor performance
+        .limit(100);
 
       // Aplicar filtros se fornecidos
       if (params?.uf) {
@@ -57,7 +57,7 @@ export const useEscolas = (params?: UseEscolasParams) => {
     },
     enabled: !!(params?.searchTerm && params.searchTerm.length >= 3),
     staleTime: 5 * 60 * 1000, // 5 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos (substituído cacheTime)
   });
 
   const buscarEscolas = async (nome: string, estado: string, cidade: string) => {
@@ -67,7 +67,7 @@ export const useEscolas = (params?: UseEscolasParams) => {
     try {
       let query = supabase
         .from('escolas_inep')
-        .select('*') // Select all fields to match the Escola type
+        .select('*')
         .eq('uf', estado)
         .eq('municipio', cidade)
         .order('escola')

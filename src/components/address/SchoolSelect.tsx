@@ -49,7 +49,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
     onChange(null);
   };
 
-  const formatSchoolDisplay = (escola: any) => {
+  const formatSchoolDisplay = (escola: Escola) => {
     const nome = escola.escola || 'Escola sem nome';
     const municipio = escola.municipio || '';
     const uf = escola.uf || '';
@@ -67,7 +67,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
   };
 
   // Filtrar escolas baseado no estado atual
-  let escolasParaMostrar: any[] = [];
+  let escolasParaMostrar: Escola[] = [];
   
   if (!mostrarTodasEscolas) {
     // Mostrar apenas escolas dos filhos
