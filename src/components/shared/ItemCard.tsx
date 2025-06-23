@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, MapPin, School, Truck, Home } from 'lucide-react';
-import { LazyImage } from '@/components/ui/lazy-image';
+import LazyImage from '@/components/ui/lazy-image';
 import { useCommonSchool } from '@/hooks/useCommonSchool';
 import { useFavoritos } from '@/hooks/useFavoritos';
 
@@ -36,7 +36,7 @@ interface ItemCardProps {
 
 export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
   const { hasCommonSchool } = useCommonSchool(item.publicado_por);
-  const { isFavorito, toggleFavorito } = useFavoritos();
+  const { verificarSeFavorito, toggleFavorito } = useFavoritos();
 
   const handleClick = () => {
     if (onItemClick) {
@@ -74,7 +74,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onItemClick }) => {
       >
         <Heart 
           className={`w-4 h-4 ${
-            isFavorito(item.id) 
+            verificarSeFavorito(item.id) 
               ? 'fill-red-500 text-red-500' 
               : 'text-gray-500'
           }`} 

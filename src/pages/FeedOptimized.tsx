@@ -5,12 +5,12 @@ import { Plus, Search, Filter, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoadingSpinner } from '@/components/loading/LoadingSpinner';
-import { ItemCardSkeleton } from '@/components/loading/ItemCardSkeleton';
-import { EmptyState } from '@/components/loading/EmptyState';
+import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
+import EmptyState from '@/components/loading/EmptyState';
 import { ItemCard } from '@/components/shared/ItemCard';
 import { LocationPrompt } from '@/components/shared/LocationPrompt';
-import { AdvancedFilters } from '@/components/shared/AdvancedFilters';
+import AdvancedFilters from '@/components/shared/AdvancedFilters';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useItensProximos } from '@/hooks/useItensProximos';
@@ -191,9 +191,11 @@ const FeedOptimized = () => {
         {error && (
           <div className="p-4">
             <EmptyState
+              type="generic"
               title="Erro ao carregar itens"
               description="Tente novamente em alguns instantes"
-              action={<Button onClick={() => refetch()}>Tentar novamente</Button>}
+              actionLabel="Tentar novamente"
+              onAction={() => refetch()}
             />
           </div>
         )}
@@ -202,6 +204,7 @@ const FeedOptimized = () => {
         {!isLoading && !error && itensFiltrados.length === 0 && (
           <div className="p-4">
             <EmptyState
+              type="search"
               title={location?.cidade ? 
                 `Nenhum item encontrado em ${location.cidade}` : 
                 "Nenhum item encontrado"
@@ -210,20 +213,15 @@ const FeedOptimized = () => {
                 "Tente expandir sua busca ou verifique outras cidades próximas" :
                 "Configure sua localização para ver itens próximos"
               }
-              action={
-                !location?.cidade ? (
-                  <Button onClick={handleConfigureLocation}>
-                    Configurar localização
-                  </Button>
-                ) : (
-                  <Button onClick={() => {
-                    setBusca('');
-                    setCategoria('todas');
-                    setFilters({ mesmaEscola: false, mesmoBairro: false, paraFilhos: false });
-                  }}>
-                    Limpar filtros
-                  </Button>
-                )
+              actionLabel={
+                !location?.cidade ? "Configurar localização" : "Limpar filtros"
+              }
+              onAction={
+                !location?.cidade ? handleConfigureLocation : () => {
+                  setBusca('');
+                  setCategoria('todas');
+                  setFilters({ mesmaEscola: false, mesmoBairro: false, paraFilhos: false });
+                }
               }
             />
           </div>
