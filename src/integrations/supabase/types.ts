@@ -1555,6 +1555,59 @@ export type Database = {
           },
         ]
       }
+      user_addresses: {
+        Row: {
+          apelido: string
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          created_at: string
+          endereco: string | null
+          estado: string | null
+          id: string
+          ponto_referencia: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apelido: string
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          ponto_referencia?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apelido?: string
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          ponto_referencia?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_addresses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
