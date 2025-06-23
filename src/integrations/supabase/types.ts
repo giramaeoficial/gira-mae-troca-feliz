@@ -710,16 +710,27 @@ export type Database = {
       }
       itens: {
         Row: {
+          aceita_entrega: boolean | null
           categoria: string
           cidade_manual: string | null
           created_at: string
           descricao: string
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_complemento: string | null
+          endereco_estado: string | null
+          endereco_rua: string | null
+          escola_id: number | null
           estado_conservacao: string
           estado_manual: string | null
           filho_id: string | null
           fotos: string[] | null
           id: string
+          instrucoes_retirada: string | null
+          ponto_referencia: string | null
           publicado_por: string
+          raio_entrega_km: number | null
           status: string
           tamanho: string | null
           titulo: string
@@ -727,16 +738,27 @@ export type Database = {
           valor_girinhas: number
         }
         Insert: {
+          aceita_entrega?: boolean | null
           categoria: string
           cidade_manual?: string | null
           created_at?: string
           descricao: string
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_complemento?: string | null
+          endereco_estado?: string | null
+          endereco_rua?: string | null
+          escola_id?: number | null
           estado_conservacao: string
           estado_manual?: string | null
           filho_id?: string | null
           fotos?: string[] | null
           id?: string
+          instrucoes_retirada?: string | null
+          ponto_referencia?: string | null
           publicado_por: string
+          raio_entrega_km?: number | null
           status?: string
           tamanho?: string | null
           titulo: string
@@ -744,16 +766,27 @@ export type Database = {
           valor_girinhas: number
         }
         Update: {
+          aceita_entrega?: boolean | null
           categoria?: string
           cidade_manual?: string | null
           created_at?: string
           descricao?: string
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_complemento?: string | null
+          endereco_estado?: string | null
+          endereco_rua?: string | null
+          escola_id?: number | null
           estado_conservacao?: string
           estado_manual?: string | null
           filho_id?: string | null
           fotos?: string[] | null
           id?: string
+          instrucoes_retirada?: string | null
+          ponto_referencia?: string | null
           publicado_por?: string
+          raio_entrega_km?: number | null
           status?: string
           tamanho?: string | null
           titulo?: string
@@ -761,6 +794,13 @@ export type Database = {
           valor_girinhas?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "itens_escola_id_fkey"
+            columns: ["escola_id"]
+            isOneToOne: false
+            referencedRelation: "escolas_inep"
+            referencedColumns: ["codigo_inep"]
+          },
           {
             foreignKeyName: "itens_filho_id_fkey"
             columns: ["filho_id"]
@@ -1089,16 +1129,20 @@ export type Database = {
           bairro: string | null
           bio: string | null
           categorias_favoritas: string[] | null
+          cep: string | null
           cidade: string | null
+          complemento: string | null
           created_at: string | null
           dados_segmentacao: Json | null
           data_nascimento: string | null
           email: string | null
           endereco: string | null
+          estado: string | null
           id: string
           instagram: string | null
           interesses: string[] | null
           nome: string | null
+          ponto_referencia: string | null
           ponto_retirada_preferido: string | null
           profissao: string | null
           raio_entrega_km: number | null
@@ -1116,16 +1160,20 @@ export type Database = {
           bairro?: string | null
           bio?: string | null
           categorias_favoritas?: string[] | null
+          cep?: string | null
           cidade?: string | null
+          complemento?: string | null
           created_at?: string | null
           dados_segmentacao?: Json | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           id: string
           instagram?: string | null
           interesses?: string[] | null
           nome?: string | null
+          ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null
           raio_entrega_km?: number | null
@@ -1143,16 +1191,20 @@ export type Database = {
           bairro?: string | null
           bio?: string | null
           categorias_favoritas?: string[] | null
+          cep?: string | null
           cidade?: string | null
+          complemento?: string | null
           created_at?: string | null
           dados_segmentacao?: Json | null
           data_nascimento?: string | null
           email?: string | null
           endereco?: string | null
+          estado?: string | null
           id?: string
           instagram?: string | null
           interesses?: string[] | null
           nome?: string | null
+          ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null
           raio_entrega_km?: number | null
