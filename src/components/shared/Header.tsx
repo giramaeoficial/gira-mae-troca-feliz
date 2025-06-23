@@ -31,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
-  const { saldoTotal } = useCarteira();
+  const { saldo } = useCarteira();
 
   const userInitial = profile?.nome?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'G';
 
@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({
                     {/* Girinhas - visível no mobile e desktop */}
                     <div className="flex items-center gap-1 text-pink-700 font-bold bg-pink-100 px-2 py-1 rounded-full text-xs">
                         <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="text-xs sm:text-sm">{saldoTotal?.toFixed(0) || '0'}</span>
+                        <span className="text-xs sm:text-sm">{saldo?.toFixed(0) || '0'}</span>
                     </div>
 
                     <DropdownMenu>
