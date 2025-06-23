@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Header from '@/components/shared/Header';
+import QuickNav from '@/components/shared/QuickNav';
 import ImageUpload from '@/components/ui/image-upload';
 import AddressInput from '@/components/address/AddressInput';
 import SchoolSelect from '@/components/address/SchoolSelect';
@@ -279,19 +281,25 @@ const EditarPerfil = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Carregando dados...</p>
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
+        <Header />
+        <div className="flex items-center justify-center pt-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Carregando dados...</p>
+          </div>
         </div>
+        <QuickNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-      {/* Header fixo */}
-      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
+      <Header />
+      
+      {/* Header fixo da página */}
+      <div className="sticky top-16 z-40 bg-white/90 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Button
             variant="ghost"
@@ -317,7 +325,7 @@ const EditarPerfil = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-6 pb-24">
+      <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="pessoais" className="text-xs">
@@ -725,6 +733,8 @@ const EditarPerfil = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <QuickNav />
     </div>
   );
 };
