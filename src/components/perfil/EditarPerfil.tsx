@@ -25,7 +25,7 @@ interface EditarPerfilProps {
 const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
   const { user } = useAuth();
   const { profile, refetch } = useProfile();
-  const { addresses, loading: addressesLoading, addAddress, deleteAddress } = useUserAddresses();
+  const { addresses, loading: addressesLoading, adicionarEndereco, removerEndereco } = useUserAddresses();
   const { escolas } = useEscolas();
   
   const [loading, setLoading] = useState(false);
@@ -143,7 +143,7 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
     }
 
     try {
-      await addAddress(newAddress);
+      await adicionarEndereco(newAddress);
       setNewAddress({
         apelido: '',
         endereco: '',
@@ -411,7 +411,7 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => deleteAddress(address.id)}
+                            onClick={() => removerEndereco(address.id)}
                           >
                             <X className="w-4 h-4" />
                           </Button>
