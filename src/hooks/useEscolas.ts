@@ -4,6 +4,16 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
+// Tipo otimizado com apenas campos essenciais
+export type EscolaEssencial = {
+  codigo_inep: number;
+  escola: string;
+  municipio: string;
+  uf: string;
+  endereco: string;
+  categoria_administrativa: string;
+};
+
 // Use the proper Supabase type for schools
 export type Escola = Tables<'escolas_inep'>;
 
@@ -14,7 +24,7 @@ interface UseEscolasParams {
 }
 
 export const useEscolas = (params?: UseEscolasParams) => {
-  const [escolas, setEscolas] = useState<Escola[]>([]);
+  const [escolas, setEscolas] = useState<EscolaEssencial[]>([]);
   const [municipios, setMunicipios] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMunicipios, setLoadingMunicipios] = useState(false);
@@ -59,7 +69,7 @@ export const useEscolas = (params?: UseEscolasParams) => {
       console.log('Escolas encontradas:', data?.length || 0);
       console.log('Primeira escola:', data?.[0]);
       
-      return data as Escola[];
+      return data as EscolaEssencial[];
     },
     enabled: !!(params?.searchTerm && params.searchTerm.length >= 3),
     staleTime: 5 * 60 * 1000, // 5 minutos

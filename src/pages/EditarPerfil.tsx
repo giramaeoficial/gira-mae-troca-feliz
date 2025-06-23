@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, User, MapPin, Baby, Bell, Plus, Trash2 } from 'lucide-react';
@@ -71,7 +70,8 @@ const EditarPerfil = () => {
     sexo: '',
     tamanho_roupas: '',
     tamanho_calcados: '',
-    escola_id: null
+    escola_id: null,
+    escola_selecionada: null as any
   });
   
   const [avatarFiles, setAvatarFiles] = useState<File[]>([]);
@@ -203,7 +203,8 @@ const EditarPerfil = () => {
         sexo: '',
         tamanho_roupas: '',
         tamanho_calcados: '',
-        escola_id: null
+        escola_id: null,
+        escola_selecionada: null
       });
       
       toast.success('Filho adicionado com sucesso!');
@@ -737,12 +738,13 @@ const EditarPerfil = () => {
                 <div>
                   <Label>Escola</Label>
                   <SchoolSelect
-                    value={null}
+                    value={novoFilho.escola_selecionada}
                     onChange={(escola) => {
                       console.log('Escola selecionada para novo filho:', escola);
                       setNovoFilho(prev => ({ 
                         ...prev, 
-                        escola_id: escola?.codigo_inep || null 
+                        escola_id: escola?.codigo_inep || null,
+                        escola_selecionada: escola
                       }));
                     }}
                     estadoFiltro={enderecoForm.estado}

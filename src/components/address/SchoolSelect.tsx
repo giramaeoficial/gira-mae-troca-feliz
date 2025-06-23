@@ -5,12 +5,12 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useEscolas, type Escola } from '@/hooks/useEscolas';
+import { useEscolas, type EscolaEssencial } from '@/hooks/useEscolas';
 import { useFilhosPorEscola } from '@/hooks/useFilhosPorEscola';
 
 interface SchoolSelectProps {
-  value?: Escola | null;
-  onChange: (escola: Escola | null) => void;
+  value?: EscolaEssencial | null;
+  onChange: (escola: EscolaEssencial | null) => void;
   placeholder?: string;
   disabled?: boolean;
   estadoFiltro?: string;
@@ -39,7 +39,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
     municipio: cidadeFiltro
   });
 
-  const handleSelect = (escola: Escola) => {
+  const handleSelect = (escola: EscolaEssencial) => {
     onChange(escola);
     setOpen(false);
     setSearchTerm('');
@@ -50,7 +50,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
     onChange(null);
   };
 
-  const formatSchoolDisplay = (escola: Escola) => {
+  const formatSchoolDisplay = (escola: EscolaEssencial) => {
     const nome = escola.escola || 'Escola sem nome';
     const municipio = escola.municipio || '';
     const uf = escola.uf || '';
@@ -68,11 +68,18 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
   };
 
   // Filtrar escolas baseado no estado atual
-  let escolasParaMostrar: Escola[] = [];
+  let escolasParaMostrar: EscolaEssencial[] = [];
   
   if (!mostrarTodasEscolas) {
-    // Mostrar apenas escolas dos filhos
-    escolasParaMostrar = escolasDosMeusFilhos;
+    // Converter escolas dos filhos para o tipo essencial
+    escolasParaMostrar = escolasDosMeusFilhos.map(escola => ({
+      codigo_inep: escola.codigo_inep,
+      escola: escola.escola || '',
+      municipio: escola.municipio || '',
+      uf: escola.uf || '',
+      endereco: escola.endereco || '',
+      categoria_administrativa: escola.categoria_administrativa || ''
+    }));
   } else {
     // Mostrar resultado da busca geral
     escolasParaMostrar = escolas || [];
@@ -120,12 +127,12 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
                 <>
                   {/* Mostrar escolas dos filhos */}
                   <CommandGroup heading="Escolas dos seus filhos">
-                    {escolasDosMeusFilhos.length === 0 ? (
+                    {escolasParaMostrar.length === 0 ? (
                       <div className="p-4 text-center text-sm text-muted-foreground">
                         Nenhum filho com escola cadastrada
                       </div>
                     ) : (
-                      escolasDosMeusFilhos.map((escola) => (
+                      escolasParaMostrar.map((escola) => (
                         <CommandItem
                           key={escola.codigo_inep}
                           onSelect={() => handleSelect(escola)}
