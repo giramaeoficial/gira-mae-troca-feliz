@@ -42,6 +42,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
   const handleSelect = (escola: Escola) => {
     onChange(escola);
     setOpen(false);
+    setSearchTerm('');
   };
 
   const handleClear = (e: React.MouseEvent) => {
@@ -74,14 +75,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
     escolasParaMostrar = escolasDosMeusFilhos;
   } else {
     // Mostrar resultado da busca geral
-    escolasParaMostrar = escolas.filter(escola => {
-      const matchesSearch = !searchTerm || 
-        escola.escola?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesEstado = !estadoFiltro || escola.uf === estadoFiltro;
-      const matchesCidade = !cidadeFiltro || escola.municipio === cidadeFiltro;
-      
-      return matchesSearch && matchesEstado && matchesCidade;
-    });
+    escolasParaMostrar = escolas || [];
   }
 
   return (
@@ -112,7 +106,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
             </div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
+        <PopoverContent className="w-full p-0 z-50" align="start">
           <Command>
             {mostrarTodasEscolas && (
               <CommandInput
@@ -121,7 +115,7 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
                 onValueChange={setSearchTerm}
               />
             )}
-            <CommandList>
+            <CommandList className="max-h-[300px]">
               {!mostrarTodasEscolas ? (
                 <>
                   {/* Mostrar escolas dos filhos */}
@@ -179,15 +173,15 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
                   </CommandGroup>
 
                   {/* Resultado da busca geral */}
-                  <CommandEmpty>
-                    {isLoading ? "Carregando..." : 
-                     searchTerm.length < 3 ? "Digite pelo menos 3 caracteres para buscar" :
-                     "Nenhuma escola encontrada."}
-                  </CommandEmpty>
-                  
-                  {searchTerm.length >= 3 && (
-                    <CommandGroup heading="Resultados da busca">
-                      {escolasParaMostrar?.map((escola) => (
+                  {searchTerm.length < 3 ? (
+                    <CommandEmpty>Digite pelo menos 3 caracteres para buscar</CommandEmpty>
+                  ) : isLoading ? (
+                    <CommandEmpty>Carregando escolas...</CommandEmpty>
+                  ) : escolasParaMostrar.length === 0 ? (
+                    <CommandEmpty>Nenhuma escola encontrada</CommandEmpty>
+                  ) : (
+                    <CommandGroup heading={`${escolasParaMostrar.length} escola(s) encontrada(s)`}>
+                      {escolasParaMostrar.map((escola) => (
                         <CommandItem
                           key={escola.codigo_inep}
                           onSelect={() => handleSelect(escola)}
@@ -200,9 +194,9 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
                             )}
                           />
                           <div className="flex flex-col">
-                            <span className="font-medium">{escola.escola}</span>
-                            <span className="text-sm text-muted-foreground">
-                              {escola.endereco} - {escola.municipio}/{escola.uf}
+                            <span className="font-medium text-sm">{escola.escola}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {escola.municipio}/{escola.uf}
                             </span>
                           </div>
                         </CommandItem>

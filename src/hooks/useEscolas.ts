@@ -27,11 +27,14 @@ export const useEscolas = (params?: UseEscolasParams) => {
         return [];
       }
 
+      console.log('Buscando escolas com parâmetros:', params);
+
+      // Selecionar apenas campos essenciais para melhor performance
       let query = supabase
         .from('escolas_inep')
-        .select('*')
+        .select('codigo_inep, escola, municipio, uf, endereco, categoria_administrativa')
         .order('escola')
-        .limit(100);
+        .limit(50); // Reduzir limite para melhor performance
 
       // Aplicar filtros se fornecidos
       if (params?.uf) {
@@ -53,11 +56,14 @@ export const useEscolas = (params?: UseEscolasParams) => {
         throw error;
       }
       
+      console.log('Escolas encontradas:', data?.length || 0);
+      console.log('Primeira escola:', data?.[0]);
+      
       return data as Escola[];
     },
     enabled: !!(params?.searchTerm && params.searchTerm.length >= 3),
     staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos (substituído cacheTime)
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 
   const buscarEscolas = async (nome: string, estado: string, cidade: string) => {
@@ -65,13 +71,15 @@ export const useEscolas = (params?: UseEscolasParams) => {
     
     setLoading(true);
     try {
+      console.log('Busca manual de escolas:', { nome, estado, cidade });
+
       let query = supabase
         .from('escolas_inep')
-        .select('*')
+        .select('codigo_inep, escola, municipio, uf, endereco, categoria_administrativa')
         .eq('uf', estado)
         .eq('municipio', cidade)
         .order('escola')
-        .limit(100);
+        .limit(50);
 
       if (nome) {
         query = query.ilike('escola', `%${nome}%`);
@@ -84,6 +92,7 @@ export const useEscolas = (params?: UseEscolasParams) => {
         return;
       }
 
+      console.log('Escolas encontradas (busca manual):', data?.length || 0);
       setEscolas(data || []);
     } catch (error) {
       console.error('Erro ao buscar escolas:', error);
@@ -121,6 +130,7 @@ export const useEscolas = (params?: UseEscolasParams) => {
   return {
     escolas: queryResult.data || escolas,
     isLoading: queryResult.isLoading,
+    error: queryResult.error,
     municipios,
     loading,
     loadingMunicipios,

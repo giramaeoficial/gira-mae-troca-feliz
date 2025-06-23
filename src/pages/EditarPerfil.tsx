@@ -159,6 +159,8 @@ const EditarPerfil = () => {
     }
 
     try {
+      console.log('Adicionando filho:', novoFilho);
+      
       const { data, error } = await supabase
         .from('filhos')
         .insert({
@@ -170,12 +172,31 @@ const EditarPerfil = () => {
           tamanho_calcados: novoFilho.tamanho_calcados || null,
           escola_id: novoFilho.escola_id
         })
-        .select()
+        .select(`
+          *,
+          escolas_inep!filhos_escola_id_fkey (
+            codigo_inep,
+            escola,
+            municipio,
+            uf,
+            endereco,
+            categoria_administrativa
+          )
+        `)
         .single();
 
       if (error) throw error;
 
-      setFilhosForm(prev => [...prev, data]);
+      console.log('Filho adicionado com sucesso:', data);
+
+      // Mapear a escola corretamente
+      const filhoComEscola = {
+        ...data,
+        escola: data.escolas_inep,
+        escolas_inep: data.escolas_inep
+      };
+
+      setFilhosForm(prev => [...prev, filhoComEscola]);
       setNovoFilho({
         nome: '',
         data_nascimento: '',
@@ -204,6 +225,8 @@ const EditarPerfil = () => {
 
   const handleSalvarFilho = async (filho: any, index: number) => {
     try {
+      console.log('Salvando filho:', filho);
+      
       const { error } = await supabase
         .from('filhos')
         .update({
@@ -217,6 +240,8 @@ const EditarPerfil = () => {
         .eq('id', filho.id);
 
       if (error) throw error;
+      
+      console.log('Filho salvo com sucesso');
       toast.success('Dados do filho salvos!');
     } catch (error) {
       console.error('Erro ao salvar filho:', error);
@@ -626,7 +651,11 @@ const EditarPerfil = () => {
                     <Label>Escola</Label>
                     <SchoolSelect
                       value={filho.escolas_inep}
-                      onChange={(escola) => handleFilhoChange(index, 'escola_id', escola?.codigo_inep || null)}
+                      onChange={(escola) => {
+                        console.log('Escola selecionada para filho:', escola);
+                        handleFilhoChange(index, 'escola_id', escola?.codigo_inep || null);
+                        handleFilhoChange(index, 'escolas_inep', escola);
+                      }}
                       estadoFiltro={enderecoForm.estado}
                       cidadeFiltro={enderecoForm.cidade}
                     />
@@ -709,7 +738,13 @@ const EditarPerfil = () => {
                   <Label>Escola</Label>
                   <SchoolSelect
                     value={null}
-                    onChange={(escola) => setNovoFilho(prev => ({ ...prev, escola_id: escola?.codigo_inep || null }))}
+                    onChange={(escola) => {
+                      console.log('Escola selecionada para novo filho:', escola);
+                      setNovoFilho(prev => ({ 
+                        ...prev, 
+                        escola_id: escola?.codigo_inep || null 
+                      }));
+                    }}
                     estadoFiltro={enderecoForm.estado}
                     cidadeFiltro={enderecoForm.cidade}
                   />
