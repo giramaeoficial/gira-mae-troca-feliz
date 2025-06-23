@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin } from 'lucide-react';
 import { useLocationFilters } from '@/hooks/useLocationFilters';
@@ -10,22 +10,29 @@ interface LocationFilterProps {
 }
 
 const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
-  const { locations, isLoading } = useLocationFilters();
+  const { 
+    locations, 
+    isLoading, 
+    selectedEstado, 
+    updateSelectedEstado, 
+    isLoadingCidades 
+  } = useLocationFilters();
 
   const handleEstadoChange = (estado: string) => {
-    onChange({ estado, cidade: value?.cidade || '' });
+    updateSelectedEstado(estado);
+    onChange({ estado, cidade: '' }); // Reset cidade quando estado muda
   };
 
   const handleCidadeChange = (cidade: string) => {
-    onChange({ estado: value?.estado || '', cidade });
+    onChange({ estado: value?.estado || selectedEstado, cidade });
   };
 
-  // Filtrar cidades baseado no estado selecionado
-  const availableCidades = React.useMemo(() => {
-    if (!value?.estado) return locations.cidades;
-    // Em uma implementação real, você filtraria as cidades pelo estado
-    return locations.cidades;
-  }, [value?.estado, locations.cidades]);
+  // Sincronizar estado interno com valor externo
+  useEffect(() => {
+    if (value?.estado && value.estado !== selectedEstado) {
+      updateSelectedEstado(value.estado);
+    }
+  }, [value?.estado, selectedEstado, updateSelectedEstado]);
 
   return (
     <div className="flex items-center gap-2">
@@ -49,21 +56,31 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
         </SelectContent>
       </Select>
 
-      <Select value={value?.cidade || ''} onValueChange={handleCidadeChange}>
+      <Select 
+        value={value?.cidade || ''} 
+        onValueChange={handleCidadeChange}
+        disabled={!value?.estado && !selectedEstado}
+      >
         <SelectTrigger className="w-40">
-          <SelectValue placeholder="Cidade" />
+          <SelectValue placeholder={
+            !value?.estado && !selectedEstado ? "Selecione UF primeiro" :
+            isLoadingCidades ? "Carregando..." :
+            "Cidade"
+          } />
         </SelectTrigger>
         <SelectContent>
-          {isLoading ? (
+          {isLoadingCidades ? (
             <SelectItem value="loading" disabled>Carregando...</SelectItem>
-          ) : availableCidades.length > 0 ? (
-            availableCidades.map(cidade => (
+          ) : locations.cidades.length > 0 ? (
+            locations.cidades.map(cidade => (
               <SelectItem key={cidade} value={cidade}>
                 {cidade}
               </SelectItem>
             ))
           ) : (
-            <SelectItem value="empty" disabled>Nenhuma cidade encontrada</SelectItem>
+            <SelectItem value="empty" disabled>
+              {!value?.estado && !selectedEstado ? "Selecione um estado primeiro" : "Nenhuma cidade encontrada"}
+            </SelectItem>
           )}
         </SelectContent>
       </Select>

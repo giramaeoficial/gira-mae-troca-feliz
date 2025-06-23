@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, MapPin } from 'lucide-react';
@@ -17,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useItensInteligentes } from '@/hooks/useItensInteligentes';
 import { useDebounce } from '@/hooks/useDebounce';
+import ManualLocationSelector from '@/components/shared/ManualLocationSelector';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
@@ -27,7 +27,13 @@ const FeedOptimized = () => {
   const [categoria, setCategoria] = useState('todas');
   const [ordem, setOrdem] = useState('recentes');
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [location, setLocation] = useState<{ estado: string; cidade: string; bairro?: string } | null>(null);
+  
+  // Estado para localização manual (temporária)
+  const [manualLocation, setManualLocation] = useState<{ estado: string; cidade: string; bairro?: string } | null>(null);
+  
+  // Estado padrão baseado no perfil
+  const [defaultLocation, setDefaultLocation] = useState<{ estado: string; cidade: string; bairro?: string } | null>(null);
+  
   const [filtrosAvancados, setFiltrosAvancados] = useState({
     mesmaEscola: false,
     mesmoBairro: false,
@@ -39,16 +45,20 @@ const FeedOptimized = () => {
   // Configurar localização padrão baseada no perfil
   useEffect(() => {
     if (profile?.cidade && profile?.estado) {
-      setLocation({
+      const profileLocation = {
         estado: profile.estado,
         cidade: profile.cidade,
         bairro: profile.bairro || undefined
-      });
+      };
+      setDefaultLocation(profileLocation);
       setShowLocationPrompt(false);
     } else if (user && !showLocationPrompt) {
       setShowLocationPrompt(true);
     }
   }, [profile, user, showLocationPrompt]);
+
+  // Determinar qual localização usar na busca
+  const location = manualLocation || defaultLocation;
 
   // Buscar itens inteligentes
   const { 
@@ -110,6 +120,17 @@ const FeedOptimized = () => {
     }
   };
 
+  const handleManualLocationChange = (newLocation: { estado: string; cidade: string } | null) => {
+    if (newLocation) {
+      setManualLocation({
+        estado: newLocation.estado,
+        cidade: newLocation.cidade
+      });
+    } else {
+      setManualLocation(null);
+    }
+  };
+
   const limparFiltros = () => {
     setBusca('');
     setCategoria('todas');
@@ -139,16 +160,14 @@ const FeedOptimized = () => {
       
       <main className="container mx-auto px-4 py-6">
         {/* Hero Section */}
-        {location && (
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-              Encontre Tesouros em {location.cidade}
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Descubra itens incríveis com filtros inteligentes
-            </p>
-          </div>
-        )}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
+            Encontre Tesouros {location?.cidade ? `em ${location.cidade}` : 'próximos'}
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Descubra itens incríveis com filtros inteligentes
+          </p>
+        </div>
 
         {/* Filtros principais em card */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
@@ -158,36 +177,56 @@ const FeedOptimized = () => {
               <h2 className="text-lg font-semibold text-gray-800">
                 Filtros Inteligentes
               </h2>
-              {location?.cidade && (
-                <p className="text-sm text-gray-500 flex items-center mt-1">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  {location.cidade}{location.bairro ? `, ${location.bairro}` : ''}
-                  {filtrosAvancados.mesmaEscola && (
-                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                      Mesma escola
+              <div className="flex items-center gap-2 mt-1">
+                {location?.cidade && (
+                  <div className="flex items-center text-sm text-gray-500">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    <span>
+                      {location.cidade}{location.bairro ? `, ${location.bairro}` : ''}
+                      {manualLocation && (
+                        <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs">
+                          Local temporário
+                        </span>
+                      )}
                     </span>
-                  )}
-                  {filtrosAvancados.mesmoBairro && (
-                    <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-                      Mesmo bairro
-                    </span>
-                  )}
-                  {filtrosAvancados.paraFilhos && (
-                    <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
-                      Para meus filhos
-                    </span>
-                  )}
-                </p>
-              )}
+                  </div>
+                )}
+                
+                {/* Badges de filtros ativos */}
+                {filtrosAvancados.mesmaEscola && (
+                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                    Mesma escola
+                  </span>
+                )}
+                {filtrosAvancados.mesmoBairro && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                    Mesmo bairro
+                  </span>
+                )}
+                {filtrosAvancados.paraFilhos && (
+                  <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                    Para meus filhos
+                  </span>
+                )}
+              </div>
             </div>
-            <Button
-              onClick={() => navigate('/publicar')}
-              size="sm"
-              className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Publicar
-            </Button>
+            
+            <div className="flex items-center gap-2">
+              {/* Seletor manual de localização */}
+              <ManualLocationSelector
+                currentLocation={manualLocation}
+                onLocationChange={handleManualLocationChange}
+              />
+              
+              <Button
+                onClick={() => navigate('/publicar')}
+                size="sm"
+                className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Publicar
+              </Button>
+            </div>
           </div>
 
           {/* Barra de busca */}
@@ -245,7 +284,7 @@ const FeedOptimized = () => {
         </div>
 
         {/* Prompt de localização */}
-        {showLocationPrompt && (
+        {showLocationPrompt && !location && (
           <LocationPrompt
             onConfigureClick={handleConfigureLocation}
             onDismiss={() => setShowLocationPrompt(false)}
@@ -284,18 +323,18 @@ const FeedOptimized = () => {
               filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
               "Tente remover alguns filtros para ver mais opções" :
               location?.cidade ? 
-                "Tente expandir sua busca ou verifique outras cidades próximas" :
+                "Tente expandir sua busca ou selecionar outra localização" :
                 "Configure sua localização para ver itens próximos"
             }
             actionLabel={
               filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
                 "Limpar filtros" :
-                !location?.cidade ? "Configurar localização" : "Limpar filtros"
+                !location?.cidade ? "Selecionar localização" : "Limpar filtros"
             }
             onAction={
               filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
                 limparFiltros :
-                !location?.cidade ? handleConfigureLocation : limparFiltros
+                !location?.cidade ? () => setShowLocationPrompt(true) : limparFiltros
             }
           />
         )}

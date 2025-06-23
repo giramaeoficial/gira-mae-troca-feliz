@@ -76,12 +76,26 @@ const validateForm = (formData: FormData): { [key: string]: string } => {
     errors.imagens = "Pelo menos uma imagem é obrigatória.";
   }
 
-  // Validação de endereço
-  if (formData.endereco_tipo === 'escola' && !formData.escola_selecionada) {
-    errors.endereco = "Selecione uma escola.";
-  }
+  return errors;
+};
 
-  if (formData.endereco_tipo === 'outro') {
+const validateAddress = (formData: FormData, userAddress: any): { [key: string]: string } => {
+  const errors: { [key: string]: string } = {};
+
+  // Validação específica para cada tipo de endereço
+  if (formData.endereco_tipo === 'meu') {
+    if (!userAddress) {
+      errors.endereco = "Você precisa cadastrar seu endereço principal no perfil para usar esta opção.";
+    } else if (!userAddress.cep || !userAddress.endereco || !userAddress.cidade || !userAddress.estado) {
+      errors.endereco = "Seu endereço principal está incompleto. Complete seu perfil primeiro.";
+    }
+  } else if (formData.endereco_tipo === 'escola') {
+    if (!formData.escola_selecionada) {
+      errors.endereco = "Selecione uma escola.";
+    } else if (!formData.escola_selecionada.municipio || !formData.escola_selecionada.uf) {
+      errors.endereco = "A escola selecionada não possui dados de localização completos.";
+    }
+  } else if (formData.endereco_tipo === 'outro') {
     const endereco = formData.endereco_personalizado;
     if (!endereco.cep || !endereco.endereco || !endereco.cidade || !endereco.estado) {
       errors.endereco = "Preencha todos os campos obrigatórios do endereço.";
@@ -162,10 +176,18 @@ const PublicarItem = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validateForm(formData);
-    setErrors(validationErrors);
+    
+    // Validação básica
+    const basicErrors = validateForm(formData);
+    
+    // Validação de endereço
+    const addressErrors = validateAddress(formData, userAddress);
+    
+    // Combinar todos os erros
+    const allErrors = { ...basicErrors, ...addressErrors };
+    setErrors(allErrors);
 
-    if (Object.keys(validationErrors).length === 0) {
+    if (Object.keys(allErrors).length === 0) {
       try {
         const categoriaSelecionada = configuracoes?.find(c => c.id === formData.categoria_id);
         
@@ -189,10 +211,21 @@ const PublicarItem = () => {
           };
         } else if (formData.endereco_tipo === 'escola' && formData.escola_selecionada) {
           const escola = formData.escola_selecionada;
+          
+          // Correção: Melhor extração do bairro e tratamento de dados da escola
+          let bairro = '';
+          if (escola.endereco) {
+            // Tentar extrair bairro do endereço da escola de forma mais robusta
+            const enderecoPartes = escola.endereco.split(',').map(parte => parte.trim());
+            if (enderecoPartes.length > 1) {
+              bairro = enderecoPartes[1];
+            }
+          }
+          
           enderecoData = {
             escola_id: escola.codigo_inep,
-            endereco_rua: escola.endereco,
-            endereco_bairro: escola.endereco?.split(',')[1]?.trim() || '',
+            endereco_rua: escola.endereco || '',
+            endereco_bairro: bairro,
             endereco_cidade: escola.municipio,
             endereco_estado: escola.uf,
             ponto_referencia: `Escola: ${escola.escola}`
