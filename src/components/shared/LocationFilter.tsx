@@ -2,7 +2,7 @@
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin } from 'lucide-react';
-import { ESTADOS_BRASIL, CIDADES_PRINCIPAIS } from '@/constants/estados';
+import { useLocationFilters } from '@/hooks/useLocationFilters';
 
 interface LocationFilterProps {
   value: { estado: string; cidade: string } | null;
@@ -10,6 +10,8 @@ interface LocationFilterProps {
 }
 
 const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
+  const { locations, isLoading } = useLocationFilters();
+
   const handleEstadoChange = (estado: string) => {
     onChange({ estado, cidade: value?.cidade || '' });
   };
@@ -17,6 +19,13 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
   const handleCidadeChange = (cidade: string) => {
     onChange({ estado: value?.estado || '', cidade });
   };
+
+  // Filtrar cidades baseado no estado selecionado
+  const availableCidades = React.useMemo(() => {
+    if (!value?.estado) return locations.cidades;
+    // Em uma implementação real, você filtraria as cidades pelo estado
+    return locations.cidades;
+  }, [value?.estado, locations.cidades]);
 
   return (
     <div className="flex items-center gap-2">
@@ -26,11 +35,17 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
           <SelectValue placeholder="UF" />
         </SelectTrigger>
         <SelectContent>
-          {ESTADOS_BRASIL.map(estado => (
-            <SelectItem key={estado.sigla} value={estado.sigla}>
-              {estado.sigla}
-            </SelectItem>
-          ))}
+          {isLoading ? (
+            <SelectItem value="loading" disabled>Carregando...</SelectItem>
+          ) : locations.estados.length > 0 ? (
+            locations.estados.map(estado => (
+              <SelectItem key={estado} value={estado}>
+                {estado}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="empty" disabled>Nenhum estado encontrado</SelectItem>
+          )}
         </SelectContent>
       </Select>
 
@@ -39,11 +54,17 @@ const LocationFilter: React.FC<LocationFilterProps> = ({ value, onChange }) => {
           <SelectValue placeholder="Cidade" />
         </SelectTrigger>
         <SelectContent>
-          {CIDADES_PRINCIPAIS.map(cidade => (
-            <SelectItem key={cidade} value={cidade}>
-              {cidade}
-            </SelectItem>
-          ))}
+          {isLoading ? (
+            <SelectItem value="loading" disabled>Carregando...</SelectItem>
+          ) : availableCidades.length > 0 ? (
+            availableCidades.map(cidade => (
+              <SelectItem key={cidade} value={cidade}>
+                {cidade}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="empty" disabled>Nenhuma cidade encontrada</SelectItem>
+          )}
         </SelectContent>
       </Select>
     </div>

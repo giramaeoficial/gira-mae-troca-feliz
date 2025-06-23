@@ -7,7 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Filter, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { Filter, X, School, Home, Users } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 
 interface AdvancedFiltersProps {
   filters: {
@@ -19,6 +24,16 @@ interface AdvancedFiltersProps {
     tamanho?: string;
     valorMin?: string;
     valorMax?: string;
+    estado?: string;
+    cidade?: string;
+    bairro?: string;
+    mesmaEscola?: boolean;
+    mesmoBairro?: boolean;
+    paraFilhos?: boolean;
+    proximidade?: {
+      enabled: boolean;
+      maxDistance: number;
+    };
   };
   onFilterChange: (filters: any) => void;
   onSearch?: () => void;
@@ -31,13 +46,19 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   onSearch,
   location
 }) => {
+  const { user } = useAuth();
+  const { profile } = useProfile();
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState({
     ...filters,
     estadoConservacao: filters.estadoConservacao || '',
     tamanho: filters.tamanho || '',
     valorMin: filters.valorMin || '',
-    valorMax: filters.valorMax || ''
+    valorMax: filters.valorMax || '',
+    mesmaEscola: filters.mesmaEscola || false,
+    mesmoBairro: filters.mesmoBairro || false,
+    paraFilhos: filters.paraFilhos || false,
+    proximidade: filters.proximidade || { enabled: false, maxDistance: 10 }
   });
 
   const categorias = [
@@ -50,8 +71,18 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   ];
 
   const updateLocalFilter = (key: string, value: any) => {
-    const newFilters = { ...localFilters, [key]: value };
-    setLocalFilters(newFilters);
+    if (key.includes('.')) {
+      const [parent, child] = key.split('.');
+      setLocalFilters(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent as keyof typeof prev],
+          [child]: value
+        }
+      }));
+    } else {
+      setLocalFilters(prev => ({ ...prev, [key]: value }));
+    }
   };
 
   const applyFilters = () => {
@@ -69,16 +100,22 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
       valorMin: '',
       valorMax: '',
       tamanho: '',
-      estadoConservacao: ''
+      estadoConservacao: '',
+      mesmaEscola: false,
+      mesmoBairro: false,
+      paraFilhos: false,
+      proximidade: { enabled: false, maxDistance: 10 }
     };
     setLocalFilters(clearedFilters);
     onFilterChange(clearedFilters);
   };
 
   const getActiveFiltersCount = () => {
-    return Object.values(localFilters).filter(value => 
-      value && value !== '' && value !== false && value !== 'todas' && value !== 'recentes'
-    ).length;
+    return Object.values(localFilters).filter(value => {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'object' && value?.enabled) return true;
+      return value && value !== '' && value !== false && value !== 'todas' && value !== 'recentes';
+    }).length;
   };
 
   return (
@@ -100,6 +137,80 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
         </SheetHeader>
         
         <div className="space-y-6 py-6">
+          {/* Filtros de Proximidade */}
+          {user && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Proximidade
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Apenas itens próximos</Label>
+                  <Switch 
+                    checked={localFilters.proximidade.enabled}
+                    onCheckedChange={(checked) => 
+                      updateLocalFilter('proximidade.enabled', checked)
+                    }
+                  />
+                </div>
+                
+                {localFilters.proximidade.enabled && (
+                  <div>
+                    <Label>Distância máxima: {localFilters.proximidade.maxDistance}km</Label>
+                    <Slider
+                      value={[localFilters.proximidade.maxDistance]}
+                      onValueChange={([value]) => 
+                        updateLocalFilter('proximidade.maxDistance', value)
+                      }
+                      max={50}
+                      min={1}
+                      step={1}
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+                
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={localFilters.mesmaEscola}
+                      onCheckedChange={(checked) => 
+                        updateLocalFilter('mesmaEscola', checked)
+                      }
+                    />
+                    <School className="w-4 h-4" />
+                    Mesma escola dos meus filhos
+                  </Label>
+                  
+                  <Label className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={localFilters.mesmoBairro}
+                      onCheckedChange={(checked) => 
+                        updateLocalFilter('mesmoBairro', checked)
+                      }
+                    />
+                    <Home className="w-4 h-4" />
+                    Mesmo bairro que eu
+                  </Label>
+                  
+                  <Label className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={localFilters.paraFilhos}
+                      onCheckedChange={(checked) => 
+                        updateLocalFilter('paraFilhos', checked)
+                      }
+                    />
+                    <Users className="w-4 h-4" />
+                    Itens que servem para meus filhos
+                  </Label>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Produto</CardTitle>
