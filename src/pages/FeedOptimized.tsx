@@ -13,7 +13,7 @@ import { LocationPrompt } from '@/components/shared/LocationPrompt';
 import AdvancedFilters from '@/components/shared/AdvancedFilters';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { useItensProximos } from '@/hooks/useItensProximos';
+import { useItensInteligentes } from '@/hooks/useItensInteligentes';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const FeedOptimized = () => {
@@ -26,11 +26,7 @@ const FeedOptimized = () => {
   const [ordem, setOrdem] = useState('recentes');
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [location, setLocation] = useState<{ estado: string; cidade: string; bairro?: string } | null>(null);
-  const [filters, setFilters] = useState({
-    busca: '',
-    categoria: 'todas',
-    ordem: 'recentes',
-    escola: null,
+  const [filtrosAvancados, setFiltrosAvancados] = useState({
     mesmaEscola: false,
     mesmoBairro: false,
     paraFilhos: false,
@@ -52,31 +48,20 @@ const FeedOptimized = () => {
     }
   }, [profile, user, showLocationPrompt]);
 
-  // Sync local state with filters
-  useEffect(() => {
-    setFilters(prev => ({
-      ...prev,
-      busca,
-      categoria,
-      ordem
-    }));
-  }, [busca, categoria, ordem]);
-
-  // Buscar itens próximos
+  // Buscar itens inteligentes
   const { 
     data: itens = [], 
     isLoading, 
     error,
     refetch 
-  } = useItensProximos({
+  } = useItensInteligentes({
     location,
-    filters: {
-      mesmaEscola: filters.mesmaEscola,
-      mesmoBairro: filters.mesmoBairro,
-      paraFilhos: filters.paraFilhos,
-      categoria: categoria !== 'todas' ? categoria : undefined,
-      ordem
-    }
+    mesmaEscola: filtrosAvancados.mesmaEscola,
+    mesmoBairro: filtrosAvancados.mesmoBairro,
+    paraFilhos: filtrosAvancados.paraFilhos,
+    categoria: categoria !== 'todas' ? categoria : undefined,
+    ordem,
+    busca: debouncedBusca
   });
 
   // Filtrar por busca local (mais rápido que refazer query)
@@ -98,9 +83,20 @@ const FeedOptimized = () => {
   };
 
   const handleFilterChange = (newFilters: any) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    console.log('🔧 Filtros alterados:', newFilters);
     
-    // Update local state for immediate UI feedback
+    // Atualizar filtros avançados
+    if (newFilters.mesmaEscola !== undefined) {
+      setFiltrosAvancados(prev => ({ ...prev, mesmaEscola: newFilters.mesmaEscola }));
+    }
+    if (newFilters.mesmoBairro !== undefined) {
+      setFiltrosAvancados(prev => ({ ...prev, mesmoBairro: newFilters.mesmoBairro }));
+    }
+    if (newFilters.paraFilhos !== undefined) {
+      setFiltrosAvancados(prev => ({ ...prev, paraFilhos: newFilters.paraFilhos }));
+    }
+    
+    // Atualizar filtros básicos
     if (newFilters.categoria !== undefined) {
       setCategoria(newFilters.categoria);
     }
@@ -110,6 +106,17 @@ const FeedOptimized = () => {
     if (newFilters.busca !== undefined) {
       setBusca(newFilters.busca);
     }
+  };
+
+  const limparFiltros = () => {
+    setBusca('');
+    setCategoria('todas');
+    setOrdem('recentes');
+    setFiltrosAvancados({
+      mesmaEscola: false,
+      mesmoBairro: false,
+      paraFilhos: false,
+    });
   };
 
   if (!user) {
@@ -135,6 +142,21 @@ const FeedOptimized = () => {
                 <p className="text-sm text-gray-500 flex items-center mt-1">
                   <MapPin className="w-3 h-3 mr-1" />
                   {location.cidade}{location.bairro ? `, ${location.bairro}` : ''}
+                  {filtrosAvancados.mesmaEscola && (
+                    <span className="ml-2 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                      Mesma escola
+                    </span>
+                  )}
+                  {filtrosAvancados.mesmoBairro && (
+                    <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                      Mesmo bairro
+                    </span>
+                  )}
+                  {filtrosAvancados.paraFilhos && (
+                    <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                      Para meus filhos
+                    </span>
+                  )}
                 </p>
               )}
             </div>
@@ -187,7 +209,15 @@ const FeedOptimized = () => {
             </Select>
 
             <AdvancedFilters
-              filters={filters}
+              filters={{
+                busca,
+                categoria,
+                ordem,
+                escola: null,
+                mesmaEscola: filtrosAvancados.mesmaEscola,
+                mesmoBairro: filtrosAvancados.mesmoBairro,
+                paraFilhos: filtrosAvancados.paraFilhos,
+              }}
               onFilterChange={handleFilterChange}
               location={location}
             />
@@ -236,26 +266,22 @@ const FeedOptimized = () => {
                 `Nenhum item encontrado em ${location.cidade}` : 
                 "Nenhum item encontrado"
               }
-              description={location?.cidade ? 
-                "Tente expandir sua busca ou verifique outras cidades próximas" :
-                "Configure sua localização para ver itens próximos"
+              description={
+                filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
+                "Tente remover alguns filtros para ver mais opções" :
+                location?.cidade ? 
+                  "Tente expandir sua busca ou verifique outras cidades próximas" :
+                  "Configure sua localização para ver itens próximos"
               }
               actionLabel={
-                !location?.cidade ? "Configurar localização" : "Limpar filtros"
+                filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
+                  "Limpar filtros" :
+                  !location?.cidade ? "Configurar localização" : "Limpar filtros"
               }
               onAction={
-                !location?.cidade ? handleConfigureLocation : () => {
-                  setBusca('');
-                  setCategoria('todas');
-                  setFilters(prev => ({ 
-                    ...prev, 
-                    mesmaEscola: false, 
-                    mesmoBairro: false, 
-                    paraFilhos: false,
-                    busca: '',
-                    categoria: 'todas'
-                  }));
-                }
+                filtrosAvancados.mesmaEscola || filtrosAvancados.mesmoBairro || filtrosAvancados.paraFilhos ?
+                  limparFiltros :
+                  !location?.cidade ? handleConfigureLocation : limparFiltros
               }
             />
           </div>

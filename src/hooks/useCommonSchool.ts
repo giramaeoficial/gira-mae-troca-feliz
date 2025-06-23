@@ -3,36 +3,43 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-export const useCommonSchool = (itemOwnerId: string) => {
+export const useCommonSchool = (itemOwnerUserId: string) => {
   const { user } = useAuth();
 
-  const { data: hasCommonSchool } = useQuery({
-    queryKey: ['common-school', user?.id, itemOwnerId],
+  const { data: hasCommonSchool = false } = useQuery({
+    queryKey: ['common-school', user?.id, itemOwnerUserId],
     queryFn: async () => {
-      if (!user?.id || user.id === itemOwnerId) return false;
+      if (!user?.id || user.id === itemOwnerUserId) {
+        return false;
+      }
 
       // Buscar escolas dos filhos do usuário atual
-      const { data: myKidsSchools } = await supabase
+      const { data: minhasEscolas } = await supabase
         .from('filhos')
         .select('escola_id')
         .eq('mae_id', user.id)
         .not('escola_id', 'is', null);
 
-      if (!myKidsSchools?.length) return false;
-
-      const mySchoolIds = myKidsSchools.map(f => f.escola_id);
-
-      // Verificar se o dono do item tem filhos na mesma escola
-      const { data: ownerKidsSchools } = await supabase
+      // Buscar escolas dos filhos do dono do item
+      const { data: escolasDoItem } = await supabase
         .from('filhos')
         .select('escola_id')
-        .eq('mae_id', itemOwnerId)
-        .in('escola_id', mySchoolIds);
+        .eq('mae_id', itemOwnerUserId)
+        .not('escola_id', 'is', null);
 
-      return (ownerKidsSchools?.length || 0) > 0;
+      if (!minhasEscolas?.length || !escolasDoItem?.length) {
+        return false;
+      }
+
+      const minhasEscolasIds = minhasEscolas.map(f => f.escola_id);
+      const escolasDoItemIds = escolasDoItem.map(f => f.escola_id);
+
+      // Verificar se há interseção
+      return minhasEscolasIds.some(id => escolasDoItemIds.includes(id));
     },
-    enabled: !!user?.id && !!itemOwnerId && user.id !== itemOwnerId
+    enabled: !!user?.id && !!itemOwnerUserId && user.id !== itemOwnerUserId,
+    staleTime: 1000 * 60 * 5, // 5 minutos
   });
 
-  return { hasCommonSchool: hasCommonSchool || false };
+  return { hasCommonSchool };
 };
