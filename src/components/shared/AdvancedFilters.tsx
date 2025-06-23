@@ -13,15 +13,82 @@ import {
 } from "@/components/ui/collapsible";
 import { useFeedFilters } from '@/contexts/FeedFiltersContext';
 
-interface AdvancedFiltersProps {
+// Interface para uso com props (Feed.tsx)
+interface AdvancedFiltersWithProps {
+  filters: {
+    busca: string;
+    categoria: string;
+    ordem: string;
+    escola: any;
+  };
+  onFilterChange: (filters: any) => void;
+  onSearch: () => void;
+  location: { estado: string; cidade: string } | null;
+}
+
+// Interface para uso com contexto (FeedOptimized.tsx)
+interface AdvancedFiltersWithContext {
   onSearch?: () => void;
 }
 
-const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo(({ onSearch }) => {
-  const { filters, updateFilter, updateFilters, resetFilters, getActiveFiltersCount } = useFeedFilters();
+type AdvancedFiltersProps = AdvancedFiltersWithProps | AdvancedFiltersWithContext;
+
+const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo((props) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Verificar se está usando contexto ou props
+  const isUsingContext = !('filters' in props);
+  
+  // Usar contexto se disponível, senão usar props
+  let filters, updateFilter, updateFilters, resetFilters, getActiveFiltersCount;
+  
+  if (isUsingContext) {
+    const contextData = useFeedFilters();
+    filters = contextData.filters;
+    updateFilter = contextData.updateFilter;
+    updateFilters = contextData.updateFilters;
+    resetFilters = contextData.resetFilters;
+    getActiveFiltersCount = contextData.getActiveFiltersCount;
+  } else {
+    // Usar props para compatibilidade com Feed.tsx
+    const propsData = props as AdvancedFiltersWithProps;
+    filters = {
+      busca: propsData.filters.busca,
+      categoria: propsData.filters.categoria,
+      ordem: propsData.filters.ordem,
+      mesmaEscola: false,
+      mesmoBairro: false,
+      paraFilhos: false,
+      apenasFavoritos: false,
+      apenasSeguidoras: false,
+      location: propsData.location,
+    };
+    updateFilter = (key: string, value: any) => {
+      if (key === 'busca' || key === 'categoria' || key === 'ordem') {
+        propsData.onFilterChange({ ...propsData.filters, [key]: value });
+      }
+    };
+    updateFilters = (updates: any) => {
+      propsData.onFilterChange({ ...propsData.filters, ...updates });
+    };
+    resetFilters = () => {
+      propsData.onFilterChange({
+        busca: '',
+        categoria: 'todas',
+        ordem: 'recentes',
+        escola: null
+      });
+    };
+    getActiveFiltersCount = () => {
+      let count = 0;
+      if (propsData.filters.categoria !== 'todas') count++;
+      if (propsData.filters.escola) count++;
+      return count;
+    };
+  }
 
   const activeFiltersCount = getActiveFiltersCount();
+  const onSearch = 'onSearch' in props ? props.onSearch : undefined;
 
   return (
     <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-sm mb-4">
@@ -71,110 +138,114 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo(({ onSearch }) => {
           </Select>
         </div>
 
-        {/* Filtros especiais - destaque mobile */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant={filters.apenasFavoritos ? "default" : "outline"}
-            size="sm"
-            onClick={() => updateFilter('apenasFavoritos', !filters.apenasFavoritos)}
-            className="h-10 text-xs font-medium"
-          >
-            <Heart className={`w-4 h-4 mr-2 ${filters.apenasFavoritos ? 'fill-current' : ''}`} />
-            Favoritos
-          </Button>
-
-          <Button
-            variant={filters.apenasSeguidoras ? "default" : "outline"}
-            size="sm"
-            onClick={() => updateFilter('apenasSeguidoras', !filters.apenasSeguidoras)}
-            className="h-10 text-xs font-medium"
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Seguidas
-          </Button>
-        </div>
-
-        {/* Filtros avançados - colapsáveis */}
-        <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  Filtros Avançados
-                </span>
-                {activeFiltersCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {activeFiltersCount}
-                  </Badge>
-                )}
-              </div>
-              <span className="text-xs text-gray-500">
-                {isExpanded ? 'Ocultar' : 'Mostrar'}
-              </span>
+        {/* Filtros especiais - apenas se usando contexto */}
+        {isUsingContext && (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={filters.apenasFavoritos ? "default" : "outline"}
+              size="sm"
+              onClick={() => updateFilter('apenasFavoritos', !filters.apenasFavoritos)}
+              className="h-10 text-xs font-medium"
+            >
+              <Heart className={`w-4 h-4 mr-2 ${filters.apenasFavoritos ? 'fill-current' : ''}`} />
+              Favoritos
             </Button>
-          </CollapsibleTrigger>
-          
-          <CollapsibleContent className="space-y-3 mt-3">
-            {/* Filtros de localização */}
-            {filters.location && (
+
+            <Button
+              variant={filters.apenasSeguidoras ? "default" : "outline"}
+              size="sm"
+              onClick={() => updateFilter('apenasSeguidoras', !filters.apenasSeguidoras)}
+              className="h-10 text-xs font-medium"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Seguidas
+            </Button>
+          </div>
+        )}
+
+        {/* Filtros avançados - colapsáveis - apenas se usando contexto */}
+        {isUsingContext && (
+          <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    Filtros Avançados
+                  </span>
+                  {activeFiltersCount > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {activeFiltersCount}
+                    </Badge>
+                  )}
+                </div>
+                <span className="text-xs text-gray-500">
+                  {isExpanded ? 'Ocultar' : 'Mostrar'}
+                </span>
+              </Button>
+            </CollapsibleTrigger>
+            
+            <CollapsibleContent className="space-y-3 mt-3">
+              {/* Filtros de localização */}
+              {filters.location && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                    <MapPin className="w-4 h-4" />
+                    <span>Filtros de localização</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-2">
+                    <Button
+                      variant={filters.mesmoBairro ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => updateFilter('mesmoBairro', !filters.mesmoBairro)}
+                      className="justify-start h-10"
+                      disabled={!filters.location.bairro}
+                    >
+                      <MapPin className="w-4 h-4 mr-2" />
+                      Mesmo bairro {filters.location.bairro && `(${filters.location.bairro})`}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Filtros de escola */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>Filtros de localização</span>
+                  <School className="w-4 h-4" />
+                  <span>Filtros de escola</span>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-2">
-                  <Button
-                    variant={filters.mesmoBairro ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => updateFilter('mesmoBairro', !filters.mesmoBairro)}
-                    className="justify-start h-10"
-                    disabled={!filters.location.bairro}
-                  >
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Mesmo bairro {filters.location.bairro && `(${filters.location.bairro})`}
-                  </Button>
+                <Button
+                  variant={filters.mesmaEscola ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => updateFilter('mesmaEscola', !filters.mesmaEscola)}
+                  className="justify-start h-10 w-full"
+                >
+                  <School className="w-4 h-4 mr-2" />
+                  Mesma escola
+                </Button>
+              </div>
+
+              {/* Filtros personalizados */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                  <Filter className="w-4 h-4" />
+                  <span>Filtros personalizados</span>
                 </div>
+                
+                <Button
+                  variant={filters.paraFilhos ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => updateFilter('paraFilhos', !filters.paraFilhos)}
+                  className="justify-start h-10 w-full"
+                >
+                  Para meus filhos
+                </Button>
               </div>
-            )}
-
-            {/* Filtros de escola */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                <School className="w-4 h-4" />
-                <span>Filtros de escola</span>
-              </div>
-              
-              <Button
-                variant={filters.mesmaEscola ? "default" : "outline"}
-                size="sm"
-                onClick={() => updateFilter('mesmaEscola', !filters.mesmaEscola)}
-                className="justify-start h-10 w-full"
-              >
-                <School className="w-4 h-4 mr-2" />
-                Mesma escola
-              </Button>
-            </div>
-
-            {/* Filtros personalizados */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                <Filter className="w-4 h-4" />
-                <span>Filtros personalizados</span>
-              </div>
-              
-              <Button
-                variant={filters.paraFilhos ? "default" : "outline"}
-                size="sm"
-                onClick={() => updateFilter('paraFilhos', !filters.paraFilhos)}
-                className="justify-start h-10 w-full"
-              >
-                Para meus filhos
-              </Button>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
 
         {/* Botões de ação */}
         <div className="flex gap-2 pt-2">
@@ -199,8 +270,8 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo(({ onSearch }) => {
           )}
         </div>
 
-        {/* Tags de filtros ativos */}
-        {activeFiltersCount > 0 && (
+        {/* Tags de filtros ativos - apenas se usando contexto */}
+        {isUsingContext && activeFiltersCount > 0 && (
           <div className="flex flex-wrap gap-2 pt-2 border-t">
             {filters.apenasFavoritos && (
               <Badge variant="secondary" className="text-xs">
