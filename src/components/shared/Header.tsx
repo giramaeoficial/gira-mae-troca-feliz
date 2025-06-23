@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Menu, Sparkles, MessageSquare } from 'lucide-react';
+import { Bell, Search, Menu, Sparkles, MessageSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,7 +15,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import DesktopNav from './DesktopNav';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onSearch?: (term: string) => void;
+  searchPlaceholder?: string;
+  showSearch?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ 
+  onSearch, 
+  searchPlaceholder = "Buscar...", 
+  showSearch = false 
+}) => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
 
@@ -25,7 +36,7 @@ const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          {/* LOGOTIPO CORRIGIDO (com fonte e tamanho ajustados) */}
+          {/* AJUSTE 1: LOGOTIPO CORRETO APLICADO */}
           <Link to="/feed" className="flex items-center space-x-2 group">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -92,7 +103,7 @@ const Header: React.FC = () => {
                       <Link to="/perfil/editar">Editar</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="text-red-500 focus:bg-red-50 focus:text-red-600">
+                    <DropdownMenuItem onClick={() => signOut()} className="text-red-500 focus:bg-red-50 focus:text-red-600">
                       Sair
                     </DropdownMenuItem>
                   </DropdownMenuContent>
