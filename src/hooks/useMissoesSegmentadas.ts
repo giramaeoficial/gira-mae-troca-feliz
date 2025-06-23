@@ -30,7 +30,7 @@ export interface MissaoSegmentada {
   elegivel?: boolean;
 }
 
-interface EventoAcao {
+export interface EventoAcao {
   id: string;
   tipo_evento: string;
   parametros: {
@@ -41,7 +41,7 @@ interface EventoAcao {
   };
 }
 
-interface ResultadoColeta {
+export interface ResultadoColeta {
   sucesso: boolean;
   girinhas_recebidas: number;
 }
@@ -132,8 +132,17 @@ export const useMissoesSegmentadas = () => {
 
       if (!missao?.acoes_eventos || !Array.isArray(missao.acoes_eventos)) return null;
 
-      const evento = (missao.acoes_eventos as EventoAcao[]).find((e) => e.id === eventoId);
-      return evento;
+      // Converter Json para EventoAcao[] com verificação de tipo
+      const eventos = (missao.acoes_eventos as unknown[]).filter(
+        (e): e is EventoAcao => 
+          typeof e === 'object' && 
+          e !== null && 
+          'id' in e && 
+          'tipo_evento' in e
+      );
+
+      const evento = eventos.find((e) => e.id === eventoId);
+      return evento || null;
     },
     onSuccess: (evento) => {
       if (!evento) return;
@@ -188,7 +197,13 @@ export const useMissoesSegmentadas = () => {
       });
 
       if (error) throw error;
-      return data as ResultadoColeta;
+      
+      // Converter Json para ResultadoColeta com verificação de tipo
+      if (typeof data === 'object' && data !== null && 'sucesso' in data && 'girinhas_recebidas' in data) {
+        return data as ResultadoColeta;
+      }
+      
+      throw new Error('Resposta inválida do servidor');
     },
     onSuccess: (data, missaoId) => {
       if (data.sucesso) {
