@@ -1,4 +1,3 @@
-
 export type NotificationType = 
   | 'nova_mensagem'
   | 'item_reservado' 
@@ -8,7 +7,9 @@ export type NotificationType =
   | 'girinhas_expirando'
   | 'girinhas_recebidas'
   | 'missao_completada'
-  | 'sistema';
+  | 'sistema'
+  | 'boas_vindas'
+  | 'item_disponivel';
 
 export type NotificationChannel = 'push' | 'email' | 'in_app';
 

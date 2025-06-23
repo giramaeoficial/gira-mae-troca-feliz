@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Notification, NotificationPreferences } from '@/types/notifications';
+import { Notification, NotificationPreferences, NotificationType } from '@/types/notifications';
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -65,8 +65,15 @@ export const useNotifications = () => {
         return;
       }
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
+      // Type casting para garantir compatibilidade
+      const typedNotifications: Notification[] = (data || []).map(item => ({
+        ...item,
+        type: item.type as NotificationType,
+        data: item.data as Record<string, any>
+      }));
+
+      setNotifications(typedNotifications);
+      setUnreadCount(typedNotifications.filter(n => !n.read).length);
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
     } finally {
@@ -200,7 +207,11 @@ export const useNotifications = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
-        const newNotification = payload.new as Notification;
+        const newNotification: Notification = {
+          ...payload.new,
+          type: payload.new.type as NotificationType,
+          data: payload.new.data as Record<string, any>
+        } as Notification;
         
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
@@ -220,7 +231,11 @@ export const useNotifications = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
-        const updatedNotification = payload.new as Notification;
+        const updatedNotification: Notification = {
+          ...payload.new,
+          type: payload.new.type as NotificationType,
+          data: payload.new.data as Record<string, any>
+        } as Notification;
         
         setNotifications(prev => 
           prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)

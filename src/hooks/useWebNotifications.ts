@@ -53,7 +53,7 @@ export const useWebNotifications = () => {
 
     await service.enviarNotificacao({
       userId: user.id,
-      templateType: 'boas_vindas',
+      templateType: 'sistema', // Mudança aqui
       variables: { nome: nomeUsuario },
       channels: ['push', 'in_app']
     });
@@ -105,7 +105,7 @@ export const useWebNotifications = () => {
   ) => {
     await service.enviarNotificacao({
       userId: usuarioId,
-      templateType: 'item_disponivel',
+      templateType: 'sistema', // Mudança aqui
       variables: {
         item_titulo: itemTitulo,
         valor: valor
