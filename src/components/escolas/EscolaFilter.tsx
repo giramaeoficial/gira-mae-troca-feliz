@@ -6,10 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useEscolas } from '@/hooks/useEscolas';
-import { Tables } from '@/integrations/supabase/types';
-
-type Escola = Tables<'escolas_inep'>;
+import { useEscolas, Escola } from '@/hooks/useEscolas';
 
 interface EscolaFilterProps {
   value?: Escola | null;

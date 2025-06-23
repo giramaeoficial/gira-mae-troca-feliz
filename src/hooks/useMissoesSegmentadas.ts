@@ -30,6 +30,22 @@ export interface MissaoSegmentada {
   elegivel?: boolean;
 }
 
+interface EventoAcao {
+  id: string;
+  tipo_evento: string;
+  parametros: {
+    url?: string;
+    titulo?: string;
+    mensagem?: string;
+    conteudo?: string;
+  };
+}
+
+interface ResultadoColeta {
+  sucesso: boolean;
+  girinhas_recebidas: number;
+}
+
 export const useMissoesSegmentadas = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -114,9 +130,9 @@ export const useMissoesSegmentadas = () => {
         .eq('id', missaoId)
         .single();
 
-      if (!missao?.acoes_eventos) return null;
+      if (!missao?.acoes_eventos || !Array.isArray(missao.acoes_eventos)) return null;
 
-      const evento = missao.acoes_eventos.find((e: any) => e.id === eventoId);
+      const evento = (missao.acoes_eventos as EventoAcao[]).find((e) => e.id === eventoId);
       return evento;
     },
     onSuccess: (evento) => {
@@ -172,7 +188,7 @@ export const useMissoesSegmentadas = () => {
       });
 
       if (error) throw error;
-      return data;
+      return data as ResultadoColeta;
     },
     onSuccess: (data, missaoId) => {
       if (data.sucesso) {

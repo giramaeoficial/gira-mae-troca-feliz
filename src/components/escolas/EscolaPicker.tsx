@@ -6,10 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useEscolas } from '@/hooks/useEscolas';
-import { Tables } from '@/integrations/supabase/types';
-
-type Escola = Tables<'escolas_inep'>;
+import { useEscolas, Escola } from '@/hooks/useEscolas';
 
 interface EscolaPickerProps {
   value?: Escola | null;

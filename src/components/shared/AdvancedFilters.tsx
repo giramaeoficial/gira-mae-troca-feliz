@@ -6,10 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import EscolaFilter from '@/components/escolas/EscolaFilter';
-import { Tables } from '@/integrations/supabase/types';
-import { useEscolas } from '@/hooks/useEscolas';
-
-type Escola = Tables<'escolas_inep'>;
+import { useEscolas, Escola } from '@/hooks/useEscolas';
 
 interface AdvancedFiltersProps {
   filters: {
