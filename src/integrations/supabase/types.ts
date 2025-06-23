@@ -1608,6 +1608,59 @@ export type Database = {
           },
         ]
       }
+      user_location_notifications: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          frequencia: string | null
+          horario_resumo: string | null
+          id: string
+          items_mesma_escola: boolean | null
+          items_mesmo_bairro: boolean | null
+          items_raio_km: number | null
+          novas_maes_bairro: boolean | null
+          novas_maes_escola: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          frequencia?: string | null
+          horario_resumo?: string | null
+          id?: string
+          items_mesma_escola?: boolean | null
+          items_mesmo_bairro?: boolean | null
+          items_raio_km?: number | null
+          novas_maes_bairro?: boolean | null
+          novas_maes_escola?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          frequencia?: string | null
+          horario_resumo?: string | null
+          id?: string
+          items_mesma_escola?: boolean | null
+          items_mesmo_bairro?: boolean | null
+          items_raio_km?: number | null
+          novas_maes_bairro?: boolean | null
+          novas_maes_escola?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_location_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1616,6 +1669,18 @@ export type Database = {
       atualizar_reputacao: {
         Args: { p_usuario_id: string; p_nova_nota: number }
         Returns: undefined
+      }
+      buscar_itens_mesma_escola: {
+        Args: { p_user_id: string }
+        Returns: {
+          item_id: string
+        }[]
+      }
+      buscar_itens_mesmo_bairro: {
+        Args: { p_user_id: string }
+        Returns: {
+          item_id: string
+        }[]
       }
       buscar_usuario_por_username: {
         Args: { p_username: string }
@@ -1628,6 +1693,10 @@ export type Database = {
       }
       calcular_custo_extensao: {
         Args: { p_valor_expirando: number }
+        Returns: number
+      }
+      calcular_distancia_ceps: {
+        Args: { cep1: string; cep2: string }
         Returns: number
       }
       calcular_metricas_saude: {
