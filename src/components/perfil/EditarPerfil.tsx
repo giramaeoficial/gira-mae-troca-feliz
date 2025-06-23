@@ -1,22 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/useAuth';
+import { Loader2, Info, X, Camera } from 'lucide-react';
+import { AddressInput } from '@/components/address/AddressInput';
+import { NotificationSettings } from '@/components/location/NotificationSettings';
 import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Upload, Plus, X, MapPin, School } from 'lucide-react';
-import { useUserAddresses } from '@/hooks/useUserAddresses';
-import { useEscolas } from '@/hooks/useEscolas';
-import NotificationSettings from '@/components/location/NotificationSettings';
+import { toast } from '@/components/ui/use-toast';
 
 interface EditarPerfilProps {
   onClose: () => void;
@@ -25,48 +22,26 @@ interface EditarPerfilProps {
 const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
   const { user } = useAuth();
   const { profile, refetch } = useProfile();
-  const { addresses, loading: addressesLoading, adicionarEndereco, removerEndereco } = useUserAddresses();
-  const { escolas } = useEscolas();
-  
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('basico');
+  const [tab, setTab] = useState<'basico' | 'endereco' | 'notificacoes'>('basico');
+  
   const [profileData, setProfileData] = useState({
     nome: '',
     bio: '',
     profissao: '',
     instagram: '',
     telefone: '',
-    aceita_entrega_domicilio: false,
-    raio_entrega_km: 5,
+    interesses: [] as string[],
+    cep: '',
     endereco: '',
     bairro: '',
     cidade: '',
     estado: '',
-    cep: '',
     complemento: '',
     ponto_referencia: ''
   });
 
-  const [newAddress, setNewAddress] = useState({
-    apelido: '',
-    endereco: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    cep: '',
-    complemento: '',
-    ponto_referencia: ''
-  });
-
-  const [filhos, setFilhos] = useState<any[]>([]);
-  const [newFilho, setNewFilho] = useState({
-    nome: '',
-    data_nascimento: '',
-    sexo: '',
-    tamanho_roupas: '',
-    tamanho_calcados: '',
-    escola_id: null
-  });
+  const [newInteresse, setNewInteresse] = useState('');
 
   useEffect(() => {
     if (profile) {
@@ -76,47 +51,21 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
         profissao: profile.profissao || '',
         instagram: profile.instagram || '',
         telefone: profile.telefone || '',
-        aceita_entrega_domicilio: profile.aceita_entrega_domicilio || false,
-        raio_entrega_km: profile.raio_entrega_km || 5,
+        interesses: profile.interesses || [],
+        cep: profile.cep || '',
         endereco: profile.endereco || '',
         bairro: profile.bairro || '',
         cidade: profile.cidade || '',
         estado: profile.estado || '',
-        cep: profile.cep || '',
         complemento: profile.complemento || '',
         ponto_referencia: profile.ponto_referencia || ''
       });
     }
   }, [profile]);
 
-  useEffect(() => {
-    if (user) {
-      carregarFilhos();
-    }
-  }, [user]);
+  const handleSave = async () => {
+    if (!user?.id) return;
 
-  const carregarFilhos = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('filhos')
-        .select(`
-          *,
-          escolas_inep!filhos_escola_id_fkey(escola, codigo_inep)
-        `)
-        .eq('mae_id', user.id);
-
-      if (error) throw error;
-      setFilhos(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar filhos:', error);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    if (!user) return;
-    
     setLoading(true);
     try {
       const { error } = await supabase
@@ -126,408 +75,260 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
 
       if (error) throw error;
 
-      toast.success('Perfil atualizado com sucesso!');
-      refetch();
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso."
+      });
+
+      await refetch();
+      onClose();
     } catch (error) {
       console.error('Erro ao atualizar perfil:', error);
-      toast.error('Erro ao atualizar perfil');
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o perfil. Tente novamente.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddAddress = async () => {
-    if (!newAddress.apelido || !newAddress.endereco) {
-      toast.error('Preencha pelo menos o apelido e endereço');
-      return;
-    }
+  const handleAddressChange = (address: any) => {
+    setProfileData(prev => ({
+      ...prev,
+      cep: address.cep || '',
+      endereco: address.endereco || '',
+      bairro: address.bairro || '',
+      cidade: address.cidade || '',
+      estado: address.estado || '',
+      complemento: address.complemento || '',
+      ponto_referencia: address.ponto_referencia || ''
+    }));
+  };
 
-    try {
-      await adicionarEndereco(newAddress);
-      setNewAddress({
-        apelido: '',
-        endereco: '',
-        bairro: '',
-        cidade: '',
-        estado: '',
-        cep: '',
-        complemento: '',
-        ponto_referencia: ''
-      });
-      toast.success('Endereço adicionado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao adicionar endereço');
+  const addInteresse = () => {
+    if (newInteresse.trim() && !profileData.interesses.includes(newInteresse.trim())) {
+      setProfileData(prev => ({
+        ...prev,
+        interesses: [...prev.interesses, newInteresse.trim()]
+      }));
+      setNewInteresse('');
     }
   };
 
-  const handleAddFilho = async () => {
-    if (!user || !newFilho.nome || !newFilho.data_nascimento) {
-      toast.error('Preencha pelo menos nome e data de nascimento');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('filhos')
-        .insert({
-          ...newFilho,
-          mae_id: user.id,
-          escola_id: newFilho.escola_id || null
-        });
-
-      if (error) throw error;
-
-      setNewFilho({
-        nome: '',
-        data_nascimento: '',
-        sexo: '',
-        tamanho_roupas: '',
-        tamanho_calcados: '',
-        escola_id: null
-      });
-      
-      carregarFilhos();
-      toast.success('Filho(a) adicionado(a) com sucesso!');
-    } catch (error) {
-      console.error('Erro ao adicionar filho:', error);
-      toast.error('Erro ao adicionar filho(a)');
-    }
+  const removeInteresse = (interesse: string) => {
+    setProfileData(prev => ({
+      ...prev,
+      interesses: prev.interesses.filter(i => i !== interesse)
+    }));
   };
 
-  const handleDeleteFilho = async (filhoId: string) => {
-    try {
-      const { error } = await supabase
-        .from('filhos')
-        .delete()
-        .eq('id', filhoId);
-
-      if (error) throw error;
-      
-      carregarFilhos();
-      toast.success('Filho(a) removido(a) com sucesso');
-    } catch (error) {
-      console.error('Erro ao remover filho:', error);
-      toast.error('Erro ao remover filho(a)');
-    }
-  };
+  const tabs = [
+    { id: 'basico', label: 'Básico' },
+    { id: 'endereco', label: 'Endereço' },
+    { id: 'notificacoes', label: 'Notificações' }
+  ] as const;
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Editar Perfil</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          {/* Navegação por abas */}
-          <div className="flex gap-2 border-b">
-            {[
-              { id: 'basico', label: 'Dados Básicos' },
-              { id: 'enderecos', label: 'Endereços' },
-              { id: 'filhos', label: 'Filhos' },
-              { id: 'notificacoes', label: 'Notificações' }
-            ].map(tab => (
-              <Button
-                key={tab.id}
-                variant={activeTab === tab.id ? 'default' : 'ghost'}
-                onClick={() => setActiveTab(tab.id)}
-                className="text-sm"
-              >
-                {tab.label}
-              </Button>
-            ))}
+    <Sheet open onOpenChange={onClose}>
+      <SheetContent side="bottom" className="h-[90vh] sm:h-auto sm:max-h-[90vh] p-0">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b p-4 z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Editar Perfil</h2>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
           </div>
+        </div>
 
-          {activeTab === 'basico' && (
+        {/* Tabs horizontais para mobile */}
+        <div className="flex gap-2 overflow-x-auto pb-2 px-4 pt-4 border-b bg-white">
+          {tabs.map(tabItem => (
+            <Button
+              key={tabItem.id}
+              variant={tab === tabItem.id ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setTab(tabItem.id)}
+              className="min-w-fit whitespace-nowrap"
+            >
+              {tabItem.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Conteúdo scrollável */}
+        <div className="overflow-y-auto h-[calc(100%-10rem)] p-4 space-y-6">
+          {tab === 'basico' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="text-center space-y-4">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto">
+                    {profileData.nome?.[0] || '?'}
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="absolute -bottom-1 -right-1 w-8 h-8 p-0 rounded-full"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="nome">Nome</Label>
+                  <Label htmlFor="nome">Nome *</Label>
                   <Input
                     id="nome"
                     value={profileData.nome}
                     onChange={(e) => setProfileData(prev => ({ ...prev, nome: e.target.value }))}
+                    placeholder="Como você gostaria de ser chamada?"
                   />
                 </div>
+
+                <div>
+                  <Label htmlFor="bio">Sobre você</Label>
+                  <Textarea
+                    id="bio"
+                    value={profileData.bio}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                    placeholder="Conte um pouco sobre você e seus filhos..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="profissao">Profissão</Label>
+                    <Input
+                      id="profissao"
+                      value={profileData.profissao}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, profissao: e.target.value }))}
+                      placeholder="O que você faz?"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="instagram">Instagram</Label>
+                    <Input
+                      id="instagram"
+                      value={profileData.instagram}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, instagram: e.target.value }))}
+                      placeholder="@seuusername"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="telefone">Telefone</Label>
                   <Input
                     id="telefone"
                     value={profileData.telefone}
                     onChange={(e) => setProfileData(prev => ({ ...prev, telefone: e.target.value }))}
+                    placeholder="(11) 99999-9999"
                   />
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profileData.bio}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Conte um pouco sobre você..."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="profissao">Profissão</Label>
-                  <Input
-                    id="profissao"
-                    value={profileData.profissao}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, profissao: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="instagram">Instagram</Label>
-                  <Input
-                    id="instagram"
-                    value={profileData.instagram}
-                    onChange={(e) => setProfileData(prev => ({ ...prev, instagram: e.target.value }))}
-                    placeholder="@seu_usuario"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <Label>Aceita entrega em domicílio</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Permitir que outros usuários solicitem entrega
-                  </p>
-                </div>
-                <Switch
-                  checked={profileData.aceita_entrega_domicilio}
-                  onCheckedChange={(checked) => 
-                    setProfileData(prev => ({ ...prev, aceita_entrega_domicilio: checked }))
-                  }
-                />
-              </div>
-
-              {profileData.aceita_entrega_domicilio && (
-                <div>
-                  <Label htmlFor="raio">Raio de entrega (km)</Label>
-                  <Input
-                    id="raio"
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={profileData.raio_entrega_km}
-                    onChange={(e) => setProfileData(prev => ({ 
-                      ...prev, 
-                      raio_entrega_km: parseInt(e.target.value) || 5 
-                    }))}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'enderecos' && (
-            <div className="space-y-6">
-              {/* Endereço principal */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Endereço Principal</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="endereco">Endereço</Label>
-                      <Input
-                        id="endereco"
-                        value={profileData.endereco}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, endereco: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="bairro">Bairro</Label>
-                      <Input
-                        id="bairro"
-                        value={profileData.bairro}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, bairro: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cidade">Cidade</Label>
-                      <Input
-                        id="cidade"
-                        value={profileData.cidade}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, cidade: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="estado">Estado</Label>
-                      <Input
-                        id="estado"
-                        value={profileData.estado}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, estado: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="cep">CEP</Label>
-                      <Input
-                        id="cep"
-                        value={profileData.cep}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, cep: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="complemento">Complemento</Label>
-                      <Input
-                        id="complemento"
-                        value={profileData.complemento}
-                        onChange={(e) => setProfileData(prev => ({ ...prev, complemento: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="ponto_referencia">Ponto de Referência</Label>
+                  <Label>Interesses</Label>
+                  <div className="flex gap-2 mb-2">
                     <Input
-                      id="ponto_referencia"
-                      value={profileData.ponto_referencia}
-                      onChange={(e) => setProfileData(prev => ({ ...prev, ponto_referencia: e.target.value }))}
+                      value={newInteresse}
+                      onChange={(e) => setNewInteresse(e.target.value)}
+                      placeholder="Ex: Montessori, Livros infantis..."
+                      onKeyPress={(e) => e.key === 'Enter' && addInteresse()}
                     />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Endereços adicionais */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Endereços Adicionais</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!addressesLoading && addresses.length > 0 && (
-                    <div className="space-y-3 mb-4">
-                      {addresses.map((address) => (
-                        <div key={address.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <div className="font-medium">{address.apelido}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {address.endereco}, {address.bairro} - {address.cidade}
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removerEndereco(address.id)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-4 p-4 border-2 border-dashed rounded-lg">
-                    <h4 className="font-medium">Adicionar Novo Endereço</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Input
-                        placeholder="Apelido (ex: Casa, Trabalho)"
-                        value={newAddress.apelido}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, apelido: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="Endereço"
-                        value={newAddress.endereco}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, endereco: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="Bairro"
-                        value={newAddress.bairro}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, bairro: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="Cidade"
-                        value={newAddress.cidade}
-                        onChange={(e) => setNewAddress(prev => ({ ...prev, cidade: e.target.value }))}
-                      />
-                    </div>
-                    <Button onClick={handleAddAddress} className="w-full">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Endereço
+                    <Button type="button" onClick={addInteresse} size="sm">
+                      Adicionar
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'filhos' && (
-            <div className="space-y-6">
-              {filhos.length > 0 && (
-                <div className="space-y-3">
-                  {filhos.map((filho) => (
-                    <div key={filho.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <div className="font-medium">{filho.nome}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(filho.data_nascimento).toLocaleDateString('pt-BR')}
-                          </div>
-                          {filho.escolas_inep && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                              <School className="w-3 h-3" />
-                              {filho.escolas_inep.escola}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteFilho(filho.id)}
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Adicionar Filho(a)</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      placeholder="Nome"
-                      value={newFilho.nome}
-                      onChange={(e) => setNewFilho(prev => ({ ...prev, nome: e.target.value }))}
-                    />
-                    <Input
-                      type="date"
-                      placeholder="Data de nascimento"
-                      value={newFilho.data_nascimento}
-                      onChange={(e) => setNewFilho(prev => ({ ...prev, data_nascimento: e.target.value }))}
-                    />
+                  <div className="flex flex-wrap gap-2">
+                    {profileData.interesses.map((interesse) => (
+                      <Badge key={interesse} variant="secondary" className="text-xs">
+                        {interesse}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="ml-1 h-4 w-4 p-0 hover:bg-transparent"
+                          onClick={() => removeInteresse(interesse)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </Badge>
+                    ))}
                   </div>
-                  <Button onClick={handleAddFilho} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Filho(a)
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           )}
 
-          {activeTab === 'notificacoes' && (
-            <NotificationSettings />
+          {tab === 'endereco' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-lg mb-2">📍 Onde você mora?</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Seu endereço ajuda outras mães a encontrarem itens próximos e facilita as trocas.
+                </p>
+              </div>
+
+              <AddressInput
+                value={{
+                  cep: profileData.cep,
+                  endereco: profileData.endereco,
+                  bairro: profileData.bairro,
+                  cidade: profileData.cidade,
+                  estado: profileData.estado,
+                  complemento: profileData.complemento,
+                  ponto_referencia: profileData.ponto_referencia
+                }}
+                onChange={handleAddressChange}
+              />
+
+              <Alert className="bg-blue-50 border-blue-200">
+                <Info className="w-4 h-4" />
+                <AlertDescription>
+                  Sua localização é usada apenas para mostrar itens próximos. 
+                  Nunca compartilhamos seu endereço completo com outras usuárias.
+                </AlertDescription>
+              </Alert>
+            </div>
           )}
 
-          <div className="flex gap-3 pt-4">
-            <Button onClick={handleSaveProfile} disabled={loading} className="flex-1">
-              {loading ? 'Salvando...' : 'Salvar Alterações'}
-            </Button>
-            <Button variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-          </div>
+          {tab === 'notificacoes' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-lg mb-2">🔔 Notificações</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure quando e como você quer ser notificada sobre novos itens próximos.
+                </p>
+              </div>
+
+              <NotificationSettings />
+            </div>
+          )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Botão de salvar fixo */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+          <Button 
+            className="w-full"
+            onClick={handleSave}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Salvar alterações'
+            )}
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 
