@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MousePointer, ExternalLink, Bell, Settings, Plus, Trash2 } from 'lucide-react';
 
 interface EventosModalProps {
@@ -28,7 +27,7 @@ const EventosModal: React.FC<EventosModalProps> = ({
   const [novoEvento, setNovoEvento] = useState({
     tipo_evento: '',
     titulo: '',
-    parametros: {}
+    parametros: {} as Record<string, any>
   });
 
   const tiposEvento = [
@@ -138,7 +137,7 @@ const EventosModal: React.FC<EventosModalProps> = ({
                             {tipo?.description}
                           </p>
                           <div className="flex gap-1 mt-1">
-                            {Object.entries(evento.parametros).map(([key, value]) => (
+                            {Object.entries(evento.parametros || {}).map(([key, value]) => (
                               <Badge key={key} variant="outline" className="text-xs">
                                 {key}: {value as string}
                               </Badge>
@@ -234,7 +233,7 @@ const EventosModal: React.FC<EventosModalProps> = ({
                         <Input
                           id="url_custom"
                           placeholder="/categoria/roupas?promo=volta-aulas"
-                          value={novoEvento.parametros.url || ''}
+                          value={(novoEvento.parametros as any).url || ''}
                           onChange={(e) => handleParametroChange('url', e.target.value)}
                         />
                       </div>
@@ -248,7 +247,7 @@ const EventosModal: React.FC<EventosModalProps> = ({
                         <Input
                           id="modal_titulo"
                           placeholder="Oferta Especial!"
-                          value={novoEvento.parametros.titulo || ''}
+                          value={(novoEvento.parametros as any).titulo || ''}
                           onChange={(e) => handleParametroChange('titulo', e.target.value)}
                         />
                       </div>
@@ -257,38 +256,22 @@ const EventosModal: React.FC<EventosModalProps> = ({
                         <Textarea
                           id="modal_conteudo"
                           placeholder="Parabéns! Você ganhou 10% de desconto..."
-                          value={novoEvento.parametros.conteudo || ''}
+                          value={(novoEvento.parametros as any).conteudo || ''}
                           onChange={(e) => handleParametroChange('conteudo', e.target.value)}
                         />
-                      </div>
-                      <div>
-                        <Label htmlFor="modal_tipo">Tipo de Modal</Label>
-                        <Select onValueChange={(value) => handleParametroChange('tipo', value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="info">Informativo</SelectItem>
-                            <SelectItem value="success">Sucesso</SelectItem>
-                            <SelectItem value="warning">Atenção</SelectItem>
-                            <SelectItem value="promocao">Promoção</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                     </div>
                   )}
 
                   {novoEvento.tipo_evento === 'external_link' && (
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="link_url">URL Externa</Label>
-                        <Input
-                          id="link_url"
-                          placeholder="https://exemplo.com/promocao"
-                          value={novoEvento.parametros.url || ''}
-                          onChange={(e) => handleParametroChange('url', e.target.value)}
-                        />
-                      </div>
+                    <div>
+                      <Label htmlFor="link_url">URL Externa</Label>
+                      <Input
+                        id="link_url"
+                        placeholder="https://exemplo.com/promocao"
+                        value={(novoEvento.parametros as any).url || ''}
+                        onChange={(e) => handleParametroChange('url', e.target.value)}
+                      />
                     </div>
                   )}
 
@@ -299,7 +282,7 @@ const EventosModal: React.FC<EventosModalProps> = ({
                         <Input
                           id="notif_titulo"
                           placeholder="Nova missão disponível!"
-                          value={novoEvento.parametros.titulo || ''}
+                          value={(novoEvento.parametros as any).titulo || ''}
                           onChange={(e) => handleParametroChange('titulo', e.target.value)}
                         />
                       </div>
@@ -308,23 +291,9 @@ const EventosModal: React.FC<EventosModalProps> = ({
                         <Textarea
                           id="notif_mensagem"
                           placeholder="Complete agora e ganhe 5 Girinhas"
-                          value={novoEvento.parametros.mensagem || ''}
+                          value={(novoEvento.parametros as any).mensagem || ''}
                           onChange={(e) => handleParametroChange('mensagem', e.target.value)}
                         />
-                      </div>
-                      <div>
-                        <Label htmlFor="notif_tipo">Tipo de Notificação</Label>
-                        <Select onValueChange={(value) => handleParametroChange('tipo', value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="info">Informativa</SelectItem>
-                            <SelectItem value="missao">Nova Missão</SelectItem>
-                            <SelectItem value="promocao">Promoção</SelectItem>
-                            <SelectItem value="lembrete">Lembrete</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                     </div>
                   )}

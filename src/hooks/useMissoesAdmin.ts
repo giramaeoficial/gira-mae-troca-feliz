@@ -19,6 +19,12 @@ export interface MissaoAdmin {
   };
   prazo_dias?: number;
   ativo: boolean;
+  criterios_segmentacao?: any;
+  configuracao_temporal?: any;
+  acoes_eventos?: any[];
+  data_inicio?: string;
+  data_fim?: string;
+  usuarios_elegíveis_cache?: number;
 }
 
 export const useMissoesAdmin = () => {
