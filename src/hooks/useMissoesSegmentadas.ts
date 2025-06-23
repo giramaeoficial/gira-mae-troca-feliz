@@ -198,9 +198,17 @@ export const useMissoesSegmentadas = () => {
 
       if (error) throw error;
       
-      // Converter Json para ResultadoColeta com verificação de tipo
-      if (typeof data === 'object' && data !== null && 'sucesso' in data && 'girinhas_recebidas' in data) {
-        return data as ResultadoColeta;
+      // Converter Json para ResultadoColeta com verificação de tipo mais robusta
+      if (
+        data && 
+        typeof data === 'object' && 
+        data !== null && 
+        'sucesso' in data && 
+        'girinhas_recebidas' in data &&
+        typeof (data as any).sucesso === 'boolean' &&
+        typeof (data as any).girinhas_recebidas === 'number'
+      ) {
+        return data as unknown as ResultadoColeta;
       }
       
       throw new Error('Resposta inválida do servidor');
