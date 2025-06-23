@@ -100,7 +100,7 @@ const PublicarItem = () => {
   const { user } = useAuth();
   const { configuracoes } = useConfigCategorias();
   const { publicarItem, loading } = useItens();
-  const { data: userAddress } = useUserAddress();
+  const { userAddress } = useUserAddress();
   const { filhos } = useFilhosPorEscola();
 
   const [formData, setFormData] = useState<FormData>({

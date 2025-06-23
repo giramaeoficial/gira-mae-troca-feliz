@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   showSearch = false 
 }) => {
   const { user } = useAuth();
-  const { data: profile } = useProfile();
+  const { profile } = useProfile();
 
   return (
     <header className="bg-white/80 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-40">
