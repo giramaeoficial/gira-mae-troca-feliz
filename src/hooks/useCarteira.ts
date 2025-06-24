@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -86,6 +85,35 @@ export const useCarteira = () => {
     retry: 1,
     retryDelay: 1000
   });
+
+  // NOVO: Listener para evento de pagamento Stripe bem-sucedido
+  useEffect(() => {
+    const handlePaymentSuccess = async (event: CustomEvent) => {
+      console.log('🎉 [useCarteira] Evento de pagamento recebido:', event.detail);
+      
+      // Invalidar TODOS os caches imediatamente
+      await queryClient.invalidateQueries({ 
+        queryKey: ['carteira'], 
+        refetchType: 'all' 
+      });
+      
+      // Forçar refetch MÚLTIPLO para garantir atualização
+      await refetch();
+      
+      // Segundo refetch após pequeno delay
+      setTimeout(async () => {
+        await refetch();
+      }, 200);
+    };
+
+    // Adicionar listener do evento customizado
+    window.addEventListener('stripe-payment-success', handlePaymentSuccess as EventListener);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('stripe-payment-success', handlePaymentSuccess as EventListener);
+    };
+  }, [queryClient, refetch]);
 
   // Tratamento de erros usando useEffect (otimizado com dependência específica)
   useEffect(() => {

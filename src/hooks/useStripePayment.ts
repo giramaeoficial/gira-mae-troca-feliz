@@ -49,42 +49,44 @@ export const useStripePayment = () => {
               description: `${data.quantidade} Girinhas adicionadas à sua carteira por R$ ${data.valor_pago.toFixed(2)}`,
             });
 
-            // CORREÇÃO CRÍTICA: Invalidar TODOS os caches relacionados à carteira
-            console.log('🔄 [useStripePayment] Invalidando caches da carteira...');
+            // SOLUÇÃO: Invalidação AGRESSIVA de todos os caches relacionados
+            console.log('🔄 [useStripePayment] Invalidando TODOS os caches...');
             
-            // Invalidar cache da carteira
+            // 1. Invalidar e refetch da carteira
             await queryClient.invalidateQueries({ 
               queryKey: ['carteira'], 
               refetchType: 'all' 
             });
             
-            // Invalidar cache de expiração
+            // 2. Invalidar cache de expiração
             await queryClient.invalidateQueries({ 
               queryKey: ['girinhas-expiracao'], 
               refetchType: 'all' 
             });
             
-            // Invalidar cache de preço manual
+            // 3. Invalidar cache de preço manual
             await queryClient.invalidateQueries({ 
               queryKey: ['preco-manual'], 
               refetchType: 'all' 
             });
             
-            // Refetch FORÇADO da carteira
+            // 4. Forçar refetch da carteira
             await refetch();
             
-            // CORREÇÃO: Resetar isProcessing IMEDIATAMENTE após sucesso
-            setIsProcessing(false);
+            // 5. NOVO: Disparar evento customizado para forçar atualização
+            window.dispatchEvent(new CustomEvent('stripe-payment-success', {
+              detail: { quantidade: data.quantidade, valor_pago: data.valor_pago }
+            }));
             
-            // NOVO: Aguardar e fazer refetch adicional para garantir
+            // 6. NOVA ABORDAGEM: Refetch múltiplo com delay
             setTimeout(async () => {
-              console.log('🔄 [useStripePayment] Segundo refetch de segurança...');
+              console.log('🔄 [useStripePayment] Refetch de segurança...');
               await queryClient.refetchQueries({ 
                 queryKey: ['carteira'], 
                 type: 'all' 
               });
               await refetch();
-            }, 500);
+            }, 100);
           }
         } catch (error: any) {
           console.error('❌ [useStripePayment] Erro ao verificar pagamento:', error);
@@ -94,7 +96,7 @@ export const useStripePayment = () => {
             variant: "destructive",
           });
         } finally {
-          // CORREÇÃO: Garantir que isProcessing seja sempre resetado
+          // Resetar isProcessing IMEDIATAMENTE
           setIsProcessing(false);
           // Clean URL
           window.history.replaceState({}, '', '/carteira');
