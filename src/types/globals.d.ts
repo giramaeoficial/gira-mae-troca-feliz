@@ -5,6 +5,9 @@ declare global {
     OneSignal?: {
       User?: {
         addTag: (key: string, value: string) => Promise<void>;
+        PushSubscription?: {
+          getIdAsync: () => Promise<string | null>;
+        };
       };
       init: (config: any) => Promise<void>;
       showSlidedownPrompt: () => Promise<void>;

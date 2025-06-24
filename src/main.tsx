@@ -20,7 +20,23 @@ const initOneSignal = async () => {
       appId: appId,
       safari_web_id: 'web.onesignal.auto.18140e24-f6e8-4f9a-8237-b699d54c3b4c',
       notifyButton: {
-        enable: false, // Desabilitar botão padrão, usaremos nosso próprio
+        enable: false,
+        prenotify: true,
+        showCredit: false,
+        text: {
+          'tip.state.unsubscribed': 'Ativar notificações',
+          'tip.state.subscribed': 'Notificações ativadas',
+          'tip.state.blocked': 'Notificações bloqueadas',
+          'message.prenotify': 'Clique para permitir notificações',
+          'message.action.subscribed': 'Obrigado! Você receberá notificações.',
+          'message.action.resubscribed': 'Notificações reativadas.',
+          'message.action.unsubscribed': 'Notificações desativadas.',
+          'dialog.main.title': 'Gerenciar notificações do site',
+          'dialog.main.button.subscribe': 'PERMITIR',
+          'dialog.main.button.unsubscribe': 'NÃO PERMITIR',
+          'dialog.blocked.title': 'Desbloquear notificações',
+          'dialog.blocked.message': 'Siga estas instruções para permitir notificações:'
+        }
       },
       allowLocalhostAsSecureOrigin: true, // Para desenvolvimento
       serviceWorkerParam: { scope: '/' },
