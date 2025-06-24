@@ -1,0 +1,17 @@
+
+{
+  "name": "GiraMãe",
+  "short_name": "GiraMãe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "gcm_sender_id": "482941778795"
+}
