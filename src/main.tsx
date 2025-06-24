@@ -29,6 +29,7 @@ const initOneSignal = async () => {
           'tip.state.blocked': 'Notificações bloqueadas',
           'message.prenotify': 'Clique para permitir notificações',
           'message.action.subscribed': 'Obrigado! Você receberá notificações.',
+          'message.action.subscribing': 'Ativando notificações...',
           'message.action.resubscribed': 'Notificações reativadas.',
           'message.action.unsubscribed': 'Notificações desativadas.',
           'dialog.main.title': 'Gerenciar notificações do site',

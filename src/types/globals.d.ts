@@ -6,7 +6,8 @@ declare global {
       User?: {
         addTag: (key: string, value: string) => Promise<void>;
         PushSubscription?: {
-          getIdAsync: () => Promise<string | null>;
+          id: string | null;
+          addEventListener: (event: string, callback: (event: any) => void) => void;
         };
       };
       init: (config: any) => Promise<void>;

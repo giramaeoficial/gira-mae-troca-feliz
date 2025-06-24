@@ -29,12 +29,21 @@ export const useOneSignal = () => {
         setIsPermissionGranted(currentPermission === 'granted');
         
         if (currentPermission === 'granted') {
-          // Obter Player ID se disponível usando a API correta
+          // Obter Player ID usando a API correta do OneSignal v16
           try {
-            const pushSubscription = await OneSignal.User.PushSubscription.getIdAsync();
-            if (pushSubscription) {
-              setPlayerId(pushSubscription);
-              console.log('OneSignal Player ID:', pushSubscription);
+            // Usar addEventListener para capturar o ID quando disponível
+            OneSignal.User.PushSubscription.addEventListener('change', (event) => {
+              if (event.current.id) {
+                setPlayerId(event.current.id);
+                console.log('OneSignal Player ID:', event.current.id);
+              }
+            });
+            
+            // Tentar obter ID atual se já disponível
+            const currentSubscription = OneSignal.User.PushSubscription.id;
+            if (currentSubscription) {
+              setPlayerId(currentSubscription);
+              console.log('OneSignal Player ID atual:', currentSubscription);
             }
           } catch (error) {
             console.log('Player ID não disponível ainda:', error);
@@ -79,11 +88,20 @@ export const useOneSignal = () => {
       setIsPermissionGranted(isGranted);
       
       if (isGranted) {
-        // Tentar obter Player ID após permissão concedida
+        // Configurar listener para capturar Player ID após permissão concedida
         try {
-          setTimeout(async () => {
-            const pushSubscription = await OneSignal.User.PushSubscription.getIdAsync();
-            if (pushSubscription) setPlayerId(pushSubscription);
+          OneSignal.User.PushSubscription.addEventListener('change', (event) => {
+            if (event.current.id) {
+              setPlayerId(event.current.id);
+            }
+          });
+          
+          // Tentar obter ID após um delay
+          setTimeout(() => {
+            const currentSubscription = OneSignal.User.PushSubscription.id;
+            if (currentSubscription) {
+              setPlayerId(currentSubscription);
+            }
           }, 2000);
         } catch (error) {
           console.log('Erro ao obter Player ID:', error);
