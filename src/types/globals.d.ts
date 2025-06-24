@@ -1,5 +1,5 @@
 
-// Declarações globais para OneSignal
+// Declarações globais para OneSignal v16
 declare global {
   interface Window {
     OneSignal?: {
@@ -11,8 +11,6 @@ declare global {
         };
       };
       init: (config: any) => Promise<void>;
-      showSlidedownPrompt: () => Promise<void>;
-      registerForPushNotifications: () => Promise<void>;
     };
   }
 }

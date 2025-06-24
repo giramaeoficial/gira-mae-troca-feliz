@@ -3,23 +3,24 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useOneSignal } from '@/hooks/useOneSignal';
+import { useNotificationSystem } from '@/hooks/useNotificationSystem';
 import { Bell, Check, X, TestTube, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const OneSignalSettings: React.FC = () => {
   const { 
-    isInitialized, 
+    oneSignalInitialized: isInitialized, 
     playerId, 
-    isPermissionGranted,
-    requestPermission,
-    sendTestNotification,
-    isPushSupported 
-  } = useOneSignal();
+    pushEnabled: isPermissionGranted,
+    requestPushPermission,
+    sendTestNotification 
+  } = useNotificationSystem();
+
+  const isPushSupported = typeof window !== 'undefined' && 'Notification' in window;
 
   const handleRequestPermission = async () => {
     try {
-      const granted = await requestPermission();
+      const granted = await requestPushPermission();
       if (granted) {
         toast.success('Permissão concedida! Notificações ativadas.');
       } else {
