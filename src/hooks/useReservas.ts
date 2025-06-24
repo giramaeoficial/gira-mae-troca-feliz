@@ -110,26 +110,52 @@ export const useReservas = () => {
     }
   };
 
-  // FUNÇÃO CORRIGIDA: entrarNaFila - apenas 1 parâmetro
+  // FUNÇÃO ATUALIZADA: Usar novo sistema V2 atômico
   const entrarNaFila = async (itemId: string): Promise<boolean> => {
     if (!user) return false;
     setLoading(true);
     try {
         const { data, error } = await supabase
-            .rpc('entrar_fila_espera', { p_item_id: itemId, p_usuario_id: user.id });
+            .rpc('entrar_fila_espera', { 
+              p_item_id: itemId, 
+              p_usuario_id: user.id 
+            });
 
-        if (error || (data && !(data as any).sucesso)) {
-            const errorMessage = error?.message || (data as any)?.erro || "Não foi possível reservar.";
-            toast({ title: "Erro ao reservar", description: errorMessage, variant: "destructive" });
+        if (error) {
+            toast({ 
+              title: "Erro ao reservar", 
+              description: error.message, 
+              variant: "destructive" 
+            });
             return false;
         }
 
-        toast({ title: "Item reservado! 🎉", description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega." });
+        // O sistema V2 retorna JSONB estruturado
+        const resultado = data as { sucesso: boolean; erro?: string; reserva_id?: string };
+        
+        if (!resultado.sucesso) {
+            toast({ 
+              title: "Erro ao reservar", 
+              description: resultado.erro || "Não foi possível reservar.", 
+              variant: "destructive" 
+            });
+            return false;
+        }
+
+        toast({ 
+          title: "Item reservado! 🎉", 
+          description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega." 
+        });
+        
         await Promise.all([fetchReservas(), invalidateItemQueries(itemId)]);
         return true;
     } catch (err) {
         console.error('Erro ao entrar na fila:', err);
-        toast({ title: "Erro ao entrar na fila", description: err instanceof Error ? err.message : "Tente novamente.", variant: "destructive" });
+        toast({ 
+          title: "Erro ao entrar na fila", 
+          description: err instanceof Error ? err.message : "Tente novamente.", 
+          variant: "destructive" 
+        });
         return false;
     } finally {
         setLoading(false);
@@ -170,7 +196,7 @@ export const useReservas = () => {
     }
   };
   
-  // FUNÇÃO CORRIGIDA: confirmarEntrega - sempre 2 parâmetros e retorna boolean
+  // FUNÇÃO ATUALIZADA: Usar finalizar_troca_com_codigo V2 refatorado
   const confirmarEntrega = async (reservaId: string, codigo: string): Promise<boolean> => {
     if (!user) {
       toast({ title: "Erro", description: "Você precisa estar logado.", variant: "destructive" });
@@ -196,15 +222,24 @@ export const useReservas = () => {
         return false;
       }
 
-      toast({
-        title: "Troca Finalizada! 🤝",
-        description: "A troca foi concluída com sucesso e as Girinhas foram transferidas!",
-      });
-      
-      const reserva = reservas.find(r => r.id === reservaId);
-      await Promise.all([fetchReservas(), invalidateItemQueries(reserva?.item_id)]);
-
-      return true;
+      // O sistema V2 agora retorna boolean diretamente do finalizar_troca_com_codigo
+      if (data === true) {
+        toast({
+          title: "Troca Finalizada! 🤝",
+          description: "A troca foi concluída com sucesso e as Girinhas foram transferidas!",
+        });
+        
+        const reserva = reservas.find(r => r.id === reservaId);
+        await Promise.all([fetchReservas(), invalidateItemQueries(reserva?.item_id)]);
+        return true;
+      } else {
+        toast({
+          title: "Erro ao finalizar troca",
+          description: "Não foi possível finalizar a troca. Verifique o código.",
+          variant: "destructive",
+        });
+        return false;
+      }
 
     } catch (err) {
       console.error('Erro ao finalizar troca:', err);

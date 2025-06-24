@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -88,6 +87,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
     return `${horas}h ${minutos}m`;
   };
 
+  // FUNÇÃO ATUALIZADA: Usar sistema V2 atômico
   const handleConfirmarEntrega = async (codigo: string): Promise<boolean> => {
     setLoadingConfirmacao(true);
     try {

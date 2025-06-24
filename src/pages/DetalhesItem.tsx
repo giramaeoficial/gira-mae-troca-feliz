@@ -1,4 +1,3 @@
-
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -99,6 +98,7 @@ const DetalhesItem = () => {
     const isProprio = item.publicado_por === user?.id;
     const isFavorite = verificarSeFavorito(item.id);
 
+    // FUNÇÃO ATUALIZADA: Sistema V2 agora simplificado (apenas 1 parâmetro)
     const handleReservar = async () => {
         if (isProprio) {
             toast({
@@ -127,7 +127,7 @@ const DetalhesItem = () => {
             return;
         }
 
-        // CORREÇÃO: entrarNaFila agora aceita apenas 1 parâmetro
+        // Sistema V2: entrarNaFila agora aceita apenas 1 parâmetro e é atômico
         const sucesso = await entrarNaFila(item.id);
         if (sucesso) {
             await carregarItem();

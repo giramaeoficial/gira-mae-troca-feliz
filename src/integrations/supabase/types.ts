@@ -408,30 +408,6 @@ export type Database = {
           },
         ]
       }
-      cotacao_girinhas: {
-        Row: {
-          cotacao_atual: number
-          created_at: string | null
-          id: string
-          updated_at: string | null
-          volume_24h: number | null
-        }
-        Insert: {
-          cotacao_atual?: number
-          created_at?: string | null
-          id?: string
-          updated_at?: string | null
-          volume_24h?: number | null
-        }
-        Update: {
-          cotacao_atual?: number
-          created_at?: string | null
-          id?: string
-          updated_at?: string | null
-          volume_24h?: number | null
-        }
-        Relationships: []
-      }
       escolas_inep: {
         Row: {
           categoria_administrativa: string | null
@@ -673,30 +649,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      historico_cotacao: {
-        Row: {
-          cotacao: number
-          created_at: string | null
-          evento: string | null
-          id: string
-          volume_periodo: number | null
-        }
-        Insert: {
-          cotacao: number
-          created_at?: string | null
-          evento?: string | null
-          id?: string
-          volume_periodo?: number | null
-        }
-        Update: {
-          cotacao?: number
-          created_at?: string | null
-          evento?: string | null
-          id?: string
-          volume_periodo?: number | null
-        }
-        Relationships: []
       }
       indicacoes: {
         Row: {
@@ -1633,8 +1585,11 @@ export type Database = {
           descricao: string
           id: string
           item_id: string | null
+          metadados: Json | null
           quantidade_girinhas: number | null
+          reserva_id: string | null
           tipo: string
+          transferencia_id: string | null
           user_id: string
           usuario_origem: string | null
           valor: number
@@ -1647,8 +1602,11 @@ export type Database = {
           descricao: string
           id?: string
           item_id?: string | null
+          metadados?: Json | null
           quantidade_girinhas?: number | null
+          reserva_id?: string | null
           tipo: string
+          transferencia_id?: string | null
           user_id: string
           usuario_origem?: string | null
           valor: number
@@ -1661,8 +1619,11 @@ export type Database = {
           descricao?: string
           id?: string
           item_id?: string | null
+          metadados?: Json | null
           quantidade_girinhas?: number | null
+          reserva_id?: string | null
           tipo?: string
+          transferencia_id?: string | null
           user_id?: string
           usuario_origem?: string | null
           valor?: number
@@ -1674,6 +1635,20 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_reserva_id_fkey"
+            columns: ["reserva_id"]
+            isOneToOne: false
+            referencedRelation: "reservas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_transferencia_id_fkey"
+            columns: ["transferencia_id"]
+            isOneToOne: false
+            referencedRelation: "transferencias_girinhas"
             referencedColumns: ["id"]
           },
         ]
@@ -1931,14 +1906,6 @@ export type Database = {
         Args: { p_user_id: string; p_missao_id: string }
         Returns: Json
       }
-      cotacao_atual: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      cotacao_mercado: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       create_notification: {
         Args: {
           p_user_id: string
@@ -2018,10 +1985,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      obter_cotacao_mercado: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       obter_data_expiracao: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -2070,14 +2033,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
-      obter_preco_recompra_girinhas: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      obter_preco_venda_girinhas: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
       obter_valor_bonus: {
         Args: { p_tipo_bonus: string }
         Returns: number
@@ -2085,10 +2040,6 @@ export type Database = {
       pode_estender_transacao: {
         Args: { p_user_id: string; p_transacao_id: string }
         Returns: Json
-      }
-      preco_emissao: {
-        Args: Record<PropertyKey, never>
-        Returns: number
       }
       processar_bonus_diario: {
         Args: { p_user_id: string; p_valor_girinhas: number }
@@ -2101,6 +2052,10 @@ export type Database = {
       processar_compra_girinhas: {
         Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
         Returns: string
+      }
+      processar_compra_girinhas_v2: {
+        Args: { p_dados: Json }
+        Returns: Json
       }
       processar_compra_manual: {
         Args: {
@@ -2118,6 +2073,10 @@ export type Database = {
         }
         Returns: Json
       }
+      processar_confirmacao_entrega_v2: {
+        Args: { p_dados: Json }
+        Returns: Json
+      }
       processar_expiracao_girinhas: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2126,13 +2085,21 @@ export type Database = {
         Args: { p_item_id: string }
         Returns: undefined
       }
-      processar_reserva: {
-        Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }
-        Returns: string
+      processar_reserva_item_v2: {
+        Args: { p_dados: Json }
+        Returns: Json
       }
       processar_taxa_transacao: {
         Args: { p_reserva_id: string }
         Returns: undefined
+      }
+      processar_transacao_atomica: {
+        Args: { p_operacao: string; p_dados: Json }
+        Returns: Json
+      }
+      processar_transferencia_p2p_v2: {
+        Args: { p_dados: Json }
+        Returns: Json
       }
       queimar_girinhas: {
         Args: { p_user_id: string; p_quantidade: number; p_motivo: string }
@@ -2160,19 +2127,6 @@ export type Database = {
           zona_atual: string
           markup_aplicado: string
           status_sistema: string
-        }[]
-      }
-      relatorio_cotacao_detalhado: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          cotacao_marketplace: number
-          preco_venda: number
-          preco_recompra: number
-          demanda_24h: number
-          emissao_24h: number
-          queima_24h: number
-          oferta_liquida: number
-          tendencia: string
         }[]
       }
       relatorio_sistema_admin: {
@@ -2215,33 +2169,6 @@ export type Database = {
           p_sent_by?: string
         }
         Returns: number
-      }
-      simular_banda_cambial: {
-        Args: { cotacao_teste: number }
-        Returns: {
-          cotacao_simulada: number
-          preco_que_seria: number
-          markup_que_seria: number
-          zona_que_seria: string
-          explicacao: string
-        }[]
-      }
-      simular_markup_inteligente: {
-        Args: { cotacao_teste: number }
-        Returns: {
-          cotacao: number
-          markup_seria: number
-          preco_seria: number
-          explicacao: string
-        }[]
-      }
-      testar_precos_tela: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          nome_funcao: string
-          valor_retornado: number
-          observacao: string
-        }[]
       }
       transferir_girinhas_p2p: {
         Args: {
