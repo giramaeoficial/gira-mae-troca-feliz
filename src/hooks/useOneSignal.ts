@@ -31,7 +31,7 @@ export const useOneSignal = () => {
         if (currentPermission === 'granted') {
           // Obter Player ID se disponível
           try {
-            const id = await OneSignal.User.PushSubscription.getIdAsync();
+            const id = await OneSignal.User.PushSubscription.getId();
             if (id) {
               setPlayerId(id);
               console.log('OneSignal Player ID:', id);
@@ -82,7 +82,7 @@ export const useOneSignal = () => {
         // Tentar obter Player ID após permissão concedida
         try {
           setTimeout(async () => {
-            const id = await OneSignal.User.PushSubscription.getIdAsync();
+            const id = await OneSignal.User.PushSubscription.getId();
             if (id) setPlayerId(id);
           }, 2000);
         } catch (error) {
