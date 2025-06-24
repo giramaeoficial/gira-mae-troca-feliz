@@ -1,15 +1,16 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MessageCircle, CheckCircle, X, Users, Star } from "lucide-react";
+import { Clock, MessageCircle, CheckCircle, X, Users, Star, Key } from "lucide-react";
 import ChatModal from "@/components/chat/ChatModal";
 import ConfirmacaoEntregaModal from "./ConfirmacaoEntregaModal";
 import AvaliacaoModal from "./AvaliacaoModal";
+import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useCodigoConfirmacao } from "@/hooks/useCodigoConfirmacao";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ReservaCardProps {
@@ -23,6 +24,7 @@ interface ReservaCardProps {
     prazo_expiracao: string;
     confirmado_por_reservador: boolean;
     confirmado_por_vendedor: boolean;
+    codigo_confirmacao?: string;
     posicao_fila?: number;
     tempo_restante?: number;
     itens?: {
@@ -41,14 +43,17 @@ interface ReservaCardProps {
   };
   onConfirmarEntrega: (reservaId: string) => void;
   onCancelarReserva: (reservaId: string) => void;
+  onRefresh?: () => void;
 }
 
-const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: ReservaCardProps) => {
+const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh }: ReservaCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { finalizarTrocaComCodigo, loading: loadingCodigo } = useCodigoConfirmacao();
   const [showChat, setShowChat] = useState(false);
   const [showConfirmacao, setShowConfirmacao] = useState(false);
   const [showAvaliacao, setShowAvaliacao] = useState(false);
+  const [showCodigoModal, setShowCodigoModal] = useState(false);
   const [loadingConfirmacao, setLoadingConfirmacao] = useState(false);
   const [jaAvaliou, setJaAvaliou] = useState(false);
 
@@ -127,6 +132,16 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
       console.error('Erro ao confirmar entrega:', error);
     } finally {
       setLoadingConfirmacao(false);
+    }
+  };
+
+  const handleFinalizarComCodigo = async (codigo: string) => {
+    const sucesso = await finalizarTrocaComCodigo(reserva.id, codigo);
+    if (sucesso) {
+      setShowCodigoModal(false);
+      if (onRefresh) {
+        onRefresh();
+      }
     }
   };
 
@@ -257,11 +272,11 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
                 
                 <Button 
                   size="sm" 
-                  onClick={() => setShowConfirmacao(true)}
+                  onClick={() => setShowCodigoModal(true)}
                   className="flex-1 bg-green-600 hover:bg-green-700"
                 >
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  {isReservador ? 'Recebi' : 'Entreguei'}
+                  <Key className="w-4 h-4 mr-1" />
+                  {isVendedor ? 'Código' : 'Ver código'}
                 </Button>
 
                 <Button 
@@ -343,6 +358,16 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva }: Reserva
           setJaAvaliou(true);
           setShowAvaliacao(false);
         }}
+      />
+
+      {/* Novo modal de código de confirmação */}
+      <CodigoConfirmacaoModal
+        isOpen={showCodigoModal}
+        onClose={() => setShowCodigoModal(false)}
+        reserva={reserva}
+        isVendedor={isVendedor}
+        onConfirmarCodigo={handleFinalizarComCodigo}
+        loading={loadingCodigo}
       />
     </>
   );

@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
 type ReservaComRelacionamentos = Tables<'reservas'> & {
+  codigo_confirmacao?: string;
   itens?: {
     titulo: string;
     fotos: string[] | null;
@@ -52,7 +53,6 @@ export const useReservas = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para invalidar cache de itens (otimizada)
   const invalidateItemQueries = async (itemId?: string) => {
     const queries = ['itens', 'meus-itens', 'itens-usuario'];
     
@@ -60,7 +60,6 @@ export const useReservas = () => {
       queryClient.invalidateQueries({ queryKey: ['item', itemId] });
     }
     
-    // Invalidar queries em batch para melhor performance
     queries.forEach(queryKey => {
       queryClient.invalidateQueries({ queryKey: [queryKey] });
     });
@@ -76,11 +75,12 @@ export const useReservas = () => {
       setLoading(true);
       setError(null);
 
-      // Buscar reservas com menos joins para melhor performance
+      // Buscar reservas incluindo código de confirmação
       const { data: reservasData, error: reservasError } = await supabase
         .from('reservas')
         .select(`
           *,
+          codigo_confirmacao,
           itens (
             titulo,
             fotos,
@@ -89,7 +89,7 @@ export const useReservas = () => {
         `)
         .or(`usuario_reservou.eq.${user.id},usuario_item.eq.${user.id}`)
         .order('created_at', { ascending: false })
-        .limit(20); // Limitar para melhor performance
+        .limit(20);
 
       if (reservasError) throw reservasError;
 
@@ -106,7 +106,7 @@ export const useReservas = () => {
         `)
         .eq('usuario_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(10); // Limitar para melhor performance
+        .limit(10);
 
       if (filasError) throw filasError;
 
@@ -214,7 +214,7 @@ export const useReservas = () => {
       if (resultado?.tipo === 'reserva_direta') {
         toast({
           title: "Item reservado! 🎉",
-          description: "As Girinhas foram bloqueadas. Você tem 48h para combinar a entrega.",
+          description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega.",
         });
       } else if (resultado?.tipo === 'fila_espera') {
         toast({
@@ -223,7 +223,6 @@ export const useReservas = () => {
         });
       }
 
-      // Atualizar dados localmente
       await fetchReservas();
       await invalidateItemQueries(itemId);
       
@@ -312,7 +311,6 @@ export const useReservas = () => {
         });
       }
 
-      // Buscar item_id da reserva para invalidar cache
       const reserva = reservas.find(r => r.id === reservaId);
       
       await Promise.all([
@@ -356,7 +354,6 @@ export const useReservas = () => {
         });
       }
 
-      // Buscar item_id da reserva para invalidar cache
       const reserva = reservas.find(r => r.id === reservaId);
       
       await Promise.all([

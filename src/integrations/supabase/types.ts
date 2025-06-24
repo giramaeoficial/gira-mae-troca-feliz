@@ -1458,6 +1458,7 @@ export type Database = {
       }
       reservas: {
         Row: {
+          codigo_confirmacao: string | null
           confirmado_por_reservador: boolean
           confirmado_por_vendedor: boolean
           created_at: string
@@ -1473,6 +1474,7 @@ export type Database = {
           valor_girinhas: number
         }
         Insert: {
+          codigo_confirmacao?: string | null
           confirmado_por_reservador?: boolean
           confirmado_por_vendedor?: boolean
           created_at?: string
@@ -1488,6 +1490,7 @@ export type Database = {
           valor_girinhas: number
         }
         Update: {
+          codigo_confirmacao?: string | null
           confirmado_por_reservador?: boolean
           confirmado_por_vendedor?: boolean
           created_at?: string
@@ -1936,6 +1939,14 @@ export type Database = {
       }
       estender_validade_girinhas_seguro: {
         Args: { p_user_id: string; p_transacao_id: string }
+        Returns: Json
+      }
+      finalizar_troca_com_codigo: {
+        Args: {
+          p_reserva_id: string
+          p_codigo: string
+          p_usuario_vendedor: string
+        }
         Returns: Json
       }
       get_municipios_por_uf: {
