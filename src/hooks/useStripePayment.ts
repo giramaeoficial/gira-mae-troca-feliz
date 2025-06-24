@@ -4,11 +4,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCarteira } from '@/hooks/useCarteira';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const useStripePayment = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { refetch } = useCarteira();
+  const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Check for Stripe redirect parameters on mount
@@ -47,18 +49,56 @@ export const useStripePayment = () => {
               description: `${data.quantidade} Girinhas adicionadas à sua carteira por R$ ${data.valor_pago.toFixed(2)}`,
             });
 
-            // CORREÇÃO: Forçar múltiplas atualizações para garantir que o saldo seja atualizado
+            // CORREÇÃO CRÍTICA: Invalidar TODOS os caches relacionados à carteira
+            console.log('🔄 [useStripePayment] Invalidando caches da carteira...');
+            
+            // Invalidar cache da carteira
+            await queryClient.invalidateQueries({ 
+              queryKey: ['carteira'], 
+              refetchType: 'all' 
+            });
+            
+            // Invalidar cache de expiração
+            await queryClient.invalidateQueries({ 
+              queryKey: ['girinhas-expiracao'], 
+              refetchType: 'all' 
+            });
+            
+            // Invalidar cache de preço manual
+            await queryClient.invalidateQueries({ 
+              queryKey: ['preco-manual'], 
+              refetchType: 'all' 
+            });
+            
+            // Refetch FORÇADO da carteira
             await refetch();
             
-            // Aguardar um pouco e fazer mais um refetch para garantir
+            // NOVO: Aguardar e fazer refetch adicional para garantir
             setTimeout(async () => {
+              console.log('🔄 [useStripePayment] Segundo refetch de segurança...');
+              await queryClient.refetchQueries({ 
+                queryKey: ['carteira'], 
+                type: 'all' 
+              });
               await refetch();
-            }, 1000);
+            }, 500);
             
-            // Terceiro refetch após mais tempo para garantia total
+            // NOVO: Terceiro refetch após mais tempo para garantia total
             setTimeout(async () => {
+              console.log('🔄 [useStripePayment] Terceiro refetch final...');
+              await queryClient.refetchQueries({ 
+                queryKey: ['carteira'], 
+                type: 'all' 
+              });
               await refetch();
-            }, 2000);
+            }, 1500);
+            
+            // NOVO: Forçar atualização da página inteira se necessário
+            setTimeout(() => {
+              console.log('🔄 [useStripePayment] Verificando se saldo foi atualizado...');
+              // Se após 3 segundos ainda não atualizou, recarregar a página
+              window.location.reload();
+            }, 3000);
           }
         } catch (error: any) {
           console.error('❌ [useStripePayment] Erro ao verificar pagamento:', error);
@@ -76,7 +116,7 @@ export const useStripePayment = () => {
     };
 
     handleStripeRedirect();
-  }, [user, toast, refetch]);
+  }, [user, toast, refetch, queryClient]);
 
   const iniciarPagamento = async (quantidade: number): Promise<boolean> => {
     if (!user) {
