@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,12 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, Info, CheckCircle, Shield, Sparkles } from 'lucide-react';
+import { ShoppingCart, Info, CheckCircle, Shield, Sparkles, CreditCard, Wallet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useCarteira } from '@/hooks/useCarteira';
 import { usePrecoManual } from '@/hooks/usePrecoManual';
+import { useStripePayment } from '@/hooks/useStripePayment';
 
 interface ConfigCompra {
   min: number;
@@ -27,6 +27,7 @@ const CompraLivre: React.FC = () => {
   const { refetch } = useCarteira();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { iniciarPagamentoStripe, isProcessing } = useStripePayment();
 
   // Carregar configurações
   useEffect(() => {
@@ -59,7 +60,7 @@ const CompraLivre: React.FC = () => {
   const valorTotal = quantidadeNum * precoManual;
   const isQuantidadeValida = quantidadeNum >= configuracoes.min && quantidadeNum <= configuracoes.max;
 
-  // ✅ MIGRADO: Usar sistema V2 atômico
+  // ✅ MANTIDO: Compra manual (simulação/teste) usando sistema V2 atômico
   const realizarCompraManual = async () => {
     if (!user || !isQuantidadeValida || quantidadeNum <= 0) return;
 
@@ -67,7 +68,6 @@ const CompraLivre: React.FC = () => {
     try {
       console.log('🔒 [CompraLivre] Iniciando compra V2 atômica:', quantidadeNum);
       
-      // ✅ NOVO: Usar processar_compra_girinhas_v2 (sistema atômico)
       const { data, error } = await supabase.rpc('processar_compra_girinhas_v2', {
         p_dados: {
           user_id: user.id,
@@ -109,6 +109,13 @@ const CompraLivre: React.FC = () => {
     }
   };
 
+  // ✅ NOVO: Compra com Stripe (pagamento real)
+  const realizarCompraStripe = async () => {
+    if (!user || !isQuantidadeValida || quantidadeNum <= 0) return;
+    
+    await iniciarPagamentoStripe(quantidadeNum);
+  };
+
   return (
     <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50">
       <CardHeader className="text-center pb-4">
@@ -118,7 +125,7 @@ const CompraLivre: React.FC = () => {
         </CardTitle>
         <div className="space-y-2">
           <p className="text-sm text-gray-600">
-            Sistema seguro e preço fixo
+            Sistema seguro com pagamento real via Stripe
           </p>
         </div>
       </CardHeader>
@@ -137,30 +144,47 @@ const CompraLivre: React.FC = () => {
           </p>
         </div>
 
+        {/* Alerta de pagamento processando */}
+        {isProcessing && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <CreditCard className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span className="font-medium">Processando pagamento Stripe...</span>
+              </div>
+              <p className="text-sm mt-1">
+                Aguarde enquanto verificamos seu pagamento.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Alerta de segurança */}
         <Alert className="border-green-200 bg-green-50">
           <Shield className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             <div className="space-y-1">
-              <p className="font-medium">🔒 Compra 100% segura!</p>
+              <p className="font-medium">🔒 Pagamento 100% seguro!</p>
               <p className="text-sm">
-                Preço fixo e transparente, sem surpresas ou taxas ocultas.
+                Processado via Stripe com criptografia de nível bancário.
               </p>
             </div>
           </AlertDescription>
         </Alert>
 
-        <Tabs defaultValue="simples" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="simples">Compra Simples</TabsTrigger>
+        <Tabs defaultValue="stripe" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="stripe">Pagamento Real</TabsTrigger>
+            <TabsTrigger value="demo">Demo/Teste</TabsTrigger>
             <TabsTrigger value="info">Informações</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="simples" className="space-y-4">
+          <TabsContent value="stripe" className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="quantidade">Quantidade de Girinhas</Label>
+              <Label htmlFor="quantidade-stripe">Quantidade de Girinhas</Label>
               <Input
-                id="quantidade"
+                id="quantidade-stripe"
                 type="number"
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value)}
@@ -168,6 +192,7 @@ const CompraLivre: React.FC = () => {
                 min={configuracoes.min}
                 max={configuracoes.max}
                 className="text-lg"
+                disabled={isProcessing}
               />
               <p className="text-xs text-gray-500">
                 Mínimo: {configuracoes.min} | Máximo: {configuracoes.max.toLocaleString()} Girinhas
@@ -196,19 +221,19 @@ const CompraLivre: React.FC = () => {
             )}
 
             <Button
-              onClick={realizarCompraManual}
-              disabled={!isQuantidadeValida || isComprandoManual || quantidadeNum <= 0}
-              className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              onClick={realizarCompraStripe}
+              disabled={!isQuantidadeValida || isProcessing || quantidadeNum <= 0}
+              className="w-full h-12 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
-              {isComprandoManual ? (
+              {isProcessing ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processando compra...
+                  Redirecionando para Stripe...
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5" />
-                  Comprar por R$ {valorTotal.toFixed(2)}
+                  <CreditCard className="w-5 h-5" />
+                  Pagar R$ {valorTotal.toFixed(2)} via Stripe
                 </div>
               )}
             </Button>
@@ -220,40 +245,95 @@ const CompraLivre: React.FC = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="demo" className="space-y-4">
+            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                <span className="font-medium">⚠️ Modo Demo:</span> Esta opção simula uma compra sem cobrança real. 
+                Use apenas para testes.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="quantidade-demo">Quantidade de Girinhas (Demo)</Label>
+              <Input
+                id="quantidade-demo"
+                type="number"
+                value={quantidade}
+                onChange={(e) => setQuantidade(e.target.value)}
+                placeholder={`Entre ${configuracoes.min} e ${configuracoes.max.toLocaleString()}`}
+                min={configuracoes.min}
+                max={configuracoes.max}
+                className="text-lg"
+                disabled={isComprandoManual || isProcessing}
+              />
+            </div>
+
+            {quantidadeNum > 0 && (
+              <div className="bg-white p-4 rounded-lg border space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Quantidade:</span>
+                  <span className="font-bold">{quantidadeNum.toLocaleString()} Girinhas</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Valor simulado:</span>
+                  <span className="font-bold">R$ {valorTotal.toFixed(2)}</span>
+                </div>
+              </div>
+            )}
+
+            <Button
+              onClick={realizarCompraManual}
+              disabled={!isQuantidadeValida || isComprandoManual || isProcessing || quantidadeNum <= 0}
+              className="w-full h-12 text-lg font-bold bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800"
+            >
+              {isComprandoManual ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Processando demo...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5" />
+                  Simular Compra (Demo)
+                </div>
+              )}
+            </Button>
+          </TabsContent>
+
           <TabsContent value="info" className="space-y-4">
             <div className="bg-white p-4 rounded-lg border space-y-3">
               <h3 className="font-bold text-gray-800 flex items-center gap-2">
                 <Info className="w-4 h-4" />
-                Como Funciona
+                Como Funciona o Pagamento
               </h3>
               
               <div className="space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Preço fixo e transparente</span>
+                  <span>Pagamento processado via Stripe (seguro)</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Sem flutuações ou surpresas</span>
+                  <span>Preço fixo de R$ {precoManual.toFixed(2)} por Girinha</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Processamento seguro server-side</span>
+                  <span>Girinhas creditadas automaticamente após pagamento</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Créditos disponíveis imediatamente</span>
+                  <span>Suporte a cartão de crédito, débito e PIX</span>
                 </div>
               </div>
 
-              <div className="bg-purple-50 p-3 rounded-lg mt-4">
-                <p className="text-sm text-purple-800">
-                  <span className="font-medium">💡 Preço controlado:</span> O valor é definido manualmente 
-                  pela administração, garantindo estabilidade e previsibilidade.
+              <div className="bg-blue-50 p-3 rounded-lg mt-4">
+                <p className="text-sm text-blue-800">
+                  <span className="font-medium">💳 Métodos aceitos:</span> O Stripe aceita cartões de crédito/débito 
+                  das principais bandeiras e PIX para pagamentos no Brasil.
                 </p>
               </div>
 
-              <div className="bg-purple-50 p-3 rounded-lg mt-4">
+              <div className="bg-purple-50 p-3 rounded-lg">
                 <p className="text-sm text-purple-800">
                   <span className="font-medium">💡 Dica:</span> As Girinhas têm validade de 12 meses e podem ser usadas 
                   para qualquer item na plataforma!
