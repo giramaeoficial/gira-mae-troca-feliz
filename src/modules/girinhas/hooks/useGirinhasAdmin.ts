@@ -1,15 +1,13 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export const useGirinhasAdmin = () => {
-  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query para preço manual atual (apenas admin)
+  // ✅ CORRIGIDO: Query para preço manual atual (apenas admin)
   const { 
     data: precoManual, 
     isLoading: loadingPrecoManual,
@@ -25,7 +23,7 @@ export const useGirinhasAdmin = () => {
     refetchInterval: 60000,
   });
 
-  // Query para métricas de saúde (apenas admin)
+  // ✅ CORRIGIDO: Query para métricas de saúde (apenas admin)
   const { data: metricasSaude, refetch: refetchMetricas } = useQuery({
     queryKey: ['admin-metricas-saude'],
     queryFn: async () => {
@@ -37,9 +35,13 @@ export const useGirinhasAdmin = () => {
     refetchInterval: 60000,
   });
 
-  // Mutation para atualizar preço manual (apenas admin)
+  // ✅ CORRIGIDO: Mutation para atualizar preço manual (apenas admin)
   const atualizarPrecoManualMutation = useMutation({
     mutationFn: async (novoPreco: number) => {
+      if (novoPreco <= 0 || novoPreco > 10) {
+        throw new Error('Preço deve estar entre R$ 0,01 e R$ 10,00');
+      }
+      
       const { error } = await supabase
         .from('config_sistema')
         .upsert({

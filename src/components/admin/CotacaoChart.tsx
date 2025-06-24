@@ -8,10 +8,10 @@ import { ptBR } from "date-fns/locale";
 const CotacaoChart = () => {
   const { precoManual, isLoading } = usePrecoManual();
 
-  // Para o MVP manual, vamos simular um histórico simples
+  // ✅ CORRIGIDO: Para o sistema manual, vamos mostrar dados históricos simples
   const chartData = Array.from({ length: 30 }, (_, i) => ({
     data: format(new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000), 'dd/MM', { locale: ptBR }),
-    cotacao: precoManual + (Math.random() - 0.5) * 0.05, // Pequena variação simulada
+    preco: precoManual, // Preço fixo para sistema manual
     volume: Math.floor(Math.random() * 100)
   }));
 
@@ -69,7 +69,7 @@ const CotacaoChart = () => {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                domain={['dataMin - 0.01', 'dataMax + 0.01']}
+                domain={[precoManual - 0.1, precoManual + 0.1]}
                 tickFormatter={(value) => `R$ ${value.toFixed(2)}`}
               />
               <Tooltip 
@@ -83,7 +83,7 @@ const CotacaoChart = () => {
               />
               <Line 
                 type="monotone" 
-                dataKey="cotacao" 
+                dataKey="preco" 
                 stroke="#3b82f6" 
                 strokeWidth={2}
                 dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3 }}

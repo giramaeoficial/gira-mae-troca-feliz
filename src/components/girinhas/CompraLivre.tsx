@@ -59,39 +59,45 @@ const CompraLivre: React.FC = () => {
   const valorTotal = quantidadeNum * precoManual;
   const isQuantidadeValida = quantidadeNum >= configuracoes.min && quantidadeNum <= configuracoes.max;
 
+  // ✅ MIGRADO: Usar sistema V2 atômico
   const realizarCompraManual = async () => {
     if (!user || !isQuantidadeValida || quantidadeNum <= 0) return;
 
     setIsComprandoManual(true);
     try {
-      console.log('🔒 [CompraLivre] Iniciando compra manual:', quantidadeNum);
+      console.log('🔒 [CompraLivre] Iniciando compra V2 atômica:', quantidadeNum);
       
-      // Gerar chave de idempotência única
-      const idempotencyKey = `compra_manual_${user.id}_${Date.now()}_${Math.random()}`;
-      
-      // Usar RPC que processa com preço manual
-      const { data, error } = await supabase.rpc('processar_compra_manual', {
-        p_user_id: user.id,
-        p_quantidade: quantidadeNum,
-        p_idempotency_key: idempotencyKey
+      // ✅ NOVO: Usar processar_compra_girinhas_v2 (sistema atômico)
+      const { data, error } = await supabase.rpc('processar_compra_girinhas_v2', {
+        p_dados: {
+          user_id: user.id,
+          quantidade: quantidadeNum,
+          payment_id: `manual_${Date.now()}_${Math.random()}`
+        }
       });
 
       if (error) {
-        console.error('❌ Erro na compra manual:', error);
+        console.error('❌ Erro na compra V2:', error);
         throw error;
       }
       
-      console.log('✅ [CompraLivre] Compra manual processada:', data);
+      console.log('✅ [CompraLivre] Compra V2 processada:', data);
+      
+      const resultado = data as { sucesso: boolean; erro?: string; quantidade?: number; valor_total?: number };
+      
+      if (!resultado.sucesso) {
+        throw new Error(resultado.erro || 'Erro na compra');
+      }
       
       await refetch();
       setQuantidade('');
       
       toast({
         title: "🎉 Compra realizada com sucesso!",
-        description: `${quantidadeNum} Girinhas adicionadas por R$ ${valorTotal.toFixed(2)}`,
+        description: `${resultado.quantidade} Girinhas adicionadas por R$ ${resultado.valor_total?.toFixed(2)}`,
       });
     } catch (error: any) {
-      console.error('❌ Erro na compra manual:', error);
+      console.error('❌ Erro na compra V2:', error);
       
       toast({
         title: "Erro na compra",

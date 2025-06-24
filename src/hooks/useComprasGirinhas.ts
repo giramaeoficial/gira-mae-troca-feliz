@@ -56,11 +56,12 @@ export const useComprasGirinhas = () => {
     }
   };
 
+  // ✅ MIGRADO: Usar sistema V2 atômico para compras
   const simularCompra = async (pacoteId: string): Promise<boolean> => {
     if (!user) return false;
 
     try {
-      console.log('🛒 [useComprasGirinhas] Iniciando compra de pacote:', pacoteId);
+      console.log('🛒 [useComprasGirinhas] Iniciando compra V2 de pacote:', pacoteId);
 
       // Buscar dados do pacote
       const { data: pacote, error: pacoteError } = await supabase
@@ -75,11 +76,30 @@ export const useComprasGirinhas = () => {
 
       console.log('📦 [useComprasGirinhas] Pacote encontrado:', pacote);
 
-      // Simular processamento de pagamento (sempre aprovado para demo)
-      const paymentId = `demo_${Date.now()}`;
+      // ✅ MIGRADO: Usar processar_compra_girinhas_v2 (sistema atômico)
+      const { data: resultadoCompra, error: compraError } = await supabase.rpc('processar_compra_girinhas_v2', {
+        p_dados: {
+          user_id: user.id,
+          quantidade: pacote.valor_girinhas,
+          payment_id: `pacote_${pacoteId}_${Date.now()}`
+        }
+      });
 
-      // Criar registro da compra
-      const { data: compra, error: compraError } = await supabase
+      if (compraError) {
+        console.error('❌ Erro na compra V2:', compraError);
+        throw compraError;
+      }
+
+      const resultado = resultadoCompra as { sucesso: boolean; erro?: string; transacao_id?: string };
+      
+      if (!resultado.sucesso) {
+        throw new Error(resultado.erro || 'Erro ao processar compra');
+      }
+
+      console.log('✅ [useComprasGirinhas] Compra V2 processada:', resultado);
+
+      // Criar registro da compra no histórico
+      const { error: registroError } = await supabase
         .from('compras_girinhas')
         .insert({
           user_id: user.id,
@@ -87,38 +107,13 @@ export const useComprasGirinhas = () => {
           valor_pago: pacote.valor_real,
           girinhas_recebidas: pacote.valor_girinhas,
           status: 'aprovado',
-          payment_id: paymentId
-        })
-        .select()
-        .single();
-
-      if (compraError) {
-        console.error('❌ Erro ao criar compra:', compraError);
-        throw compraError;
-      }
-
-      console.log('✅ [useComprasGirinhas] Compra registrada:', compra);
-
-      // Obter data de expiração configurada
-      const { data: dataExpiracao } = await supabase.rpc('obter_data_expiracao');
-
-      // Inserir transação diretamente (o trigger irá processar automaticamente)
-      const { error: transacaoError } = await supabase
-        .from('transacoes')
-        .insert({
-          user_id: user.id,
-          tipo: 'compra',
-          valor: pacote.valor_girinhas,
-          descricao: `Compra de pacote: ${pacote.nome}`,
-          data_expiracao: dataExpiracao
+          payment_id: `pacote_${pacoteId}_${Date.now()}`
         });
 
-      if (transacaoError) {
-        console.error('❌ Erro ao criar transação:', transacaoError);
-        throw transacaoError;
+      if (registroError) {
+        console.error('❌ Erro ao registrar compra:', registroError);
+        // Não falhar aqui pois a compra já foi processada
       }
-
-      console.log('✅ [useComprasGirinhas] Transação criada - trigger processará automaticamente');
 
       // Mostrar celebração especial para compras
       const economiaTexto = pacote.desconto_percentual > 0 
@@ -144,7 +139,7 @@ export const useComprasGirinhas = () => {
       
       return true;
     } catch (err) {
-      console.error('❌ [useComprasGirinhas] Erro ao processar compra:', err);
+      console.error('❌ [useComprasGirinhas] Erro ao processar compra V2:', err);
       setError(err instanceof Error ? err.message : 'Erro ao processar compra');
       
       toast({

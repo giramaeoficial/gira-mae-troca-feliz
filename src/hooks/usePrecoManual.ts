@@ -7,7 +7,7 @@ export const usePrecoManual = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query para obter preço manual atual
+  // ✅ CORRIGIDO: Query para obter preço manual atual usando função correta
   const { data: precoManual, isLoading } = useQuery({
     queryKey: ['preco-manual'],
     queryFn: async (): Promise<number> => {
@@ -18,9 +18,13 @@ export const usePrecoManual = () => {
     staleTime: 60000, // 1 minuto
   });
 
-  // Mutation para atualizar preço manual
+  // ✅ CORRIGIDO: Mutation para atualizar preço manual usando config_sistema
   const atualizarPrecoMutation = useMutation({
     mutationFn: async (novoPreco: number) => {
+      if (novoPreco <= 0 || novoPreco > 10) {
+        throw new Error('Preço deve estar entre R$ 0,01 e R$ 10,00');
+      }
+      
       const { error } = await supabase
         .from('config_sistema')
         .upsert({
