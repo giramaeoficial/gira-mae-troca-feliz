@@ -4,8 +4,8 @@ import { AuthProvider } from '@/hooks/useAuth'
 import App from './App.tsx'
 import './index.css'
 
-// Remover inicialização do OneSignal do main.tsx
-// Agora será gerenciado pelo useNotificationSystem
+// OneSignal será gerenciado pelo useNotificationSystem
+// Não inicializar aqui para evitar conflitos
 
 createRoot(document.getElementById("root")!).render(
   <AuthProvider>

@@ -22,8 +22,14 @@ export const useNotificationSystem = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Inicializar OneSignal uma única vez
+  // Inicializar OneSignal uma única vez (DESABILITADO TEMPORARIAMENTE)
   const initializeOneSignal = useCallback(async () => {
+    // TEMPORARIAMENTE DESABILITADO para resolver problemas de Service Worker
+    console.log('OneSignal temporariamente desabilitado');
+    setOneSignalInitialized(false);
+    return;
+    
+    /* 
     if (oneSignalInitialized || typeof window === 'undefined') return;
 
     try {
@@ -75,6 +81,7 @@ export const useNotificationSystem = () => {
     } catch (error) {
       console.error('Erro ao inicializar OneSignal:', error);
     }
+    */
   }, [oneSignalInitialized, user]);
 
   // Carregar notificações in-app
@@ -115,16 +122,17 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Carregar preferências
+  // Carregar preferências (QUERY DEFENSIVA)
   const loadPreferences = useCallback(async () => {
     if (!user) return;
 
     try {
+      // Usar maybeSingle() em vez de single() para não falhar se não existir
       const { data, error } = await supabase
         .from('user_notification_preferences')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Erro ao carregar preferências:', error);
@@ -139,15 +147,47 @@ export const useNotificationSystem = () => {
           sistema: data.sistema,
           push_enabled: data.push_enabled
         });
+      } else {
+        // Se não existe, criar com valores padrão
+        console.log('Criando preferências padrão para o usuário');
+        const { data: newPrefs, error: insertError } = await supabase
+          .from('user_notification_preferences')
+          .insert({
+            user_id: user.id,
+            mensagens: true,
+            reservas: true,
+            girinhas: true,
+            sistema: true,
+            push_enabled: false
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Erro ao criar preferências:', insertError);
+        } else if (newPrefs) {
+          setPreferences({
+            mensagens: newPrefs.mensagens,
+            reservas: newPrefs.reservas,
+            girinhas: newPrefs.girinhas,
+            sistema: newPrefs.sistema,
+            push_enabled: newPrefs.push_enabled
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar preferências:', error);
     }
   }, [user]);
 
-  // Solicitar permissão para push notifications
+  // Solicitar permissão para push notifications (DESABILITADO)
   const requestPushPermission = async () => {
     try {
+      // TEMPORARIAMENTE DESABILITADO
+      console.log('Push notifications temporariamente desabilitado');
+      return false;
+      
+      /*
       const permission = await Notification.requestPermission();
       const isGranted = permission === 'granted';
       setPushEnabled(isGranted);
@@ -170,6 +210,7 @@ export const useNotificationSystem = () => {
       }
 
       return isGranted;
+      */
     } catch (error) {
       console.error('Erro ao solicitar permissão:', error);
       return false;
@@ -280,35 +321,8 @@ export const useNotificationSystem = () => {
         console.error('Erro ao salvar notificação no banco:', dbError);
       }
 
-      // 2. Enviar push notification via OneSignal (se disponível)
-      if (oneSignalInitialized && playerId) {
-        try {
-          const restApiKey = ''; // Configurar quando necessário
-          const appId = '26d188ec-fdd6-41b3-86fe-b571cce6b3a5';
-
-          if (restApiKey) {
-            await fetch('https://onesignal.com/api/v1/notifications', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Basic ${restApiKey}`
-              },
-              body: JSON.stringify({
-                app_id: appId,
-                filters: [
-                  { field: 'tag', key: 'user_id', relation: '=', value: userId }
-                ],
-                headings: { en: title },
-                contents: { en: message },
-                data: data,
-                web_url: window.location.origin
-              })
-            });
-          }
-        } catch (pushError) {
-          console.error('Erro ao enviar push notification:', pushError);
-        }
-      }
+      // 2. Push notification via OneSignal TEMPORARIAMENTE DESABILITADO
+      console.log('Push notification via OneSignal temporariamente desabilitado');
 
       console.log('Notificação enviada:', { userId, type, title, message });
     } catch (error) {
@@ -317,28 +331,21 @@ export const useNotificationSystem = () => {
     }
   }, [oneSignalInitialized, playerId]);
 
-  // Enviar notificação de teste
+  // Enviar notificação de teste (SIMPLIFICADA)
   const sendTestNotification = useCallback(async () => {
-    if (!pushEnabled) {
-      const permission = await requestPushPermission();
-      if (!permission) {
-        toast.error('Permissão de notificação necessária');
-        return;
-      }
-    }
-
-    // Testar notificação do browser
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('GiraMãe - Teste', {
-        body: 'Sistema de notificações funcionando!',
-        icon: '/favicon.ico',
-        tag: 'test-notification'
+    // Testar apenas notificação in-app por enquanto
+    if (user) {
+      await sendNotification({
+        userId: user.id,
+        type: 'sistema',
+        title: 'GiraMãe - Teste',
+        message: 'Sistema de notificações in-app funcionando!'
       });
-      toast.success('Notificação de teste enviada!');
+      toast.success('Notificação de teste criada!');
     } else {
-      toast.error('Permissões de notificação não disponíveis');
+      toast.error('Usuário não encontrado');
     }
-  }, [pushEnabled, requestPushPermission]);
+  }, [user, sendNotification]);
 
   // Effects
   useEffect(() => {
