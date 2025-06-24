@@ -59,7 +59,6 @@ export const useReservas = () => {
   };
 
   const fetchReservas = async () => {
-    // ... (Sua função fetchReservas está correta e permanece aqui)
     if (!user) {
       setLoading(false);
       return;
@@ -111,13 +110,14 @@ export const useReservas = () => {
   };
 
   const entrarNaFila = async (itemId: string): Promise<boolean> => {
+    // ... (Esta função já está correta e foi mantida) ...
     if (!user) return false;
     setLoading(true);
     try {
         const { data, error } = await supabase
             .rpc('entrar_fila_espera', { p_item_id: itemId, p_usuario_id: user.id });
 
-        if (error || (data && !data.sucesso)) {
+        if (error || (data && !(data as any).sucesso)) {
             const errorMessage = error?.message || (data as any)?.erro || "Não foi possível reservar.";
             toast({ title: "Erro ao reservar", description: errorMessage, variant: "destructive" });
             return false;
@@ -135,8 +135,24 @@ export const useReservas = () => {
     }
   };
 
+  const sairDaFila = async (itemId: string): Promise<boolean> => {
+    // ... (Sua função original, que foi removida por engano, restaurada) ...
+    if (!user) return false;
+    try {
+      const { error } = await supabase.rpc('sair_fila_espera', { p_item_id: itemId, p_usuario_id: user.id });
+      if (error) throw error;
+      toast({ title: "Saiu da fila! 👋", description: "Você foi removido da fila de espera." });
+      await Promise.all([fetchReservas(), invalidateItemQueries(itemId)]);
+      return true;
+    } catch (err) {
+      console.error('Erro ao sair da fila:', err);
+      toast({ title: "Erro ao sair da fila", description: err instanceof Error ? err.message : "Tente novamente.", variant: "destructive" });
+      return false;
+    }
+  };
+
   const cancelarReserva = async (reservaId: string): Promise<boolean> => {
-    // ... (Sua função cancelarReserva está correta e permanece aqui, usando o alias 'removerDaReserva' se preferir) ...
+    // ... (Sua função original, restaurada) ...
     if (!user) return false;
     setLoading(true);
     try {
@@ -155,64 +171,42 @@ export const useReservas = () => {
     }
   };
   
-  // ====================================================================
-  //               ✨ FUNÇÃO CIRURGICAMENTE CORRIGIDA ✨
-  //              (A função 'confirmarEntrega' foi removida)
-  // ====================================================================
   const finalizarTrocaComCodigo = async (reservaId: string, codigo: string): Promise<boolean> => {
-    if (!user) {
-      toast({ title: "Erro", description: "Você precisa estar logado.", variant: "destructive" });
-      return false;
-    }
-
+    // ... (A nova função de finalização que criamos, mantida) ...
+    if (!user) return false;
     setLoading(true);
     try {
-      // Chamada RPC com os parâmetros corretos
-      const { data, error } = await supabase
-        .rpc('finalizar_troca_com_codigo', {
-          p_reserva_id: reservaId,
-          p_codigo_confirmacao: codigo // Nome do parâmetro corrigido
-        });
-
+      const { data, error } = await supabase.rpc('finalizar_troca_com_codigo', { p_reserva_id: reservaId, p_codigo_confirmacao: codigo });
       if (error) {
-        // Trata erros específicos da função do backend para feedback claro ao usuário
         if (error.message.includes('Código de confirmação inválido')) {
             toast({ title: "Código Inválido", description: "O código informado não está correto.", variant: "destructive"});
         } else if (error.message.includes('troca já foi finalizada')) {
              toast({ title: "Troca já finalizada", description: "Esta operação já foi concluída.", variant: "info"});
-        } else {
-            throw error; // Lança outros erros inesperados para o catch
-        }
+        } else { throw error; }
         return false;
       }
-
       if (data) {
-        toast({
-          title: "Troca Finalizada! 🤝",
-          description: "A troca foi concluída com sucesso e as Girinhas foram transferidas!",
-        });
+        toast({ title: "Troca Finalizada! 🤝", description: "A troca foi concluída com sucesso!" });
       }
-      
-      // Atualiza a UI para refletir o novo estado da reserva e do item
       const reserva = reservas.find(r => r.id === reservaId);
-      await Promise.all([
-        fetchReservas(),
-        invalidateItemQueries(reserva?.item_id)
-      ]);
-
+      await Promise.all([fetchReservas(), invalidateItemQueries(reserva?.item_id)]);
       return true;
-
     } catch (err) {
       console.error('Erro ao finalizar troca:', err);
-      toast({
-        title: "Erro ao finalizar troca",
-        description: err instanceof Error ? err.message : "Tente novamente.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao finalizar troca", description: err instanceof Error ? err.message : "Tente novamente.", variant: "destructive" });
       return false;
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
+  };
+
+  // Funções de utilidade que também foram removidas e agora restauradas
+  const isItemReservado = (itemId: string): boolean => {
+    return reservas.some(r => r.item_id === itemId && r.status === 'pendente');
+  };
+
+  const getFilaEspera = (itemId: string): number => {
+    return filasEspera.filter(f => f.item_id === itemId).length;
   };
 
   useEffect(() => {
@@ -222,20 +216,21 @@ export const useReservas = () => {
   }, [user]);
 
   // ====================================================================
-  //               ✨ RETORNO DO HOOK ATUALIZADO ✨
+  //               ✨ RETORNO DO HOOK COMPLETO E CORRIGIDO ✨
   // ====================================================================
   return {
     reservas,
     filasEspera,
     loading,
     error,
-    criarReserva: entrarNaFila, // Mantendo alias, se usado
+    criarReserva: entrarNaFila,
     entrarNaFila,
     sairDaFila,
+    removerDaReserva: cancelarReserva, // Mantendo o alias que você tinha
+    confirmarEntrega: finalizarTrocaComCodigo, // Alias para a nova função, para que a UI quebre o mínimo possível
     cancelarReserva,
-    finalizarTrocaComCodigo, // <-- Exportando a nova função correta
-    refetch: fetchReservas,
-    // As funções 'removerDaReserva' e 'isItemReservado' foram removidas para simplificar, 
-    // mas podem ser adicionadas de volta se forem usadas em outros lugares.
+    isItemReservado,
+    getFilaEspera,
+    refetch: fetchReservas
   };
 };
