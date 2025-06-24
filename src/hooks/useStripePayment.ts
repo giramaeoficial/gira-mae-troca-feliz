@@ -31,7 +31,7 @@ export const useStripePayment = () => {
       }
 
       if (stripeSuccess && sessionId && user) {
-        console.log('🔄 [useStripePayment] Verificando pagamento Stripe...');
+        console.log('🔄 [useStripePayment] Verificando pagamento...');
         setIsProcessing(true);
 
         try {
@@ -47,8 +47,18 @@ export const useStripePayment = () => {
               description: `${data.quantidade} Girinhas adicionadas à sua carteira por R$ ${data.valor_pago.toFixed(2)}`,
             });
 
-            // Refresh wallet data
+            // CORREÇÃO: Forçar múltiplas atualizações para garantir que o saldo seja atualizado
             await refetch();
+            
+            // Aguardar um pouco e fazer mais um refetch para garantir
+            setTimeout(async () => {
+              await refetch();
+            }, 1000);
+            
+            // Terceiro refetch após mais tempo para garantia total
+            setTimeout(async () => {
+              await refetch();
+            }, 2000);
           }
         } catch (error: any) {
           console.error('❌ [useStripePayment] Erro ao verificar pagamento:', error);
@@ -68,7 +78,7 @@ export const useStripePayment = () => {
     handleStripeRedirect();
   }, [user, toast, refetch]);
 
-  const iniciarPagamentoStripe = async (quantidade: number): Promise<boolean> => {
+  const iniciarPagamento = async (quantidade: number): Promise<boolean> => {
     if (!user) {
       toast({
         title: "Erro",
@@ -99,7 +109,7 @@ export const useStripePayment = () => {
     setIsProcessing(true);
 
     try {
-      console.log('🚀 [useStripePayment] Iniciando checkout Stripe para:', quantidade, 'Girinhas');
+      console.log('🚀 [useStripePayment] Iniciando checkout para:', quantidade, 'Girinhas');
 
       const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
         body: { quantidade }
@@ -108,7 +118,7 @@ export const useStripePayment = () => {
       if (error) throw error;
 
       if (data.url) {
-        // Redirect to Stripe Checkout
+        // Redirect to Checkout
         window.location.href = data.url;
         return true;
       } else {
@@ -129,7 +139,7 @@ export const useStripePayment = () => {
   };
 
   return {
-    iniciarPagamentoStripe,
+    iniciarPagamento,
     isProcessing
   };
 };

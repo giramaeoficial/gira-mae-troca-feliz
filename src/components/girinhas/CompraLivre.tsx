@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, Info, CheckCircle, Shield, Sparkles, CreditCard, Wallet } from 'lucide-react';
+import { ShoppingCart, Info, CheckCircle, Shield, Sparkles, CreditCard } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -21,13 +22,12 @@ interface ConfigCompra {
 const CompraLivre: React.FC = () => {
   const [quantidade, setQuantidade] = useState('');
   const [configuracoes, setConfiguracoes] = useState<ConfigCompra>({ min: 10, max: 999000 });
-  const [isComprandoManual, setIsComprandoManual] = useState(false);
   
   const { precoManual } = usePrecoManual();
   const { refetch } = useCarteira();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { iniciarPagamentoStripe, isProcessing } = useStripePayment();
+  const { iniciarPagamento, isProcessing } = useStripePayment();
 
   // Carregar configurações
   useEffect(() => {
@@ -60,60 +60,11 @@ const CompraLivre: React.FC = () => {
   const valorTotal = quantidadeNum * precoManual;
   const isQuantidadeValida = quantidadeNum >= configuracoes.min && quantidadeNum <= configuracoes.max;
 
-  // ✅ MANTIDO: Compra manual (simulação/teste) usando sistema V2 atômico
-  const realizarCompraManual = async () => {
-    if (!user || !isQuantidadeValida || quantidadeNum <= 0) return;
-
-    setIsComprandoManual(true);
-    try {
-      console.log('🔒 [CompraLivre] Iniciando compra V2 atômica:', quantidadeNum);
-      
-      const { data, error } = await supabase.rpc('processar_compra_girinhas_v2', {
-        p_dados: {
-          user_id: user.id,
-          quantidade: quantidadeNum,
-          payment_id: `manual_${Date.now()}_${Math.random()}`
-        }
-      });
-
-      if (error) {
-        console.error('❌ Erro na compra V2:', error);
-        throw error;
-      }
-      
-      console.log('✅ [CompraLivre] Compra V2 processada:', data);
-      
-      const resultado = data as { sucesso: boolean; erro?: string; quantidade?: number; valor_total?: number };
-      
-      if (!resultado.sucesso) {
-        throw new Error(resultado.erro || 'Erro na compra');
-      }
-      
-      await refetch();
-      setQuantidade('');
-      
-      toast({
-        title: "🎉 Compra realizada com sucesso!",
-        description: `${resultado.quantidade} Girinhas adicionadas por R$ ${resultado.valor_total?.toFixed(2)}`,
-      });
-    } catch (error: any) {
-      console.error('❌ Erro na compra V2:', error);
-      
-      toast({
-        title: "Erro na compra",
-        description: error.message || "Não foi possível processar a compra. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsComprandoManual(false);
-    }
-  };
-
-  // ✅ NOVO: Compra com Stripe (pagamento real)
-  const realizarCompraStripe = async () => {
+  // Realizar pagamento
+  const realizarCompra = async () => {
     if (!user || !isQuantidadeValida || quantidadeNum <= 0) return;
     
-    await iniciarPagamentoStripe(quantidadeNum);
+    await iniciarPagamento(quantidadeNum);
   };
 
   return (
@@ -125,7 +76,7 @@ const CompraLivre: React.FC = () => {
         </CardTitle>
         <div className="space-y-2">
           <p className="text-sm text-gray-600">
-            Sistema seguro com pagamento real via Stripe
+            Sistema seguro de pagamento online
           </p>
         </div>
       </CardHeader>
@@ -151,7 +102,7 @@ const CompraLivre: React.FC = () => {
             <AlertDescription className="text-blue-800">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span className="font-medium">Processando pagamento Stripe...</span>
+                <span className="font-medium">Processando pagamento...</span>
               </div>
               <p className="text-sm mt-1">
                 Aguarde enquanto verificamos seu pagamento.
@@ -167,24 +118,23 @@ const CompraLivre: React.FC = () => {
             <div className="space-y-1">
               <p className="font-medium">🔒 Pagamento 100% seguro!</p>
               <p className="text-sm">
-                Processado via Stripe com criptografia de nível bancário.
+                Processado com criptografia de nível bancário.
               </p>
             </div>
           </AlertDescription>
         </Alert>
 
-        <Tabs defaultValue="stripe" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="stripe">Pagamento Real</TabsTrigger>
-            <TabsTrigger value="demo">Demo/Teste</TabsTrigger>
+        <Tabs defaultValue="comprar" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="comprar">Comprar</TabsTrigger>
             <TabsTrigger value="info">Informações</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="stripe" className="space-y-4">
+          <TabsContent value="comprar" className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="quantidade-stripe">Quantidade de Girinhas</Label>
+              <Label htmlFor="quantidade">Quantidade de Girinhas</Label>
               <Input
-                id="quantidade-stripe"
+                id="quantidade"
                 type="number"
                 value={quantidade}
                 onChange={(e) => setQuantidade(e.target.value)}
@@ -221,19 +171,19 @@ const CompraLivre: React.FC = () => {
             )}
 
             <Button
-              onClick={realizarCompraStripe}
+              onClick={realizarCompra}
               disabled={!isQuantidadeValida || isProcessing || quantidadeNum <= 0}
               className="w-full h-12 text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
               {isProcessing ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Redirecionando para Stripe...
+                  Redirecionando para pagamento...
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
                   <CreditCard className="w-5 h-5" />
-                  Pagar R$ {valorTotal.toFixed(2)} via Stripe
+                  Pagar R$ {valorTotal.toFixed(2)}
                 </div>
               )}
             </Button>
@@ -243,61 +193,6 @@ const CompraLivre: React.FC = () => {
                 Quantidade deve estar entre {configuracoes.min} e {configuracoes.max.toLocaleString()} Girinhas
               </p>
             )}
-          </TabsContent>
-
-          <TabsContent value="demo" className="space-y-4">
-            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <p className="text-sm text-yellow-800">
-                <span className="font-medium">⚠️ Modo Demo:</span> Esta opção simula uma compra sem cobrança real. 
-                Use apenas para testes.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="quantidade-demo">Quantidade de Girinhas (Demo)</Label>
-              <Input
-                id="quantidade-demo"
-                type="number"
-                value={quantidade}
-                onChange={(e) => setQuantidade(e.target.value)}
-                placeholder={`Entre ${configuracoes.min} e ${configuracoes.max.toLocaleString()}`}
-                min={configuracoes.min}
-                max={configuracoes.max}
-                className="text-lg"
-                disabled={isComprandoManual || isProcessing}
-              />
-            </div>
-
-            {quantidadeNum > 0 && (
-              <div className="bg-white p-4 rounded-lg border space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Quantidade:</span>
-                  <span className="font-bold">{quantidadeNum.toLocaleString()} Girinhas</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Valor simulado:</span>
-                  <span className="font-bold">R$ {valorTotal.toFixed(2)}</span>
-                </div>
-              </div>
-            )}
-
-            <Button
-              onClick={realizarCompraManual}
-              disabled={!isQuantidadeValida || isComprandoManual || isProcessing || quantidadeNum <= 0}
-              className="w-full h-12 text-lg font-bold bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800"
-            >
-              {isComprandoManual ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processando demo...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Wallet className="w-5 h-5" />
-                  Simular Compra (Demo)
-                </div>
-              )}
-            </Button>
           </TabsContent>
 
           <TabsContent value="info" className="space-y-4">
@@ -310,7 +205,7 @@ const CompraLivre: React.FC = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  <span>Pagamento processado via Stripe (seguro)</span>
+                  <span>Pagamento processado de forma segura</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
@@ -328,7 +223,7 @@ const CompraLivre: React.FC = () => {
 
               <div className="bg-blue-50 p-3 rounded-lg mt-4">
                 <p className="text-sm text-blue-800">
-                  <span className="font-medium">💳 Métodos aceitos:</span> O Stripe aceita cartões de crédito/débito 
+                  <span className="font-medium">💳 Métodos aceitos:</span> Cartões de crédito/débito 
                   das principais bandeiras e PIX para pagamentos no Brasil.
                 </p>
               </div>
