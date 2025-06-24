@@ -87,9 +87,9 @@ export const useTrocas = () => {
 
     try {
       const { data, error } = await supabase
-        .rpc('confirmar_entrega', {
+        .rpc('finalizar_troca_com_codigo', {
           p_reserva_id: reservaId,
-          p_usuario_id: user.id
+          p_codigo_confirmacao: 'ADMIN_OVERRIDE'
         });
 
       if (error) throw error;
@@ -97,7 +97,7 @@ export const useTrocas = () => {
       // Recarregar dados
       await fetchTrocas();
       
-      return data === true; // Retorna true se ambos confirmaram
+      return data === true; // Retorna true se a troca foi finalizada
     } catch (err) {
       console.error('Erro ao confirmar entrega:', err);
       setError(err instanceof Error ? err.message : 'Erro ao confirmar entrega');

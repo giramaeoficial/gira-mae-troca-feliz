@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -191,7 +192,7 @@ export const useReservas = () => {
         if (error.message.includes('Código de confirmação inválido')) {
             toast({ title: "Código Inválido", description: "O código informado não está correto.", variant: "destructive"});
         } else if (error.message.includes('troca já foi finalizada')) {
-             toast({ title: "Troca já finalizada", description: "Esta operação já foi concluída.", variant: "info"});
+             toast({ title: "Troca já finalizada", description: "Esta operação já foi concluída.", variant: "default"});
         } else {
             throw error;
         }

@@ -1,3 +1,4 @@
+
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +12,7 @@ import UniversalCard from "@/components/ui/universal-card";
 
 const MinhasReservas = () => {
   const { user } = useAuth();
-  const { reservas, filasEspera, loading, confirmarEntrega, cancelarReserva, sairDaFila } = useReservas();
+  const { reservas, filasEspera, loading, confirmarEntrega, cancelarReserva, sairDaFila, refetch } = useReservas();
 
   const minhasReservasAtivas = reservas.filter(r => 
     r.usuario_reservou === user?.id && 
@@ -123,6 +124,7 @@ const MinhasReservas = () => {
                     reserva={reserva}
                     onConfirmarEntrega={confirmarEntrega}
                     onCancelarReserva={cancelarReserva}
+                    onRefresh={refetch}
                   />
                 ))}
               </div>
@@ -164,6 +166,7 @@ const MinhasReservas = () => {
                     reserva={reserva}
                     onConfirmarEntrega={confirmarEntrega}
                     onCancelarReserva={cancelarReserva}
+                    onRefresh={refetch}
                   />
                 ))}
               </div>
@@ -185,6 +188,7 @@ const MinhasReservas = () => {
                     reserva={reserva}
                     onConfirmarEntrega={confirmarEntrega}
                     onCancelarReserva={cancelarReserva}
+                    onRefresh={refetch}
                   />
                 ))}
               </div>

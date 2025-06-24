@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +27,7 @@ export const useBonificacoes = () => {
     if (!user) return;
 
     try {
-      // Verificar se a reserva foi confirmada por ambas as partes
+      // Verificar se a reserva foi confirmada
       const { data: reserva, error: reservaError } = await supabase
         .from('reservas')
         .select('*')
@@ -37,7 +36,7 @@ export const useBonificacoes = () => {
 
       if (reservaError || !reserva) return;
 
-      if (reserva.confirmado_por_reservador && reserva.confirmado_por_vendedor && reserva.status === 'confirmada') {
+      if (reserva.status === 'confirmada') {
         // Verificar se já foi processado
         const { data: transacaoExistente } = await supabase
           .from('transacoes')

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,6 @@ interface ReservaCardProps {
     valor_girinhas: number;
     status: string;
     prazo_expiracao: string;
-    confirmado_por_reservador: boolean;
-    confirmado_por_vendedor: boolean;
     codigo_confirmacao?: string;
     posicao_fila?: number;
     tempo_restante?: number;
@@ -41,7 +40,7 @@ interface ReservaCardProps {
       avatar_url: string | null;
     } | null;
   };
-  onConfirmarEntrega: (reservaId: string) => void;
+  onConfirmarEntrega: (reservaId: string, codigo: string) => Promise<boolean>;
   onCancelarReserva: (reservaId: string) => void;
   onRefresh?: () => void;
 }
@@ -92,55 +91,46 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
     return `${horas}h ${minutos}m`;
   };
 
-  const handleConfirmarEntrega = async () => {
+  const handleConfirmarEntrega = async (codigo: string) => {
     setLoadingConfirmacao(true);
     try {
-      await onConfirmarEntrega(reserva.id);
+      const sucesso = await onConfirmarEntrega(reserva.id, codigo);
       
-      // Verificar se ambos confirmaram com delay para garantir consistência
-      setTimeout(async () => {
-        // Recarregar dados da reserva
-        const { data: reservaAtualizada } = await supabase
-          .from('reservas')
-          .select('*')
-          .eq('id', reserva.id)
-          .single();
+      if (sucesso) {
+        // Verificar se a troca foi finalizada e mostrar avaliação
+        setTimeout(async () => {
+          // Recarregar dados da reserva
+          const { data: reservaAtualizada } = await supabase
+            .from('reservas')
+            .select('*')
+            .eq('id', reserva.id)
+            .single();
 
-        const ambosConfirmaram = 
-          reservaAtualizada?.confirmado_por_vendedor && 
-          reservaAtualizada?.confirmado_por_reservador;
-        
-        if (ambosConfirmaram) {
-          // Verificar avaliação com retry
-          const jaAvaliou = await verificarSeJaAvaliouComRetry();
-          
-          if (!jaAvaliou) {
-            // Garantir que o modal aparece
-            setShowAvaliacao(true);
+          if (reservaAtualizada?.status === 'confirmada') {
+            // Verificar avaliação com retry
+            const jaAvaliou = await verificarSeJaAvaliouComRetry();
             
-            // Feedback adicional
-            toast({
-              title: "🎉 Troca concluída!",
-              description: "Agora você pode avaliar esta troca.",
-            });
+            if (!jaAvaliou) {
+              // Garantir que o modal aparece
+              setShowAvaliacao(true);
+              
+              // Feedback adicional
+              toast({
+                title: "🎉 Troca concluída!",
+                description: "Agora você pode avaliar esta troca.",
+              });
+            }
           }
-        }
-      }, 1000); // Delay para garantir consistência
-      
-      setShowConfirmacao(false);
+        }, 1000); // Delay para garantir consistência
+        
+        setShowConfirmacao(false);
+        setShowCodigoModal(false);
+      }
     } catch (error) {
       console.error('Erro ao confirmar entrega:', error);
     } finally {
       setLoadingConfirmacao(false);
     }
-  };
-
-  const handleFinalizarComCodigo = async (codigo: string) => {
-    const sucesso = await confirmarEntrega(reserva.id, codigo);
-    if (sucesso && onRefresh) {
-      onRefresh();
-    }
-    return sucesso;
   };
 
   const getStatusBadge = () => {
@@ -177,24 +167,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         <div className={`flex items-center gap-1 text-sm ${isUrgente ? 'text-red-600' : 'text-orange-600'}`}>
           <Clock className="w-4 h-4" />
           <span>Expira em {formatarTempo(reserva.tempo_restante)}</span>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const getConfirmacoes = () => {
-    if (reserva.status === 'pendente') {
-      return (
-        <div className="flex gap-2 text-xs">
-          <div className={`flex items-center gap-1 ${reserva.confirmado_por_reservador ? 'text-green-600' : 'text-gray-400'}`}>
-            <CheckCircle className="w-3 h-3" />
-            <span>Comprador</span>
-          </div>
-          <div className={`flex items-center gap-1 ${reserva.confirmado_por_vendedor ? 'text-green-600' : 'text-gray-400'}`}>
-            <CheckCircle className="w-3 h-3" />
-            <span>Vendedor</span>
-          </div>
         </div>
       );
     }
@@ -250,7 +222,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
           <div className="space-y-2">
             {getPrioridade()}
             {getTempoRestante()}
-            {getConfirmacoes()}
           </div>
         </CardContent>
 
@@ -344,7 +315,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         onClose={() => setShowConfirmacao(false)}
         reserva={reserva}
         isReservador={isReservador}
-        onConfirmar={handleConfirmarEntrega}
+        onConfirmar={() => handleConfirmarEntrega('')}
         loading={loadingConfirmacao}
       />
 
@@ -358,13 +329,13 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         }}
       />
 
-      {/* Modal de código de confirmação usando hook correto */}
+      {/* Modal de código de confirmação */}
       <CodigoConfirmacaoModal
         isOpen={showCodigoModal}
         onClose={() => setShowCodigoModal(false)}
         reserva={reserva}
         isVendedor={isVendedor}
-        onConfirmarCodigo={handleFinalizarComCodigo}
+        onConfirmarCodigo={handleConfirmarEntrega}
         loading={loading}
       />
     </>
