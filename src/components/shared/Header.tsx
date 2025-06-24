@@ -12,11 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { toast } from 'sonner';
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { profile } = useUserProfile();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,16 +124,16 @@ const Header: React.FC = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                    {user.avatar_url ? (
+                    {profile?.avatar_url ? (
                       <img 
-                        src={user.avatar_url} 
-                        alt={user.nome || 'Avatar'} 
+                        src={profile.avatar_url} 
+                        alt={profile.nome || 'Avatar'} 
                         className="w-8 h-8 rounded-full"
                       />
                     ) : (
                       <User className="w-5 h-5" />
                     )}
-                    <span className="text-sm font-medium">{user.nome || 'Usuário'}</span>
+                    <span className="text-sm font-medium">{profile?.nome || 'Usuário'}</span>
                     <ChevronDown className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -141,6 +143,9 @@ const Header: React.FC = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/perfil/editar')}>
                     Editar Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
+                    Configurações
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/indicacoes')}>
                     Indicações
@@ -191,17 +196,17 @@ const Header: React.FC = () => {
             <div className="p-4 border-b">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  {user.avatar_url ? (
+                  {profile?.avatar_url ? (
                     <img 
-                      src={user.avatar_url} 
-                      alt={user.nome || 'Avatar'} 
+                      src={profile.avatar_url} 
+                      alt={profile.nome || 'Avatar'} 
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
                     <User className="w-10 h-10 p-2 bg-gray-100 rounded-full" />
                   )}
                   <div>
-                    <p className="font-medium text-sm">{user.nome || 'Usuário'}</p>
+                    <p className="font-medium text-sm">{profile?.nome || 'Usuário'}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                 </div>
@@ -247,6 +252,13 @@ const Header: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Editar Perfil
+              </Link>
+              <Link
+                to="/configuracoes"
+                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Configurações
               </Link>
               <Link
                 to="/indicacoes"

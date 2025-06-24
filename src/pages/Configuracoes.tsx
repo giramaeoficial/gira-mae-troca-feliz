@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +16,7 @@ import QuickNav from '@/components/shared/QuickNav';
 
 const Configuracoes: React.FC = () => {
   const { user } = useAuth();
+  const { profile, loading } = useUserProfile();
   const { sendTestNotification } = useNotificationSystem();
   const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.replace('#', '');
@@ -38,6 +40,25 @@ const Configuracoes: React.FC = () => {
           <p className="text-gray-600">Você precisa estar logado para acessar as configurações.</p>
         </div>
       </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-gray-50 pb-20 md:pb-8">
+          <div className="max-w-4xl mx-auto p-4">
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-gray-600">Carregando configurações...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <QuickNav />
+      </>
     );
   }
 
@@ -84,10 +105,10 @@ const Configuracoes: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-4">
-                    {user.avatar_url ? (
+                    {profile?.avatar_url ? (
                       <img 
-                        src={user.avatar_url} 
-                        alt={user.nome || 'Avatar'} 
+                        src={profile.avatar_url} 
+                        alt={profile.nome || 'Avatar'} 
                         className="w-16 h-16 rounded-full"
                       />
                     ) : (
@@ -96,10 +117,10 @@ const Configuracoes: React.FC = () => {
                       </div>
                     )}
                     <div>
-                      <h3 className="font-semibold text-lg">{user.nome || 'Nome não informado'}</h3>
+                      <h3 className="font-semibold text-lg">{profile?.nome || 'Nome não informado'}</h3>
                       <p className="text-gray-600">{user.email}</p>
                       <Badge variant="secondary" className="mt-1">
-                        {user.username ? `@${user.username}` : 'Username não definido'}
+                        {profile?.username ? `@${profile.username}` : 'Username não definido'}
                       </Badge>
                     </div>
                   </div>
