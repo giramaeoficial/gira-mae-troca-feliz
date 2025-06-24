@@ -5,7 +5,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
-// --- TIPOS (Sem alterações) ---
+// --- TIPOS (sem alterações) ---
 type ReservaComRelacionamentos = Tables<'reservas'> & {
   codigo_confirmacao?: string;
   itens?: {
@@ -110,7 +110,6 @@ export const useReservas = () => {
   };
 
   const entrarNaFila = async (itemId: string): Promise<boolean> => {
-    // ... (Esta função já está correta e foi mantida) ...
     if (!user) return false;
     setLoading(true);
     try {
@@ -136,7 +135,6 @@ export const useReservas = () => {
   };
 
   const sairDaFila = async (itemId: string): Promise<boolean> => {
-    // ... (Sua função original, que foi removida por engano, restaurada) ...
     if (!user) return false;
     try {
       const { error } = await supabase.rpc('sair_fila_espera', { p_item_id: itemId, p_usuario_id: user.id });
@@ -152,7 +150,6 @@ export const useReservas = () => {
   };
 
   const cancelarReserva = async (reservaId: string): Promise<boolean> => {
-    // ... (Sua função original, restaurada) ...
     if (!user) return false;
     setLoading(true);
     try {
@@ -171,36 +168,59 @@ export const useReservas = () => {
     }
   };
   
+  // ====================================================================
+  //         ✨ FUNÇÃO DE FINALIZAÇÃO CORRIGIDA E DEFINITIVA ✨
+  // ====================================================================
   const finalizarTrocaComCodigo = async (reservaId: string, codigo: string): Promise<boolean> => {
-    // ... (A nova função de finalização que criamos, mantida) ...
-    if (!user) return false;
+    if (!user) {
+      toast({ title: "Erro", description: "Você precisa estar logado.", variant: "destructive" });
+      return false;
+    }
+
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc('finalizar_troca_com_codigo', { p_reserva_id: reservaId, p_codigo_confirmacao: codigo });
+      // Chamada RPC com os parâmetros corretos que existem no banco de dados
+      const { data, error } = await supabase
+        .rpc('finalizar_troca_com_codigo', {
+          p_reserva_id: reservaId,
+          p_codigo_confirmacao: codigo 
+        });
+
       if (error) {
+        // Trata erros específicos da função do backend para feedback claro
         if (error.message.includes('Código de confirmação inválido')) {
             toast({ title: "Código Inválido", description: "O código informado não está correto.", variant: "destructive"});
         } else if (error.message.includes('troca já foi finalizada')) {
              toast({ title: "Troca já finalizada", description: "Esta operação já foi concluída.", variant: "info"});
-        } else { throw error; }
+        } else {
+            throw error;
+        }
         return false;
       }
-      if (data) {
-        toast({ title: "Troca Finalizada! 🤝", description: "A troca foi concluída com sucesso!" });
-      }
+
+      toast({
+        title: "Troca Finalizada! 🤝",
+        description: "A troca foi concluída com sucesso e as Girinhas foram transferidas!",
+      });
+      
       const reserva = reservas.find(r => r.id === reservaId);
       await Promise.all([fetchReservas(), invalidateItemQueries(reserva?.item_id)]);
+
       return true;
+
     } catch (err) {
       console.error('Erro ao finalizar troca:', err);
-      toast({ title: "Erro ao finalizar troca", description: err instanceof Error ? err.message : "Tente novamente.", variant: "destructive" });
+      toast({
+        title: "Erro ao finalizar troca",
+        description: err instanceof Error ? err.message : "Tente novamente.",
+        variant: "destructive",
+      });
       return false;
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
-  // Funções de utilidade que também foram removidas e agora restauradas
   const isItemReservado = (itemId: string): boolean => {
     return reservas.some(r => r.item_id === itemId && r.status === 'pendente');
   };
@@ -216,7 +236,7 @@ export const useReservas = () => {
   }, [user]);
 
   // ====================================================================
-  //               ✨ RETORNO DO HOOK COMPLETO E CORRIGIDO ✨
+  //            ✨ RETORNO DO HOOK COMPLETO E CORRIGIDO ✨
   // ====================================================================
   return {
     reservas,
@@ -226,8 +246,10 @@ export const useReservas = () => {
     criarReserva: entrarNaFila,
     entrarNaFila,
     sairDaFila,
-    removerDaReserva: cancelarReserva, // Mantendo o alias que você tinha
-    confirmarEntrega: finalizarTrocaComCodigo, // Alias para a nova função, para que a UI quebre o mínimo possível
+    removerDaReserva: cancelarReserva,
+    // A função 'confirmarEntrega' agora usa a nova lógica de código.
+    // Isso evita que você precise mudar o nome da função em todos os seus componentes da UI.
+    confirmarEntrega: finalizarTrocaComCodigo,
     cancelarReserva,
     isItemReservado,
     getFilaEspera,
