@@ -31,7 +31,7 @@ interface CodigoConfirmacaoModalProps {
     } | null;
   };
   isVendedor: boolean;
-  onConfirmarCodigo: (codigo: string) => Promise<void>;
+  onConfirmarCodigo: (codigo: string) => Promise<boolean>;
   loading: boolean;
 }
 
@@ -66,7 +66,10 @@ const CodigoConfirmacaoModal = ({
       return;
     }
 
-    await onConfirmarCodigo(codigoInput.trim().toUpperCase());
+    const sucesso = await onConfirmarCodigo(codigoInput.trim().toUpperCase());
+    if (sucesso) {
+      onClose();
+    }
   };
 
   return (

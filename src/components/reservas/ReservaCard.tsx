@@ -10,7 +10,7 @@ import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useCodigoConfirmacao } from "@/hooks/useCodigoConfirmacao";
+import { useReservas } from "@/hooks/useReservas";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ReservaCardProps {
@@ -49,7 +49,7 @@ interface ReservaCardProps {
 const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh }: ReservaCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { finalizarTrocaComCodigo, loading: loadingCodigo } = useCodigoConfirmacao();
+  const { confirmarEntrega, loading } = useReservas();
   const [showChat, setShowChat] = useState(false);
   const [showConfirmacao, setShowConfirmacao] = useState(false);
   const [showAvaliacao, setShowAvaliacao] = useState(false);
@@ -136,13 +136,11 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
   };
 
   const handleFinalizarComCodigo = async (codigo: string) => {
-    const sucesso = await finalizarTrocaComCodigo(reserva.id, codigo);
-    if (sucesso) {
-      setShowCodigoModal(false);
-      if (onRefresh) {
-        onRefresh();
-      }
+    const sucesso = await confirmarEntrega(reserva.id, codigo);
+    if (sucesso && onRefresh) {
+      onRefresh();
     }
+    return sucesso;
   };
 
   const getStatusBadge = () => {
@@ -360,14 +358,14 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         }}
       />
 
-      {/* Novo modal de código de confirmação */}
+      {/* Modal de código de confirmação usando hook correto */}
       <CodigoConfirmacaoModal
         isOpen={showCodigoModal}
         onClose={() => setShowCodigoModal(false)}
         reserva={reserva}
         isVendedor={isVendedor}
         onConfirmarCodigo={handleFinalizarComCodigo}
-        loading={loadingCodigo}
+        loading={loading}
       />
     </>
   );

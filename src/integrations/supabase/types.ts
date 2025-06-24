@@ -1459,8 +1459,6 @@ export type Database = {
       reservas: {
         Row: {
           codigo_confirmacao: string | null
-          confirmado_por_reservador: boolean
-          confirmado_por_vendedor: boolean
           created_at: string
           data_reserva: string
           id: string
@@ -1472,11 +1470,11 @@ export type Database = {
           usuario_item: string
           usuario_reservou: string
           valor_girinhas: number
+          valor_taxa: number
+          valor_total: number
         }
         Insert: {
           codigo_confirmacao?: string | null
-          confirmado_por_reservador?: boolean
-          confirmado_por_vendedor?: boolean
           created_at?: string
           data_reserva?: string
           id?: string
@@ -1488,11 +1486,11 @@ export type Database = {
           usuario_item: string
           usuario_reservou: string
           valor_girinhas: number
+          valor_taxa?: number
+          valor_total?: number
         }
         Update: {
           codigo_confirmacao?: string | null
-          confirmado_por_reservador?: boolean
-          confirmado_por_vendedor?: boolean
           created_at?: string
           data_reserva?: string
           id?: string
@@ -1504,6 +1502,8 @@ export type Database = {
           usuario_item?: string
           usuario_reservou?: string
           valor_girinhas?: number
+          valor_taxa?: number
+          valor_total?: number
         }
         Relationships: [
           {
@@ -1826,6 +1826,57 @@ export type Database = {
           },
         ]
       }
+      v_reserva: {
+        Row: {
+          codigo_confirmacao: string | null
+          created_at: string | null
+          data_reserva: string | null
+          id: string | null
+          item_id: string | null
+          localizacao_combinada: string | null
+          prazo_expiracao: string | null
+          status: string | null
+          updated_at: string | null
+          usuario_item: string | null
+          usuario_reservou: string | null
+          valor_girinhas: number | null
+          valor_taxa: number | null
+          valor_total: number | null
+        }
+        Insert: {
+          codigo_confirmacao?: string | null
+          created_at?: string | null
+          data_reserva?: string | null
+          id?: string | null
+          item_id?: string | null
+          localizacao_combinada?: string | null
+          prazo_expiracao?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usuario_item?: string | null
+          usuario_reservou?: string | null
+          valor_girinhas?: number | null
+          valor_taxa?: number | null
+          valor_total?: number | null
+        }
+        Update: {
+          codigo_confirmacao?: string | null
+          created_at?: string | null
+          data_reserva?: string | null
+          id?: string | null
+          item_id?: string | null
+          localizacao_combinada?: string | null
+          prazo_expiracao?: string | null
+          status?: string | null
+          updated_at?: string | null
+          usuario_item?: string | null
+          usuario_reservou?: string | null
+          valor_girinhas?: number | null
+          valor_taxa?: number | null
+          valor_total?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1880,10 +1931,6 @@ export type Database = {
         Args: { p_user_id: string; p_missao_id: string }
         Returns: Json
       }
-      confirmar_entrega: {
-        Args: { p_reserva_id: string; p_usuario_id: string }
-        Returns: boolean
-      }
       cotacao_atual: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -1922,11 +1969,13 @@ export type Database = {
         Returns: number
       }
       entrar_fila_espera: {
-        Args: {
-          p_item_id: string
-          p_usuario_id: string
-          p_valor_girinhas: number
-        }
+        Args:
+          | { p_item_id: string; p_usuario_id: string }
+          | {
+              p_item_id: string
+              p_usuario_id: string
+              p_valor_girinhas: number
+            }
         Returns: Json
       }
       estender_validade_girinhas: {
@@ -1942,12 +1991,8 @@ export type Database = {
         Returns: Json
       }
       finalizar_troca_com_codigo: {
-        Args: {
-          p_reserva_id: string
-          p_codigo: string
-          p_usuario_vendedor: string
-        }
-        Returns: Json
+        Args: { p_reserva_id: string; p_codigo_confirmacao: string }
+        Returns: boolean
       }
       get_municipios_por_uf: {
         Args: { uf_param: string }
