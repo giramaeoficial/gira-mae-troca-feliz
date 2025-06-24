@@ -73,6 +73,9 @@ export const useStripePayment = () => {
             // Refetch FORÇADO da carteira
             await refetch();
             
+            // CORREÇÃO: Resetar isProcessing IMEDIATAMENTE após sucesso
+            setIsProcessing(false);
+            
             // NOVO: Aguardar e fazer refetch adicional para garantir
             setTimeout(async () => {
               console.log('🔄 [useStripePayment] Segundo refetch de segurança...');
@@ -82,23 +85,6 @@ export const useStripePayment = () => {
               });
               await refetch();
             }, 500);
-            
-            // NOVO: Terceiro refetch após mais tempo para garantia total
-            setTimeout(async () => {
-              console.log('🔄 [useStripePayment] Terceiro refetch final...');
-              await queryClient.refetchQueries({ 
-                queryKey: ['carteira'], 
-                type: 'all' 
-              });
-              await refetch();
-            }, 1500);
-            
-            // NOVO: Forçar atualização da página inteira se necessário
-            setTimeout(() => {
-              console.log('🔄 [useStripePayment] Verificando se saldo foi atualizado...');
-              // Se após 3 segundos ainda não atualizou, recarregar a página
-              window.location.reload();
-            }, 3000);
           }
         } catch (error: any) {
           console.error('❌ [useStripePayment] Erro ao verificar pagamento:', error);
@@ -108,6 +94,7 @@ export const useStripePayment = () => {
             variant: "destructive",
           });
         } finally {
+          // CORREÇÃO: Garantir que isProcessing seja sempre resetado
           setIsProcessing(false);
           // Clean URL
           window.history.replaceState({}, '', '/carteira');
