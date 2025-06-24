@@ -4,29 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import OneSignal from 'react-onesignal';
-
-interface NotificationItem {
-  id: string;
-  user_id: string;
-  type: string;
-  title: string;
-  message: string;
-  data: Record<string, any>;
-  read: boolean;
-  created_at: string;
-}
-
-interface NotificationPreferences {
-  mensagens: boolean;
-  reservas: boolean;
-  girinhas: boolean;
-  sistema: boolean;
-  push_enabled: boolean;
-}
+import type { Notification, NotificationPreferences } from '@/types/notifications';
 
 export const useNotificationSystem = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
@@ -112,8 +94,20 @@ export const useNotificationSystem = () => {
         return;
       }
 
-      setNotifications(data || []);
-      setUnreadCount((data || []).filter(n => !n.read).length);
+      // Converter dados do Supabase para o tipo correto
+      const convertedNotifications: Notification[] = (data || []).map(item => ({
+        id: item.id,
+        user_id: item.user_id,
+        type: item.type as any, // Type assertion necessária aqui
+        title: item.title,
+        message: item.message,
+        data: (typeof item.data === 'string' ? JSON.parse(item.data) : item.data) || {},
+        read: item.read,
+        created_at: item.created_at
+      }));
+
+      setNotifications(convertedNotifications);
+      setUnreadCount(convertedNotifications.filter(n => !n.read).length);
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
     } finally {
@@ -370,13 +364,24 @@ export const useNotificationSystem = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
-        const newNotification = payload.new as NotificationItem;
-        setNotifications(prev => [newNotification, ...prev]);
+        const newNotification = payload.new as any;
+        const convertedNotification: Notification = {
+          id: newNotification.id,
+          user_id: newNotification.user_id,
+          type: newNotification.type,
+          title: newNotification.title,
+          message: newNotification.message,
+          data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
+          read: newNotification.read,
+          created_at: newNotification.created_at
+        };
+        
+        setNotifications(prev => [convertedNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
         
         // Toast notification
-        toast(newNotification.title, {
-          description: newNotification.message,
+        toast(convertedNotification.title, {
+          description: convertedNotification.message,
         });
       })
       .subscribe();
