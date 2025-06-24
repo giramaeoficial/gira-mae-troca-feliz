@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Index from '@/pages/Index';
@@ -22,6 +23,7 @@ import MinhasReservas from '@/pages/MinhasReservas';
 import AdminDashboard from '@/pages/AdminDashboard';
 import NotFound from '@/pages/NotFound';
 import Missoes from '@/pages/Missoes';
+import Configuracoes from '@/pages/Configuracoes';
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster />
+      <SonnerToaster />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -48,6 +51,7 @@ function App() {
           <Route path="/indicacoes" element={<Indicacoes />} />
           <Route path="/item/:id" element={<DetalhesItem />} />
           <Route path="/minhas-reservas" element={<MinhasReservas />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

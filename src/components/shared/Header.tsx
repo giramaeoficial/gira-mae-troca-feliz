@@ -1,132 +1,277 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Bell, Search, Menu, Sparkles, MessageSquare, Wallet } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Search, User, Menu, X, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-import { useCarteira } from '@/hooks/useCarteira';
-import DesktopNav from './DesktopNav';
-import MoreMenu from './MoreMenu';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { toast } from 'sonner';
 
-interface HeaderProps {
-  onSearch?: (term: string) => void;
-  searchPlaceholder?: string;
-  showSearch?: boolean;
-}
-
-const Header: React.FC<HeaderProps> = ({
-  onSearch,
-  searchPlaceholder = "Buscar...",
-  showSearch = false
-}) => {
+const Header: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
-  const { saldo } = useCarteira();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const userInitial = profile?.nome?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'G';
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/feed?busca=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm('');
+    }
+  };
 
-  return (
-    <header className="bg-white/80 backdrop-blur-sm border-b border-primary/20 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          
-          {/* Logotipo */}
-          <Link to="/feed" className="flex items-center space-x-2 group">
-            <svg
-              xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className="h-8 w-8 text-primary transition-colors duration-200 group-hover:text-pink-500"
-            >
-              <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
-              <path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" />
-            </svg>
-            <span className="font-bold text-2xl bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent group-hover:from-pink-500 group-hover:to-purple-500 transition-all duration-200">
-              GiraMãe
-            </span>
-          </Link>
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Logout realizado com sucesso!');
+      navigate('/auth');
+    } catch (error) {
+      toast.error('Erro ao fazer logout');
+    }
+  };
 
-          {/* Navegação Desktop */}
-          <div className="hidden md:flex flex-1 justify-center">
-            <DesktopNav />
-          </div>
+  const desktopNavItems = [
+    { label: 'Feed', path: '/feed' },
+    { label: 'Publicar', path: '/publicar' },
+    { label: 'Carteira', path: '/carteira' },
+    { label: 'Missões', path: '/missoes' },
+    { label: 'Mensagens', path: '/mensagens' },
+    { label: 'Reservas', path: '/minhas-reservas' }
+  ];
 
-          {/* Lado Direito */}
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            {user ? (
-              <>
-                {/* Ícones e links do Desktop */}
-                <div className="hidden md:flex items-center space-x-4">
-                    <Link to="/mensagens" title="Chat">
-                        <MessageSquare className="w-5 h-5 text-gray-600 hover:text-pink-600" />
-                    </Link>
-                    <Link to="/carteira" className="text-sm font-medium text-gray-800 hover:text-pink-600">
-                        Carteira
-                    </Link>
-                    <Button variant="ghost" size="icon" className="relative hover:bg-primary/10">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-pink-500 text-[10px] text-white">1</span>
-                    </Button>
-                </div>
-                
-                {/* Seção do Usuário (Girinhas e Avatar) */}
-                <div className="flex items-center space-x-2">
-                    {/* Girinhas - visível no mobile e desktop */}
-                    <div className="flex items-center gap-1 text-pink-700 font-bold bg-pink-100 px-2 py-1 rounded-full text-xs">
-                        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="text-xs sm:text-sm">{saldo?.toFixed(0) || '0'}</span>
-                    </div>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="focus:outline-none rounded-full focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.user_metadata?.avatar_url || profile?.avatar_url || ""} />
-                            <AvatarFallback className="bg-gradient-to-br from-primary to-pink-500 text-white text-sm">
-                              {userInitial}
-                            </AvatarFallback>
-                          </Avatar>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-48" align="end">
-                        <DropdownMenuItem asChild><Link to="/perfil">Ver perfil</Link></DropdownMenuItem>
-                        <DropdownMenuItem asChild><Link to="/perfil/editar">Editar</Link></DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => signOut()} className="text-red-500 focus:bg-red-50 focus:text-red-600">
-                          Sair
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-
-                {/* Menu Mobile usando MoreMenu */}
-                <div className="md:hidden">
-                  <MoreMenu>
-                    <Button variant="ghost" size="icon">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </MoreMenu>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link to="/auth"><Button variant="ghost" size="sm">Entrar</Button></Link>
-                <Link to="/auth"><Button size="sm">Cadastrar</Button></Link>
-              </div>
-            )}
+  if (!user) {
+    return (
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="flex items-center">
+              <span className="text-2xl font-bold text-primary">GiraMãe</span>
+            </Link>
+            
+            <div className="flex items-center space-x-4">
+              <Link to="/auth">
+                <Button variant="outline">Entrar</Button>
+              </Link>
+              <Link to="/cadastro">
+                <Button>Cadastrar</Button>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+    );
+  }
+
+  return (
+    <>
+      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link to="/feed" className="flex items-center">
+              <span className="text-2xl font-bold text-primary">GiraMãe</span>
+            </Link>
+
+            {/* Desktop Navigation - Hidden on mobile */}
+            <nav className="hidden md:flex items-center space-x-6">
+              {desktopNavItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    location.pathname === item.path 
+                      ? 'text-primary border-b-2 border-primary pb-4' 
+                      : 'text-gray-600'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Search Bar - Hidden on mobile */}
+            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-6">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  type="text"
+                  placeholder="Buscar itens..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+            </form>
+
+            {/* Right side - Desktop */}
+            <div className="hidden md:flex items-center space-x-4">
+              {/* Notification Bell */}
+              <NotificationBell />
+              
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                    {user.avatar_url ? (
+                      <img 
+                        src={user.avatar_url} 
+                        alt={user.nome || 'Avatar'} 
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
+                    <span className="text-sm font-medium">{user.nome || 'Usuário'}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate('/perfil')}>
+                    Meu Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/perfil/editar')}>
+                    Editar Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/indicacoes')}>
+                    Indicações
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Mobile menu button and notification */}
+            <div className="md:hidden flex items-center space-x-2">
+              <NotificationBell />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2"
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Search Bar */}
+        <div className="md:hidden px-4 pb-4">
+          <form onSubmit={handleSearch}>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Buscar itens..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 w-full"
+              />
+            </div>
+          </form>
+        </div>
+      </header>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setMobileMenuOpen(false)}>
+          <div className="fixed right-0 top-0 h-full w-64 bg-white shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  {user.avatar_url ? (
+                    <img 
+                      src={user.avatar_url} 
+                      alt={user.nome || 'Avatar'} 
+                      className="w-10 h-10 rounded-full"
+                    />
+                  ) : (
+                    <User className="w-10 h-10 p-2 bg-gray-100 rounded-full" />
+                  )}
+                  <div>
+                    <p className="font-medium text-sm">{user.nome || 'Usuário'}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <nav className="p-4 space-y-2">
+              {desktopNavItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`block py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === item.path
+                      ? 'bg-primary text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+              
+              <hr className="my-4" />
+              
+              <Link
+                to="/perfil"
+                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Meu Perfil
+              </Link>
+              <Link
+                to="/perfil/editar"
+                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Editar Perfil
+              </Link>
+              <Link
+                to="/indicacoes"
+                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Indicações
+              </Link>
+              
+              <hr className="my-4" />
+              
+              <button
+                onClick={() => {
+                  handleSignOut();
+                  setMobileMenuOpen(false);
+                }}
+                className="block w-full text-left py-2 px-3 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                Sair
+              </button>
+            </nav>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
