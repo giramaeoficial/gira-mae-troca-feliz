@@ -1,10 +1,54 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import OneSignal from 'react-onesignal';
 import type { Notification, NotificationPreferences } from '@/types/notifications';
+
+// Singleton para gerenciar channels
+class ChannelManager {
+  private static instance: ChannelManager;
+  private channels: Map<string, any> = new Map();
+
+  static getInstance(): ChannelManager {
+    if (!ChannelManager.instance) {
+      ChannelManager.instance = new ChannelManager();
+    }
+    return ChannelManager.instance;
+  }
+
+  getOrCreateChannel(key: string, factory: () => any): any {
+    if (!this.channels.has(key)) {
+      const channel = factory();
+      this.channels.set(key, channel);
+    }
+    return this.channels.get(key);
+  }
+
+  removeChannel(key: string): void {
+    const channel = this.channels.get(key);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch (error) {
+        console.warn('Error removing channel:', error);
+      }
+      this.channels.delete(key);
+    }
+  }
+
+  removeAllChannels(): void {
+    this.channels.forEach((channel, key) => {
+      try {
+        supabase.removeChannel(channel);
+      } catch (error) {
+        console.warn('Error removing channel:', key, error);
+      }
+    });
+    this.channels.clear();
+  }
+}
 
 export const useNotificationSystem = () => {
   const { user } = useAuth();
@@ -22,72 +66,27 @@ export const useNotificationSystem = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Refs para controle de estado
+  const isLoadingRef = useRef(false);
+  const channelManager = useRef(ChannelManager.getInstance());
+  const oneSignalInitRef = useRef(false);
+
   // Inicializar OneSignal uma única vez (DESABILITADO TEMPORARIAMENTE)
   const initializeOneSignal = useCallback(async () => {
+    if (oneSignalInitRef.current) return;
+    oneSignalInitRef.current = true;
+
     // TEMPORARIAMENTE DESABILITADO para resolver problemas de Service Worker
     console.log('OneSignal temporariamente desabilitado');
     setOneSignalInitialized(false);
     return;
-    
-    /* 
-    if (oneSignalInitialized || typeof window === 'undefined') return;
-
-    try {
-      // Verificar se está em ambiente seguro
-      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-        console.warn('OneSignal requer HTTPS ou localhost');
-        return;
-      }
-
-      const appId = '26d188ec-fdd6-41b3-86fe-b571cce6b3a5';
-      
-      await OneSignal.init({
-        appId: appId,
-        allowLocalhostAsSecureOrigin: true,
-        serviceWorkerParam: { scope: '/' },
-        serviceWorkerPath: 'OneSignalSDKWorker.js'
-      });
-
-      // Verificar status da permissão
-      const permission = Notification.permission;
-      setPushEnabled(permission === 'granted');
-
-      // Configurar listener para mudanças no push subscription
-      if (permission === 'granted') {
-        OneSignal.User.PushSubscription.addEventListener('change', (event) => {
-          if (event.current.id) {
-            setPlayerId(event.current.id);
-            console.log('OneSignal Player ID:', event.current.id);
-          }
-        });
-
-        // Tentar obter ID atual
-        const currentId = OneSignal.User.PushSubscription.id;
-        if (currentId) {
-          setPlayerId(currentId);
-        }
-
-        // Associar com usuário logado
-        if (user?.id) {
-          await OneSignal.User.addTag('user_id', user.id);
-          if (user.email) {
-            await OneSignal.User.addTag('email', user.email);
-          }
-        }
-      }
-
-      setOneSignalInitialized(true);
-      console.log('OneSignal inicializado com sucesso');
-    } catch (error) {
-      console.error('Erro ao inicializar OneSignal:', error);
-    }
-    */
-  }, [oneSignalInitialized, user]);
+  }, []);
 
   // Carregar notificações in-app
   const loadNotifications = useCallback(async () => {
-    if (!user) return;
-
+    if (!user || isLoadingRef.current) return;
+    
+    isLoadingRef.current = true;
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -105,7 +104,7 @@ export const useNotificationSystem = () => {
       const convertedNotifications: Notification[] = (data || []).map(item => ({
         id: item.id,
         user_id: item.user_id,
-        type: item.type as any, // Type assertion necessária aqui
+        type: item.type as any,
         title: item.title,
         message: item.message,
         data: (typeof item.data === 'string' ? JSON.parse(item.data) : item.data) || {},
@@ -119,10 +118,11 @@ export const useNotificationSystem = () => {
       console.error('Erro ao carregar notificações:', error);
     } finally {
       setLoading(false);
+      isLoadingRef.current = false;
     }
   }, [user]);
 
-  // Carregar preferências (QUERY DEFENSIVA)
+  // Carregar preferências com query defensiva
   const loadPreferences = useCallback(async () => {
     if (!user) return;
 
@@ -186,31 +186,6 @@ export const useNotificationSystem = () => {
       // TEMPORARIAMENTE DESABILITADO
       console.log('Push notifications temporariamente desabilitado');
       return false;
-      
-      /*
-      const permission = await Notification.requestPermission();
-      const isGranted = permission === 'granted';
-      setPushEnabled(isGranted);
-
-      if (isGranted && oneSignalInitialized) {
-        // Configurar listener após permissão concedida
-        OneSignal.User.PushSubscription.addEventListener('change', (event) => {
-          if (event.current.id) {
-            setPlayerId(event.current.id);
-          }
-        });
-
-        // Tentar obter ID após delay
-        setTimeout(() => {
-          const currentId = OneSignal.User.PushSubscription.id;
-          if (currentId) {
-            setPlayerId(currentId);
-          }
-        }, 2000);
-      }
-
-      return isGranted;
-      */
     } catch (error) {
       console.error('Erro ao solicitar permissão:', error);
       return false;
@@ -329,7 +304,7 @@ export const useNotificationSystem = () => {
       console.error('Erro ao enviar notificação:', error);
       throw error;
     }
-  }, [oneSignalInitialized, playerId]);
+  }, []);
 
   // Enviar notificação de teste (SIMPLIFICADA)
   const sendTestNotification = useCallback(async () => {
@@ -347,56 +322,72 @@ export const useNotificationSystem = () => {
     }
   }, [user, sendNotification]);
 
-  // Effects
+  // Effect para inicialização única do OneSignal
   useEffect(() => {
     initializeOneSignal();
   }, [initializeOneSignal]);
 
+  // Effect para carregar dados do usuário
   useEffect(() => {
     if (user) {
       loadPreferences();
       loadNotifications();
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+      setLoading(false);
     }
   }, [user, loadPreferences, loadNotifications]);
 
-  // Realtime subscription para notificações
+  // Realtime subscription com singleton pattern
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel('notifications')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        const newNotification = payload.new as any;
-        const convertedNotification: Notification = {
-          id: newNotification.id,
-          user_id: newNotification.user_id,
-          type: newNotification.type,
-          title: newNotification.title,
-          message: newNotification.message,
-          data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
-          read: newNotification.read,
-          created_at: newNotification.created_at
-        };
-        
-        setNotifications(prev => [convertedNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        // Toast notification
-        toast(convertedNotification.title, {
-          description: convertedNotification.message,
-        });
-      })
-      .subscribe();
+    const channelKey = `notifications-${user.id}`;
+    
+    const channel = channelManager.current.getOrCreateChannel(channelKey, () => {
+      return supabase
+        .channel(channelKey)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          const newNotification = payload.new as any;
+          const convertedNotification: Notification = {
+            id: newNotification.id,
+            user_id: newNotification.user_id,
+            type: newNotification.type,
+            title: newNotification.title,
+            message: newNotification.message,
+            data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
+            read: newNotification.read,
+            created_at: newNotification.created_at
+          };
+          
+          setNotifications(prev => [convertedNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Toast notification
+          toast(convertedNotification.title, {
+            description: convertedNotification.message,
+          });
+        })
+        .subscribe();
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      channelManager.current.removeChannel(channelKey);
     };
   }, [user]);
+
+  // Cleanup global no unmount
+  useEffect(() => {
+    return () => {
+      channelManager.current.removeAllChannels();
+    };
+  }, []);
 
   return {
     // In-App Notifications
