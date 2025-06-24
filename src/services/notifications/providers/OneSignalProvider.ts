@@ -40,9 +40,10 @@ export class OneSignalProvider implements WebNotificationProvider {
 
   async registerUser(userId: string, metadata?: any): Promise<void> {
     try {
-      // Inicializar OneSignal SDK se não estiver inicializado
+      // Usar a nova API do OneSignal v16
       if (typeof window !== 'undefined' && window.OneSignal) {
-        await window.OneSignal.setExternalUserId(userId);
+        // Usar addTag em vez de setExternalUserId
+        await window.OneSignal.User?.addTag('user_id', userId);
         console.log('Usuário registrado no OneSignal:', userId);
       }
     } catch (error) {

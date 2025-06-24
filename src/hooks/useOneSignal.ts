@@ -24,11 +24,11 @@ export const useOneSignal = () => {
           return;
         }
 
-        // Aguardar permissão do usuário
-        const permission = await OneSignal.Notifications.requestPermission();
-        setIsPermissionGranted(permission);
+        // Verificar permissão atual
+        const currentPermission = Notification.permission;
+        setIsPermissionGranted(currentPermission === 'granted');
         
-        if (permission) {
+        if (currentPermission === 'granted') {
           // Obter Player ID se disponível
           try {
             const id = await OneSignal.User.PushSubscription.getIdAsync();
@@ -56,7 +56,7 @@ export const useOneSignal = () => {
           setIsInitialized(true);
           console.log('OneSignal inicializado com sucesso');
         } else {
-          console.log('Permissão de notificação negada');
+          console.log('Permissão de notificação não concedida');
         }
       } catch (error) {
         console.error('Erro ao configurar OneSignal:', error);
@@ -73,9 +73,25 @@ export const useOneSignal = () => {
 
   const requestPermission = async () => {
     try {
-      const permission = await OneSignal.Notifications.requestPermission();
-      setIsPermissionGranted(permission);
-      return permission;
+      // Usar API nativa do browser para solicitar permissão
+      const permission = await Notification.requestPermission();
+      const isGranted = permission === 'granted';
+      setIsPermissionGranted(isGranted);
+      
+      if (isGranted) {
+        // Tentar obter Player ID após permissão concedida
+        try {
+          setTimeout(async () => {
+            const id = await OneSignal.User.PushSubscription.getIdAsync();
+            if (id) setPlayerId(id);
+          }, 2000);
+        } catch (error) {
+          console.log('Erro ao obter Player ID:', error);
+        }
+        setIsInitialized(true);
+      }
+      
+      return isGranted;
     } catch (error) {
       console.error('Erro ao solicitar permissão:', error);
       return false;
