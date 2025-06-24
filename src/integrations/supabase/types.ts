@@ -2148,6 +2148,18 @@ export type Database = {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
       }
+      send_admin_notification: {
+        Args: {
+          p_title: string
+          p_message: string
+          p_target_type?: string
+          p_target_users?: string[]
+          p_action_url?: string
+          p_action_text?: string
+          p_sent_by?: string
+        }
+        Returns: number
+      }
       simular_banda_cambial: {
         Args: { cotacao_teste: number }
         Returns: {
