@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCarteira } from '@/hooks/useCarteira';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useStripePayment = () => {
   const { user } = useAuth();
@@ -18,7 +18,6 @@ export const useStripePayment = () => {
     const handleStripeRedirect = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const stripeSuccess = urlParams.get('stripe_success');
-      const sessionId = urlParams.get('session_id');
       const stripeCanceled = urlParams.get('stripe_canceled');
 
       if (stripeCanceled) {
@@ -32,46 +31,24 @@ export const useStripePayment = () => {
         return;
       }
 
-      if (stripeSuccess && sessionId && user) {
-        console.log('🔄 [useStripePayment] Verificando pagamento...');
-        setIsProcessing(true);
+      if (stripeSuccess && user) {
+        console.log('✅ [useStripePayment] Pagamento realizado via Stripe');
+        
+        toast({
+          title: "🎉 Pagamento processado!",
+          description: "Seu pagamento foi processado com sucesso. O saldo será atualizado automaticamente pelo sistema.",
+        });
 
-        try {
-          const { data, error } = await supabase.functions.invoke('verify-stripe-payment', {
-            body: { session_id: sessionId }
-          });
-
-          if (error) throw error;
-
-          if (data.success) {
-            console.log('✅ [useStripePayment] Pagamento verificado com sucesso:', data);
-            
-            toast({
-              title: "🎉 Pagamento confirmado!",
-              description: `${data.quantidade} Girinhas adicionadas à sua carteira por R$ ${data.valor_pago.toFixed(2)}`,
-            });
-
-            // SOLUÇÃO CRÍTICA: Invalidação COMPLETA e reload da página para garantir estado consistente
-            console.log('🔄 [useStripePayment] Forçando atualização completa...');
-            
-            // 1. Limpar TODOS os caches
-            queryClient.clear();
-            
-            // 2. Forçar reload da página para garantir estado limpo
-            setTimeout(() => {
-              window.location.href = '/carteira';
-            }, 1000);
-          }
-        } catch (error: any) {
-          console.error('❌ [useStripePayment] Erro ao verificar pagamento:', error);
-          toast({
-            title: "Erro na verificação",
-            description: "Houve um problema ao verificar seu pagamento. Entre em contato conosco se o valor foi debitado.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsProcessing(false);
-        }
+        // 🔒 SEGURANÇA: Não verificamos mais no frontend
+        // O webhook do Stripe já processou o pagamento automaticamente
+        
+        // Invalidar cache e recarregar dados frescos
+        console.log('🔄 [useStripePayment] Atualizando dados...');
+        queryClient.clear();
+        await refetch();
+        
+        // Clean URL
+        window.history.replaceState({}, '', '/carteira');
       }
     };
 
