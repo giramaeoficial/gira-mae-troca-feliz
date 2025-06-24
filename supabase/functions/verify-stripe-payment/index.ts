@@ -74,48 +74,124 @@ serve(async (req) => {
 
     console.log('💰 [verify-stripe-payment] Pagamento confirmado, processando:', quantidade, 'Girinhas');
 
-    // Use the atomic V2 function to process the purchase
-    const { data: resultado, error: compraError } = await supabaseService.rpc('processar_compra_girinhas_v2', {
-      p_dados: {
-        user_id: user.id,
+    // CORREÇÃO CRÍTICA: Verificar se já foi processado para evitar duplicação
+    const { data: compraExistente } = await supabaseService
+      .from('compras_girinhas')
+      .select('id')
+      .eq('payment_id', `stripe_${session_id}`)
+      .maybeSingle();
+
+    if (compraExistente) {
+      console.log('⚠️ [verify-stripe-payment] Pagamento já processado anteriormente');
+      return new Response(JSON.stringify({
+        success: true,
         quantidade: quantidade,
-        payment_id: `stripe_${session_id}`
+        valor_pago: (session.amount_total || 0) / 100,
+        message: "Payment already processed"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // CORREÇÃO: Usar transação manual para garantir atomicidade
+    console.log('🔧 [verify-stripe-payment] Iniciando transação manual...');
+
+    // 1. Primeiro criar a transação
+    const { data: transacaoData, error: transacaoError } = await supabaseService
+      .from('transacoes')
+      .insert({
+        user_id: user.id,
+        tipo: 'compra',
+        valor: quantidade,
+        descricao: `Compra de ${quantidade} Girinhas via Stripe`,
+        valor_real: (session.amount_total || 0) / 100,
+        quantidade_girinhas: quantidade,
+        data_expiracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 ano
+        metadados: {
+          payment_id: `stripe_${session_id}`,
+          stripe_session_id: session_id
+        }
+      })
+      .select()
+      .single();
+
+    if (transacaoError) {
+      console.error('❌ [verify-stripe-payment] Erro ao criar transação:', transacaoError);
+      throw new Error(`Erro ao criar transação: ${transacaoError.message}`);
+    }
+
+    console.log('✅ [verify-stripe-payment] Transação criada:', transacaoData.id);
+
+    // 2. Atualizar carteira diretamente
+    const { data: carteiraAtual, error: carteiraSelectError } = await supabaseService
+      .from('carteiras')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (carteiraSelectError) {
+      console.error('❌ [verify-stripe-payment] Erro ao buscar carteira:', carteiraSelectError);
+      throw new Error(`Erro ao buscar carteira: ${carteiraSelectError.message}`);
+    }
+
+    // Se não existe carteira, criar uma
+    if (!carteiraAtual) {
+      console.log('💡 [verify-stripe-payment] Criando carteira inicial...');
+      const { error: carteiraCreateError } = await supabaseService
+        .from('carteiras')
+        .insert({
+          user_id: user.id,
+          saldo_atual: quantidade,
+          total_recebido: quantidade,
+          total_gasto: 0
+        });
+
+      if (carteiraCreateError) {
+        console.error('❌ [verify-stripe-payment] Erro ao criar carteira:', carteiraCreateError);
+        throw new Error(`Erro ao criar carteira: ${carteiraCreateError.message}`);
       }
-    });
+    } else {
+      // Atualizar carteira existente
+      console.log('💰 [verify-stripe-payment] Atualizando carteira existente...');
+      const { error: carteiraUpdateError } = await supabaseService
+        .from('carteiras')
+        .update({
+          saldo_atual: Number(carteiraAtual.saldo_atual) + quantidade,
+          total_recebido: Number(carteiraAtual.total_recebido) + quantidade,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
 
-    if (compraError) {
-      console.error('❌ [verify-stripe-payment] Erro ao processar compra V2:', compraError);
-      throw compraError;
+      if (carteiraUpdateError) {
+        console.error('❌ [verify-stripe-payment] Erro ao atualizar carteira:', carteiraUpdateError);
+        throw new Error(`Erro ao atualizar carteira: ${carteiraUpdateError.message}`);
+      }
     }
 
-    const resultadoCompra = resultado as { sucesso: boolean; erro?: string; transacao_id?: string };
-    
-    if (!resultadoCompra.sucesso) {
-      throw new Error(resultadoCompra.erro || 'Erro ao processar compra');
-    }
+    console.log('✅ [verify-stripe-payment] Carteira atualizada com sucesso');
 
-    console.log('✅ [verify-stripe-payment] Compra processada com sucesso:', resultadoCompra);
-
-    // Register the purchase in compras_girinhas table
+    // 3. Registrar a compra
     const { error: registroError } = await supabaseService
       .from('compras_girinhas')
       .insert({
         user_id: user.id,
-        valor_pago: (session.amount_total || 0) / 100, // Convert from cents
+        valor_pago: (session.amount_total || 0) / 100,
         girinhas_recebidas: quantidade,
         status: 'aprovado',
-        payment_id: `stripe_${session_id}`,
-        stripe_session_id: session_id
+        payment_id: `stripe_${session_id}`
       });
 
     if (registroError) {
       console.error('⚠️ [verify-stripe-payment] Erro ao registrar compra (mas transação foi processada):', registroError);
     }
 
+    console.log('🎉 [verify-stripe-payment] Processo completo - Transação, carteira e compra processadas!');
+
     return new Response(JSON.stringify({
       success: true,
       quantidade: quantidade,
-      transacao_id: resultadoCompra.transacao_id,
+      transacao_id: transacaoData.id,
       valor_pago: (session.amount_total || 0) / 100
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

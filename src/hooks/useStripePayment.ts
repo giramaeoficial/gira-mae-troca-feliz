@@ -44,49 +44,23 @@ export const useStripePayment = () => {
           if (error) throw error;
 
           if (data.success) {
+            console.log('✅ [useStripePayment] Pagamento verificado com sucesso:', data);
+            
             toast({
               title: "🎉 Pagamento confirmado!",
               description: `${data.quantidade} Girinhas adicionadas à sua carteira por R$ ${data.valor_pago.toFixed(2)}`,
             });
 
-            // SOLUÇÃO: Invalidação AGRESSIVA de todos os caches relacionados
-            console.log('🔄 [useStripePayment] Invalidando TODOS os caches...');
+            // SOLUÇÃO CRÍTICA: Invalidação COMPLETA e reload da página para garantir estado consistente
+            console.log('🔄 [useStripePayment] Forçando atualização completa...');
             
-            // 1. Invalidar e refetch da carteira
-            await queryClient.invalidateQueries({ 
-              queryKey: ['carteira'], 
-              refetchType: 'all' 
-            });
+            // 1. Limpar TODOS os caches
+            queryClient.clear();
             
-            // 2. Invalidar cache de expiração
-            await queryClient.invalidateQueries({ 
-              queryKey: ['girinhas-expiracao'], 
-              refetchType: 'all' 
-            });
-            
-            // 3. Invalidar cache de preço manual
-            await queryClient.invalidateQueries({ 
-              queryKey: ['preco-manual'], 
-              refetchType: 'all' 
-            });
-            
-            // 4. Forçar refetch da carteira
-            await refetch();
-            
-            // 5. NOVO: Disparar evento customizado para forçar atualização
-            window.dispatchEvent(new CustomEvent('stripe-payment-success', {
-              detail: { quantidade: data.quantidade, valor_pago: data.valor_pago }
-            }));
-            
-            // 6. NOVA ABORDAGEM: Refetch múltiplo com delay
-            setTimeout(async () => {
-              console.log('🔄 [useStripePayment] Refetch de segurança...');
-              await queryClient.refetchQueries({ 
-                queryKey: ['carteira'], 
-                type: 'all' 
-              });
-              await refetch();
-            }, 100);
+            // 2. Forçar reload da página para garantir estado limpo
+            setTimeout(() => {
+              window.location.href = '/carteira';
+            }, 1000);
           }
         } catch (error: any) {
           console.error('❌ [useStripePayment] Erro ao verificar pagamento:', error);
@@ -96,10 +70,7 @@ export const useStripePayment = () => {
             variant: "destructive",
           });
         } finally {
-          // Resetar isProcessing IMEDIATAMENTE
           setIsProcessing(false);
-          // Clean URL
-          window.history.replaceState({}, '', '/carteira');
         }
       }
     };

@@ -17,7 +17,7 @@ export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query OTIMIZADA - Cache MUITO menos agressivo para permitir atualizações imediatas
+  // Query SIMPLIFICADA - Cache mínimo para garantir dados sempre frescos
   const {
     data: carteiraData,
     isLoading: loading,
@@ -76,44 +76,15 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    // CORREÇÃO CRÍTICA: Cache extremamente reduzido para transações
-    staleTime: 0, // Sem cache stale - sempre buscar dados frescos
-    gcTime: 1000 * 30, // 30 segundos apenas em cache
+    // CORREÇÃO: Cache mínimo para sempre buscar dados frescos
+    staleTime: 0,
+    gcTime: 0,
     refetchOnWindowFocus: true, 
     refetchOnMount: true, 
     refetchInterval: false, 
     retry: 1,
     retryDelay: 1000
   });
-
-  // NOVO: Listener para evento de pagamento Stripe bem-sucedido
-  useEffect(() => {
-    const handlePaymentSuccess = async (event: CustomEvent) => {
-      console.log('🎉 [useCarteira] Evento de pagamento recebido:', event.detail);
-      
-      // Invalidar TODOS os caches imediatamente
-      await queryClient.invalidateQueries({ 
-        queryKey: ['carteira'], 
-        refetchType: 'all' 
-      });
-      
-      // Forçar refetch MÚLTIPLO para garantir atualização
-      await refetch();
-      
-      // Segundo refetch após pequeno delay
-      setTimeout(async () => {
-        await refetch();
-      }, 200);
-    };
-
-    // Adicionar listener do evento customizado
-    window.addEventListener('stripe-payment-success', handlePaymentSuccess as EventListener);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('stripe-payment-success', handlePaymentSuccess as EventListener);
-    };
-  }, [queryClient, refetch]);
 
   // Tratamento de erros usando useEffect (otimizado com dependência específica)
   useEffect(() => {
@@ -185,36 +156,13 @@ export const useCarteira = () => {
       return data;
     },
     onSuccess: async () => {
-      // CORREÇÃO CRUCIAL: Invalidação e refetch AGRESSIVOS
-      console.log('🔄 [useCarteira] Transação bem-sucedida - Invalidando TODOS os caches...');
-      
-      // Invalidar cache da carteira
+      // Invalidação simples
       await queryClient.invalidateQueries({ 
         queryKey: ['carteira', user?.id], 
         exact: true 
       });
       
-      // Invalidar cache de expiração
-      await queryClient.invalidateQueries({ 
-        queryKey: ['girinhas-expiracao', user?.id], 
-        exact: true 
-      });
-      
-      // Forçar refetch IMEDIATO da carteira
       await refetch();
-      
-      // Aguardar um pouco e refetch novamente para garantir
-      setTimeout(async () => {
-        console.log('🔄 [useCarteira] Segundo refetch de segurança...');
-        await queryClient.refetchQueries({ 
-          queryKey: ['carteira', user?.id], 
-          exact: true 
-        });
-        await queryClient.refetchQueries({ 
-          queryKey: ['girinhas-expiracao', user?.id], 
-          exact: true 
-        });
-      }, 500);
       
       toast({
         title: "💳 Transação Realizada",
@@ -237,75 +185,6 @@ export const useCarteira = () => {
           variant: "destructive",
         });
       }
-    }
-  });
-
-  // 🔒 SEGURANÇA: Mutation para compras seguras via RPC
-  const comprarPacoteSeguroMutation = useMutation({
-    mutationFn: async (pacoteId: string) => {
-      if (!user) throw new Error('Usuário não autenticado');
-
-      console.log('🔒 [useCarteira] Comprando pacote SEGURO via RPC:', pacoteId);
-
-      // Buscar dados do pacote
-      const { data: pacote, error: pacoteError } = await supabase
-        .from('pacotes_girinhas')
-        .select('*')
-        .eq('id', pacoteId)
-        .single();
-
-      if (pacoteError || !pacote) {
-        throw new Error('Pacote não encontrado');
-      }
-
-      // Usar RPC segura que calcula cotação no servidor
-      const { data, error } = await supabase.rpc('processar_compra_segura', {
-        p_user_id: user.id,
-        p_quantidade: pacote.valor_girinhas,
-        p_idempotency_key: `pacote_${pacoteId}_${Date.now()}`
-      });
-
-      if (error) throw error;
-
-      // Registrar compra na tabela de compras
-      const { error: compraError } = await supabase
-        .from('compras_girinhas')
-        .insert({
-          user_id: user.id,
-          pacote_id: pacoteId,
-          valor_pago: pacote.valor_real,
-          girinhas_recebidas: pacote.valor_girinhas,
-          status: 'aprovado',
-          payment_id: `demo_${Date.now()}`
-        });
-
-      if (compraError) {
-        console.error('⚠️ Erro ao registrar compra (mas transação foi processada):', compraError);
-      }
-
-      return data;
-    },
-    onSuccess: async () => {
-      console.log('✅ [useCarteira] Compra segura bem-sucedida');
-      
-      // Invalidar todos os caches
-      await queryClient.invalidateQueries({ queryKey: ['carteira'] });
-      await queryClient.invalidateQueries({ queryKey: ['girinhas-expiracao'] });
-      await refetch();
-      
-      toast({
-        title: "💰 Compra Realizada!",
-        description: "Girinhas adicionadas à sua carteira com segurança!",
-      });
-    },
-    onError: (error: any) => {
-      console.error('❌ [useCarteira] Erro na compra segura:', error);
-      
-      toast({
-        title: "Erro na compra",
-        description: error.message || "Não foi possível processar a compra. Tente novamente.",
-        variant: "destructive",
-      });
     }
   });
 
@@ -380,25 +259,6 @@ export const useCarteira = () => {
     return carteiraData?.carteira ? Number(carteiraData.carteira.saldo_atual) >= valor : false;
   };
 
-  // 🔒 SEGURANÇA: Função de compra usando RPC segura
-  const comprarPacote = async (pacoteId: string): Promise<boolean> => {
-    if (!user) {
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para comprar Girinhas.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    try {
-      await comprarPacoteSeguroMutation.mutateAsync(pacoteId);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   return {
     carteira: carteiraData?.carteira || null,
     transacoes: carteiraData?.transacoes || [],
@@ -411,7 +271,6 @@ export const useCarteira = () => {
     totalRecebido: carteiraData?.carteira ? Number(carteiraData.carteira.total_recebido) : 0,
     totalGasto: carteiraData?.carteira ? Number(carteiraData.carteira.total_gasto) : 0,
     isAddingTransaction: adicionarTransacaoMutation.isPending,
-    comprarPacote,
     
     // Métodos compatíveis com CarteiraContext para facilitar migração
     transferirGirinhas: (valor: number, para: string, itemId: number, descricao: string): boolean => {
