@@ -1,3 +1,4 @@
+
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ const DetalhesItem = () => {
     const { id } = useParams();
     const { toast } = useToast();
     const { user } = useAuth();
-    const { criarReserva, isItemReservado } = useReservas();
+    const { entrarNaFila, isItemReservado } = useReservas();
     const { saldo } = useCarteira();
     const { buscarItemPorId, loading } = useItens();
     const { verificarSeFavorito, toggleFavorito } = useFavoritos();
@@ -126,9 +127,9 @@ const DetalhesItem = () => {
             return;
         }
 
-        const sucesso = await criarReserva(item.id, Number(item.valor_girinhas));
+        // CORREÇÃO: entrarNaFila agora aceita apenas 1 parâmetro
+        const sucesso = await entrarNaFila(item.id);
         if (sucesso) {
-            // Recarregar item para atualizar status
             await carregarItem();
         }
     };

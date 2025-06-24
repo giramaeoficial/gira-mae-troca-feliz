@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -96,11 +95,12 @@ const Feed = () => {
         }
     };
 
-    const handleReservarItem = async (itemId: string, valorGirinhas: number) => {
+    const handleReservarItem = async (itemId: string) => {
         setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
         
         try {
-            const sucesso = await entrarNaFila(itemId, valorGirinhas);
+            // CORREÇÃO: entrarNaFila agora aceita apenas 1 parâmetro
+            const sucesso = await entrarNaFila(itemId);
             if (sucesso) {
                 setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
                 const filaInfo = await obterFilaItem(itemId);
@@ -302,7 +302,7 @@ const Feed = () => {
                                                         <Button 
                                                             size="sm" 
                                                             className="w-full text-xs bg-gradient-to-r from-primary to-pink-500"
-                                                            onClick={() => handleReservarItem(item.id, Number(item.valor_girinhas))}
+                                                            onClick={() => handleReservarItem(item.id)}
                                                             disabled={semSaldo || actionState === 'loading'}
                                                         >
                                                             {actionState === 'loading' ? (
@@ -321,7 +321,7 @@ const Feed = () => {
                                                             size="sm" 
                                                             variant="outline"
                                                             className="w-full text-xs"
-                                                            onClick={() => handleReservarItem(item.id, Number(item.valor_girinhas))}
+                                                            onClick={() => handleReservarItem(item.id)}
                                                             disabled={semSaldo || actionState === 'loading'}
                                                         >
                                                             {actionState === 'loading' ? (

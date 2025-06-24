@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Clock, MessageCircle, CheckCircle, X, Users, Star, Key } from "lucide-react";
 import ChatModal from "@/components/chat/ChatModal";
-import ConfirmacaoEntregaModal from "./ConfirmacaoEntregaModal";
 import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,7 +49,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
   const { toast } = useToast();
   const { confirmarEntrega, loading } = useReservas();
   const [showChat, setShowChat] = useState(false);
-  const [showConfirmacao, setShowConfirmacao] = useState(false);
   const [showAvaliacao, setShowAvaliacao] = useState(false);
   const [showCodigoModal, setShowCodigoModal] = useState(false);
   const [loadingConfirmacao, setLoadingConfirmacao] = useState(false);
@@ -78,7 +76,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
           console.error('Erro ao verificar avaliação:', error);
           return false;
         }
-        // Aguardar antes de tentar novamente
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
@@ -91,15 +88,13 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
     return `${horas}h ${minutos}m`;
   };
 
-  const handleConfirmarEntrega = async (codigo: string) => {
+  const handleConfirmarEntrega = async (codigo: string): Promise<boolean> => {
     setLoadingConfirmacao(true);
     try {
       const sucesso = await onConfirmarEntrega(reserva.id, codigo);
       
       if (sucesso) {
-        // Verificar se a troca foi finalizada e mostrar avaliação
         setTimeout(async () => {
-          // Recarregar dados da reserva
           const { data: reservaAtualizada } = await supabase
             .from('reservas')
             .select('*')
@@ -107,27 +102,26 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
             .single();
 
           if (reservaAtualizada?.status === 'confirmada') {
-            // Verificar avaliação com retry
             const jaAvaliou = await verificarSeJaAvaliouComRetry();
             
             if (!jaAvaliou) {
-              // Garantir que o modal aparece
               setShowAvaliacao(true);
               
-              // Feedback adicional
               toast({
                 title: "🎉 Troca concluída!",
                 description: "Agora você pode avaliar esta troca.",
               });
             }
           }
-        }, 1000); // Delay para garantir consistência
+        }, 1000);
         
-        setShowConfirmacao(false);
         setShowCodigoModal(false);
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Erro ao confirmar entrega:', error);
+      return false;
     } finally {
       setLoadingConfirmacao(false);
     }
@@ -310,15 +304,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         />
       )}
 
-      <ConfirmacaoEntregaModal
-        isOpen={showConfirmacao}
-        onClose={() => setShowConfirmacao(false)}
-        reserva={reserva}
-        isReservador={isReservador}
-        onConfirmar={() => handleConfirmarEntrega('')}
-        loading={loadingConfirmacao}
-      />
-
       <AvaliacaoModal
         isOpen={showAvaliacao}
         onClose={() => setShowAvaliacao(false)}
@@ -329,7 +314,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         }}
       />
 
-      {/* Modal de código de confirmação */}
       <CodigoConfirmacaoModal
         isOpen={showCodigoModal}
         onClose={() => setShowCodigoModal(false)}
