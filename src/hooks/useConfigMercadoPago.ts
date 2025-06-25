@@ -21,7 +21,8 @@ export const useConfigMercadoPago = () => {
       }
 
       // Se não existe configuração, assume teste como padrão
-      const usarAmbienteTeste = data?.valor?.ativo ?? true;
+      const valorConfig = data?.valor as { ativo?: boolean } | null;
+      const usarAmbienteTeste = valorConfig?.ativo ?? true;
 
       return {
         usarAmbienteTeste
