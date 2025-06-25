@@ -22,50 +22,136 @@ serve(async (req) => {
     console.log('🔔 [mercadopago-webhook] Webhook recebido do Mercado Pago');
 
     const body = await req.text();
-    const webhookData = JSON.parse(body);
+    console.log('📥 [mercadopago-webhook] Raw body:', body);
+
+    // 🔄 SUPORTE: Diferentes formatos de webhook do MP
+    let webhookData;
+    try {
+      webhookData = JSON.parse(body);
+    } catch (parseError) {
+      console.error('❌ [mercadopago-webhook] Erro ao parsear JSON:', parseError);
+      return new Response("Invalid JSON", { status: 400 });
+    }
+
+    // 🔄 ADAPTAÇÃO: Normalizar diferentes formatos de webhook
+    let paymentId, webhookType, action;
     
+    if (webhookData.data?.id) {
+      // Formato novo: { type: "payment", data: { id: "123" } }
+      paymentId = webhookData.data.id;
+      webhookType = webhookData.type;
+      action = webhookData.action;
+    } else if (webhookData.topic === 'payment' && webhookData.resource) {
+      // Formato alternativo: { topic: "payment", resource: "https://..." }
+      const resourceUrl = webhookData.resource;
+      const matches = resourceUrl.match(/\/payments\/(\d+)/);
+      paymentId = matches ? matches[1] : null;
+      webhookType = webhookData.topic;
+    } else if (webhookData.topic === 'merchant_order') {
+      // Ignorar merchant_order por enquanto
+      console.log('⏭️ [mercadopago-webhook] Evento merchant_order ignorado');
+      return new Response("Merchant order ignored", { status: 200 });
+    }
+
     console.log('📥 [mercadopago-webhook] Dados recebidos:', {
-      type: webhookData.type,
-      action: webhookData.action,
-      dataId: webhookData.data?.id
+      type: webhookType,
+      action: action,
+      dataId: paymentId,
+      rawData: webhookData
     });
 
     // 🔒 SEGURANÇA: Processar apenas eventos de pagamento
-    if (webhookData.type !== 'payment') {
-      console.log('⏭️ [mercadopago-webhook] Evento ignorado:', webhookData.type);
+    if (webhookType !== 'payment') {
+      console.log('⏭️ [mercadopago-webhook] Evento ignorado:', webhookType);
       return new Response("Event ignored", { status: 200 });
     }
 
-    const paymentId = webhookData.data?.id;
     if (!paymentId) {
-      throw new Error('Payment ID não encontrado no webhook');
+      console.error('❌ [mercadopago-webhook] Payment ID não encontrado no webhook');
+      return new Response("Payment ID not found", { status: 400 });
     }
 
-    // 🔒 SEGURANÇA: Buscar dados do pagamento diretamente da API do Mercado Pago
+    // 🔒 SEGURANÇA: Buscar dados do pagamento com retry para timing issues
     const mpAccessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!mpAccessToken) {
       throw new Error('MERCADO_PAGO_ACCESS_TOKEN não configurado');
     }
 
-    console.log('🔍 [mercadopago-webhook] Buscando dados do pagamento:', paymentId);
-
-    const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: {
-        'Authorization': `Bearer ${mpAccessToken}`
-      }
+    console.log('🔑 [mercadopago-webhook] Token info:', {
+      length: mpAccessToken.length,
+      prefix: mpAccessToken.substring(0, 15) + '...',
+      isAppToken: mpAccessToken.startsWith('APP_USR-')
     });
-    
-    if (!paymentResponse.ok) {
-      throw new Error(`Erro ao buscar pagamento: ${paymentResponse.status}`);
+
+    let payment = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+    const retryDelay = 2000; // 2 segundos
+
+    while (attempts < maxAttempts && !payment) {
+      attempts++;
+      
+      if (attempts > 1) {
+        console.log(`🔄 [mercadopago-webhook] Tentativa ${attempts} de buscar payment...`);
+      } else {
+        console.log(`🔍 [mercadopago-webhook] Tentando buscar pagamento: ${paymentId}`);
+      }
+
+      const paymentUrl = `https://api.mercadopago.com/v1/payments/${paymentId}`;
+      console.log('🌐 [mercadopago-webhook] URL da requisição:', paymentUrl);
+
+      const paymentResponse = await fetch(paymentUrl, {
+        headers: {
+          'Authorization': `Bearer ${mpAccessToken}`
+        }
+      });
+
+      console.log('📡 [mercadopago-webhook] Response status:', {
+        status: paymentResponse.status,
+        statusText: paymentResponse.statusText
+      });
+
+      if (paymentResponse.ok) {
+        payment = await paymentResponse.json();
+        break;
+      } else if (paymentResponse.status === 404 && attempts < maxAttempts) {
+        // 🔄 RETRY: Comum no sandbox - timing issue
+        console.log('⚠️ [mercadopago-webhook] Payment não encontrado - pode ser timing issue');
+        console.log(`🔄 [mercadopago-webhook] Aguardando ${retryDelay / 1000} segundos para retry...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      } else {
+        const errorText = await paymentResponse.text();
+        console.error('❌ [mercadopago-webhook] Erro na API do MP:', {
+          status: paymentResponse.status,
+          body: errorText
+        });
+        throw new Error(`Erro ao buscar pagamento: ${paymentResponse.status}`);
+      }
     }
-    
-    const payment = await paymentResponse.json();
+
+    if (!payment) {
+      console.log('❌ [mercadopago-webhook] Payment ainda não encontrado após retry');
+      console.log('📋 [mercadopago-webhook] Possível cenário de Checkout Pro com timing issue');
+      console.log('📋 [mercadopago-webhook] Recomendação: Verificar manualmente se o pagamento foi aprovado');
+      
+      // Em vez de erro 500, retornar 200 para evitar retry infinito do MP
+      return new Response(JSON.stringify({
+        warning: "Payment not found after retries",
+        recommendation: "Check payment status manually",
+        payment_id: paymentId
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     
     console.log('💳 [mercadopago-webhook] Dados do pagamento:', {
       id: payment.id,
       status: payment.status,
       amount: payment.transaction_amount,
-      external_reference: payment.external_reference
+      external_reference: payment.external_reference,
+      payment_method: payment.payment_method_id,
+      live_mode: payment.live_mode
     });
 
     // 🔒 SEGURANÇA: Processar apenas pagamentos aprovados
@@ -94,7 +180,8 @@ serve(async (req) => {
       userId,
       quantidade,
       paymentId: payment.id,
-      externalRef
+      externalRef,
+      liveMode: payment.live_mode ? 'PRODUÇÃO' : 'TESTE'
     });
 
     // 🔒 SEGURANÇA: Validar dados antes de processar
@@ -121,6 +208,20 @@ serve(async (req) => {
     
     if (error) {
       console.error('❌ [mercadopago-webhook] Erro ao processar compra:', error);
+      
+      // Se for erro de duplicação, não é crítico
+      if (error.message?.includes('já processado')) {
+        console.log('ℹ️ [mercadopago-webhook] Pagamento já foi processado anteriormente');
+        return new Response(JSON.stringify({
+          success: true,
+          message: "Payment already processed",
+          payment_id: payment.id
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
       throw error;
     }
     
@@ -128,7 +229,8 @@ serve(async (req) => {
       userId,
       quantidade,
       paymentId: payment.id,
-      resultado: result
+      resultado: result,
+      ambiente: payment.live_mode ? 'PRODUÇÃO' : 'TESTE'
     });
 
     return new Response(JSON.stringify({
@@ -136,7 +238,8 @@ serve(async (req) => {
       message: "Webhook processed successfully",
       payment_id: payment.id,
       user_id: userId,
-      quantidade: quantidade
+      quantidade: quantidade,
+      ambiente: payment.live_mode ? 'producao' : 'teste'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
