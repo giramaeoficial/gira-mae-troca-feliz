@@ -7,8 +7,16 @@ import { Sparkles, Heart, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import CompraLivre from "@/components/girinhas/CompraLivre";
+import { useMercadoPago } from "@/hooks/useMercadoPago";
 
 const ComprarGirinhas = () => {
+  const { verificarStatusPagamento } = useMercadoPago();
+
+  useEffect(() => {
+    // Verificar se há parâmetros de retorno do Mercado Pago
+    verificarStatusPagamento();
+  }, [verificarStatusPagamento]);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 md:pb-8">
       <Header />
