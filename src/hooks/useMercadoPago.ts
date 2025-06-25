@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useCarteira } from '@/hooks/useCarteira';
+import { useConfigMercadoPago } from '@/hooks/useConfigMercadoPago';
 import { supabase } from '@/integrations/supabase/client';
 
 interface MercadoPagoPreference {
@@ -10,12 +11,15 @@ interface MercadoPagoPreference {
   init_point: string;
   external_reference: string;
   sandbox_init_point?: string;
+  checkout_url: string;
+  ambiente: 'teste' | 'producao';
 }
 
 export const useMercadoPago = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { refetch } = useCarteira();
+  const { config } = useConfigMercadoPago();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const criarPreferencia = async (quantidade: number): Promise<boolean> => {
@@ -41,7 +45,10 @@ export const useMercadoPago = () => {
     setIsProcessing(true);
 
     try {
-      console.log('🚀 [useMercadoPago] Criando preferência para:', quantidade, 'Girinhas');
+      console.log('🚀 [useMercadoPago] Criando preferência para:', {
+        quantidade,
+        ambiente: config.usarAmbienteTeste ? 'TESTE' : 'PRODUÇÃO'
+      });
 
       const { data, error } = await supabase.functions.invoke('create-mercadopago-preference', {
         body: { quantidade }
@@ -58,11 +65,24 @@ export const useMercadoPago = () => {
 
       const preference = data as MercadoPagoPreference;
       
-      console.log('✅ [useMercadoPago] Preferência criada:', preference.preference_id);
+      console.log('✅ [useMercadoPago] Preferência criada:', {
+        preferenceId: preference.preference_id,
+        ambiente: preference.ambiente,
+        checkoutUrl: preference.checkout_url
+      });
 
-      // 🔒 SEGURANÇA: Redirecionar para checkout oficial do Mercado Pago
-      const checkoutUrl = preference.init_point || preference.sandbox_init_point;
+      // 🆕 INTELIGENTE: Usar URL já selecionada pelo backend baseada na config
+      const checkoutUrl = preference.checkout_url;
+      
       if (checkoutUrl) {
+        // 🎯 FEEDBACK: Mostrar o ambiente sendo usado
+        toast({
+          title: `🔄 Redirecionando para ${preference.ambiente === 'teste' ? 'Ambiente de Teste' : 'Produção'}`,
+          description: preference.ambiente === 'teste' 
+            ? "Você será direcionado para o sandbox do Mercado Pago" 
+            : "Processamento de pagamento real",
+        });
+
         window.location.href = checkoutUrl;
         return true;
       } else {
@@ -89,11 +109,15 @@ export const useMercadoPago = () => {
     const externalRef = urlParams.get('ref');
 
     if (paymentStatus && externalRef) {
+      const isTestEnvironment = config.usarAmbienteTeste;
+      
       switch (paymentStatus) {
         case 'success':
           toast({
-            title: "🎉 Pagamento Aprovado!",
-            description: "Suas Girinhas foram creditadas automaticamente. O saldo será atualizado em alguns instantes.",
+            title: `🎉 Pagamento Aprovado! ${isTestEnvironment ? '(Teste)' : ''}`,
+            description: isTestEnvironment 
+              ? "Teste realizado com sucesso! Suas Girinhas de teste foram creditadas." 
+              : "Suas Girinhas foram creditadas automaticamente. O saldo será atualizado em alguns instantes.",
           });
           // Limpar URL e recarregar dados
           window.history.replaceState({}, '', '/carteira');
@@ -102,8 +126,10 @@ export const useMercadoPago = () => {
         
         case 'failure':
           toast({
-            title: "❌ Pagamento Recusado",
-            description: "Seu pagamento foi recusado. Tente novamente com outro método de pagamento.",
+            title: `❌ Pagamento Recusado ${isTestEnvironment ? '(Teste)' : ''}`,
+            description: isTestEnvironment
+              ? "Teste de pagamento recusado. Tente novamente com outros dados de teste."
+              : "Seu pagamento foi recusado. Tente novamente com outro método de pagamento.",
             variant: "destructive",
           });
           window.history.replaceState({}, '', '/carteira');
@@ -111,8 +137,10 @@ export const useMercadoPago = () => {
         
         case 'pending':
           toast({
-            title: "⏳ Pagamento Pendente",
-            description: "Seu pagamento está sendo processado. Suas Girinhas serão creditadas assim que aprovado.",
+            title: `⏳ Pagamento Pendente ${isTestEnvironment ? '(Teste)' : ''}`,
+            description: isTestEnvironment
+              ? "Teste de pagamento pendente simulado."
+              : "Seu pagamento está sendo processado. Suas Girinhas serão creditadas assim que aprovado.",
           });
           window.history.replaceState({}, '', '/carteira');
           break;
@@ -123,6 +151,7 @@ export const useMercadoPago = () => {
   return {
     criarPreferencia,
     verificarStatusPagamento,
-    isProcessing
+    isProcessing,
+    ambiente: config.usarAmbienteTeste ? 'teste' : 'producao'
   };
 };

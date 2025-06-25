@@ -21,10 +21,10 @@ serve(async (req) => {
   try {
     console.log('🚀 [create-mercadopago-preference] Iniciando criação de preferência');
 
-    // Create Supabase client for auth
+    // Create Supabase client for auth and config
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     // Get authenticated user
@@ -34,6 +34,8 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
+    
+    // Verificar usuário autenticado
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !userData.user) {
@@ -52,6 +54,20 @@ serve(async (req) => {
       throw new Error('Quantidade deve estar entre 10 e 999.000 Girinhas');
     }
 
+    // 🆕 NOVO: Buscar configuração de ambiente (teste/produção)
+    const { data: configData } = await supabaseClient
+      .from('config_sistema')
+      .select('valor')
+      .eq('chave', 'mercadopago_ambiente_teste')
+      .single();
+
+    const usarAmbienteTeste = configData?.valor?.ativo ?? true;
+
+    console.log('⚙️ [create-mercadopago-preference] Configuração ambiente:', {
+      usarAmbienteTeste,
+      ambiente: usarAmbienteTeste ? 'TESTE (Sandbox)' : 'PRODUÇÃO'
+    });
+
     const valorTotal = quantidade * 1.00; // R$ 1,00 por Girinha
 
     // 🔒 SEGURANÇA: Gerar referência única com timestamp e user ID
@@ -61,7 +77,8 @@ serve(async (req) => {
       quantidade,
       valorTotal,
       userId: user.id,
-      externalReference
+      externalReference,
+      ambiente: usarAmbienteTeste ? 'TESTE' : 'PRODUÇÃO'
     });
 
     // 🔒 CORREÇÃO: URLs base corrigidas
@@ -124,11 +141,23 @@ serve(async (req) => {
 
     console.log('✅ [create-mercadopago-preference] Preferência criada com sucesso:', preference.id);
 
+    // 🆕 INTELIGENTE: Selecionar URL baseada na configuração
+    const checkoutUrl = usarAmbienteTeste 
+      ? preference.sandbox_init_point 
+      : preference.init_point;
+
+    console.log('🔗 [create-mercadopago-preference] URL selecionada:', {
+      ambiente: usarAmbienteTeste ? 'TESTE' : 'PRODUÇÃO',
+      url: checkoutUrl
+    });
+
     return new Response(JSON.stringify({
       preference_id: preference.id,
       init_point: preference.init_point,
       external_reference: externalReference,
-      sandbox_init_point: preference.sandbox_init_point
+      sandbox_init_point: preference.sandbox_init_point,
+      checkout_url: checkoutUrl, // 🆕 URL já selecionada baseada na config
+      ambiente: usarAmbienteTeste ? 'teste' : 'producao'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

@@ -9,6 +9,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import MetricsOverview from '@/components/admin/MetricsOverview';
 import ConfigCategorias from '@/components/admin/ConfigCategorias';
 import ConfigCompraGirinhas from '@/components/admin/ConfigCompraGirinhas';
+import ConfigMercadoPago from '@/components/admin/ConfigMercadoPago';
 import EmissionChart from '@/components/admin/EmissionChart';
 import PainelSaudeGirinha from '@/components/admin/PainelSaudeGirinha';
 import SystemConfig from '@/components/admin/SystemConfig';
@@ -37,11 +38,12 @@ const AdminDashboard = () => {
 
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="users">Usuários</TabsTrigger>
               <TabsTrigger value="categories">Categorias</TabsTrigger>
               <TabsTrigger value="girinhas">Girinhas</TabsTrigger>
+              <TabsTrigger value="mercadopago">Mercado Pago</TabsTrigger>
               <TabsTrigger value="saude">Painel Saúde</TabsTrigger>
               <TabsTrigger value="system">Sistema</TabsTrigger>
               <TabsTrigger value="bonus">Bônus</TabsTrigger>
@@ -65,6 +67,10 @@ const AdminDashboard = () => {
                 <ConfigCompraGirinhas />
                 <EmissionChart />
               </div>
+            </TabsContent>
+
+            <TabsContent value="mercadopago">
+              <ConfigMercadoPago />
             </TabsContent>
 
             <TabsContent value="saude">

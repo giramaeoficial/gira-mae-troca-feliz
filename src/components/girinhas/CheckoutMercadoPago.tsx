@@ -5,14 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { CreditCard, DollarSign, Shield, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CreditCard, DollarSign, Shield, Clock, TestTube } from "lucide-react";
 import { useMercadoPago } from '@/hooks/useMercadoPago';
+import { useConfigMercadoPago } from '@/hooks/useConfigMercadoPago';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const CheckoutMercadoPago = () => {
   const [quantidade, setQuantidade] = useState<number>(50);
-  const { criarPreferencia, isProcessing } = useMercadoPago();
+  const { criarPreferencia, isProcessing, ambiente } = useMercadoPago();
+  const { config } = useConfigMercadoPago();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -50,12 +53,21 @@ const CheckoutMercadoPago = () => {
       {/* Header */}
       <Card className="border-2 border-primary/20">
         <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2 text-2xl">
-            <DollarSign className="h-6 w-6 text-primary" />
-            Comprar Girinhas
-          </CardTitle>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <CardTitle className="flex items-center justify-center gap-2 text-2xl">
+              <DollarSign className="h-6 w-6 text-primary" />
+              Comprar Girinhas
+            </CardTitle>
+            {config.usarAmbienteTeste && (
+              <Badge variant="secondary" className="gap-1">
+                <TestTube className="h-3 w-3" />
+                TESTE
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">
             Compre Girinhas de forma segura com Mercado Pago
+            {config.usarAmbienteTeste && " (Ambiente de Teste)"}
           </p>
         </CardHeader>
       </Card>
@@ -102,6 +114,20 @@ const CheckoutMercadoPago = () => {
             </div>
           </div>
 
+          {/* Ambiente de teste - aviso */}
+          {config.usarAmbienteTeste && (
+            <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg">
+              <div className="flex items-center gap-2 text-orange-800">
+                <TestTube className="h-4 w-4" />
+                <span className="text-sm font-medium">Modo de Teste Ativado</span>
+              </div>
+              <p className="text-xs text-orange-700 mt-1">
+                Esta compra será simulada. Nenhum pagamento real será processado.
+                Use dados de teste do Mercado Pago para completar a simulação.
+              </p>
+            </div>
+          )}
+
           {/* Botão de Compra */}
           <Button
             onClick={handleComprar}
@@ -113,7 +139,7 @@ const CheckoutMercadoPago = () => {
             ) : (
               <>
                 <CreditCard className="h-5 w-5 mr-2" />
-                Pagar com Mercado Pago
+                {config.usarAmbienteTeste ? 'Testar' : 'Pagar'} com Mercado Pago
               </>
             )}
           </Button>
@@ -134,6 +160,9 @@ const CheckoutMercadoPago = () => {
             <p>• Aceitamos cartão de crédito, débito, PIX e boleto</p>
             <p>• Suas Girinhas são creditadas automaticamente após aprovação</p>
             <p>• Válidas por 12 meses a partir da compra</p>
+            {config.usarAmbienteTeste && (
+              <p className="text-orange-600 font-medium">• MODO TESTE: Use dados de teste do Mercado Pago</p>
+            )}
           </div>
         </CardContent>
       </Card>
