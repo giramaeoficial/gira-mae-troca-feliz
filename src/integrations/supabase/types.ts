@@ -139,6 +139,33 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       avaliacoes: {
         Row: {
           avaliado_id: string
@@ -240,10 +267,12 @@ export type Database = {
       compras_girinhas: {
         Row: {
           created_at: string
+          external_reference: string | null
           girinhas_recebidas: number
           id: string
           pacote_id: string | null
           payment_id: string | null
+          payment_method: string | null
           status: string
           updated_at: string
           user_id: string
@@ -251,10 +280,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          external_reference?: string | null
           girinhas_recebidas: number
           id?: string
           pacote_id?: string | null
           payment_id?: string | null
+          payment_method?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -262,24 +293,18 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          external_reference?: string | null
           girinhas_recebidas?: number
           id?: string
           pacote_id?: string | null
           payment_id?: string | null
+          payment_method?: string | null
           status?: string
           updated_at?: string
           user_id?: string
           valor_pago?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "compras_girinhas_pacote_id_fkey"
-            columns: ["pacote_id"]
-            isOneToOne: false
-            referencedRelation: "pacotes_girinhas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       config_categorias: {
         Row: {
@@ -407,6 +432,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      error_log: {
+        Row: {
+          created_at: string | null
+          error_details: Json | null
+          error_message: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_details?: Json | null
+          error_message: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_details?: Json | null
+          error_message?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       escolas_inep: {
         Row: {
@@ -1205,39 +1254,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      pacotes_girinhas: {
-        Row: {
-          ativo: boolean | null
-          created_at: string
-          desconto_percentual: number | null
-          id: string
-          nome: string
-          updated_at: string
-          valor_girinhas: number
-          valor_real: number
-        }
-        Insert: {
-          ativo?: boolean | null
-          created_at?: string
-          desconto_percentual?: number | null
-          id?: string
-          nome: string
-          updated_at?: string
-          valor_girinhas: number
-          valor_real: number
-        }
-        Update: {
-          ativo?: boolean | null
-          created_at?: string
-          desconto_percentual?: number | null
-          id?: string
-          nome?: string
-          updated_at?: string
-          valor_girinhas?: number
-          valor_real?: number
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -2070,6 +2086,17 @@ export type Database = {
           p_user_id: string
           p_quantidade: number
           p_idempotency_key?: string
+        }
+        Returns: Json
+      }
+      processar_compra_webhook_segura: {
+        Args: {
+          p_user_id: string
+          p_quantidade: number
+          p_payment_id: string
+          p_external_reference: string
+          p_payment_method?: string
+          p_payment_status?: string
         }
         Returns: Json
       }
