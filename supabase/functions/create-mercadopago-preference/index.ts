@@ -64,6 +64,9 @@ serve(async (req) => {
       externalReference
     });
 
+    // 🔒 CORREÇÃO: URLs base corrigidas
+    const baseUrl = Deno.env.get('SITE_URL') || 'http://localhost:3000';
+    
     const preferenceData = {
       items: [{
         id: 'girinhas',
@@ -79,9 +82,9 @@ serve(async (req) => {
       external_reference: externalReference,
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
       back_urls: {
-        success: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/carteira?payment=success&ref=${externalReference}`,
-        failure: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/carteira?payment=failure&ref=${externalReference}`,
-        pending: `${Deno.env.get('SITE_URL') || 'http://localhost:3000'}/carteira?payment=pending&ref=${externalReference}`
+        success: `${baseUrl}/carteira?payment=success&ref=${externalReference}`,
+        failure: `${baseUrl}/carteira?payment=failure&ref=${externalReference}`,
+        pending: `${baseUrl}/carteira?payment=pending&ref=${externalReference}`
       },
       auto_return: 'approved',
       statement_descriptor: 'GIRAMAE_GIRINHAS',
