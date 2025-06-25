@@ -84,6 +84,16 @@ serve(async (req) => {
     // 🔒 CORREÇÃO: URLs base corrigidas
     const baseUrl = Deno.env.get('SITE_URL') || 'http://localhost:3000';
     
+    // 🔧 CORREÇÃO: Configurar payer baseado no ambiente
+    const payerConfig = usarAmbienteTeste 
+      ? {} // Em teste, deixa o MP gerenciar o login sem email específico
+      : { email: user.email }; // Em produção, usa o email do usuário logado
+
+    console.log('👤 [create-mercadopago-preference] Configuração do payer:', {
+      ambiente: usarAmbienteTeste ? 'TESTE' : 'PRODUÇÃO',
+      payerConfig: usarAmbienteTeste ? 'Login gerenciado pelo MP' : `Email: ${user.email}`
+    });
+    
     const preferenceData = {
       items: [{
         id: 'girinhas',
@@ -93,9 +103,7 @@ serve(async (req) => {
         currency_id: 'BRL',
         unit_price: valorTotal
       }],
-      payer: {
-        email: user.email
-      },
+      payer: payerConfig, // 🔧 Configuração dinâmica do payer
       external_reference: externalReference,
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
       back_urls: {
