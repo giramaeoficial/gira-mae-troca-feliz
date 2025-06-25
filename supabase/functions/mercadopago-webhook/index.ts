@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -24,7 +23,7 @@ serve(async (req) => {
     const body = await req.text();
     console.log('📥 [mercadopago-webhook] Raw body:', body);
 
-    // 🔄 SUPORTE: Diferentes formatos de webhook do MP
+    // Parse webhook data
     let webhookData;
     try {
       webhookData = JSON.parse(body);
@@ -33,22 +32,22 @@ serve(async (req) => {
       return new Response("Invalid JSON", { status: 400 });
     }
 
-    // 🔄 ADAPTAÇÃO: Normalizar diferentes formatos de webhook
+    // Normalize different webhook formats
     let paymentId, webhookType, action;
     
     if (webhookData.data?.id) {
-      // Formato novo: { type: "payment", data: { id: "123" } }
+      // New format: { type: "payment", data: { id: "123" } }
       paymentId = webhookData.data.id;
       webhookType = webhookData.type;
       action = webhookData.action;
     } else if (webhookData.topic === 'payment' && webhookData.resource) {
-      // Formato alternativo: { topic: "payment", resource: "https://..." }
+      // Alternative format: { topic: "payment", resource: "https://..." }
       const resourceUrl = webhookData.resource;
       const matches = resourceUrl.match(/\/payments\/(\d+)/);
       paymentId = matches ? matches[1] : null;
       webhookType = webhookData.topic;
     } else if (webhookData.topic === 'merchant_order') {
-      // Ignorar merchant_order por enquanto
+      // Ignore merchant_order events
       console.log('⏭️ [mercadopago-webhook] Evento merchant_order ignorado');
       return new Response("Merchant order ignored", { status: 200 });
     }
@@ -60,7 +59,7 @@ serve(async (req) => {
       rawData: webhookData
     });
 
-    // 🔒 SEGURANÇA: Processar apenas eventos de pagamento
+    // Process only payment events
     if (webhookType !== 'payment') {
       console.log('⏭️ [mercadopago-webhook] Evento ignorado:', webhookType);
       return new Response("Event ignored", { status: 200 });
@@ -71,7 +70,7 @@ serve(async (req) => {
       return new Response("Payment ID not found", { status: 400 });
     }
 
-    // 🔒 SEGURANÇA: Buscar dados do pagamento com retry para timing issues
+    // Get MP access token
     const mpAccessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     if (!mpAccessToken) {
       throw new Error('MERCADO_PAGO_ACCESS_TOKEN não configurado');
@@ -83,15 +82,16 @@ serve(async (req) => {
       isAppToken: mpAccessToken.startsWith('APP_USR-')
     });
 
+    // Enhanced retry logic with exponential backoff
     let payment = null;
     let attempts = 0;
-    const maxAttempts = 5; // Aumentar para 5 tentativas
-    const baseDelay = 1000; // 1 segundo base
+    const maxAttempts = 5;
+    const baseDelay = 1000; // 1 second base
 
     while (attempts < maxAttempts && !payment) {
       attempts++;
       
-      // Delay exponencial: 1s, 2s, 4s, 8s, 16s
+      // Exponential backoff: 1s, 2s, 4s, 8s, 16s
       const delay = attempts > 1 ? baseDelay * Math.pow(2, attempts - 2) : 0;
       
       if (delay > 0) {
@@ -121,12 +121,12 @@ serve(async (req) => {
         console.log('✅ [mercadopago-webhook] Pagamento encontrado na tentativa', attempts);
         break;
       } else if (paymentResponse.status === 404) {
-        // 🔄 RETRY: Comum no sandbox - timing issue
+        // Common in sandbox - timing issue
         const errorText = await paymentResponse.text();
         console.log(`⚠️ [mercadopago-webhook] Payment não encontrado (tentativa ${attempts}/${maxAttempts}):`, errorText);
         
         if (attempts >= maxAttempts) {
-          // 🎯 ESTRATÉGIA: Não retornar 500 para evitar retry infinito
+          // Don't return 500 to avoid infinite retry loop
           console.log('❌ [mercadopago-webhook] Payment não encontrado após todas as tentativas');
           console.log('📋 [mercadopago-webhook] Possível timing issue no sandbox - retornando 200 para evitar loops');
           
@@ -138,11 +138,11 @@ serve(async (req) => {
             environment: "sandbox_timing_issue"
           }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200, // 🎯 IMPORTANTE: 200 para evitar retry do MP
+            status: 200, // Return 200 to prevent MP retry loop
           });
         }
       } else {
-        // Outros erros HTTP
+        // Other HTTP errors
         const errorText = await paymentResponse.text();
         console.error('❌ [mercadopago-webhook] Erro HTTP na API do MP:', {
           status: paymentResponse.status,
@@ -150,7 +150,7 @@ serve(async (req) => {
           tentativa: attempts
         });
         
-        // Para erros que não sejam 404, falhar imediatamente
+        // Fail immediately for non-404 errors
         throw new Error(`Erro na API do MP: ${paymentResponse.status} - ${errorText}`);
       }
     }
@@ -163,7 +163,7 @@ serve(async (req) => {
         attempts: maxAttempts
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200, // 200 para evitar retry infinito
+        status: 200, // 200 to prevent infinite retry
       });
     }
     
@@ -176,7 +176,7 @@ serve(async (req) => {
       live_mode: payment.live_mode
     });
 
-    // 🔒 SEGURANÇA: Processar apenas pagamentos aprovados
+    // Process only approved payments
     if (payment.status !== 'approved') {
       console.log(`⏳ [mercadopago-webhook] Pagamento não aprovado (status: ${payment.status}) - Aguardando aprovação`);
       return new Response(JSON.stringify({
@@ -189,21 +189,21 @@ serve(async (req) => {
       });
     }
 
-    // 🔒 SEGURANÇA: Validar referência externa
+    // Validate external reference
     const externalRef = payment.external_reference;
     if (!externalRef || !externalRef.startsWith('girinha_')) {
       console.error('❌ [mercadopago-webhook] Referência externa inválida:', externalRef);
       throw new Error('Referência externa inválida');
     }
 
-    // Extrair user_id da referência externa
+    // Extract user_id from external reference
     const refParts = externalRef.split('_');
     if (refParts.length < 4) {
       throw new Error('Formato de referência externa inválido');
     }
 
     const userId = refParts[1];
-    const quantidade = Math.floor(payment.transaction_amount); // Quantidade = valor pago em reais
+    const quantidade = Math.floor(payment.transaction_amount); // Quantity = paid amount in reais
     
     console.log('💰 [mercadopago-webhook] Processando compra aprovada:', {
       userId,
@@ -213,7 +213,7 @@ serve(async (req) => {
       ambiente: payment.live_mode ? 'PRODUÇÃO' : 'SANDBOX'
     });
 
-    // 🔒 SEGURANÇA: Validar dados antes de processar
+    // Validate data before processing
     if (!userId || !quantidade || quantidade < 10 || quantidade > 999000) {
       throw new Error(`Dados inválidos: userId=${userId}, quantidade=${quantidade}`);
     }
@@ -225,7 +225,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // 🔒 SEGURANÇA: Processar compra usando função RPC segura
+    // Process purchase using secure RPC function
     const { data: result, error } = await supabaseService.rpc('processar_compra_webhook_segura', {
       p_user_id: userId,
       p_quantidade: quantidade,
@@ -238,7 +238,7 @@ serve(async (req) => {
     if (error) {
       console.error('❌ [mercadopago-webhook] Erro ao processar compra:', error);
       
-      // Se for erro de duplicação, não é crítico
+      // If it's a duplication error, it's not critical
       if (error.message?.includes('já processado')) {
         console.log('ℹ️ [mercadopago-webhook] Pagamento já foi processado anteriormente');
         return new Response(JSON.stringify({
@@ -277,7 +277,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ [mercadopago-webhook] Erro crítico não relacionado ao timing:', error);
     
-    // Return 500 apenas para erros reais (não timing issues)
+    // Return 500 only for real errors (not timing issues)
     return new Response(JSON.stringify({ 
       error: "Internal server error",
       message: error.message,
