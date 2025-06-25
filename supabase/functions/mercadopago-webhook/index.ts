@@ -85,16 +85,20 @@ serve(async (req) => {
 
     let payment = null;
     let attempts = 0;
-    const maxAttempts = 3;
-    const retryDelay = 2000; // 2 segundos
+    const maxAttempts = 5; // Aumentar para 5 tentativas
+    const baseDelay = 1000; // 1 segundo base
 
     while (attempts < maxAttempts && !payment) {
       attempts++;
       
-      if (attempts > 1) {
-        console.log(`🔄 [mercadopago-webhook] Tentativa ${attempts} de buscar payment...`);
+      // Delay exponencial: 1s, 2s, 4s, 8s, 16s
+      const delay = attempts > 1 ? baseDelay * Math.pow(2, attempts - 2) : 0;
+      
+      if (delay > 0) {
+        console.log(`🔄 [mercadopago-webhook] Tentativa ${attempts}/${maxAttempts} - Aguardando ${delay / 1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       } else {
-        console.log(`🔍 [mercadopago-webhook] Tentando buscar pagamento: ${paymentId}`);
+        console.log(`🔍 [mercadopago-webhook] Tentativa ${attempts}/${maxAttempts} - Buscando pagamento: ${paymentId}`);
       }
 
       const paymentUrl = `https://api.mercadopago.com/v1/payments/${paymentId}`;
@@ -108,44 +112,62 @@ serve(async (req) => {
 
       console.log('📡 [mercadopago-webhook] Response status:', {
         status: paymentResponse.status,
-        statusText: paymentResponse.statusText
+        statusText: paymentResponse.statusText,
+        tentativa: attempts
       });
 
       if (paymentResponse.ok) {
         payment = await paymentResponse.json();
+        console.log('✅ [mercadopago-webhook] Pagamento encontrado na tentativa', attempts);
         break;
-      } else if (paymentResponse.status === 404 && attempts < maxAttempts) {
+      } else if (paymentResponse.status === 404) {
         // 🔄 RETRY: Comum no sandbox - timing issue
-        console.log('⚠️ [mercadopago-webhook] Payment não encontrado - pode ser timing issue');
-        console.log(`🔄 [mercadopago-webhook] Aguardando ${retryDelay / 1000} segundos para retry...`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-      } else {
         const errorText = await paymentResponse.text();
-        console.error('❌ [mercadopago-webhook] Erro na API do MP:', {
+        console.log(`⚠️ [mercadopago-webhook] Payment não encontrado (tentativa ${attempts}/${maxAttempts}):`, errorText);
+        
+        if (attempts >= maxAttempts) {
+          // 🎯 ESTRATÉGIA: Não retornar 500 para evitar retry infinito
+          console.log('❌ [mercadopago-webhook] Payment não encontrado após todas as tentativas');
+          console.log('📋 [mercadopago-webhook] Possível timing issue no sandbox - retornando 200 para evitar loops');
+          
+          return new Response(JSON.stringify({
+            warning: "Payment not found after retries",
+            recommendation: "This is common in sandbox environment due to timing issues",
+            payment_id: paymentId,
+            attempts: maxAttempts,
+            environment: "sandbox_timing_issue"
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200, // 🎯 IMPORTANTE: 200 para evitar retry do MP
+          });
+        }
+      } else {
+        // Outros erros HTTP
+        const errorText = await paymentResponse.text();
+        console.error('❌ [mercadopago-webhook] Erro HTTP na API do MP:', {
           status: paymentResponse.status,
-          body: errorText
+          body: errorText,
+          tentativa: attempts
         });
-        throw new Error(`Erro ao buscar pagamento: ${paymentResponse.status}`);
+        
+        // Para erros que não sejam 404, falhar imediatamente
+        throw new Error(`Erro na API do MP: ${paymentResponse.status} - ${errorText}`);
       }
     }
 
     if (!payment) {
-      console.log('❌ [mercadopago-webhook] Payment ainda não encontrado após retry');
-      console.log('📋 [mercadopago-webhook] Possível cenário de Checkout Pro com timing issue');
-      console.log('📋 [mercadopago-webhook] Recomendação: Verificar manualmente se o pagamento foi aprovado');
-      
-      // Em vez de erro 500, retornar 200 para evitar retry infinito do MP
+      console.log('❌ [mercadopago-webhook] Payment ainda não encontrado após todas as tentativas');
       return new Response(JSON.stringify({
-        warning: "Payment not found after retries",
-        recommendation: "Check payment status manually",
-        payment_id: paymentId
+        error: "Payment not found after retries",
+        payment_id: paymentId,
+        attempts: maxAttempts
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        status: 200, // 200 para evitar retry infinito
       });
     }
     
-    console.log('💳 [mercadopago-webhook] Dados do pagamento:', {
+    console.log('💳 [mercadopago-webhook] Dados do pagamento obtidos:', {
       id: payment.id,
       status: payment.status,
       amount: payment.transaction_amount,
@@ -156,8 +178,15 @@ serve(async (req) => {
 
     // 🔒 SEGURANÇA: Processar apenas pagamentos aprovados
     if (payment.status !== 'approved') {
-      console.log(`⏳ [mercadopago-webhook] Pagamento não aprovado: ${payment.status}`);
-      return new Response("Payment not approved", { status: 200 });
+      console.log(`⏳ [mercadopago-webhook] Pagamento não aprovado (status: ${payment.status}) - Aguardando aprovação`);
+      return new Response(JSON.stringify({
+        message: "Payment not approved yet",
+        status: payment.status,
+        payment_id: payment.id
+      }), { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200 
+      });
     }
 
     // 🔒 SEGURANÇA: Validar referência externa
@@ -176,12 +205,12 @@ serve(async (req) => {
     const userId = refParts[1];
     const quantidade = Math.floor(payment.transaction_amount); // Quantidade = valor pago em reais
     
-    console.log('💰 [mercadopago-webhook] Processando compra:', {
+    console.log('💰 [mercadopago-webhook] Processando compra aprovada:', {
       userId,
       quantidade,
       paymentId: payment.id,
       externalRef,
-      liveMode: payment.live_mode ? 'PRODUÇÃO' : 'TESTE'
+      ambiente: payment.live_mode ? 'PRODUÇÃO' : 'SANDBOX'
     });
 
     // 🔒 SEGURANÇA: Validar dados antes de processar
@@ -230,7 +259,7 @@ serve(async (req) => {
       quantidade,
       paymentId: payment.id,
       resultado: result,
-      ambiente: payment.live_mode ? 'PRODUÇÃO' : 'TESTE'
+      ambiente: payment.live_mode ? 'PRODUÇÃO' : 'SANDBOX'
     });
 
     return new Response(JSON.stringify({
@@ -239,16 +268,16 @@ serve(async (req) => {
       payment_id: payment.id,
       user_id: userId,
       quantidade: quantidade,
-      ambiente: payment.live_mode ? 'producao' : 'teste'
+      ambiente: payment.live_mode ? 'producao' : 'sandbox'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
 
   } catch (error) {
-    console.error('❌ [mercadopago-webhook] Erro crítico:', error);
+    console.error('❌ [mercadopago-webhook] Erro crítico não relacionado ao timing:', error);
     
-    // Return 500 for real internal errors so Mercado Pago retries
+    // Return 500 apenas para erros reais (não timing issues)
     return new Response(JSON.stringify({ 
       error: "Internal server error",
       message: error.message,
