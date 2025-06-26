@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ConfigCategoria {
-  id: string;
   codigo: string;
   nome: string;
   icone: string;

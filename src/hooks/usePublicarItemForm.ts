@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -130,7 +129,7 @@ export const usePublicarItemForm = () => {
 
     if (Object.keys(allErrors).length === 0) {
       try {
-        const categoriaSelecionada = configuracoes?.find(c => c.id === formData.categoria_id);
+        const categoriaSelecionada = configuracoes?.find(c => c.codigo === formData.categoria_id);
         
         if (!categoriaSelecionada) {
           toast.error("Categoria não encontrada.");
@@ -178,7 +177,7 @@ export const usePublicarItemForm = () => {
         const itemData = {
           titulo: formData.nome,
           descricao: formData.descricao,
-          categoria: categoriaSelecionada.categoria,
+          categoria: categoriaSelecionada.codigo,
           estado_conservacao: formData.estado_conservacao,
           tamanho: formData.tamanho || null,
           valor_girinhas: parseFloat(formData.preco),

@@ -126,7 +126,7 @@ export const usePublicarItemFormV2 = () => {
     }
 
     try {
-      const categoriaSelecionada = configuracoes?.find(c => c.categoria === formData.categoria_id);
+      const categoriaSelecionada = configuracoes?.find(c => c.codigo === formData.categoria_id);
       
       if (!categoriaSelecionada) {
         toast.error("Categoria não encontrada.");
