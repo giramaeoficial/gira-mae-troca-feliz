@@ -129,7 +129,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
           </SelectTrigger>
           <SelectContent>
             {configuracoes?.map(config => (
-              <SelectItem key={config.id} value={config.codigo}>
+              <SelectItem key={config.codigo} value={config.codigo}>
                 {config.icone} {config.nome}
               </SelectItem>
             ))}
