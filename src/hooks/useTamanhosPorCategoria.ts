@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -45,3 +46,13 @@ export const useTiposTamanho = (categoria?: string) => {
       data?.forEach(item => {
         if (!tiposTamanho[item.tipo_tamanho]) {
           tiposTamanho[item.tipo_tamanho] = [];
+        }
+        tiposTamanho[item.tipo_tamanho].push(item);
+      });
+
+      return tiposTamanho;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 30 * 60 * 1000, // 30 minutos
+  });
+};
