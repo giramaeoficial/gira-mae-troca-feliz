@@ -14,7 +14,7 @@ interface SimpleFormData {
   genero: 'menino' | 'menina' | 'unissex';
   tamanho_categoria: string;
   tamanho_valor: string;
-  estado_conservacao: 'novo' | 'seminovo' | 'usado' | 'muito usado';
+  estado_conservacao: 'novo' | 'seminovo' | 'usado' | 'muito_usado';
   preco: string;
   imagens: File[];
 }
@@ -26,7 +26,7 @@ interface ValidationErrors {
 export const usePublicarItemFormV2 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { configuracoes } = useConfigCategorias();
+  const { configuracoes, validarValorCategoria } = useConfigCategorias();
   const { mutate: publicarItem, isPending: loading } = usePublicarItem();
 
   const [formData, setFormData] = useState<SimpleFormData>({
@@ -101,8 +101,12 @@ export const usePublicarItemFormV2 = () => {
       const precoNumerico = parseFloat(formData.preco);
       if (isNaN(precoNumerico) || precoNumerico <= 0) {
         validationErrors.preco = "O preço deve ser um número maior que zero.";
-      } else if (precoNumerico > 500) {
-        validationErrors.preco = "O preço não pode exceder 500 Girinhas.";
+      } else {
+        // Validar se o preço está na faixa da categoria
+        const validacao = validarValorCategoria(formData.categoria_id, precoNumerico);
+        if (!validacao.valido) {
+          validationErrors.preco = validacao.mensagem;
+        }
       }
     }
 
@@ -126,17 +130,10 @@ export const usePublicarItemFormV2 = () => {
     }
 
     try {
-      const categoriaSelecionada = configuracoes?.find(c => c.codigo === formData.categoria_id);
-      
-      if (!categoriaSelecionada) {
-        toast.error("Categoria não encontrada.");
-        return;
-      }
-
       const itemData = {
         titulo: formData.titulo,
         descricao: formData.descricao,
-        categoria: formData.categoria_id,
+        categoria: formData.categoria_id, // Usar o código diretamente
         subcategoria: formData.subcategoria,
         genero: formData.genero,
         tamanho_categoria: formData.tamanho_categoria,
