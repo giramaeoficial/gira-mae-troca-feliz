@@ -17,7 +17,6 @@ import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
 import EmptyState from "@/components/loading/EmptyState";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import FriendlyError from "@/components/error/FriendlyError";
-import LazyImage from "@/components/ui/lazy-image";
 import ItemCardWithActions from "@/components/shared/ItemCardWithActions";
 
 const Perfil = () => {
