@@ -25,7 +25,7 @@ interface Item {
   valor_girinhas: number;
   publicado_por: string;
   status: string;
-  fotos?: string[];
+  fotos: string[];
   created_at: string;
   updated_at: string;
 }
