@@ -29,8 +29,8 @@ const BuscarItens = () => {
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   
   // Dados dos dropdowns
-  const { configuracoes: categorias } = useConfigCategorias();
-  const { subcategorias: todasSubcategorias } = useSubcategorias();
+  const { configuracoes: categorias = [] } = useConfigCategorias();
+  const { subcategorias: todasSubcategorias = [] } = useSubcategorias();
   
   // Filtrar subcategorias baseado na categoria selecionada
   const subcategoriasFiltradas = categoria !== 'todas' 
@@ -163,7 +163,7 @@ const BuscarItens = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
-                {categorias.map((cat) => (
+                {categorias && categorias.map((cat) => (
                   <SelectItem key={cat.codigo} value={cat.nome}>
                     {cat.nome}
                   </SelectItem>
@@ -184,7 +184,7 @@ const BuscarItens = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
-                {subcategoriasFiltradas.map((sub) => (
+                {subcategoriasFiltradas && subcategoriasFiltradas.map((sub) => (
                   <SelectItem key={sub.id} value={sub.nome}>
                     {sub.nome}
                   </SelectItem>
