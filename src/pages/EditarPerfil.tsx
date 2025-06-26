@@ -1,42 +1,25 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, User, MapPin, Baby, Bell, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, User, MapPin, Baby, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
-import ImageUpload from '@/components/ui/image-upload';
-import AddressInput from '@/components/address/AddressInput';
-import SchoolSelect from '@/components/address/SchoolSelect';
-import EnderecoAdicional from '@/components/perfil/EnderecoAdicional';
 import NotificationSettings from '@/components/location/NotificationSettings';
+import DadosPessoaisSection from '@/components/perfil/sections/DadosPessoaisSection';
+import EnderecoSection from '@/components/perfil/sections/EnderecoSection';
+import FilhosSection from '@/components/perfil/sections/FilhosSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { useAddress, type Address } from '@/hooks/useAddress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
-
-const CATEGORIAS_DISPONIVEIS = [
-  'roupas', 'calcados', 'brinquedos', 'livros', 'acessorios', 'moveis', 'decoracao'
-];
-
-const INTERESSES_DISPONIVEIS = [
-  'Moda Infantil', 'Educação', 'Atividades ao Ar Livre', 'Arte e Criatividade',
-  'Esportes', 'Música', 'Leitura', 'Culinária', 'Jardinagem', 'Tecnologia'
-];
+import type { Address } from '@/hooks/useAddress';
 
 const EditarPerfil = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, filhos, loading, updateProfile, deleteFilho, refetch } = useProfile();
+  const { profile, filhos, loading, updateProfile, deleteFilho } = useProfile();
   
   // Estados do formulário
   const [formData, setFormData] = useState({
@@ -154,6 +137,10 @@ const EditarPerfil = () => {
     });
   };
 
+  const handleNovoFilhoChange = (field: string, value: any) => {
+    setNovoFilho(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleAdicionarFilho = async () => {
     if (!novoFilho.nome || !novoFilho.data_nascimento) {
       toast.error('Nome e data de nascimento são obrigatórios');
@@ -161,8 +148,6 @@ const EditarPerfil = () => {
     }
 
     try {
-      console.log('Adicionando filho:', novoFilho);
-      
       const { data, error } = await supabase
         .from('filhos')
         .insert({
@@ -188,8 +173,6 @@ const EditarPerfil = () => {
         .single();
 
       if (error) throw error;
-
-      console.log('Filho adicionado com sucesso:', data);
 
       const filhoComEscola = {
         ...data,
@@ -227,8 +210,6 @@ const EditarPerfil = () => {
 
   const handleSalvarFilho = async (filho: any, index: number) => {
     try {
-      console.log('Salvando filho:', filho);
-      
       const { error } = await supabase
         .from('filhos')
         .update({
@@ -243,7 +224,6 @@ const EditarPerfil = () => {
 
       if (error) throw error;
       
-      console.log('Filho salvo com sucesso');
       toast.success('Dados do filho salvos!');
     } catch (error) {
       console.error('Erro ao salvar filho:', error);
@@ -373,392 +353,36 @@ const EditarPerfil = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="pessoais" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Foto do Perfil</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-20 h-20">
-                    <AvatarImage src={profile?.avatar_url} alt={profile?.nome} />
-                    <AvatarFallback className="text-lg">
-                      {profile?.nome?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1">
-                    <ImageUpload
-                      value={avatarFiles}
-                      onChange={setAvatarFiles}
-                      maxFiles={1}
-                      accept="image/*"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Informações Básicas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="nome">Nome completo *</Label>
-                  <Input
-                    id="nome"
-                    value={formData.nome}
-                    onChange={(e) => handleInputChange('nome', e.target.value)}
-                    placeholder="Seu nome completo"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    value={formData.bio}
-                    onChange={(e) => handleInputChange('bio', e.target.value)}
-                    placeholder="Conte um pouco sobre você..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="profissao">Profissão</Label>
-                    <Input
-                      id="profissao"
-                      value={formData.profissao}
-                      onChange={(e) => handleInputChange('profissao', e.target.value)}
-                      placeholder="Sua profissão"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-                    <Input
-                      id="data_nascimento"
-                      type="date"
-                      value={formData.data_nascimento}
-                      onChange={(e) => handleInputChange('data_nascimento', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="telefone">Telefone</Label>
-                    <Input
-                      id="telefone"
-                      value={formData.telefone}
-                      onChange={(e) => handleInputChange('telefone', e.target.value)}
-                      placeholder="(11) 99999-9999"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="instagram">Instagram</Label>
-                    <Input
-                      id="instagram"
-                      value={formData.instagram}
-                      onChange={(e) => handleInputChange('instagram', e.target.value)}
-                      placeholder="@seuinstagram"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Interesses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {INTERESSES_DISPONIVEIS.map(interesse => (
-                    <Badge
-                      key={interesse}
-                      variant={formData.interesses.includes(interesse) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => handleInteresseToggle(interesse)}
-                    >
-                      {interesse}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Categorias Favoritas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {CATEGORIAS_DISPONIVEIS.map(categoria => (
-                    <Badge
-                      key={categoria}
-                      variant={formData.categorias_favoritas.includes(categoria) ? "default" : "outline"}
-                      className="cursor-pointer capitalize"
-                      onClick={() => handleCategoriaToggle(categoria)}
-                    >
-                      {categoria}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="pessoais">
+            <DadosPessoaisSection
+              formData={formData}
+              profile={profile}
+              avatarFiles={avatarFiles}
+              onInputChange={handleInputChange}
+              onInteresseToggle={handleInteresseToggle}
+              onCategoriaToggle={handleCategoriaToggle}
+              onAvatarChange={setAvatarFiles}
+            />
           </TabsContent>
 
-          {/* Endereço */}
-          <TabsContent value="endereco" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Endereço Principal</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AddressInput
-                  value={enderecoForm}
-                  onChange={setEnderecoForm}
-                  showAllFields={true}
-                />
-              </CardContent>
-            </Card>
-
-            <EnderecoAdicional />
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Preferências de Entrega</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="aceita_entrega">Aceita entrega em domicílio</Label>
-                  <input
-                    id="aceita_entrega"
-                    type="checkbox"
-                    checked={formData.aceita_entrega_domicilio}
-                    onChange={(e) => handleInputChange('aceita_entrega_domicilio', e.target.checked)}
-                    className="rounded"
-                  />
-                </div>
-
-                {formData.aceita_entrega_domicilio && (
-                  <div>
-                    <Label htmlFor="raio_entrega">Raio de entrega (km)</Label>
-                    <Select
-                      value={formData.raio_entrega_km.toString()}
-                      onValueChange={(value) => handleInputChange('raio_entrega_km', parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 5, 10, 15, 20].map(km => (
-                          <SelectItem key={km} value={km.toString()}>
-                            {km} km
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="ponto_retirada">Ponto de retirada preferido</Label>
-                  <Input
-                    id="ponto_retirada"
-                    value={formData.ponto_retirada_preferido}
-                    onChange={(e) => handleInputChange('ponto_retirada_preferido', e.target.value)}
-                    placeholder="Ex: Shopping, estação de metrô..."
-                  />
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="endereco">
+            <EnderecoSection
+              formData={formData}
+              onInputChange={handleInputChange}
+            />
           </TabsContent>
 
-          <TabsContent value="filhos" className="space-y-6">
-            {filhosForm.map((filho, index) => (
-              <Card key={filho.id}>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">{filho.nome}</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoverFilho(filho.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>Nome</Label>
-                      <Input
-                        value={filho.nome}
-                        onChange={(e) => handleFilhoChange(index, 'nome', e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Data de Nascimento</Label>
-                      <Input
-                        type="date"
-                        value={filho.data_nascimento}
-                        onChange={(e) => handleFilhoChange(index, 'data_nascimento', e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label>Sexo</Label>
-                      <Select
-                        value={filho.sexo}
-                        onValueChange={(value) => handleFilhoChange(index, 'sexo', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecionar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="M">Masculino</SelectItem>
-                          <SelectItem value="F">Feminino</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Tamanho Roupas</Label>
-                      <Input
-                        value={filho.tamanho_roupas}
-                        onChange={(e) => handleFilhoChange(index, 'tamanho_roupas', e.target.value)}
-                        placeholder="Ex: 8, 10, M, G"
-                      />
-                    </div>
-                    <div>
-                      <Label>Tamanho Calçados</Label>
-                      <Input
-                        value={filho.tamanho_calcados}
-                        onChange={(e) => handleFilhoChange(index, 'tamanho_calcados', e.target.value)}
-                        placeholder="Ex: 35, 36, 37"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Escola</Label>
-                    <SchoolSelect
-                      value={filho.escolas_inep}
-                      onChange={(escola) => {
-                        console.log('Escola selecionada para filho:', escola);
-                        handleFilhoChange(index, 'escola_id', escola?.codigo_inep || null);
-                        handleFilhoChange(index, 'escolas_inep', escola);
-                      }}
-                      estadoFiltro={enderecoForm.estado}
-                      cidadeFiltro={enderecoForm.cidade}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={() => handleSalvarFilho(filho, index)}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Salvar Alterações
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  Adicionar Filho
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Nome *</Label>
-                    <Input
-                      value={novoFilho.nome}
-                      onChange={(e) => setNovoFilho(prev => ({ ...prev, nome: e.target.value }))}
-                      placeholder="Nome do filho"
-                    />
-                  </div>
-                  <div>
-                    <Label>Data de Nascimento *</Label>
-                    <Input
-                      type="date"
-                      value={novoFilho.data_nascimento}
-                      onChange={(e) => setNovoFilho(prev => ({ ...prev, data_nascimento: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>Sexo</Label>
-                    <Select
-                      value={novoFilho.sexo}
-                      onValueChange={(value) => setNovoFilho(prev => ({ ...prev, sexo: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="M">Masculino</SelectItem>
-                        <SelectItem value="F">Feminino</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Tamanho Roupas</Label>
-                    <Input
-                      value={novoFilho.tamanho_roupas}
-                      onChange={(e) => setNovoFilho(prev => ({ ...prev, tamanho_roupas: e.target.value }))}
-                      placeholder="Ex: 8, 10, M, G"
-                    />
-                  </div>
-                  <div>
-                    <Label>Tamanho Calçados</Label>
-                    <Input
-                      value={novoFilho.tamanho_calcados}
-                      onChange={(e) => setNovoFilho(prev => ({ ...prev, tamanho_calcados: e.target.value }))}
-                      placeholder="Ex: 35, 36, 37"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Escola</Label>
-                  <SchoolSelect
-                    value={novoFilho.escola_selecionada}
-                    onChange={(escola) => {
-                      console.log('Escola selecionada para novo filho:', escola);
-                      setNovoFilho(prev => ({ 
-                        ...prev, 
-                        escola_id: escola?.codigo_inep || null,
-                        escola_selecionada: escola
-                      }));
-                    }}
-                    estadoFiltro={enderecoForm.estado}
-                    cidadeFiltro={enderecoForm.cidade}
-                  />
-                </div>
-
-                <Button
-                  onClick={handleAdicionarFilho}
-                  className="w-full"
-                  disabled={!novoFilho.nome || !novoFilho.data_nascimento}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Filho
-                </Button>
-              </CardContent>
-            </Card>
+          <TabsContent value="filhos">
+            <FilhosSection
+              filhosForm={filhosForm}
+              novoFilho={novoFilho}
+              enderecoForm={enderecoForm}
+              onFilhoChange={handleFilhoChange}
+              onNovoFilhoChange={handleNovoFilhoChange}
+              onSalvarFilho={handleSalvarFilho}
+              onRemoverFilho={handleRemoverFilho}
+              onAdicionarFilho={handleAdicionarFilho}
+            />
           </TabsContent>
 
           <TabsContent value="notificacoes">
