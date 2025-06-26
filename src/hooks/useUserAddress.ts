@@ -20,18 +20,25 @@ export const useUserAddress = () => {
         .eq('id', user.id)
         .single();
 
-      if (error || !data) return null;
+      if (error) {
+        console.error('Erro ao buscar endereço:', error);
+        return null;
+      }
 
-      // Verificar se o usuário tem endereço completo
-      if (!data.cep || !data.endereco || !data.cidade) return null;
+      if (!data) return null;
+
+      // Verificar se o usuário tem endereço completo (campos obrigatórios)
+      if (!data.cep || !data.endereco || !data.numero || !data.bairro || !data.cidade || !data.estado) {
+        return null;
+      }
 
       return {
-        cep: data.cep || '',
-        endereco: data.endereco || '',
-        numero: data.numero || '',
-        bairro: data.bairro || '',
-        cidade: data.cidade || '',
-        estado: data.estado || '',
+        cep: data.cep,
+        endereco: data.endereco,
+        numero: data.numero,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
         complemento: data.complemento || '',
         ponto_referencia: data.ponto_referencia || ''
       };

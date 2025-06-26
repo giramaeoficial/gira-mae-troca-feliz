@@ -56,6 +56,7 @@ const EditarPerfil = () => {
   const [enderecoForm, setEnderecoForm] = useState<Address>({
     cep: '',
     endereco: '',
+    numero: '',
     bairro: '',
     cidade: '',
     estado: '',
@@ -98,6 +99,7 @@ const EditarPerfil = () => {
       setEnderecoForm({
         cep: profile.cep || '',
         endereco: profile.endereco || '',
+        numero: profile.numero || '',
         bairro: profile.bairro || '',
         cidade: profile.cidade || '',
         estado: profile.estado || '',

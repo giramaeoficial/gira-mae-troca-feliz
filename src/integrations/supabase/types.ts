@@ -1275,6 +1275,7 @@ export type Database = {
           instagram: string | null
           interesses: string[] | null
           nome: string | null
+          numero: string | null
           ponto_referencia: string | null
           ponto_retirada_preferido: string | null
           profissao: string | null
@@ -1306,6 +1307,7 @@ export type Database = {
           instagram?: string | null
           interesses?: string[] | null
           nome?: string | null
+          numero?: string | null
           ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null
@@ -1337,6 +1339,7 @@ export type Database = {
           instagram?: string | null
           interesses?: string[] | null
           nome?: string | null
+          numero?: string | null
           ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null

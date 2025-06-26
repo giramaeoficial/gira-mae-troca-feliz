@@ -20,10 +20,30 @@ const AddressInput: React.FC<AddressInputProps> = ({
   showAllFields = true
 }) => {
   const { loading, error, fetchAddress, formatCep } = useAddress();
-  const [address, setAddress] = useState<Partial<Address>>(value);
+  const [address, setAddress] = useState<Partial<Address>>({
+    cep: '',
+    endereco: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    complemento: '',
+    ponto_referencia: '',
+    ...value
+  });
 
   useEffect(() => {
-    setAddress(value);
+    setAddress({
+      cep: '',
+      endereco: '',
+      numero: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+      complemento: '',
+      ponto_referencia: '',
+      ...value
+    });
   }, [value]);
 
   const handleCepChange = async (cep: string) => {
@@ -35,12 +55,19 @@ const AddressInput: React.FC<AddressInputProps> = ({
       const fetchedAddress = await fetchAddress(formattedCep);
       if (fetchedAddress) {
         const completeAddress = {
+          ...newAddress,
           ...fetchedAddress,
+          numero: address.numero || '', // Manter número se já preenchido
           complemento: address.complemento || '',
           ponto_referencia: address.ponto_referencia || ''
         };
         setAddress(completeAddress);
-        onChange(completeAddress);
+        
+        // Só chama onChange se todos os campos obrigatórios estão preenchidos
+        if (completeAddress.cep && completeAddress.endereco && completeAddress.numero && 
+            completeAddress.bairro && completeAddress.cidade && completeAddress.estado) {
+          onChange(completeAddress as Address);
+        }
       }
     }
   };
@@ -48,7 +75,10 @@ const AddressInput: React.FC<AddressInputProps> = ({
   const handleFieldChange = (field: keyof Address, value: string) => {
     const newAddress = { ...address, [field]: value };
     setAddress(newAddress);
-    if (newAddress.cep && newAddress.endereco && newAddress.cidade && newAddress.estado) {
+    
+    // Só chama onChange se todos os campos obrigatórios estão preenchidos
+    if (newAddress.cep && newAddress.endereco && newAddress.numero && 
+        newAddress.bairro && newAddress.cidade && newAddress.estado) {
       onChange(newAddress as Address);
     }
   };
@@ -92,15 +122,28 @@ const AddressInput: React.FC<AddressInputProps> = ({
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="endereco">Endereço *</Label>
-        <Input
-          id="endereco"
-          placeholder="Rua, Avenida..."
-          value={address.endereco || ''}
-          onChange={(e) => handleFieldChange('endereco', e.target.value)}
-          disabled={disabled}
-        />
+      <div className="grid grid-cols-3 gap-4">
+        <div className="col-span-2">
+          <Label htmlFor="endereco">Endereço *</Label>
+          <Input
+            id="endereco"
+            placeholder="Rua, Avenida..."
+            value={address.endereco || ''}
+            onChange={(e) => handleFieldChange('endereco', e.target.value)}
+            disabled={disabled}
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="numero">Número *</Label>
+          <Input
+            id="numero"
+            placeholder="123"
+            value={address.numero || ''}
+            onChange={(e) => handleFieldChange('numero', e.target.value)}
+            disabled={disabled}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
