@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => ({
           // Separar páginas pesadas
           'page-perfil': ['src/pages/Perfil.tsx'],
           'page-publicar': ['src/pages/PublicarItem.tsx'],
-          'page-feed': ['src/pages/Feed.tsx']
+          'page-feed': ['src/pages/FeedOptimized.tsx']
         }
       }
     },
