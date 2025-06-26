@@ -16,7 +16,7 @@ export const useSubcategorias = () => {
     queryKey: ['subcategorias'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('subcategorias_itens')
+        .from('subcategorias')
         .select('*')
         .eq('ativo', true)
         .order('categoria_pai')

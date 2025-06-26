@@ -5,18 +5,32 @@ import { toast } from "sonner";
 import { useAuth } from '@/hooks/useAuth';
 import { usePublicarItem } from '@/hooks/useItensOptimized';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { useUserAddress } from '@/hooks/useUserAddress';
-import { validateItemForm, getProgressSteps, type NovoFormData, type ValidationErrors } from '@/utils/itemValidation';
+
+interface SimpleFormData {
+  titulo: string;
+  descricao: string;
+  categoria_id: string;
+  subcategoria: string;
+  genero: 'menino' | 'menina' | 'unissex';
+  tamanho_categoria: string;
+  tamanho_valor: string;
+  estado_conservacao: 'novo' | 'seminovo' | 'usado' | 'muito usado';
+  preco: string;
+  imagens: File[];
+}
+
+interface ValidationErrors {
+  [key: string]: string;
+}
 
 export const usePublicarItemFormV2 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { configuracoes } = useConfigCategorias();
   const { mutate: publicarItem, isPending: loading } = usePublicarItem();
-  const { userAddress } = useUserAddress();
 
-  const [formData, setFormData] = useState<NovoFormData>({
-    nome: '',
+  const [formData, setFormData] = useState<SimpleFormData>({
+    titulo: '',
     descricao: '',
     categoria_id: '',
     subcategoria: '',
@@ -25,18 +39,12 @@ export const usePublicarItemFormV2 = () => {
     tamanho_valor: '',
     estado_conservacao: 'usado',
     preco: '',
-    imagens: [],
-    aceita_entrega: false,
-    raio_entrega_km: 5,
-    instrucoes_retirada: '',
-    endereco_tipo: 'meu',
-    escola_selecionada: null,
-    endereco_personalizado: {}
+    imagens: []
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
-  const updateFormData = (updates: Partial<NovoFormData>) => {
+  const updateFormData = (updates: Partial<SimpleFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
     // Limpar erros dos campos que foram atualizados
     const updatedFields = Object.keys(updates);
@@ -50,7 +58,61 @@ export const usePublicarItemFormV2 = () => {
   };
 
   const validateForm = (): boolean => {
-    const validationErrors = validateItemForm(formData, userAddress);
+    const validationErrors: ValidationErrors = {};
+
+    // Campos obrigatórios básicos
+    if (!formData.titulo?.trim()) {
+      validationErrors.titulo = "O título do item é obrigatório.";
+    } else if (formData.titulo.trim().length < 10) {
+      validationErrors.titulo = "O título deve ter pelo menos 10 caracteres.";
+    }
+
+    if (!formData.categoria_id) {
+      validationErrors.categoria_id = "A categoria é obrigatória.";
+    }
+
+    if (!formData.subcategoria) {
+      validationErrors.subcategoria = "A subcategoria é obrigatória.";
+    }
+
+    if (!formData.genero) {
+      validationErrors.genero = "O gênero é obrigatório.";
+    }
+
+    if (!formData.estado_conservacao) {
+      validationErrors.estado_conservacao = "O estado de conservação é obrigatório.";
+    }
+
+    if (!formData.tamanho_valor) {
+      validationErrors.tamanho = "O tamanho é obrigatório.";
+    }
+
+    // Validação de descrição
+    if (!formData.descricao?.trim()) {
+      validationErrors.descricao = "A descrição é obrigatória.";
+    } else if (formData.descricao.trim().length < 20) {
+      validationErrors.descricao = "A descrição deve ter pelo menos 20 caracteres.";
+    }
+
+    // Validação de preço
+    if (!formData.preco) {
+      validationErrors.preco = "O preço é obrigatório.";
+    } else {
+      const precoNumerico = parseFloat(formData.preco);
+      if (isNaN(precoNumerico) || precoNumerico <= 0) {
+        validationErrors.preco = "O preço deve ser um número maior que zero.";
+      } else if (precoNumerico > 500) {
+        validationErrors.preco = "O preço não pode exceder 500 Girinhas.";
+      }
+    }
+
+    // Validação de imagens
+    if (!formData.imagens || formData.imagens.length === 0) {
+      validationErrors.imagens = "Pelo menos uma foto é obrigatória.";
+    } else if (formData.imagens.length > 5) {
+      validationErrors.imagens = "Máximo de 5 fotos permitidas.";
+    }
+
     setErrors(validationErrors);
     return Object.keys(validationErrors).length === 0;
   };
@@ -71,45 +133,8 @@ export const usePublicarItemFormV2 = () => {
         return;
       }
 
-      // Preparar dados de endereço baseado no tipo selecionado
-      let enderecoData: any = {};
-
-      if (formData.endereco_tipo === 'meu' && userAddress) {
-        // Usar endereço principal do usuário
-        enderecoData = {
-          endereco_cep: userAddress.cep,
-          endereco_rua: userAddress.endereco,
-          endereco_bairro: userAddress.bairro,
-          endereco_cidade: userAddress.cidade,
-          endereco_estado: userAddress.estado,
-          endereco_complemento: userAddress.complemento,
-          ponto_referencia: userAddress.ponto_referencia
-        };
-      } else if (formData.endereco_tipo === 'escola' && formData.escola_selecionada) {
-        const escola = formData.escola_selecionada;
-        enderecoData = {
-          escola_id: escola.codigo_inep,
-          endereco_rua: escola.endereco || '',
-          endereco_bairro: escola.bairro || '',
-          endereco_cidade: escola.municipio,
-          endereco_estado: escola.uf,
-          ponto_referencia: `Escola: ${escola.escola}`
-        };
-      } else if (formData.endereco_tipo === 'outro') {
-        const endereco = formData.endereco_personalizado;
-        enderecoData = {
-          endereco_cep: endereco.cep,
-          endereco_rua: endereco.endereco,
-          endereco_bairro: endereco.bairro,
-          endereco_cidade: endereco.cidade,
-          endereco_estado: endereco.estado,
-          endereco_complemento: endereco.complemento,
-          ponto_referencia: endereco.ponto_referencia
-        };
-      }
-
       const itemData = {
-        titulo: formData.nome,
+        titulo: formData.titulo,
         descricao: formData.descricao,
         categoria: formData.categoria_id,
         subcategoria: formData.subcategoria,
@@ -118,12 +143,8 @@ export const usePublicarItemFormV2 = () => {
         tamanho_valor: formData.tamanho_valor,
         estado_conservacao: formData.estado_conservacao,
         valor_girinhas: parseFloat(formData.preco),
-        aceita_entrega: formData.aceita_entrega,
-        raio_entrega_km: formData.aceita_entrega ? formData.raio_entrega_km : null,
-        instrucoes_retirada: formData.instrucoes_retirada || null,
         publicado_por: user?.id,
-        status: 'disponivel',
-        ...enderecoData
+        status: 'disponivel'
       };
 
       publicarItem(
@@ -145,25 +166,12 @@ export const usePublicarItemFormV2 = () => {
     }
   };
 
-  const calculateProgress = () => {
-    return getProgressSteps(formData, userAddress);
-  };
-
-  const progress = (() => {
-    const steps = calculateProgress();
-    const completedSteps = steps.filter(step => step.completed).length;
-    return Math.round((completedSteps / steps.length) * 100);
-  })();
-
   return {
     formData,
     updateFormData,
     errors,
-    progress,
     loading,
     handleSubmit,
-    calculateProgress,
-    userAddress,
-    isValid: Object.keys(errors).length === 0 && progress === 100
+    isValid: Object.keys(errors).length === 0
   };
 };

@@ -226,6 +226,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "avaliacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "avaliacoes_reserva_id_fkey"
             columns: ["reserva_id"]
             isOneToOne: false
@@ -643,6 +650,13 @@ export type Database = {
             referencedRelation: "itens"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "favoritos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       fila_espera: {
@@ -676,6 +690,13 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fila_espera_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_completos"
             referencedColumns: ["id"]
           },
           {
@@ -800,31 +821,16 @@ export type Database = {
       }
       itens: {
         Row: {
-          aceita_entrega: boolean | null
           categoria: string
-          cidade_manual: string | null
           created_at: string
           descricao: string
-          endereco_bairro: string | null
-          endereco_cep: string | null
-          endereco_cidade: string | null
-          endereco_complemento: string | null
-          endereco_estado: string | null
-          endereco_rua: string | null
-          escola_id: number | null
           estado_conservacao: string
-          estado_manual: string | null
-          filho_id: string | null
           fotos: string[] | null
           genero: string | null
           id: string
-          instrucoes_retirada: string | null
-          ponto_referencia: string | null
           publicado_por: string
-          raio_entrega_km: number | null
           status: string
           subcategoria: string | null
-          tamanho: string | null
           tamanho_categoria: string | null
           tamanho_valor: string | null
           titulo: string
@@ -832,31 +838,16 @@ export type Database = {
           valor_girinhas: number
         }
         Insert: {
-          aceita_entrega?: boolean | null
           categoria: string
-          cidade_manual?: string | null
           created_at?: string
           descricao: string
-          endereco_bairro?: string | null
-          endereco_cep?: string | null
-          endereco_cidade?: string | null
-          endereco_complemento?: string | null
-          endereco_estado?: string | null
-          endereco_rua?: string | null
-          escola_id?: number | null
           estado_conservacao: string
-          estado_manual?: string | null
-          filho_id?: string | null
           fotos?: string[] | null
           genero?: string | null
           id?: string
-          instrucoes_retirada?: string | null
-          ponto_referencia?: string | null
           publicado_por: string
-          raio_entrega_km?: number | null
           status?: string
           subcategoria?: string | null
-          tamanho?: string | null
           tamanho_categoria?: string | null
           tamanho_valor?: string | null
           titulo: string
@@ -864,31 +855,16 @@ export type Database = {
           valor_girinhas: number
         }
         Update: {
-          aceita_entrega?: boolean | null
           categoria?: string
-          cidade_manual?: string | null
           created_at?: string
           descricao?: string
-          endereco_bairro?: string | null
-          endereco_cep?: string | null
-          endereco_cidade?: string | null
-          endereco_complemento?: string | null
-          endereco_estado?: string | null
-          endereco_rua?: string | null
-          escola_id?: number | null
           estado_conservacao?: string
-          estado_manual?: string | null
-          filho_id?: string | null
           fotos?: string[] | null
           genero?: string | null
           id?: string
-          instrucoes_retirada?: string | null
-          ponto_referencia?: string | null
           publicado_por?: string
-          raio_entrega_km?: number | null
           status?: string
           subcategoria?: string | null
-          tamanho?: string | null
           tamanho_categoria?: string | null
           tamanho_valor?: string | null
           titulo?: string
@@ -896,20 +872,6 @@ export type Database = {
           valor_girinhas?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "itens_escola_id_fkey"
-            columns: ["escola_id"]
-            isOneToOne: false
-            referencedRelation: "escolas_inep"
-            referencedColumns: ["codigo_inep"]
-          },
-          {
-            foreignKeyName: "itens_filho_id_fkey"
-            columns: ["filho_id"]
-            isOneToOne: false
-            referencedRelation: "filhos"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "itens_publicado_por_fkey"
             columns: ["publicado_por"]
@@ -1538,6 +1500,13 @@ export type Database = {
             referencedRelation: "itens"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reservas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
         ]
       }
       seguidores: {
@@ -1738,6 +1707,13 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_completos"
             referencedColumns: ["id"]
           },
           {
@@ -1957,7 +1933,46 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      itens_completos: {
+        Row: {
+          aceita_entrega_domicilio: boolean | null
+          categoria: string | null
+          created_at: string | null
+          descricao: string | null
+          estado_conservacao: string | null
+          fotos: string[] | null
+          genero: string | null
+          id: string | null
+          ponto_retirada_preferido: string | null
+          publicado_por: string | null
+          status: string | null
+          subcategoria: string | null
+          tamanho_categoria: string | null
+          tamanho_valor: string | null
+          titulo: string | null
+          updated_at: string | null
+          valor_girinhas: number | null
+          vendedor_avatar: string | null
+          vendedor_bairro: string | null
+          vendedor_cep: string | null
+          vendedor_cidade: string | null
+          vendedor_endereco: string | null
+          vendedor_estado: string | null
+          vendedor_nome: string | null
+          vendedor_raio_entrega: number | null
+          vendedor_reputacao: number | null
+          vendedor_telefone: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["publicado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       atualizar_reputacao: {
