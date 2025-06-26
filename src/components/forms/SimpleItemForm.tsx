@@ -68,7 +68,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
     onFieldChange('tamanho_valor', valor);
   };
 
-  // Filtrar subcategorias - vamos tentar diferentes combinações
+  // Filtrar subcategorias sem duplicação
   const subcategoriasFiltradas = React.useMemo(() => {
     if (!subcategorias || !formData.categoria_id) return [];
     
@@ -96,33 +96,49 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
       });
     }
     
-    console.log('✅ Subcategorias filtradas:', filtradas);
-    return filtradas;
+    // Remover duplicatas baseado no nome
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    console.log('✅ Subcategorias filtradas (sem duplicatas):', subcategoriasUnicas);
+    return subcategoriasUnicas;
   }, [subcategorias, formData.categoria_id]);
 
-  // Obter tamanhos do primeiro tipo disponível
+  // Obter tamanhos do primeiro tipo disponível sem duplicação
   const tamanhosDisponiveis = React.useMemo(() => {
     const tipos = Object.keys(tiposTamanho || {});
     const tipoUnico = tipos[0];
     const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
     
-    console.log('🔍 Tamanhos disponíveis:', {
+    // Remover duplicatas baseado no valor
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    console.log('🔍 Tamanhos disponíveis (sem duplicatas):', {
       tipos_disponiveis: tipos,
       tipo_selecionado: tipoUnico,
-      tamanhos_count: tamanhos.length,
-      tamanhos: tamanhos
+      tamanhos_count: tamanhosUnicos.length,
+      tamanhos: tamanhosUnicos
     });
     
-    return tamanhos;
+    return tamanhosUnicos;
   }, [tiposTamanho]);
 
   const categoriaSelecionada = configuracoes?.find(c => c.categoria === formData.categoria_id);
 
   return (
-    <div className="space-y-8">
-      {/* === SEÇÃO: FOTOS === */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">📸 Fotos do Item</h3>
+    <div className="space-y-6">
+      {/* Fotos do Item */}
+      <div>
+        <Label className="text-base font-medium mb-3 block">📸 Fotos do Item</Label>
         <ImageUpload 
           value={formData.imagens} 
           onChange={(files) => onFieldChange('imagens', files)}
@@ -130,9 +146,9 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
         {errors.imagens && <p className="text-red-500 text-sm mt-2">{errors.imagens}</p>}
       </div>
 
-      {/* === SEÇÃO: TÍTULO === */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">✏️ Título</h3>
+      {/* Título */}
+      <div>
+        <Label htmlFor="titulo" className="text-base font-medium">✏️ Título</Label>
         <Input
           type="text"
           id="titulo"
@@ -140,141 +156,116 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
           value={formData.titulo}
           onChange={handleChange}
           placeholder="Ex: Vestido de festa rosa, Tênis infantil..."
-          className="text-base"
+          className="text-base mt-2"
         />
         {errors.titulo && <p className="text-red-500 text-sm mt-2">{errors.titulo}</p>}
       </div>
 
-      {/* === SEÇÃO: CATEGORIA === */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">🏷️ Categoria</h3>
-        
-        {/* Categoria Principal */}
-        <div className="mb-4">
-          <Label htmlFor="categoria" className="text-base font-medium">Categoria Principal</Label>
-          <Select value={formData.categoria_id} onValueChange={handleCategoriaChange}>
+      {/* Categoria Principal */}
+      <div>
+        <Label htmlFor="categoria" className="text-base font-medium">🏷️ Categoria Principal</Label>
+        <Select value={formData.categoria_id} onValueChange={handleCategoriaChange}>
+          <SelectTrigger className="w-full mt-2">
+            <SelectValue placeholder="Selecione uma categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            {configuracoes?.map(config => (
+              <SelectItem key={config.id} value={config.categoria}>
+                {config.categoria === 'roupas' && '👕 '}
+                {config.categoria === 'calcados' && '👟 '}
+                {config.categoria === 'brinquedos' && '🧸 '}
+                {config.categoria === 'livros' && '📚 '}
+                {config.categoria === 'equipamentos' && '🍼 '}
+                {config.categoria === 'acessorios' && '🎒 '}
+                {config.categoria.charAt(0).toUpperCase() + config.categoria.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {errors.categoria_id && <p className="text-red-500 text-sm mt-1">{errors.categoria_id}</p>}
+      </div>
+
+      {/* Subcategoria */}
+      {formData.categoria_id && (
+        <div>
+          <Label htmlFor="subcategoria" className="text-base font-medium">Subcategoria</Label>
+          <Select 
+            value={formData.subcategoria} 
+            onValueChange={handleSubcategoriaChange}
+            disabled={isLoadingSubcategorias}
+          >
             <SelectTrigger className="w-full mt-2">
-              <SelectValue placeholder="Selecione uma categoria" />
+              <SelectValue placeholder={
+                isLoadingSubcategorias ? "Carregando..." : 
+                subcategoriasFiltradas.length === 0 ? "Nenhuma subcategoria disponível" :
+                "Selecione uma subcategoria"
+              } />
             </SelectTrigger>
             <SelectContent>
-              {configuracoes?.map(config => (
-                <SelectItem key={config.id} value={config.categoria}>
-                  {config.categoria === 'roupas' && '👕 '}
-                  {config.categoria === 'calcados' && '👟 '}
-                  {config.categoria === 'brinquedos' && '🧸 '}
-                  {config.categoria === 'livros' && '📚 '}
-                  {config.categoria === 'equipamentos' && '🍼 '}
-                  {config.categoria === 'acessorios' && '🎒 '}
-                  {config.categoria.charAt(0).toUpperCase() + config.categoria.slice(1)}
+              {subcategoriasFiltradas.map(sub => (
+                <SelectItem key={sub.id} value={sub.nome}>
+                  {sub.icone} {sub.nome}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.categoria_id && <p className="text-red-500 text-sm mt-1">{errors.categoria_id}</p>}
+          {errors.subcategoria && <p className="text-red-500 text-sm mt-1">{errors.subcategoria}</p>}
         </div>
+      )}
 
-        {/* Subcategoria */}
-        {formData.categoria_id && (
-          <div>
-            <Label htmlFor="subcategoria" className="text-base font-medium">Subcategoria</Label>
-            <Select 
-              value={formData.subcategoria} 
-              onValueChange={handleSubcategoriaChange}
-              disabled={isLoadingSubcategorias}
-            >
-              <SelectTrigger className="w-full mt-2">
-                <SelectValue placeholder={
-                  isLoadingSubcategorias ? "Carregando..." : 
-                  subcategoriasFiltradas.length === 0 ? "Nenhuma subcategoria disponível" :
-                  "Selecione uma subcategoria"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {subcategoriasFiltradas.map(sub => (
-                  <SelectItem key={sub.id} value={sub.nome}>
-                    {sub.icone} {sub.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.subcategoria && <p className="text-red-500 text-sm mt-1">{errors.subcategoria}</p>}
-            
-            {/* Debug info melhorado */}
-            <div className="text-xs text-gray-500 mt-1 space-y-1">
-              <p>{subcategoriasFiltradas.length} subcategorias encontradas para "{formData.categoria_id}"</p>
-              <p>Total de subcategorias carregadas: {subcategorias?.length || 0}</p>
-              {subcategorias && subcategorias.length > 0 && (
-                <p>Categorias pai encontradas: {[...new Set(subcategorias.map(s => s.categoria_pai))].join(', ')}</p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* === SEÇÃO: IDADE/TAMANHO & GÊNERO === */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">📏 Tamanho & Gênero</h3>
-        
-        <div className="grid grid-cols-2 gap-4">
-          {/* Tamanho/Idade */}
-          <div>
-            <Label className="text-base font-medium">
-              {formData.categoria_id === 'calcados' ? 'Número' : 
+      <div className="grid grid-cols-2 gap-4">
+        {/* Tamanho/Idade */}
+        <div>
+          <Label className="text-base font-medium">
+            📏 {formData.categoria_id === 'calcados' ? 'Número' : 
                formData.categoria_id === 'brinquedos' ? 'Idade' : 
                formData.categoria_id === 'livros' ? 'Faixa Etária' : 'Tamanho'}
-            </Label>
-            <Select 
-              value={formData.tamanho_valor} 
-              onValueChange={handleTamanhoChange}
-              disabled={isLoadingTamanhos}
-            >
-              <SelectTrigger className="mt-2">
-                <SelectValue placeholder={
-                  isLoadingTamanhos ? "Carregando..." :
-                  tamanhosDisponiveis.length === 0 ? "Nenhum tamanho disponível" :
-                  "Selecione"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {tamanhosDisponiveis?.map((t) => (
-                  <SelectItem key={t.id} value={t.valor}>
-                    {t.label_display}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.tamanho && <p className="text-red-500 text-sm mt-1">{errors.tamanho}</p>}
-            
-            {/* Debug info melhorado */}
-            <div className="text-xs text-gray-500 mt-1 space-y-1">
-              <p>{tamanhosDisponiveis.length} tamanhos encontrados</p>
-              <p>Tipos disponíveis: {Object.keys(tiposTamanho || {}).join(', ') || 'Nenhum'}</p>
-            </div>
-          </div>
+          </Label>
+          <Select 
+            value={formData.tamanho_valor} 
+            onValueChange={handleTamanhoChange}
+            disabled={isLoadingTamanhos}
+          >
+            <SelectTrigger className="mt-2">
+              <SelectValue placeholder={
+                isLoadingTamanhos ? "Carregando..." :
+                tamanhosDisponiveis.length === 0 ? "Nenhum tamanho disponível" :
+                "Selecione"
+              } />
+            </SelectTrigger>
+            <SelectContent>
+              {tamanhosDisponiveis?.map((t) => (
+                <SelectItem key={t.id} value={t.valor}>
+                  {t.label_display}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.tamanho && <p className="text-red-500 text-sm mt-1">{errors.tamanho}</p>}
+        </div>
 
-          {/* Gênero */}
-          <div>
-            <Label htmlFor="genero" className="text-base font-medium">Gênero</Label>
-            <Select value={formData.genero} onValueChange={(value) => onFieldChange('genero', value)}>
-              <SelectTrigger className="mt-2">
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="menino">👦 Menino</SelectItem>
-                <SelectItem value="menina">👧 Menina</SelectItem>
-                <SelectItem value="unissex">👶 Unissex</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.genero && <p className="text-red-500 text-sm mt-1">{errors.genero}</p>}
-          </div>
+        {/* Gênero */}
+        <div>
+          <Label htmlFor="genero" className="text-base font-medium">👶 Gênero</Label>
+          <Select value={formData.genero} onValueChange={(value) => onFieldChange('genero', value)}>
+            <SelectTrigger className="mt-2">
+              <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="menino">👦 Menino</SelectItem>
+              <SelectItem value="menina">👧 Menina</SelectItem>
+              <SelectItem value="unissex">👶 Unissex</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.genero && <p className="text-red-500 text-sm mt-1">{errors.genero}</p>}
         </div>
       </div>
 
-      {/* === SEÇÃO: ESTADO DO PRODUTO === */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">⭐ Estado do Produto</h3>
+      {/* Estado do Produto */}
+      <div>
+        <Label className="text-base font-medium">⭐ Estado do Produto</Label>
         <Select value={formData.estado_conservacao} onValueChange={(value) => onFieldChange('estado_conservacao', value)}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full mt-2">
             <SelectValue placeholder="Selecione o estado" />
           </SelectTrigger>
           <SelectContent>
@@ -287,48 +278,41 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
         {errors.estado_conservacao && <p className="text-red-500 text-sm mt-1">{errors.estado_conservacao}</p>}
       </div>
 
-      {/* === SEÇÃO: DESCRIÇÃO DETALHADA === */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">📝 Descrição Detalhada</h3>
+      {/* Descrição Detalhada */}
+      <div>
+        <Label htmlFor="descricao" className="text-base font-medium">📝 Descrição Detalhada</Label>
         <Textarea
           id="descricao"
           name="descricao"
           value={formData.descricao}
           onChange={handleChange}
           placeholder="Descreva o item detalhadamente, incluindo características especiais, defeitos (se houver), marca, etc..."
-          className="min-h-[120px]"
+          className="min-h-[120px] mt-2"
           rows={6}
         />
         {errors.descricao && <p className="text-red-500 text-sm mt-1">{errors.descricao}</p>}
       </div>
 
-      {/* === SEÇÃO: PREÇO & LOCALIZAÇÃO === */}
-      <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">💰 Preço & Localização</h3>
+      {/* Preço */}
+      <div>
+        <Label htmlFor="preco" className="text-base font-medium">💰 Preço (Girinhas)</Label>
+        <Input
+          type="number"
+          id="preco"
+          name="preco"
+          value={formData.preco}
+          onChange={handleChange}
+          placeholder="Ex: 25"
+          className="mt-2"
+        />
+        {errors.preco && <p className="text-red-500 text-sm mt-1">{errors.preco}</p>}
         
-        <div className="space-y-4">
-          {/* Preço */}
-          <div>
-            <Label htmlFor="preco" className="text-base font-medium">Preço (Girinhas)</Label>
-            <Input
-              type="number"
-              id="preco"
-              name="preco"
-              value={formData.preco}
-              onChange={handleChange}
-              placeholder="Ex: 25"
-              className="mt-2"
-            />
-            {errors.preco && <p className="text-red-500 text-sm mt-1">{errors.preco}</p>}
-            
-            {/* Mostrar faixa de preços da categoria */}
-            {categoriaSelecionada && (
-              <p className="text-sm text-gray-500 mt-2">
-                💡 Faixa sugerida: {categoriaSelecionada.valor_minimo} - {categoriaSelecionada.valor_maximo} Girinhas
-              </p>
-            )}
-          </div>
-        </div>
+        {/* Mostrar faixa de preços da categoria */}
+        {categoriaSelecionada && (
+          <p className="text-sm text-gray-500 mt-2">
+            💡 Faixa sugerida: {categoriaSelecionada.valor_minimo} - {categoriaSelecionada.valor_maximo} Girinhas
+          </p>
+        )}
       </div>
     </div>
   );
