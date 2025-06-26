@@ -16,7 +16,7 @@ interface TamanhoItem {
 }
 
 export const useTiposTamanho = (categoria?: string) => {
-  return useQuery({
+  const queryResult = useQuery({
     queryKey: ['tipos-tamanho', categoria],
     queryFn: async () => {
       console.log('🔍 Buscando tamanhos para categoria:', categoria);
@@ -55,4 +55,9 @@ export const useTiposTamanho = (categoria?: string) => {
     staleTime: 10 * 60 * 1000, // 10 minutos
     gcTime: 30 * 60 * 1000, // 30 minutos
   });
+
+  return {
+    ...queryResult,
+    tiposTamanho: queryResult.data || {}
+  };
 };

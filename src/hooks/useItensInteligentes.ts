@@ -15,11 +15,12 @@ interface ItensInteligentesFiltros {
   apenasSeguidoras?: boolean;
   categoria?: string;
   subcategoria?: string;
+  genero?: string;
   ordem?: string;
   busca?: string;
   precoMin?: number;
   precoMax?: number;
-  locationDetected?: boolean; // Nova propriedade
+  locationDetected?: boolean;
 }
 
 export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
@@ -70,6 +71,10 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
           itensFiltrados = itensFiltrados.filter(item => item.subcategoria === filtros.subcategoria);
         }
 
+        if (filtros.genero && filtros.genero !== 'todos') {
+          itensFiltrados = itensFiltrados.filter(item => item.genero === filtros.genero);
+        }
+
         // Aplicar filtros de preço
         if (filtros.precoMin !== undefined && filtros.precoMin > 0) {
           itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas >= filtros.precoMin);
@@ -107,6 +112,10 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
 
         if (filtros.subcategoria) {
           itensFiltrados = itensFiltrados.filter(item => item.subcategoria === filtros.subcategoria);
+        }
+
+        if (filtros.genero && filtros.genero !== 'todos') {
+          itensFiltrados = itensFiltrados.filter(item => item.genero === filtros.genero);
         }
 
         if (filtros.busca) {
@@ -158,6 +167,11 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
       // Filtro por subcategoria
       if (filtros.subcategoria) {
         query = query.eq('subcategoria', filtros.subcategoria);
+      }
+
+      // Filtro por gênero
+      if (filtros.genero && filtros.genero !== 'todos') {
+        query = query.eq('genero', filtros.genero);
       }
 
       // Filtro por busca

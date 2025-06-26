@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from "sonner";
 import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
@@ -87,7 +88,7 @@ export const useEditarItemForm = (initialItem: Item) => {
         
         // Verificar se o tamanho salvo existe nas opções disponíveis
         const todosOsTamanhos = Object.values(tiposTamanho).flat();
-        const tamanhoEncontrado = todosOsTamanhos.find(t => t.valor === tamanhoSalvo);
+        const tamanhoEncontrado = todosOsTamanhos.find((t: any) => t.valor === tamanhoSalvo);
         
         if (tamanhoEncontrado) {
           setFormData(prev => ({
