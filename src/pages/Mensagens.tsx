@@ -12,7 +12,6 @@ import { useConversas } from '@/hooks/useConversas';
 import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/shared/Header';
-import ChatModal from '@/components/chat/ChatModal';
 import MessageText from '@/components/mensagens/MessageText';
 import MentionInput from '@/components/mensagens/MentionInput';
 import { toast } from "sonner";
@@ -25,7 +24,6 @@ const Mensagens = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [novaMensagem, setNovaMensagem] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [showChatModal, setShowChatModal] = useState(false);
 
   const {
     conversas,
@@ -235,12 +233,7 @@ const Mensagens = () => {
         {/* Lista de Conversas (Esquerda) */}
         <div className="w-1/3 bg-white border-r border-gray-200 shadow-sm">
           <div className="p-4 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Mensagens</h2>
-              <Button onClick={() => setShowChatModal(true)} size="sm" variant="outline">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Mensagens</h2>
             <Input
               type="search"
               placeholder="Buscar conversas..."
@@ -341,11 +334,7 @@ const Mensagens = () => {
             <div className="text-center">
               <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <p className="text-xl font-semibold text-gray-900 mb-2">Selecione uma conversa</p>
-              <p className="text-gray-600 mb-6">Escolha uma conversa para começar a conversar</p>
-              <Button onClick={() => setShowChatModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Conversa
-              </Button>
+              <p className="text-gray-600">Escolha uma conversa para começar a conversar</p>
             </div>
           </div>
         )}
@@ -355,7 +344,6 @@ const Mensagens = () => {
 
   return (
     <>
-      <ChatModal isOpen={showChatModal} onClose={() => setShowChatModal(false)} />
       <div className="md:hidden">
         {renderMobile()}
       </div>
