@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -43,7 +42,7 @@ const FeedOptimized = () => {
   // Dados dos dropdowns
   const { configuracoes: categorias = [], isLoading: loadingCategorias } = useConfigCategorias();
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
-  const { tamanhos: todosTamanhos = [], isLoading: loadingTamanhos } = useTamanhosPorCategoria(categoria !== 'todas' ? categoria : undefined);
+  const { data: todosTamanhos = [], isLoading: loadingTamanhos } = useTamanhosPorCategoria(categoria !== 'todas' ? categoria : undefined);
   
   // Filtrar subcategorias baseado na categoria selecionada
   const subcategoriasFiltradas = categoria !== 'todas' 
