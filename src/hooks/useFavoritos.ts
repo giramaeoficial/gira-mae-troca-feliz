@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -13,7 +12,8 @@ export const useFavoritos = () => {
   const [favoritos, setFavoritos] = useState<Favorito[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const buscarFavoritos = async () => {
+  // ✅ CORREÇÃO: Memorizar a função buscarFavoritos com useCallback
+  const buscarFavoritos = useCallback(async () => {
     if (!user) {
       console.log('Usuário não logado, limpando favoritos');
       setFavoritos([]);
@@ -47,15 +47,15 @@ export const useFavoritos = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]); // ✅ Dependências explícitas
 
-  const verificarSeFavorito = (itemId: string): boolean => {
+  const verificarSeFavorito = useCallback((itemId: string): boolean => {
     const ehFavorito = favoritos.some(fav => fav.item_id === itemId);
     console.log(`Item ${itemId} é favorito:`, ehFavorito);
     return ehFavorito;
-  };
+  }, [favoritos]); // ✅ Memorizar também esta função
 
-  const adicionarFavorito = async (itemId: string): Promise<boolean> => {
+  const adicionarFavorito = useCallback(async (itemId: string): Promise<boolean> => {
     if (!user) {
       toast({
         title: "Erro",
@@ -107,9 +107,9 @@ export const useFavoritos = () => {
       });
       return false;
     }
-  };
+  }, [user, toast, verificarSeFavorito]); // ✅ Dependências explícitas
 
-  const removerFavorito = async (itemId: string): Promise<boolean> => {
+  const removerFavorito = useCallback(async (itemId: string): Promise<boolean> => {
     if (!user) return false;
 
     try {
@@ -143,9 +143,9 @@ export const useFavoritos = () => {
       });
       return false;
     }
-  };
+  }, [user, toast]); // ✅ Dependências explícitas
 
-  const toggleFavorito = async (itemId: string): Promise<boolean> => {
+  const toggleFavorito = useCallback(async (itemId: string): Promise<boolean> => {
     const ehFavorito = verificarSeFavorito(itemId);
     console.log(`Toggle favorito para item ${itemId}, é favorito: ${ehFavorito}`);
     
@@ -154,13 +154,13 @@ export const useFavoritos = () => {
     } else {
       return await adicionarFavorito(itemId);
     }
-  };
+  }, [verificarSeFavorito, removerFavorito, adicionarFavorito]); // ✅ Dependências explícitas
 
-  // Buscar favoritos quando o componente montar e quando o usuário mudar
+  // ✅ CORREÇÃO: useEffect agora só executa quando user.id muda
   useEffect(() => {
     console.log('useEffect useFavoritos - user:', user?.id);
     buscarFavoritos();
-  }, [user?.id]);
+  }, [user?.id, buscarFavoritos]); // ✅ buscarFavoritos agora é estável
 
   return {
     favoritos,
