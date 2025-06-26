@@ -39,7 +39,7 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/feed" element={<FeedOptimized />} />
+          <Route path="/feed" element={<BuscarItens />} />
           <Route path="/buscar-itens" element={<BuscarItens />} />
           <Route path="/publicar" element={<PublicarItem />} />
           <Route path="/missoes" element={<Missoes />} />
