@@ -191,8 +191,8 @@ export const useIndicacoes = () => {
         ).length,
         totalBonusRecebido: items.reduce((total, item) => {
           let bonus = 0;
-          if (item.bonus_cadastro_pago) bonus += 2;
-          if (item.bonus_primeiro_item_pago) bonus += 3;
+          if (item.bonus_cadastro_pago) bonus += 5;
+          if (item.bonus_primeiro_item_pago) bonus += 5;
           if (item.bonus_primeira_compra_pago) bonus += 5;
           return total + bonus;
         }, 0)
