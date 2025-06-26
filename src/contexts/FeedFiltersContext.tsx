@@ -1,12 +1,9 @@
-
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 export interface FeedFilters {
   busca: string;
   categoria: string;
   subcategoria: string;
-  genero: string;
-  tamanho: string;
   ordem: string;
   mesmaEscola: boolean;
   mesmoBairro: boolean;
@@ -17,6 +14,9 @@ export interface FeedFilters {
   locationDetected: boolean;
   precoMin: number;
   precoMax: number;
+  // ✅ ADICIONADO: Filtros de gênero e tamanho
+  genero: string;
+  tamanho: string;
 }
 
 interface FeedFiltersContextType {
@@ -32,8 +32,6 @@ const defaultFilters: FeedFilters = {
   busca: '',
   categoria: 'todas',
   subcategoria: '',
-  genero: 'todos',
-  tamanho: 'todos',
   ordem: 'recentes',
   mesmaEscola: false,
   mesmoBairro: false,
@@ -44,6 +42,9 @@ const defaultFilters: FeedFilters = {
   locationDetected: false,
   precoMin: 0,
   precoMax: 200,
+  // ✅ ADICIONADO: Valores padrão para gênero e tamanho
+  genero: 'todos',
+  tamanho: 'todos',
 };
 
 const FeedFiltersContext = createContext<FeedFiltersContextType | undefined>(undefined);
@@ -80,10 +81,11 @@ export const FeedFiltersProvider: React.FC<{ children: ReactNode }> = ({ childre
     if (filters.apenasSeguidoras) count++;
     if (filters.categoria !== 'todas') count++;
     if (filters.subcategoria) count++;
-    if (filters.genero !== 'todos') count++;
-    if (filters.tamanho !== 'todos') count++;
     if (filters.location) count++;
     if (filters.precoMin > 0 || filters.precoMax < 200) count++;
+    // ✅ ADICIONADO: Contagem para gênero e tamanho
+    if (filters.genero !== 'todos') count++;
+    if (filters.tamanho !== 'todos') count++;
     return count;
   }, [filters]);
 
