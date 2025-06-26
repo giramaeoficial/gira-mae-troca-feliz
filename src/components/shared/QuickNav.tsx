@@ -1,59 +1,43 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, Trophy, Menu } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useMissoes } from '@/hooks/useMissoes';
-import MoreMenu from './MoreMenu';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Home, Search, Plus, MessageCircle, User, Package } from 'lucide-react';
 
-const QuickNav: React.FC = () => {
+const QuickNav = () => {
+  const navigate = useNavigate();
   const location = useLocation();
-  const { missoesCompletas } = useMissoes();
 
-  const mainItems = [
-    { icon: Home, label: "Feed", path: "/feed" },
-    { icon: Plus, label: "Publicar", path: "/publicar" },
-    { icon: Trophy, label: "Missões", path: "/missoes" }
+  const navItems = [
+    { icon: Home, label: 'Feed', path: '/feed' },
+    { icon: Search, label: 'Buscar', path: '/buscar-itens' },
+    { icon: Plus, label: 'Publicar', path: '/publicar' },
+    { icon: Package, label: 'Meus Itens', path: '/meus-itens' },
+    { icon: MessageCircle, label: 'Mensagens', path: '/mensagens' },
+    { icon: User, label: 'Perfil', path: '/perfil' },
   ];
 
   return (
-    // Mostrar apenas no mobile (md:hidden)
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="grid grid-cols-4 h-16">
-        {mainItems.map((item) => {
-          const isActive = location.pathname === item.path;
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden">
+      <div className="flex justify-around items-center py-2">
+        {navItems.map((item) => {
           const Icon = item.icon;
+          const isActive = location.pathname === item.path;
           
           return (
-            <Link
+            <button
               key={item.path}
-              to={item.path}
-              className={`flex flex-col items-center justify-center space-y-1 relative ${
+              onClick={() => navigate(item.path)}
+              className={`flex flex-col items-center justify-center p-2 min-w-0 flex-1 ${
                 isActive 
-                  ? 'text-primary bg-primary/5' 
+                  ? 'text-pink-500' 
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <div className="relative">
-                <Icon className="h-5 w-5" />
-                {item.path === '/missoes' && missoesCompletas > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-4 w-4 text-xs p-0 bg-green-500 flex items-center justify-center">
-                    {missoesCompletas}
-                  </Badge>
-                )}
-              </div>
-              <span className="text-xs font-medium">{item.label}</span>
-            </Link>
+              <Icon className="w-5 h-5 mb-1" />
+              <span className="text-xs font-medium truncate">{item.label}</span>
+            </button>
           );
         })}
-        
-        {/* Menu "Mais" */}
-        <MoreMenu>
-          <div className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-gray-700 cursor-pointer">
-            <Menu className="h-5 w-5" />
-            <span className="text-xs font-medium">Mais</span>
-          </div>
-        </MoreMenu>
       </div>
     </nav>
   );
