@@ -121,16 +121,14 @@ const Feed = () => {
             <main className="flex-grow pb-32 md:pb-8">
                 <div className="container mx-auto px-4 py-6">
                     {/* Hero Section */}
-                    {location && (
-                        <div className="text-center mb-8">
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-                                Encontre Tesouros em {location.cidade}
-                            </h1>
-                            <p className="text-gray-600 text-lg">
-                                Descubra itens incríveis compartilhados pela comunidade
-                            </p>
-                        </div>
-                    )}
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
+                            {location ? `Encontre Tesouros em ${location.cidade}` : 'Descubra Tesouros Incríveis'}
+                        </h1>
+                        <p className="text-gray-600 text-lg">
+                            {location ? 'Itens compartilhados pela comunidade local' : 'Itens compartilhados pela comunidade'}
+                        </p>
+                    </div>
 
                     {/* Filtros Avançados */}
                     <AdvancedFilters 
