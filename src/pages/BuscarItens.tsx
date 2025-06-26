@@ -164,7 +164,7 @@ const BuscarItens = () => {
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
                 {categorias.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.nome}>
+                  <SelectItem key={cat.codigo} value={cat.nome}>
                     {cat.nome}
                   </SelectItem>
                 ))}
