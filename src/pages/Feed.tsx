@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -131,14 +132,14 @@ const Feed = () => {
                         </div>
                     )}
 
-                    {/* Filtros Avançados - Convert filters to compatible format */}
+                    {/* Filtros Avançados */}
                     <AdvancedFilters 
                         filtros={{
                             busca: filters.busca,
                             categoria: filters.categoria,
                             subcategoria: filters.subcategoria,
-                            tamanho: filters.tamanho,
                             genero: filters.genero,
+                            tamanho: filters.tamanho,
                             preco_minimo: filters.precoMin,
                             preco_maximo: filters.precoMax
                         }} 
@@ -146,11 +147,7 @@ const Feed = () => {
                     />
 
                     {/* Grid de Itens */}
-                    {!location ? (
-                        <div className="text-center py-12">
-                            <p className="text-gray-500">Use a localização para ver itens próximos a você</p>
-                        </div>
-                    ) : loading ? (
+                    {loading ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             <ItemCardSkeleton count={10} />
                         </div>
@@ -162,7 +159,16 @@ const Feed = () => {
                             actionLabel={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "Limpar Filtros" : "Publicar Item"}
                             onAction={() => {
                                 if (filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos") {
-                                    // Reset filters logic here
+                                    // Reset filters
+                                    updateFilters({
+                                        busca: '',
+                                        categoria: 'todas',
+                                        subcategoria: '',
+                                        genero: 'todos',
+                                        tamanho: 'todos',
+                                        precoMin: 0,
+                                        precoMax: 200
+                                    });
                                 }
                             }}
                             className="mx-4"

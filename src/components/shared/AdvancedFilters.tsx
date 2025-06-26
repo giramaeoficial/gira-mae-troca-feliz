@@ -37,7 +37,13 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    onFiltrosChange({ ...filtros, [name]: value });
+    
+    // Convert price fields to numbers
+    if (name === 'preco_minimo' || name === 'preco_maximo') {
+      onFiltrosChange({ ...filtros, [name]: parseFloat(value) || 0 });
+    } else {
+      onFiltrosChange({ ...filtros, [name]: value });
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -58,7 +64,7 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
   }, [filtros.categoria, subcategorias]);
 
   return (
-    <Accordion type="single" collapsible className="w-full">
+    <Accordion type="single" collapsible className="w-full mb-6">
       <AccordionItem value="filters">
         <AccordionTrigger>Filtros Avançados</AccordionTrigger>
         <AccordionContent>
@@ -79,11 +85,12 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="categoria">Categoria</Label>
-                <Select onValueChange={(value) => handleSelectChange('categoria', value)}>
+                <Select value={filtros.categoria} onValueChange={(value) => handleSelectChange('categoria', value)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione a Categoria" defaultValue={filtros.categoria} />
+                    <SelectValue placeholder="Selecione a Categoria" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="todas">Todas as categorias</SelectItem>
                     {categorias?.map((categoria) => (
                       <SelectItem key={categoria.codigo} value={categoria.codigo}>{categoria.nome}</SelectItem>
                     ))}
@@ -93,11 +100,12 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
 
               <div>
                 <Label htmlFor="subcategoria">Subcategoria</Label>
-                <Select onValueChange={(value) => handleSelectChange('subcategoria', value)}>
+                <Select value={filtros.subcategoria} onValueChange={(value) => handleSelectChange('subcategoria', value)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione a Subcategoria" defaultValue={filtros.subcategoria} />
+                    <SelectValue placeholder="Selecione a Subcategoria" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">Todas as subcategorias</SelectItem>
                     {subcategoriasFiltradas.map((subcategoria) => (
                       <SelectItem key={subcategoria.id} value={subcategoria.nome}>{subcategoria.nome}</SelectItem>
                     ))}
@@ -109,11 +117,12 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
             {/* Gênero */}
             <div>
               <Label htmlFor="genero">Gênero</Label>
-              <Select onValueChange={(value) => handleSelectChange('genero', value)}>
+              <Select value={filtros.genero} onValueChange={(value) => handleSelectChange('genero', value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o Gênero" defaultValue={filtros.genero} />
+                  <SelectValue placeholder="Selecione o Gênero" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="menina">Menina</SelectItem>
                   <SelectItem value="menino">Menino</SelectItem>
                   <SelectItem value="unissex">Unissex</SelectItem>
@@ -125,11 +134,12 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
             {filtros.categoria && tiposTamanho && Object.keys(tiposTamanho).length > 0 && (
               <div>
                 <Label htmlFor="tamanho">Tamanho</Label>
-                <Select onValueChange={handleTamanhoChange}>
+                <Select value={filtros.tamanho} onValueChange={handleTamanhoChange}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o Tamanho" defaultValue={filtros.tamanho} />
+                    <SelectValue placeholder="Selecione o Tamanho" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="todos">Todos os tamanhos</SelectItem>
                     {Object.values(tiposTamanho)
                       .flat()
                       .map((tamanho) => (
@@ -143,11 +153,12 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
             {/* Estado de Conservação */}
             <div>
               <Label htmlFor="estado_conservacao">Estado de Conservação</Label>
-              <Select onValueChange={(value) => handleSelectChange('estado_conservacao', value)}>
+              <Select value={filtros.estado_conservacao} onValueChange={(value) => handleSelectChange('estado_conservacao', value)}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o Estado" defaultValue={filtros.estado_conservacao} />
+                  <SelectValue placeholder="Selecione o Estado" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="">Todos os estados</SelectItem>
                   <SelectItem value="novo">Novo</SelectItem>
                   <SelectItem value="seminovo">Seminovo</SelectItem>
                   <SelectItem value="usado">Usado</SelectItem>
@@ -158,7 +169,7 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
             {/* Faixa de Preço */}
             <div>
               <Label>Faixa de Preço (Girinhas)</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-2">
                 <Input
                   type="number"
                   name="preco_minimo"
@@ -178,10 +189,10 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
                 />
               </div>
               <Slider
-                defaultValue={[filtros.preco_minimo || 0, filtros.preco_maximo || 100]}
-                max={100}
+                value={[filtros.preco_minimo || 0, filtros.preco_maximo || 200]}
+                max={200}
                 step={1}
-                onValueChange={(value) => handleSliderChange(value)}
+                onValueChange={handleSliderChange}
               />
             </div>
           </div>
