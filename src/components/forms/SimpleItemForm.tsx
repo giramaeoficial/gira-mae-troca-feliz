@@ -2,7 +2,7 @@
 import React from 'react';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { ItemBasicInfo } from './ItemBasicInfo';
-import ItemCategorization from './ItemCategorization';
+import { ItemCategorization } from './ItemCategorization';
 import { ItemPricing } from './ItemPricing';
 import ImageUpload from '@/components/ui/image-upload';
 import ImageUploadEditor from '@/components/ui/image-upload-editor';

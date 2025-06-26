@@ -1,204 +1,160 @@
-
-import React from 'react';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+import React, { useState } from 'react';
+import { useFeedFilters } from '@/contexts/FeedFiltersContext';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
+import { FiltersHeader } from '@/components/filters/FiltersHeader';
+import { SearchBar } from '@/components/filters/SearchBar';
+import { BasicFilters } from '@/components/filters/BasicFilters';
+import { LocationFilter } from '@/components/filters/LocationFilter';
+import { AdvancedFiltersToggle } from '@/components/filters/AdvancedFiltersToggle';
+import { AdvancedFiltersContent } from '@/components/filters/AdvancedFiltersContent';
 
 interface AdvancedFiltersProps {
-  filtros: {
-    busca?: string;
-    categoria?: string;
-    subcategoria?: string;
-    tamanho?: string;
-    estado_conservacao?: string;
-    preco_minimo?: number;
-    preco_maximo?: number;
-    idade_minima?: number;
-    idade_maxima?: number;
-    genero?: string;
-  };
-  onFiltrosChange: (novosFiltros: any) => void;
+  onSearch?: () => void;
 }
 
-const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => {
-  const { configuracoes: categorias = [] } = useConfigCategorias();
-  const { subcategorias = [] } = useSubcategorias();
-  const { data: tiposTamanho } = useTiposTamanho(filtros.categoria);
+const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
+  const { filters, updateFilter, updateFilters, getActiveFiltersCount, setLocationDetected } = useFeedFilters();
+  const { configuracoes } = useConfigCategorias();
+  const { subcategorias: allSubcategorias } = useSubcategorias();
+  // ✅ ADICIONADO: Hook para buscar tamanhos baseado na categoria
+  const { tiposTamanho } = useTiposTamanho(filters.categoria !== 'todas' ? filters.categoria : undefined);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    // Convert price fields to numbers
-    if (name === 'preco_minimo' || name === 'preco_maximo') {
-      onFiltrosChange({ ...filtros, [name]: parseFloat(value) || 0 });
-    } else {
-      onFiltrosChange({ ...filtros, [name]: value });
+  const handleSearch = () => {
+    if (onSearch) {
+      onSearch();
     }
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    onFiltrosChange({ ...filtros, [name]: value });
+  const handleLocationDetected = (location: { cidade: string; estado: string; bairro?: string }) => {
+    setLocationDetected(location);
   };
 
-  const handleTamanhoChange = (value: string) => {
-    onFiltrosChange({ ...filtros, tamanho: value });
+  const handleResetFilters = () => {
+    updateFilters({
+      busca: '',
+      categoria: 'todas',
+      subcategoria: '',
+      ordem: 'recentes',
+      mesmaEscola: false,
+      mesmoBairro: false,
+      paraFilhos: false,
+      apenasFavoritos: false,
+      apenasSeguidoras: false,
+      precoMin: 0,
+      precoMax: 200,
+      // ✅ ADICIONADO: Reset para gênero e tamanho
+      genero: 'todos',
+      tamanho: 'todos',
+    });
   };
 
-  const handleSliderChange = (value: number[]) => {
-    onFiltrosChange({ ...filtros, preco_minimo: value[0], preco_maximo: value[1] });
-  };
+  // Convert configuracoes to categorias format
+  const categorias = configuracoes?.map(config => ({
+    id: config.codigo,
+    nome: config.nome,
+    icone: config.icone
+  })) || [];
 
-  const subcategoriasFiltradas = React.useMemo(() => {
-    if (!filtros.categoria || !subcategorias) return [];
-    return subcategorias.filter(sub => sub.categoria_pai === filtros.categoria);
-  }, [filtros.categoria, subcategorias]);
+  // Get subcategorias for selected category
+  const subcategorias = filters.categoria !== 'todas' 
+    ? allSubcategorias.filter(sub => sub.categoria_pai === filters.categoria).map(sub => sub.nome)
+    : [];
+
+  // ✅ ADICIONADO: Obter tamanhos disponíveis
+  const tamanhosDisponiveis = React.useMemo(() => {
+    const tipos = Object.keys(tiposTamanho || {});
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    // Remover duplicatas baseado no valor
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  }, [tiposTamanho]);
+
+  // ✅ ADICIONADO: Reset tamanho quando categoria muda
+  React.useEffect(() => {
+    if (filters.categoria === 'todas') {
+      updateFilter('tamanho', 'todos');
+    }
+  }, [filters.categoria, updateFilter]);
+
+  const activeFiltersCount = getActiveFiltersCount();
 
   return (
-    <Accordion type="single" collapsible className="w-full mb-6">
-      <AccordionItem value="filters">
-        <AccordionTrigger>Filtros Avançados</AccordionTrigger>
-        <AccordionContent>
-          <div className="grid gap-4">
-            {/* Busca */}
-            <div>
-              <Label htmlFor="busca">Buscar</Label>
-              <Input
-                type="text"
-                name="busca"
-                placeholder="Digite o que procura..."
-                value={filtros.busca || ''}
-                onChange={handleInputChange}
-              />
-            </div>
+    <div className="bg-white rounded-lg shadow-sm border mb-6">
+      <FiltersHeader 
+        location={filters.location}
+        locationDetected={filters.locationDetected}
+      />
 
-            {/* Categoria e Subcategoria */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="categoria">Categoria</Label>
-                <Select value={filtros.categoria} onValueChange={(value) => handleSelectChange('categoria', value)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione a Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas as categorias</SelectItem>
-                    {categorias?.map((categoria) => (
-                      <SelectItem key={categoria.codigo} value={categoria.codigo}>{categoria.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <div className="p-4 space-y-4">
+        <SearchBar
+          value={filters.busca}
+          onChange={(value) => updateFilter('busca', value)}
+          onSearch={handleSearch}
+        />
 
-              <div>
-                <Label htmlFor="subcategoria">Subcategoria</Label>
-                <Select value={filtros.subcategoria} onValueChange={(value) => handleSelectChange('subcategoria', value)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione a Subcategoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todas as subcategorias</SelectItem>
-                    {subcategoriasFiltradas.map((subcategoria) => (
-                      <SelectItem key={subcategoria.id} value={subcategoria.nome}>{subcategoria.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+        <BasicFilters
+          categoria={filters.categoria}
+          ordem={filters.ordem}
+          subcategoria={filters.subcategoria}
+          // ✅ ADICIONADO: Props para gênero e tamanho
+          genero={filters.genero}
+          tamanho={filters.tamanho}
+          categorias={categorias}
+          subcategorias={subcategorias}
+          // ✅ ADICIONADO: Tamanhos disponíveis
+          tamanhosDisponiveis={tamanhosDisponiveis}
+          onCategoriaChange={(value) => updateFilter('categoria', value)}
+          onOrdemChange={(value) => updateFilter('ordem', value)}
+          onSubcategoriaChange={(value) => updateFilter('subcategoria', value === "todas_sub" ? '' : value)}
+          // ✅ ADICIONADO: Handlers para gênero e tamanho
+          onGeneroChange={(value) => updateFilter('genero', value)}
+          onTamanhoChange={(value) => updateFilter('tamanho', value)}
+        />
 
-            {/* Gênero */}
-            <div>
-              <Label htmlFor="genero">Gênero</Label>
-              <Select value={filtros.genero} onValueChange={(value) => handleSelectChange('genero', value)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o Gênero" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="menina">Menina</SelectItem>
-                  <SelectItem value="menino">Menino</SelectItem>
-                  <SelectItem value="unissex">Unissex</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <LocationFilter
+          location={filters.location}
+          locationDetected={filters.locationDetected}
+          onLocationDetected={handleLocationDetected}
+          onLocationClear={() => updateFilters({ location: null, locationDetected: false })}
+        />
 
-            {/* Tamanho */}
-            {filtros.categoria && tiposTamanho && Object.keys(tiposTamanho).length > 0 && (
-              <div>
-                <Label htmlFor="tamanho">Tamanho</Label>
-                <Select value={filtros.tamanho} onValueChange={handleTamanhoChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o Tamanho" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os tamanhos</SelectItem>
-                    {Object.values(tiposTamanho)
-                      .flat()
-                      .map((tamanho) => (
-                        <SelectItem key={tamanho.valor} value={tamanho.valor}>{tamanho.label_display}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+        <AdvancedFiltersToggle
+          showAdvanced={showAdvanced}
+          activeFiltersCount={activeFiltersCount}
+          onToggle={() => setShowAdvanced(!showAdvanced)}
+          onResetFilters={handleResetFilters}
+        />
 
-            {/* Estado de Conservação */}
-            <div>
-              <Label htmlFor="estado_conservacao">Estado de Conservação</Label>
-              <Select value={filtros.estado_conservacao} onValueChange={(value) => handleSelectChange('estado_conservacao', value)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o Estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos os estados</SelectItem>
-                  <SelectItem value="novo">Novo</SelectItem>
-                  <SelectItem value="seminovo">Seminovo</SelectItem>
-                  <SelectItem value="usado">Usado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Faixa de Preço */}
-            <div>
-              <Label>Faixa de Preço (Girinhas)</Label>
-              <div className="flex items-center gap-2 mb-2">
-                <Input
-                  type="number"
-                  name="preco_minimo"
-                  placeholder="Mínimo"
-                  value={filtros.preco_minimo || ''}
-                  onChange={handleInputChange}
-                  className="w-24"
-                />
-                -
-                <Input
-                  type="number"
-                  name="preco_maximo"
-                  placeholder="Máximo"
-                  value={filtros.preco_maximo || ''}
-                  onChange={handleInputChange}
-                  className="w-24"
-                />
-              </div>
-              <Slider
-                value={[filtros.preco_minimo || 0, filtros.preco_maximo || 200]}
-                max={200}
-                step={1}
-                onValueChange={handleSliderChange}
-              />
-            </div>
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+        {showAdvanced && (
+          <AdvancedFiltersContent
+            precoMin={filters.precoMin}
+            precoMax={filters.precoMax}
+            mesmaEscola={filters.mesmaEscola}
+            mesmoBairro={filters.mesmoBairro}
+            paraFilhos={filters.paraFilhos}
+            apenasFavoritos={filters.apenasFavoritos}
+            apenasSeguidoras={filters.apenasSeguidoras}
+            onPrecoChange={([min, max]) => updateFilters({ precoMin: min, precoMax: max })}
+            onMesmaEscolaChange={(checked) => updateFilter('mesmaEscola', checked)}
+            onMesmoBairroChange={(checked) => updateFilter('mesmoBairro', checked)}
+            onParaFilhosChange={(checked) => updateFilter('paraFilhos', checked)}
+            onApenasFavoritosChange={(checked) => updateFilter('apenasFavoritos', checked)}
+            onApenasSeguidorasChange={(checked) => updateFilter('apenasSeguidoras', checked)}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 

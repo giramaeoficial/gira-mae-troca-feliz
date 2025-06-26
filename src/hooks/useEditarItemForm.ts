@@ -1,183 +1,311 @@
-
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { toast } from "sonner";
+import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
+import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
+import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
+import { supabase } from '@/integrations/supabase/client';
 
-const formSchema = z.object({
-  titulo: z.string().min(3, {
-    message: "Título precisa ter pelo menos 3 caracteres.",
-  }),
-  descricao: z.string().min(10, {
-    message: "Descrição precisa ter pelo menos 10 caracteres.",
-  }),
-  categoria: z.string().min(1, {
-    message: "Categoria é obrigatória.",
-  }),
-  subcategoria: z.string().optional(),
-  genero: z.string().optional(),
-  estado_conservacao: z.string().min(1, {
-    message: "Estado de conservação é obrigatório.",
-  }),
-  valor_girinhas: z.string().refine((value) => {
-    const num = Number(value);
-    return !isNaN(num) && num > 0;
-  }, {
-    message: "Valor deve ser um número maior que zero.",
-  }),
-  tamanho: z.object({
-    valor: z.string(),
-    label_display: z.string(),
-  }).optional(),
-});
+interface EditFormData {
+  titulo: string;
+  descricao: string;
+  categoria_id: string;
+  subcategoria: string;
+  genero: 'menino' | 'menina' | 'unissex';
+  tamanho_categoria: string;
+  tamanho_valor: string;
+  estado_conservacao: 'novo' | 'seminovo' | 'usado' | 'muito_usado';
+  preco: string;
+  imagens: File[];
+  imagensExistentes: string[];
+}
 
-interface FormValues extends z.infer<typeof formSchema> {}
+interface ValidationErrors {
+  [key: string]: string;
+}
 
-export const useEditarItemForm = (item: any) => {
-  const { data: tiposTamanho } = useTiposTamanho();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    titulo: item?.titulo || '',
-    descricao: item?.descricao || '',
-    categoria_id: item?.categoria || '',
-    subcategoria: item?.subcategoria || '',
-    genero: item?.genero || '',
-    estado_conservacao: item?.estado_conservacao || '',
-    preco: item?.valor_girinhas?.toString() || '0',
-    imagens: [] as File[],
-    imagensExistentes: item?.imagens || [],
+export const useEditarItemForm = (initialItem: Item) => {
+  const { validarValorCategoria } = useConfigCategorias();
+  const { mutate: atualizarItem, isPending: loading } = useAtualizarItem();
+  const { subcategorias, isLoading: loadingSubcategorias } = useSubcategorias();
+  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(initialItem?.categoria);
+
+  const [formData, setFormData] = useState<EditFormData>({
+    titulo: '',
+    descricao: '',
+    categoria_id: '',
+    subcategoria: '',
+    genero: 'unissex',
     tamanho_categoria: '',
-    tamanho_valor: item?.tamanho_valor || '',
-  });
-  const [errors, setErrors] = useState<any>({});
-  const [loading, setLoading] = useState(false);
-  const [isFormInitialized, setIsFormInitialized] = useState(true);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
-  
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      titulo: item?.titulo || "",
-      descricao: item?.descricao || "",
-      categoria: item?.categoria || "",
-      subcategoria: item?.subcategoria || "",
-      genero: item?.genero || "",
-      estado_conservacao: item?.estado_conservacao || "",
-      valor_girinhas: item?.valor_girinhas?.toString() || "0",
-    },
+    tamanho_valor: '',
+    estado_conservacao: 'usado',
+    preco: '',
+    imagens: [],
+    imagensExistentes: []
   });
 
-  const updateFormData = (updates: Partial<typeof formData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-  };
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
-  const removerImagemExistente = (url: string) => {
+  // Aguardar carregamento das opções para inicializar o formulário
+  useEffect(() => {
+    if (initialItem && !loadingSubcategorias && !loadingTamanhos && !isFormInitialized) {
+      console.log('🔄 Inicializando form com dados completos do item:', initialItem.id);
+      console.log('📏 Tamanhos disponíveis:', tiposTamanho);
+      console.log('📏 Tamanho salvo do item:', {
+        categoria: initialItem.tamanho_categoria,
+        valor: initialItem.tamanho_valor
+      });
+      
+      setFormData({
+        titulo: initialItem.titulo || '',
+        descricao: initialItem.descricao || '',
+        categoria_id: initialItem.categoria || '',
+        subcategoria: initialItem.subcategoria || '',
+        genero: (initialItem.genero as 'menino' | 'menina' | 'unissex') || 'unissex',
+        tamanho_categoria: initialItem.tamanho_categoria || '',
+        tamanho_valor: initialItem.tamanho_valor || '',
+        estado_conservacao: (initialItem.estado_conservacao as 'novo' | 'seminovo' | 'usado' | 'muito_usado') || 'usado',
+        preco: initialItem.valor_girinhas?.toString() || '',
+        imagens: [],
+        imagensExistentes: Array.isArray(initialItem.fotos) ? initialItem.fotos : []
+      });
+      setErrors({});
+      setIsFormInitialized(true);
+    }
+  }, [initialItem, loadingSubcategorias, loadingTamanhos, isFormInitialized, tiposTamanho]);
+
+  // Efeito adicional para garantir que o tamanho seja definido quando as opções estiverem prontas
+  useEffect(() => {
+    if (isFormInitialized && initialItem && tiposTamanho && Object.keys(tiposTamanho).length > 0) {
+      const tamanhoSalvo = initialItem.tamanho_valor;
+      
+      if (tamanhoSalvo && formData.tamanho_valor !== tamanhoSalvo) {
+        console.log('🔧 Ajustando tamanho após carregamento das opções:', tamanhoSalvo);
+        
+        // Verificar se o tamanho salvo existe nas opções disponíveis
+        const todosOsTamanhos = Object.values(tiposTamanho).flat();
+        const tamanhoEncontrado = todosOsTamanhos.find(t => t.valor === tamanhoSalvo);
+        
+        if (tamanhoEncontrado) {
+          setFormData(prev => ({
+            ...prev,
+            tamanho_categoria: initialItem.tamanho_categoria || Object.keys(tiposTamanho)[0] || '',
+            tamanho_valor: tamanhoSalvo
+          }));
+          console.log('✅ Tamanho ajustado com sucesso:', tamanhoSalvo);
+        } else {
+          console.log('⚠️ Tamanho salvo não encontrado nas opções disponíveis:', tamanhoSalvo);
+        }
+      }
+    }
+  }, [isFormInitialized, initialItem, tiposTamanho, formData.tamanho_valor]);
+
+  const resetForm = useCallback((item: Item) => {
+    console.log('🔄 Resetando form com item:', item);
+    setFormData({
+      titulo: item.titulo || '',
+      descricao: item.descricao || '',
+      categoria_id: item.categoria || '',
+      subcategoria: item.subcategoria || '',
+      genero: (item.genero as 'menino' | 'menina' | 'unissex') || 'unissex',
+      tamanho_categoria: item.tamanho_categoria || '',
+      tamanho_valor: item.tamanho_valor || '',
+      estado_conservacao: (item.estado_conservacao as 'novo' | 'seminovo' | 'usado' | 'muito_usado') || 'usado',
+      preco: item.valor_girinhas?.toString() || '',
+      imagens: [],
+      imagensExistentes: Array.isArray(item.fotos) ? item.fotos : []
+    });
+    setErrors({});
+    setIsFormInitialized(false); // Resetar para recarregar
+  }, []);
+
+  const updateFormData = useCallback((updates: Partial<EditFormData>) => {
+    setFormData(prev => {
+      const newData = { ...prev, ...updates };
+      
+      // Se a categoria mudou, mas não estamos atualizando o tamanho especificamente,
+      // preservar os valores de tamanho existentes
+      if (updates.categoria_id && !updates.tamanho_valor && !updates.tamanho_categoria) {
+        // Manter os valores de tamanho atuais
+        newData.tamanho_categoria = prev.tamanho_categoria;
+        newData.tamanho_valor = prev.tamanho_valor;
+      }
+      
+      return newData;
+    });
+    
+    // Limpar erros dos campos que foram atualizados
+    const updatedFields = Object.keys(updates);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      updatedFields.forEach(field => {
+        delete newErrors[field];
+      });
+      return newErrors;
+    });
+  }, []);
+
+  const removerImagemExistente = useCallback((urlImagem: string) => {
+    console.log('🗑️ Removendo imagem existente:', urlImagem);
     setFormData(prev => ({
       ...prev,
-      imagensExistentes: prev.imagensExistentes?.filter(img => img !== url) || []
+      imagensExistentes: prev.imagensExistentes.filter(url => url !== urlImagem)
     }));
-  };
+  }, []);
 
-  const handleSubmit = async (): Promise<boolean> => {
+  const validateForm = useCallback((): boolean => {
+    const validationErrors: ValidationErrors = {};
+
+    // Campos obrigatórios básicos
+    if (!formData.titulo?.trim()) {
+      validationErrors.titulo = "O título do item é obrigatório.";
+    } else if (formData.titulo.trim().length < 10) {
+      validationErrors.titulo = "O título deve ter pelo menos 10 caracteres.";
+    }
+
+    if (!formData.categoria_id) {
+      validationErrors.categoria_id = "A categoria é obrigatória.";
+    }
+
+    if (!formData.subcategoria) {
+      validationErrors.subcategoria = "A subcategoria é obrigatória.";
+    }
+
+    if (!formData.genero) {
+      validationErrors.genero = "O gênero é obrigatório.";
+    }
+
+    if (!formData.estado_conservacao) {
+      validationErrors.estado_conservacao = "O estado de conservação é obrigatório.";
+    }
+
+    if (!formData.tamanho_valor) {
+      validationErrors.tamanho = "O tamanho é obrigatório.";
+    }
+
+    // Validação de descrição
+    if (!formData.descricao?.trim()) {
+      validationErrors.descricao = "A descrição é obrigatória.";
+    } else if (formData.descricao.trim().length < 20) {
+      validationErrors.descricao = "A descrição deve ter pelo menos 20 caracteres.";
+    }
+
+    // Validação de preço
+    if (!formData.preco) {
+      validationErrors.preco = "O preço é obrigatório.";
+    } else {
+      const precoNumerico = parseFloat(formData.preco);
+      if (isNaN(precoNumerico) || precoNumerico <= 0) {
+        validationErrors.preco = "O preço deve ser um número maior que zero.";
+      } else {
+        const validacao = validarValorCategoria(formData.categoria_id, precoNumerico);
+        if (!validacao.valido) {
+          validationErrors.preco = validacao.mensagem;
+        }
+      }
+    }
+
+    setErrors(validationErrors);
+    return Object.keys(validationErrors).length === 0;
+  }, [formData, validarValorCategoria]);
+
+  const handleSubmit = useCallback(async (): Promise<boolean> => {
+    if (!validateForm()) {
+      toast.error("Por favor, corrija os erros no formulário.");
+      return false;
+    }
+
+    setUploadingImages(true);
+
     try {
-      setLoading(true);
-      setIsSubmitting(true);
+      let fotosFinais = [...formData.imagensExistentes];
 
-      const updateData: any = {
-        titulo: formData.titulo,
-        descricao: formData.descricao,
-        categoria: formData.categoria_id,
-        subcategoria: formData.subcategoria || null,
-        genero: formData.genero || null,
-        estado_conservacao: formData.estado_conservacao,
-        valor_girinhas: Number(formData.preco),
-        updated_at: new Date().toISOString()
-      };
+      // Upload das novas imagens
+      if (formData.imagens.length > 0) {
+        console.log('📤 Fazendo upload de', formData.imagens.length, 'novas imagens...');
+        
+        for (let i = 0; i < formData.imagens.length; i++) {
+          const foto = formData.imagens[i];
+          console.log(`⬆️ Upload da imagem ${i + 1}/${formData.imagens.length}:`, foto.name);
+          
+          try {
+            const fileName = generateImagePath(initialItem.publicado_por, foto.name);
+            
+            const uploadResult = await uploadImage({
+              bucket: 'itens',
+              path: fileName,
+              file: foto
+            });
 
-      if (formData.tamanho_valor) {
-        updateData.tamanho_valor = formData.tamanho_valor;
+            console.log('✅ Upload result:', uploadResult);
+
+            // Gerar URL pública usando supabase client
+            const { data: { publicUrl } } = supabase.storage
+              .from('itens')
+              .getPublicUrl(fileName);
+            
+            fotosFinais.push(publicUrl);
+            console.log(`✅ Imagem ${i + 1} uploaded:`, publicUrl);
+          } catch (uploadError: any) {
+            console.error(`❌ Erro no upload da imagem ${i + 1}:`, uploadError);
+            throw new Error(`Erro no upload da imagem ${i + 1}: ${uploadError.message}`);
+          }
+        }
       }
 
-      const { error } = await supabase
-        .from('itens')
-        .update(updateData)
-        .eq('id', item.id);
+      return new Promise((resolve) => {
+        const dadosAtualizados = {
+          titulo: formData.titulo,
+          descricao: formData.descricao,
+          categoria: formData.categoria_id,
+          subcategoria: formData.subcategoria,
+          genero: formData.genero,
+          tamanho_categoria: formData.tamanho_categoria,
+          tamanho_valor: formData.tamanho_valor,
+          estado_conservacao: formData.estado_conservacao,
+          valor_girinhas: parseFloat(formData.preco),
+          fotos: fotosFinais
+        };
 
-      if (error) {
-        console.error("Erro ao atualizar item:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível atualizar o item. Tente novamente.",
-          variant: "destructive",
-        });
-        return false;
-      }
+        console.log('💾 Salvando dados atualizados:', dadosAtualizados);
 
-      toast({
-        title: "Sucesso",
-        description: "Item atualizado com sucesso!",
+        atualizarItem(
+          { itemId: initialItem.id, dadosAtualizados },
+          {
+            onSuccess: () => {
+              toast.success("Item atualizado com sucesso! 🎉");
+              resolve(true);
+            },
+            onError: (error: any) => {
+              console.error('❌ Erro ao atualizar item:', error);
+              toast.error("Erro ao atualizar o item. Tente novamente.");
+              resolve(false);
+            }
+          }
+        );
       });
-
-      await queryClient.invalidateQueries({ queryKey: ['item', item.id] });
-      navigate(`/item/${item.id}`);
-      return true;
-
-    } catch (error) {
-      console.error("Erro ao atualizar item:", error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar o item.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      console.error('❌ Erro no processamento:', error);
+      toast.error(error.message || "Erro ao processar as imagens.");
       return false;
     } finally {
-      setLoading(false);
-      setIsSubmitting(false);
+      setUploadingImages(false);
     }
-  };
+  }, [formData, validateForm, atualizarItem, initialItem.id, initialItem.publicado_por]);
 
-  const resetForm = (itemData: any) => {
-    setFormData({
-      titulo: itemData?.titulo || '',
-      descricao: itemData?.descricao || '',
-      categoria_id: itemData?.categoria || '',
-      subcategoria: itemData?.subcategoria || '',
-      genero: itemData?.genero || '',
-      estado_conservacao: itemData?.estado_conservacao || '',
-      preco: itemData?.valor_girinhas?.toString() || '0',
-      imagens: [] as File[],
-      imagensExistentes: itemData?.imagens || [],
-      tamanho_categoria: '',
-      tamanho_valor: itemData?.tamanho_valor || '',
-    });
-  };
-
-  const onSubmit = async (values: FormValues) => {
-    return await handleSubmit();
-  };
-
-  return { 
-    form, 
-    onSubmit, 
-    isSubmitting, 
-    tiposTamanho,
+  return {
     formData,
     updateFormData,
     removerImagemExistente,
     errors,
-    loading,
+    loading: loading || uploadingImages,
     handleSubmit,
     resetForm,
+    isValid: Object.keys(errors).length === 0,
     isFormInitialized,
-    isLoadingOptions
+    isLoadingOptions: loadingSubcategorias || loadingTamanhos
   };
 };

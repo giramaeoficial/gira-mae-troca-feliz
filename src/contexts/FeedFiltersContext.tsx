@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 export interface FeedFilters {
@@ -15,6 +14,7 @@ export interface FeedFilters {
   locationDetected: boolean;
   precoMin: number;
   precoMax: number;
+  // ✅ ADICIONADO: Filtros de gênero e tamanho
   genero: string;
   tamanho: string;
 }
@@ -42,6 +42,7 @@ const defaultFilters: FeedFilters = {
   locationDetected: false,
   precoMin: 0,
   precoMax: 200,
+  // ✅ ADICIONADO: Valores padrão para gênero e tamanho
   genero: 'todos',
   tamanho: 'todos',
 };
@@ -82,6 +83,7 @@ export const FeedFiltersProvider: React.FC<{ children: ReactNode }> = ({ childre
     if (filters.subcategoria) count++;
     if (filters.location) count++;
     if (filters.precoMin > 0 || filters.precoMax < 200) count++;
+    // ✅ ADICIONADO: Contagem para gênero e tamanho
     if (filters.genero !== 'todos') count++;
     if (filters.tamanho !== 'todos') count++;
     return count;

@@ -1,37 +1,42 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useIndicacoes } from '@/hooks/useIndicacoes';
-import { useConfiguracoesBonus } from '@/hooks/useConfiguracoesBonus';
-import { Users, Gift, Share2, Trophy, Check, Clock } from 'lucide-react';
+import { Users, Gift, Share2, Trophy, Mail, Check, Clock } from 'lucide-react';
 
 const PaginaIndicacoes = () => {
   const { 
     indicacoes, 
     indicados, 
     loading, 
-    compartilharIndicacao,
-    obterEstatisticas
+    registrarIndicacao, 
+    compartilharIndicacao 
   } = useIndicacoes();
   
-  const { obterValorBonus } = useConfiguracoesBonus();
-  const [estatisticas, setEstatisticas] = useState<any>(null);
+  const [emailIndicacao, setEmailIndicacao] = useState('');
+  const [enviandoIndicacao, setEnviandoIndicacao] = useState(false);
 
-  useEffect(() => {
-    const carregarEstatisticas = async () => {
-      const stats = await obterEstatisticas();
-      setEstatisticas(stats);
-    };
-    carregarEstatisticas();
-  }, [indicacoes]);
+  const handleIndicar = async () => {
+    if (!emailIndicacao.trim()) return;
+    
+    setEnviandoIndicacao(true);
+    const sucesso = await registrarIndicacao(emailIndicacao);
+    if (sucesso) {
+      setEmailIndicacao('');
+    }
+    setEnviandoIndicacao(false);
+  };
 
   const calcularBonusTotal = (indicacao: any) => {
     let total = 0;
-    if (indicacao.bonus_cadastro_pago) total += obterValorBonus('indicacao_cadastro');
-    if (indicacao.bonus_primeiro_item_pago) total += obterValorBonus('indicacao_primeiro_item');
-    if (indicacao.bonus_primeira_compra_pago) total += obterValorBonus('indicacao_primeira_compra');
+    if (indicacao.bonus_cadastro_pago) total += 5;
+    if (indicacao.bonus_primeiro_item_pago) total += 5;
+    if (indicacao.bonus_primeira_compra_pago) total += 5;
     return total;
   };
 
@@ -48,31 +53,9 @@ const PaginaIndicacoes = () => {
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold text-gray-900">💫 Sistema de Indicações</h1>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Convide suas amigas para o GiraMãe e ganhe Girinhas quando elas se engajarem!
+          Convide suas amigas para o GiraMãe e ganhe Girinhas toda vez que elas se engajarem!
         </p>
       </div>
-
-      {/* Card de Estatísticas */}
-      {estatisticas && (
-        <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-green-600" />
-              Suas Conquistas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{estatisticas.totalIndicacoes}</div>
-              <div className="text-sm text-gray-600">Amigas Indicadas</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">+{estatisticas.totalBonusRecebido}</div>
-              <div className="text-sm text-gray-600">Girinhas Ganhas</div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Card de Compartilhamento */}
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -82,7 +65,7 @@ const PaginaIndicacoes = () => {
             Compartilhar Indicação
           </CardTitle>
           <CardDescription>
-            Compartilhe o GiraMãe e ganhe Girinhas conforme sua amiga se engaja!
+            Compartilhe o GiraMãe e ganhe até 15 Girinhas por amiga indicada!
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -91,15 +74,15 @@ const PaginaIndicacoes = () => {
             <div className="grid gap-2 text-sm">
               <div className="flex items-center gap-2">
                 <Gift className="h-4 w-4 text-green-500" />
-                <span><strong>+{obterValorBonus('indicacao_cadastro')} Girinhas</strong> quando sua amiga completa o cadastro</span>
+                <span><strong>+5 Girinhas</strong> quando sua amiga se cadastra</span>
               </div>
               <div className="flex items-center gap-2">
                 <Gift className="h-4 w-4 text-blue-500" />
-                <span><strong>+{obterValorBonus('indicacao_primeiro_item')} Girinhas</strong> quando ela publica o primeiro item</span>
+                <span><strong>+5 Girinhas</strong> quando ela publica o primeiro item</span>
               </div>
               <div className="flex items-center gap-2">
                 <Gift className="h-4 w-4 text-purple-500" />
-                <span><strong>+{obterValorBonus('indicacao_primeira_compra')} Girinhas</strong> quando ela faz a primeira reserva confirmada</span>
+                <span><strong>+5 Girinhas</strong> quando ela faz a primeira compra</span>
               </div>
             </div>
           </div>
@@ -111,6 +94,38 @@ const PaginaIndicacoes = () => {
           >
             <Share2 className="h-4 w-4 mr-2" />
             Compartilhar Link de Indicação
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Card de Indicação Manual */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5 text-blue-600" />
+            Indicar por Email
+          </CardTitle>
+          <CardDescription>
+            Se sua amiga já tem conta, indique ela diretamente pelo email
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email da amiga</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="email@exemplo.com"
+              value={emailIndicacao}
+              onChange={(e) => setEmailIndicacao(e.target.value)}
+            />
+          </div>
+          <Button 
+            onClick={handleIndicar}
+            disabled={!emailIndicacao.trim() || enviandoIndicacao}
+            className="w-full"
+          >
+            {enviandoIndicacao ? 'Registrando...' : 'Registrar Indicação'}
           </Button>
         </CardContent>
       </Card>
@@ -137,10 +152,8 @@ const PaginaIndicacoes = () => {
                 <div key={indicacao.id} className="border rounded-lg p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium">{indicacao.profiles?.nome || 'Amiga indicada'}</p>
-                      <p className="text-sm text-gray-500">
-                        Indicada em {new Date(indicacao.created_at).toLocaleDateString()}
-                      </p>
+                      <p className="font-medium">{indicacao.profiles?.nome || 'Nome não disponível'}</p>
+                      <p className="text-sm text-gray-500">{indicacao.profiles?.email}</p>
                     </div>
                     <Badge variant="outline" className="bg-green-50 text-green-700">
                       +{calcularBonusTotal(indicacao)} Girinhas
@@ -158,7 +171,7 @@ const PaginaIndicacoes = () => {
                     </div>
                     <div className={`flex items-center gap-1 ${indicacao.bonus_primeira_compra_pago ? 'text-green-600' : 'text-gray-400'}`}>
                       {indicacao.bonus_primeira_compra_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                      1ª Reserva
+                      1ª Compra
                     </div>
                   </div>
                 </div>
@@ -188,7 +201,7 @@ const PaginaIndicacoes = () => {
                 <div key={indicacao.id} className="border rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium">{indicacao.profiles?.nome || 'Mãe indicadora'}</p>
+                      <p className="font-medium">{indicacao.profiles?.nome || 'Nome não disponível'}</p>
                       <p className="text-sm text-gray-500">Te indicou em {new Date(indicacao.created_at).toLocaleDateString()}</p>
                     </div>
                     <Badge variant="secondary">
