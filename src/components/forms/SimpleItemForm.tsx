@@ -35,12 +35,12 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   const { subcategorias, isLoading: isLoadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: isLoadingTamanhos } = useTiposTamanho(formData.categoria_id);
 
-  console.log('🔍 Debug SimpleItemForm:', {
+  console.log('🔍 Debug SimpleItemForm - Estado completo:', {
     categoria_selecionada: formData.categoria_id,
+    subcategorias_raw: subcategorias,
     subcategorias_total: subcategorias?.length || 0,
-    subcategorias_filtradas: subcategorias?.filter(sub => sub.categoria_pai === formData.categoria_id)?.length || 0,
-    tipos_tamanho: Object.keys(tiposTamanho || {}),
-    tamanhos_primeiro_tipo: Object.values(tiposTamanho || {})[0]?.length || 0
+    tipos_tamanho_raw: tiposTamanho,
+    configuracoes: configuracoes?.map(c => c.categoria)
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -63,19 +63,58 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
 
   const handleTamanhoChange = (valor: string) => {
     console.log('📝 Tamanho alterado para:', valor);
-    const tipoUnico = Object.keys(tiposTamanho)[0];
+    const tipoUnico = Object.keys(tiposTamanho || {})[0];
     onFieldChange('tamanho_categoria', tipoUnico || '');
     onFieldChange('tamanho_valor', valor);
   };
 
-  // Filtrar subcategorias baseado na categoria selecionada
-  const subcategoriasFiltradas = subcategorias?.filter(
-    sub => sub.categoria_pai === formData.categoria_id
-  ) || [];
+  // Filtrar subcategorias - vamos tentar diferentes combinações
+  const subcategoriasFiltradas = React.useMemo(() => {
+    if (!subcategorias || !formData.categoria_id) return [];
+    
+    console.log('🔍 Tentando filtrar subcategorias para categoria:', formData.categoria_id);
+    
+    // Tentar filtrar exatamente como está
+    let filtradas = subcategorias.filter(sub => sub.categoria_pai === formData.categoria_id);
+    
+    // Se não encontrou nada, tentar variações
+    if (filtradas.length === 0) {
+      // Tentar plural/singular
+      const categoriaPlural = formData.categoria_id.endsWith('s') ? formData.categoria_id : formData.categoria_id + 's';
+      const categoriaSingular = formData.categoria_id.endsWith('s') ? formData.categoria_id.slice(0, -1) : formData.categoria_id;
+      
+      filtradas = subcategorias.filter(sub => 
+        sub.categoria_pai === categoriaPlural || 
+        sub.categoria_pai === categoriaSingular
+      );
+      
+      console.log('🔍 Tentativas alternativas:', {
+        original: formData.categoria_id,
+        plural: categoriaPlural,
+        singular: categoriaSingular,
+        encontradas: filtradas.length
+      });
+    }
+    
+    console.log('✅ Subcategorias filtradas:', filtradas);
+    return filtradas;
+  }, [subcategorias, formData.categoria_id]);
 
   // Obter tamanhos do primeiro tipo disponível
-  const tipoUnico = Object.keys(tiposTamanho || {})[0];
-  const tamanhosDisponiveis = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+  const tamanhosDisponiveis = React.useMemo(() => {
+    const tipos = Object.keys(tiposTamanho || {});
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    console.log('🔍 Tamanhos disponíveis:', {
+      tipos_disponiveis: tipos,
+      tipo_selecionado: tipoUnico,
+      tamanhos_count: tamanhos.length,
+      tamanhos: tamanhos
+    });
+    
+    return tamanhos;
+  }, [tiposTamanho]);
 
   const categoriaSelecionada = configuracoes?.find(c => c.categoria === formData.categoria_id);
 
@@ -141,7 +180,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
             <Select 
               value={formData.subcategoria} 
               onValueChange={handleSubcategoriaChange}
-              disabled={isLoadingSubcategorias || subcategoriasFiltradas.length === 0}
+              disabled={isLoadingSubcategorias}
             >
               <SelectTrigger className="w-full mt-2">
                 <SelectValue placeholder={
@@ -160,10 +199,14 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
             </Select>
             {errors.subcategoria && <p className="text-red-500 text-sm mt-1">{errors.subcategoria}</p>}
             
-            {/* Debug info */}
-            <p className="text-xs text-gray-500 mt-1">
-              {subcategoriasFiltradas.length} subcategorias encontradas para "{formData.categoria_id}"
-            </p>
+            {/* Debug info melhorado */}
+            <div className="text-xs text-gray-500 mt-1 space-y-1">
+              <p>{subcategoriasFiltradas.length} subcategorias encontradas para "{formData.categoria_id}"</p>
+              <p>Total de subcategorias carregadas: {subcategorias?.length || 0}</p>
+              {subcategorias && subcategorias.length > 0 && (
+                <p>Categorias pai encontradas: {[...new Set(subcategorias.map(s => s.categoria_pai))].join(', ')}</p>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -183,7 +226,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
             <Select 
               value={formData.tamanho_valor} 
               onValueChange={handleTamanhoChange}
-              disabled={isLoadingTamanhos || tamanhosDisponiveis.length === 0}
+              disabled={isLoadingTamanhos}
             >
               <SelectTrigger className="mt-2">
                 <SelectValue placeholder={
@@ -202,10 +245,11 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
             </Select>
             {errors.tamanho && <p className="text-red-500 text-sm mt-1">{errors.tamanho}</p>}
             
-            {/* Debug info */}
-            <p className="text-xs text-gray-500 mt-1">
-              {tamanhosDisponiveis.length} tamanhos encontrados
-            </p>
+            {/* Debug info melhorado */}
+            <div className="text-xs text-gray-500 mt-1 space-y-1">
+              <p>{tamanhosDisponiveis.length} tamanhos encontrados</p>
+              <p>Tipos disponíveis: {Object.keys(tiposTamanho || {}).join(', ') || 'Nenhum'}</p>
+            </div>
           </div>
 
           {/* Gênero */}

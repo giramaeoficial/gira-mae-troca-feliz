@@ -26,19 +26,51 @@ export const useTamanhosPorCategoria = (categoria?: string) => {
       
       console.log('🔍 Buscando tamanhos para categoria:', categoria);
       
-      const { data, error } = await supabase
+      // Tentar buscar exato primeiro
+      let { data, error } = await supabase
         .from('categorias_tamanhos')
         .select('*')
         .eq('categoria', categoria)
         .eq('ativo', true)
         .order('ordem');
 
+      // Se não encontrou nada, tentar variações
+      if (!data || data.length === 0) {
+        console.log('🔍 Tentando variações para categoria:', categoria);
+        
+        const categoriaPlural = categoria.endsWith('s') ? categoria : categoria + 's';
+        const categoriaSingular = categoria.endsWith('s') ? categoria.slice(0, -1) : categoria;
+        
+        const { data: dataVariacoes, error: errorVariacoes } = await supabase
+          .from('categorias_tamanhos')
+          .select('*')
+          .in('categoria', [categoriaPlural, categoriaSingular])
+          .eq('ativo', true)
+          .order('ordem');
+        
+        data = dataVariacoes;
+        error = errorVariacoes;
+        
+        console.log('🔍 Tentativas de variação:', {
+          original: categoria,
+          plural: categoriaPlural,
+          singular: categoriaSingular,
+          encontrados: data?.length || 0
+        });
+      }
+
       if (error) {
         console.error('❌ Erro ao buscar tamanhos:', error);
         throw error;
       }
 
-      console.log('✅ Tamanhos encontrados:', data?.length || 0, data);
+      console.log('✅ Tamanhos encontrados:', {
+        categoria,
+        total: data?.length || 0,
+        tipos: [...new Set(data?.map(t => t.tipo_tamanho) || [])],
+        dados: data
+      });
+      
       return data || [];
     },
     enabled: !!categoria,
@@ -62,7 +94,11 @@ export const useTiposTamanho = (categoria?: string) => {
   console.log('🔍 Tipos de tamanho agrupados:', {
     categoria,
     tipos: Object.keys(tiposTamanho),
-    total_tamanhos: tamanhos.length
+    total_tamanhos: tamanhos.length,
+    agrupamento: Object.entries(tiposTamanho).map(([tipo, items]) => ({
+      tipo,
+      quantidade: items.length
+    }))
   });
 
   return {

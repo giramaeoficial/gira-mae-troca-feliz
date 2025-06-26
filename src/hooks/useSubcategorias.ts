@@ -29,7 +29,12 @@ export const useSubcategorias = () => {
         throw error;
       }
 
-      console.log('✅ Subcategorias encontradas:', data?.length || 0, data);
+      console.log('✅ Subcategorias encontradas:', {
+        total: data?.length || 0,
+        categorias_pai: [...new Set(data?.map(s => s.categoria_pai) || [])],
+        dados: data
+      });
+      
       return data || [];
     },
     staleTime: 300000, // 5 minutos
