@@ -19,7 +19,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
-import { useTamanhosPorCategoria } from '@/hooks/useTamanhosPorCategoria';
+import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
@@ -43,8 +43,8 @@ const FeedOptimized = () => {
   // Dados dos dropdowns
   const { configuracoes: categorias = [], isLoading: loadingCategorias } = useConfigCategorias();
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
-  const { data: todosTamanhos = [], isLoading: loadingTamanhos } = useTamanhosPorCategoria(categoria !== 'todas' ? categoria : undefined);
-  
+  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria !== 'todas' ? categoria : undefined);
+
   // Debug logs para verificar os dados
   console.log('🔍 Debug FeedOptimized:', {
     categoria,
@@ -53,27 +53,45 @@ const FeedOptimized = () => {
     genero,
     categorias: categorias.length,
     todasSubcategorias: todasSubcategorias.length,
-    todosTamanhos: todosTamanhos.length,
+    tiposTamanho: Object.keys(tiposTamanho || {}).length,
     loadingCategorias,
     loadingSubcategorias,
     loadingTamanhos
   });
 
   // Filtrar subcategorias baseado na categoria selecionada
-  const subcategoriasFiltradas = categoria !== 'todas' 
-    ? todasSubcategorias.filter(sub => {
-        // Tentar diferentes variações do nome da categoria
-        const categoriaNormalizada = categoria.toLowerCase();
-        const categoriaPaiNormalizada = sub.categoria_pai.toLowerCase();
-        
-        return categoriaPaiNormalizada === categoriaNormalizada ||
-               categoriaPaiNormalizada === categoriaNormalizada + 's' ||
-               categoriaPaiNormalizada === categoriaNormalizada.slice(0, -1);
-      })
-    : [];
+  const subcategoriasFiltradas = React.useMemo(() => {
+    if (!todasSubcategorias || categoria === 'todas') return [];
+    
+    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
+    
+    // Remover duplicatas baseado no nome
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    return subcategoriasUnicas;
+  }, [todasSubcategorias, categoria]);
 
-  // Filtrar tamanhos baseado na categoria selecionada
-  const tamanhosFiltrados = categoria !== 'todas' ? todosTamanhos : [];
+  // Obter tamanhos do primeiro tipo disponível sem duplicação
+  const tamanhosDisponiveis = React.useMemo(() => {
+    const tipos = Object.keys(tiposTamanho || {});
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    // Remover duplicatas baseado no valor
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  }, [tiposTamanho]);
 
   // Debug para subcategorias
   console.log('🔍 Debug Subcategorias:', {
@@ -85,8 +103,8 @@ const FeedOptimized = () => {
   // Debug para tamanhos
   console.log('🔍 Debug Tamanhos:', {
     categoria,
-    tamanhosFiltrados: tamanhosFiltrados.length,
-    exemplos: tamanhosFiltrados.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display }))
+    tamanhosDisponiveis: tamanhosDisponiveis.length,
+    exemplos: tamanhosDisponiveis.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display }))
   });
 
   const debouncedBusca = useDebounce(busca, 500);
@@ -156,6 +174,10 @@ const FeedOptimized = () => {
     setCategoria(novaCategoria);
     setSubcategoria('todas'); // Reset subcategoria
     setTamanho('todos'); // Reset tamanho
+  };
+
+  const handleTamanhoChange = (valor: string) => {
+    setTamanho(valor);
   };
 
   if (!user) {
@@ -277,14 +299,17 @@ const FeedOptimized = () => {
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
                       <SelectItem value="todas">Todas</SelectItem>
                       {loadingCategorias ? (
                         <SelectItem value="loading" disabled>Carregando...</SelectItem>
                       ) : (
                         categorias.map((cat) => (
-                          <SelectItem key={cat.codigo} value={cat.nome}>
-                            {cat.nome}
+                          <SelectItem key={cat.codigo} value={cat.codigo}>
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm">{cat.icone}</span>
+                              {cat.nome}
+                            </span>
                           </SelectItem>
                         ))
                       )}
@@ -302,7 +327,7 @@ const FeedOptimized = () => {
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
                       <SelectItem value="todas">Todas</SelectItem>
                       {loadingSubcategorias ? (
                         <SelectItem value="loading" disabled>Carregando...</SelectItem>
@@ -311,7 +336,10 @@ const FeedOptimized = () => {
                       ) : (
                         subcategoriasFiltradas.map((sub) => (
                           <SelectItem key={sub.id} value={sub.nome}>
-                            {sub.nome}
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm">{sub.icone}</span>
+                              {sub.nome}
+                            </span>
                           </SelectItem>
                         ))
                       )}
@@ -328,33 +356,52 @@ const FeedOptimized = () => {
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg z-50">
                       <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="menino">Menino</SelectItem>
-                      <SelectItem value="menina">Menina</SelectItem>
-                      <SelectItem value="unissex">Unissex</SelectItem>
+                      <SelectItem value="menino">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👦</span>
+                          Menino
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="menina">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👧</span>
+                          Menina
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="unissex">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👶</span>
+                          Unissex
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">TAMANHO</h3>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                    {categoria === 'calcados' ? 'NÚMERO' : 
+                     categoria === 'brinquedos' ? 'IDADE' : 
+                     categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
+                  </h3>
                   <Select 
                     value={tamanho} 
-                    onValueChange={setTamanho}
+                    onValueChange={handleTamanhoChange}
                     disabled={categoria === 'todas' || loadingTamanhos}
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
                       <SelectItem value="todos">Todos</SelectItem>
                       {loadingTamanhos ? (
                         <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                      ) : tamanhosFiltrados.length === 0 ? (
+                      ) : tamanhosDisponiveis.length === 0 ? (
                         <SelectItem value="none" disabled>Nenhum tamanho encontrado</SelectItem>
                       ) : (
-                        tamanhosFiltrados.map((tam) => (
+                        tamanhosDisponiveis.map((tam) => (
                           <SelectItem key={tam.id} value={tam.valor}>
                             {tam.label_display}
                           </SelectItem>
