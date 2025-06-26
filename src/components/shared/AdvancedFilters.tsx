@@ -35,6 +35,8 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
       busca: '',
       categoria: 'todas',
       subcategoria: '',
+      genero: 'todos',
+      tamanho: 'todos',
       ordem: 'recentes',
       mesmaEscola: false,
       mesmoBairro: false,
@@ -78,11 +80,15 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
           categoria={filters.categoria}
           ordem={filters.ordem}
           subcategoria={filters.subcategoria}
+          genero={filters.genero}
+          tamanho={filters.tamanho}
           categorias={categorias}
           subcategorias={subcategorias}
           onCategoriaChange={(value) => updateFilter('categoria', value)}
           onOrdemChange={(value) => updateFilter('ordem', value)}
           onSubcategoriaChange={(value) => updateFilter('subcategoria', value === "todas_sub" ? '' : value)}
+          onGeneroChange={(value) => updateFilter('genero', value)}
+          onTamanhoChange={(value) => updateFilter('tamanho', value)}
         />
 
         <LocationFilter

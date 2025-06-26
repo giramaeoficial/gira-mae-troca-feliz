@@ -117,13 +117,21 @@ const Feed = () => {
         
         const matchCategoria = filters.categoria === 'todas' || item.categoria === filters.categoria;
         
-        // Fix: Safely check subcategoria property using type assertion
         const matchSubcategoria = !filters.subcategoria || 
             ((item as any).subcategoria && (item as any).subcategoria === filters.subcategoria);
         
+        const matchGenero = filters.genero === 'todos' || item.genero === filters.genero;
+        
+        const matchTamanho = filters.tamanho === 'todos' || item.tamanho_valor === filters.tamanho;
+        
         const matchPreco = item.valor_girinhas >= filters.precoMin && item.valor_girinhas <= filters.precoMax;
         
-        return matchBusca && matchCategoria && matchSubcategoria && matchPreco;
+        // Location filter
+        const matchLocation = !filters.location || 
+            (item.publicado_por_profile?.cidade && 
+             item.publicado_por_profile.cidade.toLowerCase().includes(filters.location.cidade.toLowerCase()));
+        
+        return matchBusca && matchCategoria && matchSubcategoria && matchGenero && matchTamanho && matchPreco && matchLocation;
     }).sort((a, b) => {
         if (filters.ordem === "recentes") {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();

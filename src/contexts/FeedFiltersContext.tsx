@@ -5,6 +5,8 @@ export interface FeedFilters {
   busca: string;
   categoria: string;
   subcategoria: string;
+  genero: string;
+  tamanho: string;
   ordem: string;
   mesmaEscola: boolean;
   mesmoBairro: boolean;
@@ -12,7 +14,7 @@ export interface FeedFilters {
   apenasFavoritos: boolean;
   apenasSeguidoras: boolean;
   location: { estado: string; cidade: string; bairro?: string } | null;
-  locationDetected: boolean; // Nova propriedade para distinguir localização automática vs manual
+  locationDetected: boolean;
   precoMin: number;
   precoMax: number;
 }
@@ -30,6 +32,8 @@ const defaultFilters: FeedFilters = {
   busca: '',
   categoria: 'todas',
   subcategoria: '',
+  genero: 'todos',
+  tamanho: 'todos',
   ordem: 'recentes',
   mesmaEscola: false,
   mesmoBairro: false,
@@ -76,6 +80,8 @@ export const FeedFiltersProvider: React.FC<{ children: ReactNode }> = ({ childre
     if (filters.apenasSeguidoras) count++;
     if (filters.categoria !== 'todas') count++;
     if (filters.subcategoria) count++;
+    if (filters.genero !== 'todos') count++;
+    if (filters.tamanho !== 'todos') count++;
     if (filters.location) count++;
     if (filters.precoMin > 0 || filters.precoMax < 200) count++;
     return count;
