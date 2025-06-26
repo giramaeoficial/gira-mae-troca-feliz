@@ -10,12 +10,15 @@ export interface Item {
   titulo: string;
   descricao: string;
   categoria: string;
+  subcategoria: string;
+  genero: string;
+  tamanho_categoria: string;
+  tamanho_valor: string;
   estado_conservacao: string;
-  tamanho?: string;
   valor_girinhas: number;
   publicado_por: string;
   status: string;
-  fotos?: string[];
+  fotos: string[];
   created_at: string;
   updated_at: string;
   filho_id?: string;
