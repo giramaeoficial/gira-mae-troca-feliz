@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { useFeedFilters } from '@/contexts/FeedFiltersContext';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
+import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 import { FiltersHeader } from '@/components/filters/FiltersHeader';
 import { SearchBar } from '@/components/filters/SearchBar';
 import { BasicFilters } from '@/components/filters/BasicFilters';
@@ -18,6 +18,8 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
   const { filters, updateFilter, updateFilters, getActiveFiltersCount, setLocationDetected } = useFeedFilters();
   const { configuracoes } = useConfigCategorias();
   const { subcategorias: allSubcategorias } = useSubcategorias();
+  // ✅ ADICIONADO: Hook para buscar tamanhos baseado na categoria
+  const { tiposTamanho } = useTiposTamanho(filters.categoria !== 'todas' ? filters.categoria : undefined);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleSearch = () => {
@@ -35,8 +37,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
       busca: '',
       categoria: 'todas',
       subcategoria: '',
-      genero: 'todos',
-      tamanho: 'todos',
       ordem: 'recentes',
       mesmaEscola: false,
       mesmoBairro: false,
@@ -45,6 +45,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
       apenasSeguidoras: false,
       precoMin: 0,
       precoMax: 200,
+      // ✅ ADICIONADO: Reset para gênero e tamanho
+      genero: 'todos',
+      tamanho: 'todos',
     });
   };
 
@@ -59,6 +62,30 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
   const subcategorias = filters.categoria !== 'todas' 
     ? allSubcategorias.filter(sub => sub.categoria_pai === filters.categoria).map(sub => sub.nome)
     : [];
+
+  // ✅ ADICIONADO: Obter tamanhos disponíveis
+  const tamanhosDisponiveis = React.useMemo(() => {
+    const tipos = Object.keys(tiposTamanho || {});
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    // Remover duplicatas baseado no valor
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  }, [tiposTamanho]);
+
+  // ✅ ADICIONADO: Reset tamanho quando categoria muda
+  React.useEffect(() => {
+    if (filters.categoria === 'todas') {
+      updateFilter('tamanho', 'todos');
+    }
+  }, [filters.categoria, updateFilter]);
 
   const activeFiltersCount = getActiveFiltersCount();
 
@@ -80,13 +107,17 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
           categoria={filters.categoria}
           ordem={filters.ordem}
           subcategoria={filters.subcategoria}
+          // ✅ ADICIONADO: Props para gênero e tamanho
           genero={filters.genero}
           tamanho={filters.tamanho}
           categorias={categorias}
           subcategorias={subcategorias}
+          // ✅ ADICIONADO: Tamanhos disponíveis
+          tamanhosDisponiveis={tamanhosDisponiveis}
           onCategoriaChange={(value) => updateFilter('categoria', value)}
           onOrdemChange={(value) => updateFilter('ordem', value)}
           onSubcategoriaChange={(value) => updateFilter('subcategoria', value === "todas_sub" ? '' : value)}
+          // ✅ ADICIONADO: Handlers para gênero e tamanho
           onGeneroChange={(value) => updateFilter('genero', value)}
           onTamanhoChange={(value) => updateFilter('tamanho', value)}
         />
