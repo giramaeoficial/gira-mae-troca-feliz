@@ -271,6 +271,45 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias: {
+        Row: {
+          ativo: boolean | null
+          codigo: string
+          created_at: string | null
+          descricao: string | null
+          icone: string | null
+          nome: string
+          ordem: number | null
+          updated_at: string | null
+          valor_maximo: number | null
+          valor_minimo: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo: string
+          created_at?: string | null
+          descricao?: string | null
+          icone?: string | null
+          nome: string
+          ordem?: number | null
+          updated_at?: string | null
+          valor_maximo?: number | null
+          valor_minimo?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo?: string
+          created_at?: string | null
+          descricao?: string | null
+          icone?: string | null
+          nome?: string
+          ordem?: number | null
+          updated_at?: string | null
+          valor_maximo?: number | null
+          valor_minimo?: number | null
+        }
+        Relationships: []
+      }
       categorias_tamanhos: {
         Row: {
           ativo: boolean | null
@@ -311,7 +350,15 @@ export type Database = {
           tipo_tamanho?: string
           valor?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_categorias_tamanhos_categoria"
+            columns: ["categoria"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       compras_girinhas: {
         Row: {
@@ -352,39 +399,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valor_pago?: number
-        }
-        Relationships: []
-      }
-      config_categorias: {
-        Row: {
-          ativo: boolean
-          categoria: string
-          created_at: string
-          descricao: string | null
-          id: string
-          updated_at: string
-          valor_maximo: number
-          valor_minimo: number
-        }
-        Insert: {
-          ativo?: boolean
-          categoria: string
-          created_at?: string
-          descricao?: string | null
-          id?: string
-          updated_at?: string
-          valor_maximo?: number
-          valor_minimo?: number
-        }
-        Update: {
-          ativo?: boolean
-          categoria?: string
-          created_at?: string
-          descricao?: string | null
-          id?: string
-          updated_at?: string
-          valor_maximo?: number
-          valor_minimo?: number
         }
         Relationships: []
       }
@@ -569,6 +583,30 @@ export type Database = {
           restricao_de_atendimento?: string | null
           telefone?: string | null
           uf?: string | null
+        }
+        Relationships: []
+      }
+      estados_conservacao: {
+        Row: {
+          ativo: boolean | null
+          codigo: string
+          descricao: string | null
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo: string
+          descricao?: string | null
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo?: string
+          descricao?: string | null
+          nome?: string
+          ordem?: number | null
         }
         Relationships: []
       }
@@ -762,6 +800,27 @@ export type Database = {
           },
         ]
       }
+      generos: {
+        Row: {
+          ativo: boolean | null
+          codigo: string
+          icone: string | null
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo: string
+          icone?: string | null
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo?: string
+          icone?: string | null
+          nome?: string
+        }
+        Relationships: []
+      }
       indicacoes: {
         Row: {
           bonus_cadastro_pago: boolean | null
@@ -872,6 +931,27 @@ export type Database = {
           valor_girinhas?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_itens_categoria"
+            columns: ["categoria"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_estado_conservacao"
+            columns: ["estado_conservacao"]
+            isOneToOne: false
+            referencedRelation: "estados_conservacao"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_genero"
+            columns: ["genero"]
+            isOneToOne: false
+            referencedRelation: "generos"
+            referencedColumns: ["codigo"]
+          },
           {
             foreignKeyName: "itens_publicado_por_fkey"
             columns: ["publicado_por"]
@@ -1573,40 +1653,15 @@ export type Database = {
           nome?: string
           ordem?: number | null
         }
-        Relationships: []
-      }
-      subcategorias_itens: {
-        Row: {
-          ativo: boolean | null
-          categoria_pai: string
-          created_at: string | null
-          icone: string | null
-          id: string
-          nome: string
-          ordem: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          categoria_pai: string
-          created_at?: string | null
-          icone?: string | null
-          id?: string
-          nome: string
-          ordem?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          ativo?: boolean | null
-          categoria_pai?: string
-          created_at?: string | null
-          icone?: string | null
-          id?: string
-          nome?: string
-          ordem?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_subcategorias_categoria"
+            columns: ["categoria_pai"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       templates_segmentacao: {
         Row: {
@@ -1964,6 +2019,27 @@ export type Database = {
           vendedor_telefone: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_itens_categoria"
+            columns: ["categoria"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_estado_conservacao"
+            columns: ["estado_conservacao"]
+            isOneToOne: false
+            referencedRelation: "estados_conservacao"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_genero"
+            columns: ["genero"]
+            isOneToOne: false
+            referencedRelation: "generos"
+            referencedColumns: ["codigo"]
+          },
           {
             foreignKeyName: "itens_publicado_por_fkey"
             columns: ["publicado_por"]

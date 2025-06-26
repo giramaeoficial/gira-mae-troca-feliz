@@ -5,17 +5,20 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ConfigCategoria {
   id: string;
-  categoria: string;
+  codigo: string;
+  nome: string;
+  icone: string;
   valor_minimo: number;
   valor_maximo: number;
   descricao: string;
   ativo: boolean;
+  ordem: number;
   created_at: string;
   updated_at: string;
 }
 
 interface AtualizarConfigCategoria {
-  categoria: string;
+  codigo: string;
   valor_minimo: number;
   valor_maximo: number;
   descricao?: string;
@@ -31,9 +34,9 @@ export const useConfigCategorias = () => {
     queryKey: ['config-categorias'],
     queryFn: async (): Promise<ConfigCategoria[]> => {
       const { data, error } = await supabase
-        .from('config_categorias')
+        .from('categorias')
         .select('*')
-        .order('categoria');
+        .order('ordem');
 
       if (error) throw error;
       return data || [];
@@ -42,15 +45,15 @@ export const useConfigCategorias = () => {
   });
 
   // Query para buscar configuração de uma categoria específica
-  const getConfigCategoria = (categoria: string) => {
-    return configuracoes?.find(config => config.categoria === categoria);
+  const getConfigCategoria = (codigo: string) => {
+    return configuracoes?.find(config => config.codigo === codigo);
   };
 
   // Mutation para atualizar configuração
   const atualizarConfigMutation = useMutation({
     mutationFn: async (dados: AtualizarConfigCategoria) => {
       const { data, error } = await supabase
-        .from('config_categorias')
+        .from('categorias')
         .update({
           valor_minimo: dados.valor_minimo,
           valor_maximo: dados.valor_maximo,
@@ -58,7 +61,7 @@ export const useConfigCategorias = () => {
           ativo: dados.ativo,
           updated_at: new Date().toISOString()
         })
-        .eq('categoria', dados.categoria)
+        .eq('codigo', dados.codigo)
         .select()
         .single();
 
@@ -82,8 +85,8 @@ export const useConfigCategorias = () => {
   });
 
   // Função para validar se um valor está dentro da faixa permitida
-  const validarValorCategoria = (categoria: string, valor: number): { valido: boolean; mensagem?: string } => {
-    const config = getConfigCategoria(categoria);
+  const validarValorCategoria = (codigo: string, valor: number): { valido: boolean; mensagem?: string } => {
+    const config = getConfigCategoria(codigo);
     
     if (!config || !config.ativo) {
       return { valido: true };
@@ -92,14 +95,14 @@ export const useConfigCategorias = () => {
     if (valor < config.valor_minimo) {
       return {
         valido: false,
-        mensagem: `Valor mínimo para ${categoria}: ${config.valor_minimo} Girinhas`
+        mensagem: `Valor mínimo para ${config.nome}: ${config.valor_minimo} Girinhas`
       };
     }
 
     if (valor > config.valor_maximo) {
       return {
         valido: false,
-        mensagem: `Valor máximo para ${categoria}: ${config.valor_maximo} Girinhas`
+        mensagem: `Valor máximo para ${config.nome}: ${config.valor_maximo} Girinhas`
       };
     }
 
@@ -107,8 +110,8 @@ export const useConfigCategorias = () => {
   };
 
   // Função para obter faixa de valores de uma categoria
-  const getFaixaValores = (categoria: string) => {
-    const config = getConfigCategoria(categoria);
+  const getFaixaValores = (codigo: string) => {
+    const config = getConfigCategoria(codigo);
     return config ? {
       minimo: config.valor_minimo,
       maximo: config.valor_maximo,

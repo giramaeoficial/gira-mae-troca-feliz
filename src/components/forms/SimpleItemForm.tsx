@@ -35,21 +35,12 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   const { subcategorias, isLoading: isLoadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: isLoadingTamanhos } = useTiposTamanho(formData.categoria_id);
 
-  console.log('🔍 Debug SimpleItemForm - Estado completo:', {
-    categoria_selecionada: formData.categoria_id,
-    subcategorias_raw: subcategorias,
-    subcategorias_total: subcategorias?.length || 0,
-    tipos_tamanho_raw: tiposTamanho,
-    configuracoes: configuracoes?.map(c => c.categoria)
-  });
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     onFieldChange(name, value);
   };
 
   const handleCategoriaChange = (categoria: string) => {
-    console.log('📝 Categoria alterada para:', categoria);
     onFieldChange('categoria_id', categoria);
     onFieldChange('subcategoria', '');
     onFieldChange('tamanho_categoria', '');
@@ -57,12 +48,10 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   };
 
   const handleSubcategoriaChange = (subcategoria: string) => {
-    console.log('📝 Subcategoria alterada para:', subcategoria);
     onFieldChange('subcategoria', subcategoria);
   };
 
   const handleTamanhoChange = (valor: string) => {
-    console.log('📝 Tamanho alterado para:', valor);
     const tipoUnico = Object.keys(tiposTamanho || {})[0];
     onFieldChange('tamanho_categoria', tipoUnico || '');
     onFieldChange('tamanho_valor', valor);
@@ -72,29 +61,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   const subcategoriasFiltradas = React.useMemo(() => {
     if (!subcategorias || !formData.categoria_id) return [];
     
-    console.log('🔍 Tentando filtrar subcategorias para categoria:', formData.categoria_id);
-    
-    // Tentar filtrar exatamente como está
-    let filtradas = subcategorias.filter(sub => sub.categoria_pai === formData.categoria_id);
-    
-    // Se não encontrou nada, tentar variações
-    if (filtradas.length === 0) {
-      // Tentar plural/singular
-      const categoriaPlural = formData.categoria_id.endsWith('s') ? formData.categoria_id : formData.categoria_id + 's';
-      const categoriaSingular = formData.categoria_id.endsWith('s') ? formData.categoria_id.slice(0, -1) : formData.categoria_id;
-      
-      filtradas = subcategorias.filter(sub => 
-        sub.categoria_pai === categoriaPlural || 
-        sub.categoria_pai === categoriaSingular
-      );
-      
-      console.log('🔍 Tentativas alternativas:', {
-        original: formData.categoria_id,
-        plural: categoriaPlural,
-        singular: categoriaSingular,
-        encontradas: filtradas.length
-      });
-    }
+    const filtradas = subcategorias.filter(sub => sub.categoria_pai === formData.categoria_id);
     
     // Remover duplicatas baseado no nome
     const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
@@ -104,7 +71,6 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
       return acc;
     }, [] as typeof filtradas);
     
-    console.log('✅ Subcategorias filtradas (sem duplicatas):', subcategoriasUnicas);
     return subcategoriasUnicas;
   }, [subcategorias, formData.categoria_id]);
 
@@ -122,17 +88,10 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
       return acc;
     }, [] as typeof tamanhos);
     
-    console.log('🔍 Tamanhos disponíveis (sem duplicatas):', {
-      tipos_disponiveis: tipos,
-      tipo_selecionado: tipoUnico,
-      tamanhos_count: tamanhosUnicos.length,
-      tamanhos: tamanhosUnicos
-    });
-    
     return tamanhosUnicos;
   }, [tiposTamanho]);
 
-  const categoriaSelecionada = configuracoes?.find(c => c.categoria === formData.categoria_id);
+  const categoriaSelecionada = configuracoes?.find(c => c.codigo === formData.categoria_id);
 
   return (
     <div className="space-y-6">
@@ -170,14 +129,8 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
           </SelectTrigger>
           <SelectContent>
             {configuracoes?.map(config => (
-              <SelectItem key={config.id} value={config.categoria}>
-                {config.categoria === 'roupas' && '👕 '}
-                {config.categoria === 'calcados' && '👟 '}
-                {config.categoria === 'brinquedos' && '🧸 '}
-                {config.categoria === 'livros' && '📚 '}
-                {config.categoria === 'equipamentos' && '🍼 '}
-                {config.categoria === 'acessorios' && '🎒 '}
-                {config.categoria.charAt(0).toUpperCase() + config.categoria.slice(1)}
+              <SelectItem key={config.id} value={config.codigo}>
+                {config.icone} {config.nome}
               </SelectItem>
             ))}
           </SelectContent>
@@ -217,9 +170,9 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
         {/* Tamanho/Idade */}
         <div>
           <Label className="text-base font-medium">
-            📏 {formData.categoria_id === 'calcados' ? 'Número' : 
-               formData.categoria_id === 'brinquedos' ? 'Idade' : 
-               formData.categoria_id === 'livros' ? 'Faixa Etária' : 'Tamanho'}
+            📏 {formData.categoria_id === 'calcado' ? 'Número' : 
+               formData.categoria_id === 'brinquedo' ? 'Idade' : 
+               formData.categoria_id === 'livro' ? 'Faixa Etária' : 'Tamanho'}
           </Label>
           <Select 
             value={formData.tamanho_valor} 
@@ -272,7 +225,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
             <SelectItem value="novo">✨ Novo</SelectItem>
             <SelectItem value="seminovo">⭐ Seminovo</SelectItem>
             <SelectItem value="usado">👍 Usado</SelectItem>
-            <SelectItem value="muito usado">🔄 Muito Usado</SelectItem>
+            <SelectItem value="muito_usado">🔄 Muito Usado</SelectItem>
           </SelectContent>
         </Select>
         {errors.estado_conservacao && <p className="text-red-500 text-sm mt-1">{errors.estado_conservacao}</p>}

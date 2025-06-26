@@ -22,7 +22,7 @@ const ConfigCategorias: React.FC = () => {
   });
 
   const handleEditar = (config: any) => {
-    setEditando(config.categoria);
+    setEditando(config.codigo);
     setFormData({
       valor_minimo: config.valor_minimo,
       valor_maximo: config.valor_maximo,
@@ -40,7 +40,7 @@ const ConfigCategorias: React.FC = () => {
     }
 
     atualizarConfig({
-      categoria: editando,
+      codigo: editando,
       valor_minimo: formData.valor_minimo,
       valor_maximo: formData.valor_maximo,
       descricao: formData.descricao,
@@ -48,19 +48,6 @@ const ConfigCategorias: React.FC = () => {
     });
 
     setEditando(null);
-  };
-
-  const formatarCategoria = (categoria: string) => {
-    const nomes: Record<string, string> = {
-      'roupa': 'Roupas',
-      'calcado': 'Calçados',
-      'brinquedo': 'Brinquedos',
-      'livro': 'Livros',
-      'acessorio': 'Acessórios',
-      'utensilio': 'Utensílios',
-      'outro': 'Outros'
-    };
-    return nomes[categoria] || categoria;
   };
 
   if (isLoading) {
@@ -97,20 +84,20 @@ const ConfigCategorias: React.FC = () => {
 
           <div className="grid gap-4">
             {configuracoes?.map((config) => (
-              <Card key={config.categoria} className="border-l-4 border-l-primary">
+              <Card key={config.codigo} className="border-l-4 border-l-primary">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">
-                          {formatarCategoria(config.categoria)}
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                          {config.icone} {config.nome}
                         </h3>
                         <Badge variant={config.ativo ? "default" : "secondary"}>
                           {config.ativo ? "Ativo" : "Inativo"}
                         </Badge>
                       </div>
 
-                      {editando === config.categoria ? (
+                      {editando === config.codigo ? (
                         <div className="space-y-4">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
