@@ -26,53 +26,50 @@ export const useItensProximos = ({ location, filters = {} }: UseItensProximosPar
         .from('itens')
         .select(`
           *,
-          publicado_por_profile:profiles!publicado_por(nome, bairro, cidade, avatar_url, reputacao),
-          escolas_inep!escola_id(escola)
+          publicado_por_profile:profiles!publicado_por(nome, bairro, cidade, avatar_url, reputacao)
         `)
         .eq('status', 'disponivel')
         .neq('publicado_por', user?.id || '');
 
-      // FILTRO 1: Localização (priorizar cidade do usuário)
-      if (location?.cidade) {
-        query = query.eq('endereco_cidade', location.cidade);
-      } else if (profile?.cidade) {
-        query = query.eq('endereco_cidade', profile.cidade);
-      }
-
-      if (location?.estado && !location?.cidade) {
-        query = query.eq('endereco_estado', location.estado);
-      }
-
-      // FILTRO 2: Mesmo bairro (quando selecionado)
-      if (filters.mesmoBairro && profile?.bairro) {
-        query = query.eq('endereco_bairro', profile.bairro);
-      }
-
-      // FILTRO 3: Mesma escola dos filhos
-      if (filters.mesmaEscola) {
-        // Buscar escolas dos filhos do usuário
-        const { data: filhos } = await supabase
-          .from('filhos')
-          .select('escola_id')
-          .eq('mae_id', user?.id || '')
-          .not('escola_id', 'is', null);
-
-        const escolasFilhos = filhos?.map(f => f.escola_id).filter(Boolean);
-        
-        if (escolasFilhos && escolasFilhos.length > 0) {
-          query = query.in('escola_id', escolasFilhos);
-        } else {
-          // Se não tem filhos com escola, retornar array vazio
-          return [];
-        }
-      }
-
-      // FILTRO 4: Categoria
+      // FILTRO 1: Categoria
       if (filters.categoria && filters.categoria !== 'todas') {
         query = query.eq('categoria', filters.categoria);
       }
 
-      // FILTRO 5: Para os meus filhos (tamanhos compatíveis)
+      // FILTRO 2: Mesmo bairro (quando selecionado)
+      if (filters.mesmoBairro && profile?.bairro) {
+        // Buscar primeiro os IDs dos usuários do mesmo bairro
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('bairro', profile.bairro);
+
+        const userIds = profilesData?.map(p => p.id) || [];
+        
+        if (userIds.length > 0) {
+          query = query.in('publicado_por', userIds);
+        } else {
+          return [];
+        }
+      } else if (location?.cidade || profile?.cidade) {
+        // FILTRO 3: Localização por cidade
+        const cidadeAlvo = location?.cidade || profile?.cidade;
+        
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('cidade', cidadeAlvo);
+
+        const userIds = profilesData?.map(p => p.id) || [];
+        
+        if (userIds.length > 0) {
+          query = query.in('publicado_por', userIds);
+        } else {
+          return [];
+        }
+      }
+
+      // FILTRO 4: Para os meus filhos (tamanhos compatíveis)
       if (filters.paraFilhos) {
         const { data: filhos } = await supabase
           .from('filhos')
@@ -85,7 +82,7 @@ export const useItensProximos = ({ location, filters = {} }: UseItensProximosPar
         ]).filter(Boolean);
 
         if (tamanhos && tamanhos.length > 0) {
-          query = query.in('tamanho', tamanhos);
+          query = query.in('tamanho_valor', tamanhos);
         }
       }
 

@@ -44,36 +44,37 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
         const favoritosIds = favoritos.map(fav => fav.item_id);
         console.log('❤️ Buscando itens favoritos:', favoritosIds);
 
-        let query = supabase
+        const { data, error } = await supabase
           .from('itens')
           .select(`
             *,
-            publicado_por_profile:profiles!publicado_por(*),
-            escolas_inep!escola_id(*)
+            publicado_por_profile:profiles!publicado_por(*)
           `)
           .in('id', favoritosIds)
           .eq('status', 'disponivel');
 
+        if (error) throw error;
+
+        let itensFiltrados = data || [];
+
         // Aplicar filtros adicionais
         if (filtros.categoria && filtros.categoria !== 'todas') {
-          query = query.eq('categoria', filtros.categoria);
+          itensFiltrados = itensFiltrados.filter(item => item.categoria === filtros.categoria);
         }
 
         // Ordenação
-        switch (filtros.ordem) {
-          case 'menor-preco':
-            query = query.order('valor_girinhas', { ascending: true });
-            break;
-          case 'maior-preco':
-            query = query.order('valor_girinhas', { ascending: false });
-            break;
-          default:
-            query = query.order('created_at', { ascending: false });
-        }
+        itensFiltrados.sort((a, b) => {
+          switch (filtros.ordem) {
+            case 'menor-preco':
+              return a.valor_girinhas - b.valor_girinhas;
+            case 'maior-preco':
+              return b.valor_girinhas - a.valor_girinhas;
+            default:
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+        });
 
-        const { data, error } = await query;
-        if (error) throw error;
-        return data || [];
+        return itensFiltrados;
       }
 
       // Se é apenas das seguidas
@@ -116,24 +117,10 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
         .from('itens')
         .select(`
           *,
-          publicado_por_profile:profiles!publicado_por(*),
-          escolas_inep!escola_id(*)
+          publicado_por_profile:profiles!publicado_por(*)
         `)
         .eq('status', 'disponivel')
         .neq('publicado_por', user.id);
-
-      // Filtro por localização
-      if (filtros.location?.estado) {
-        query = query.eq('endereco_estado', filtros.location.estado);
-      }
-      if (filtros.location?.cidade) {
-        query = query.eq('endereco_cidade', filtros.location.cidade);
-      }
-
-      // Filtro mesmo bairro
-      if (filtros.mesmoBairro && filtros.location?.bairro) {
-        query = query.eq('endereco_bairro', filtros.location.bairro);
-      }
 
       // Filtro por categoria
       if (filtros.categoria && filtros.categoria !== 'todas') {
@@ -144,16 +131,6 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
       if (filtros.busca) {
         query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
       }
-
-      // Filtro mesma escola - usando função SQL que já existe
-      if (filtros.mesmaEscola) {
-        // Esta funcionalidade precisa ser implementada via função SQL personalizada
-        // que relaciona os filhos das mães através da tabela 'filhos'
-        console.log('🏫 Filtro mesma escola aplicado');
-      }
-
-      // Filtro para filhos (se implementado no futuro)
-      // Este filtro precisaria de lógica adicional baseada na idade dos filhos, etc.
 
       // Ordenação
       switch (filtros.ordem) {
