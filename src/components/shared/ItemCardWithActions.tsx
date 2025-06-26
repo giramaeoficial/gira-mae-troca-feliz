@@ -7,28 +7,10 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { MoreVertical, Edit, Eye, EyeOff, Trash2, Sparkles } from 'lucide-react';
-import { useAtualizarItem } from '@/hooks/useItensOptimized';
+import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
 import { toast } from '@/components/ui/use-toast';
 import LazyImage from '@/components/ui/lazy-image';
 import EditarItem from '@/components/perfil/EditarItem';
-
-interface Item {
-  id: string;
-  titulo: string;
-  descricao: string;
-  categoria: string;
-  subcategoria?: string;
-  estado_conservacao: string;
-  tamanho_valor?: string;
-  tamanho_categoria?: string;
-  genero?: string;
-  valor_girinhas: number;
-  publicado_por: string;
-  status: string;
-  fotos: string[];
-  created_at: string;
-  updated_at: string;
-}
 
 interface ItemCardWithActionsProps {
   item: Item;
