@@ -27,7 +27,6 @@ type Escola = Tables<'escolas_inep'>;
 
 const Feed = () => {
     const [location, setLocation] = useState<{ estado: string; cidade: string } | null>(null);
-    const [shouldSearch, setShouldSearch] = useState(false);
     
     const { user } = useAuth();
     const { itens, loading, error, refetch } = useItens();
@@ -37,7 +36,11 @@ const Feed = () => {
     const { saldo } = useCarteira();
     const { filters, updateFilters } = useFeedFilters();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
-    const [filasInfo, setFilasInfo] = useActionState<Record<string, any>>({});
+
+    // Carregar itens ao montar o componente
+    useEffect(() => {
+        refetch();
+    }, [refetch]);
 
     const handleEntrarFila = async (itemId: string) => {
         setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
@@ -46,8 +49,6 @@ const Feed = () => {
             const sucesso = await entrarNaFila(itemId);
             if (sucesso) {
                 setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
-                const filaInfo = await obterFilaItem(itemId);
-                setFilasInfo(prev => ({ ...prev, [itemId]: filaInfo }));
             } else {
                 setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
             }
@@ -66,11 +67,11 @@ const Feed = () => {
         updateFilters(novosFiltros);
     };
 
-    // Apply filters to items - convert tamanho string to object for compatibility
+    // Aplicar filtros aos itens
     const filteredItens = itens.filter(item => {
         const matchBusca = !filters.busca || 
             item.titulo.toLowerCase().includes(filters.busca.toLowerCase()) ||
-            item.descricao.toLowerCase().includes(filters.busca.toLowerCase());
+            item.descricao.toLowerCase().includes(filters.descricao.toLowerCase());
         
         const matchCategoria = filters.categoria === 'todas' || item.categoria === filters.categoria;
         
@@ -141,7 +142,7 @@ const Feed = () => {
                             preco_minimo: filters.precoMin,
                             preco_maximo: filters.precoMax
                         }} 
-                        onFiltrosChange={handleFiltrosChange} 
+                        onFiltrosChange={handleFiltrosChange}
                     />
 
                     {/* Grid de Itens */}

@@ -9,6 +9,7 @@ import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
 import Cadastro from '@/pages/Cadastro';
+import Feed from '@/pages/Feed';
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
@@ -39,7 +40,8 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/feed" element={<FeedOptimized />} />
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/feed-optimized" element={<FeedOptimized />} />
           <Route path="/buscar-itens" element={<BuscarItens />} />
           <Route path="/publicar" element={<PublicarItem />} />
           <Route path="/missoes" element={<Missoes />} />
