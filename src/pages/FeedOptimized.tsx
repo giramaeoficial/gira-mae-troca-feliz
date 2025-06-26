@@ -9,7 +9,6 @@ import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 import { ItemCard } from '@/components/shared/ItemCard';
-import { LocationPrompt } from '@/components/shared/LocationPrompt';
 import AdvancedFilters from '@/components/shared/AdvancedFilters';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -17,7 +16,6 @@ import { useItensInteligentes } from '@/hooks/useItensInteligentes';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useFeedFilters } from '@/contexts/FeedFiltersContext';
 import { FeedFiltersProvider } from '@/contexts/FeedFiltersContext';
-import ManualLocationSelector from '@/components/shared/ManualLocationSelector';
 
 const FeedContent = () => {
   const navigate = useNavigate();
@@ -29,7 +27,7 @@ const FeedContent = () => {
 
   // Configurar localização padrão baseada no perfil
   useEffect(() => {
-    if (profile?.cidade && profile?.estado && !filters.location) {
+    if (profile?.cidade && profile?.estado && !filters.location && !filters.locationDetected) {
       const profileLocation = {
         estado: profile.estado,
         cidade: profile.cidade,
@@ -37,7 +35,7 @@ const FeedContent = () => {
       };
       updateFilter('location', profileLocation);
     }
-  }, [profile, filters.location, updateFilter]);
+  }, [profile, filters.location, filters.locationDetected, updateFilter]);
 
   // Buscar itens inteligentes
   const { 
@@ -47,34 +45,23 @@ const FeedContent = () => {
     refetch 
   } = useItensInteligentes({
     location: filters.location,
+    locationDetected: filters.locationDetected,
     mesmaEscola: filters.mesmaEscola,
     mesmoBairro: filters.mesmoBairro,
     paraFilhos: filters.paraFilhos,
     apenasFavoritos: filters.apenasFavoritos,
     apenasSeguidoras: filters.apenasSeguidoras,
     categoria: filters.categoria !== 'todas' ? filters.categoria : undefined,
+    subcategoria: filters.subcategoria || undefined,
     ordem: filters.ordem,
-    busca: debouncedBusca
+    busca: debouncedBusca,
+    precoMin: filters.precoMin,
+    precoMax: filters.precoMax,
   });
 
   const handleItemClick = useCallback((itemId: string) => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
-
-  const handleConfigureLocation = useCallback(() => {
-    navigate('/perfil');
-  }, [navigate]);
-
-  const handleManualLocationChange = useCallback((newLocation: { estado: string; cidade: string } | null) => {
-    if (newLocation) {
-      updateFilter('location', {
-        estado: newLocation.estado,
-        cidade: newLocation.cidade
-      });
-    } else {
-      updateFilter('location', null);
-    }
-  }, [updateFilter]);
 
   const handleSearch = useCallback(() => {
     refetch();
@@ -92,6 +79,17 @@ const FeedContent = () => {
     );
   }
 
+  const getLocationText = () => {
+    if (filters.location) {
+      if (filters.locationDetected) {
+        return `📍 ${filters.location.cidade}`;
+      } else {
+        return `em ${filters.location.cidade}`;
+      }
+    }
+    return 'próximos';
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
       <Header />
@@ -100,10 +98,13 @@ const FeedContent = () => {
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-            Encontre Tesouros {filters.location?.cidade ? `em ${filters.location.cidade}` : 'próximos'}
+            Encontre Tesouros {getLocationText()}
           </h1>
           <p className="text-gray-600 text-lg">
-            Descubra itens incríveis com filtros inteligentes
+            {filters.locationDetected ? 
+              'Localização detectada automaticamente' : 
+              'Descubra itens incríveis com filtros inteligentes'
+            }
           </p>
         </div>
 
@@ -114,44 +115,30 @@ const FeedContent = () => {
               <h2 className="text-lg font-semibold text-gray-800">
                 Filtros Inteligentes
               </h2>
-              {filters.location?.cidade && (
+              {filters.location && (
                 <div className="flex items-center text-sm text-gray-500 mt-1">
                   <MapPin className="w-3 h-3 mr-1" />
                   <span>
                     {filters.location.cidade}{filters.location.bairro ? `, ${filters.location.bairro}` : ''}
+                    {filters.locationDetected && ' (detectado automaticamente)'}
                   </span>
                 </div>
               )}
             </div>
             
-            <div className="flex items-center gap-2">
-              <ManualLocationSelector
-                currentLocation={filters.location}
-                onLocationChange={handleManualLocationChange}
-              />
-              
-              <Button
-                onClick={() => navigate('/publicar')}
-                size="sm"
-                className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Publicar
-              </Button>
-            </div>
+            <Button
+              onClick={() => navigate('/publicar')}
+              size="sm"
+              className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Publicar
+            </Button>
           </div>
         </div>
 
         {/* Filtros principais */}
         <AdvancedFilters onSearch={handleSearch} />
-
-        {/* Prompt de localização */}
-        {!filters.location && (
-          <LocationPrompt
-            onConfigureClick={handleConfigureLocation}
-            onDismiss={() => {}}
-          />
-        )}
 
         {/* Loading state */}
         {isLoading && (
@@ -189,15 +176,23 @@ const FeedContent = () => {
 
         {/* Grid de itens */}
         {!isLoading && !error && itens.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {itens.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                onItemClick={handleItemClick}
-              />
-            ))}
-          </div>
+          <>
+            {/* Contador de resultados */}
+            <div className="mb-4 text-sm text-gray-600">
+              {itens.length} {itens.length === 1 ? 'item encontrado' : 'itens encontrados'}
+              {filters.location && ` em ${filters.location.cidade}`}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {itens.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onItemClick={handleItemClick}
+                />
+              ))}
+            </div>
+          </>
         )}
       </main>
       

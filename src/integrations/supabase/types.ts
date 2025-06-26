@@ -524,6 +524,7 @@ export type Database = {
         Row: {
           categoria_administrativa: string | null
           categoria_escola_privada: string | null
+          cep: string | null
           codigo_inep: number
           conveniada_poder_publico: string | null
           dependencia_administrativa: string | null
@@ -545,6 +546,7 @@ export type Database = {
         Insert: {
           categoria_administrativa?: string | null
           categoria_escola_privada?: string | null
+          cep?: string | null
           codigo_inep: number
           conveniada_poder_publico?: string | null
           dependencia_administrativa?: string | null
@@ -566,6 +568,7 @@ export type Database = {
         Update: {
           categoria_administrativa?: string | null
           categoria_escola_privada?: string | null
+          cep?: string | null
           codigo_inep?: number
           conveniada_poder_publico?: string | null
           dependencia_administrativa?: string | null
@@ -2055,6 +2058,20 @@ export type Database = {
         Args: { p_usuario_id: string; p_nova_nota: number }
         Returns: undefined
       }
+      buscar_escolas_proximas_por_cep: {
+        Args: { cep_usuario: string; limite?: number }
+        Returns: {
+          codigo_inep: number
+          escola: string
+          endereco: string
+          cep: string
+          municipio: string
+          uf: string
+          latitude: string
+          longitude: string
+          distancia_cep: number
+        }[]
+      }
       buscar_itens_mesma_escola: {
         Args: { p_user_id: string }
         Returns: {
@@ -2150,6 +2167,10 @@ export type Database = {
       estender_validade_girinhas_seguro: {
         Args: { p_user_id: string; p_transacao_id: string }
         Returns: Json
+      }
+      extrair_cep_endereco: {
+        Args: { endereco_text: string }
+        Returns: string
       }
       finalizar_troca_com_codigo: {
         Args: { p_reserva_id: string; p_codigo_confirmacao: string }

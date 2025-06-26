@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
 import { Search, Filter, X, Heart, Users, School, MapPin } from 'lucide-react';
 import {
   Collapsible,
@@ -12,8 +13,11 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useFeedFilters } from '@/contexts/FeedFiltersContext';
+import { LocationDetectionButton } from '@/components/location/LocationDetectionButton';
+import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { useSubcategorias } from '@/hooks/useSubcategorias';
 
-// Interface para uso com props (Feed.tsx)
+// Interface para uso com props (Feed.tsx) - mantida para compatibilidade
 interface AdvancedFiltersWithProps {
   filters: {
     busca: string;
@@ -40,7 +44,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo((props) => {
   const isUsingContext = !('filters' in props);
   
   // Usar contexto se disponível, senão usar props
-  let filters, updateFilter, updateFilters, resetFilters, getActiveFiltersCount;
+  let filters, updateFilter, updateFilters, resetFilters, getActiveFiltersCount, setLocationDetected;
   
   if (isUsingContext) {
     const contextData = useFeedFilters();
@@ -49,12 +53,14 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo((props) => {
     updateFilters = contextData.updateFilters;
     resetFilters = contextData.resetFilters;
     getActiveFiltersCount = contextData.getActiveFiltersCount;
+    setLocationDetected = contextData.setLocationDetected;
   } else {
     // Usar props para compatibilidade com Feed.tsx
     const propsData = props as AdvancedFiltersWithProps;
     filters = {
       busca: propsData.filters.busca,
       categoria: propsData.filters.categoria,
+      subcategoria: '',
       ordem: propsData.filters.ordem,
       mesmaEscola: false,
       mesmoBairro: false,
@@ -62,6 +68,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo((props) => {
       apenasFavoritos: false,
       apenasSeguidoras: false,
       location: propsData.location,
+      locationDetected: false,
+      precoMin: 0,
+      precoMax: 200,
     };
     updateFilter = (key: string, value: any) => {
       if (key === 'busca' || key === 'categoria' || key === 'ordem') {
@@ -85,10 +94,56 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo((props) => {
       if (propsData.filters.escola) count++;
       return count;
     };
+    setLocationDetected = () => {}; // No-op para compatibilidade
   }
 
   const activeFiltersCount = getActiveFiltersCount();
   const onSearch = 'onSearch' in props ? props.onSearch : undefined;
+
+  // Hooks para categorias e subcategorias
+  const { configuracoes } = useConfigCategorias();
+  const { subcategorias, isLoading: isLoadingSubcategorias } = useSubcategorias();
+
+  // Filtrar subcategorias baseado na categoria selecionada
+  const subcategoriasFiltradas = React.useMemo(() => {
+    if (!subcategorias || !filters.categoria || filters.categoria === 'todas') return [];
+    
+    const filtradas = subcategorias.filter(sub => sub.categoria_pai === filters.categoria);
+    
+    // Remover duplicatas baseado no nome
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    return subcategoriasUnicas;
+  }, [subcategorias, filters.categoria]);
+
+  const handleLocationDetected = (location: { cidade: string; estado: string; bairro?: string }) => {
+    if (setLocationDetected) {
+      setLocationDetected(location);
+    }
+  };
+
+  const handleLocationInputChange = (value: string) => {
+    if (value) {
+      // Parse manual input - formato simples: "Cidade, UF"
+      const parts = value.split(',').map(s => s.trim());
+      if (parts.length >= 2) {
+        updateFilter('location', {
+          cidade: parts[0],
+          estado: parts[1],
+          bairro: parts[2] || undefined
+        });
+        updateFilter('locationDetected', false);
+      }
+    } else {
+      updateFilter('location', null);
+      updateFilter('locationDetected', false);
+    }
+  };
 
   return (
     <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-sm mb-4">
@@ -104,31 +159,122 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo((props) => {
           />
         </div>
 
-        {/* Filtros rápidos - sempre visíveis */}
-        <div className="flex flex-wrap gap-2">
-          <Select 
-            value={filters.categoria} 
-            onValueChange={(value) => updateFilter('categoria', value)}
-          >
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas</SelectItem>
-              <SelectItem value="roupas">Roupas</SelectItem>
-              <SelectItem value="calcados">Calçados</SelectItem>
-              <SelectItem value="brinquedos">Brinquedos</SelectItem>
-              <SelectItem value="livros">Livros</SelectItem>
-              <SelectItem value="acessorios">Acessórios</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* LOCALIZAÇÃO - Nova seção */}
+        {isUsingContext && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <MapPin className="w-4 h-4" />
+              <span>LOCALIZAÇÃO</span>
+            </div>
+            
+            <div className="space-y-2">
+              <Input
+                placeholder="Digite sua cidade..."
+                value={filters.location ? `${filters.location.cidade}, ${filters.location.estado}` : ''}
+                onChange={(e) => handleLocationInputChange(e.target.value)}
+                className="h-10"
+              />
+              
+              <LocationDetectionButton
+                onLocationDetected={handleLocationDetected}
+                className="h-10"
+              />
+            </div>
+          </div>
+        )}
 
+        {/* CATEGORIA e SUBCATEGORIA lado a lado */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">CATEGORIA</label>
+            <Select 
+              value={filters.categoria} 
+              onValueChange={(value) => {
+                updateFilter('categoria', value);
+                // Limpar subcategoria quando categoria muda
+                if (isUsingContext) {
+                  updateFilter('subcategoria', '');
+                }
+              }}
+            >
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas</SelectItem>
+                {configuracoes?.map(config => (
+                  <SelectItem key={config.codigo} value={config.codigo}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm">{config.icone}</span>
+                      {config.nome}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">SUBCATEGORIA</label>
+            <Select 
+              value={filters.subcategoria || ''} 
+              onValueChange={(value) => updateFilter('subcategoria', value)}
+              disabled={!filters.categoria || filters.categoria === 'todas' || isLoadingSubcategorias}
+            >
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder={
+                  !filters.categoria || filters.categoria === 'todas' ? "Selecione categoria" :
+                  isLoadingSubcategorias ? "Carregando..." :
+                  subcategoriasFiltradas.length === 0 ? "Nenhuma disponível" :
+                  "Todas"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas</SelectItem>
+                {subcategoriasFiltradas.map(sub => (
+                  <SelectItem key={sub.id} value={sub.nome}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm">{sub.icone}</span>
+                      {sub.nome}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* PREÇO - Slider de faixa */}
+        {isUsingContext && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">
+                PREÇO: {filters.precoMin} - {filters.precoMax} Girinhas
+              </label>
+            </div>
+            <Slider
+              value={[filters.precoMin, filters.precoMax]}
+              onValueChange={([min, max]) => {
+                updateFilter('precoMin', min);
+                updateFilter('precoMax', max);
+              }}
+              max={200}
+              min={0}
+              step={5}
+              className="w-full"
+            />
+          </div>
+        )}
+
+        {/* ORDENAÇÃO */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">ORDENAR POR</label>
           <Select 
             value={filters.ordem} 
             onValueChange={(value) => updateFilter('ordem', value)}
           >
-            <SelectTrigger className="w-full sm:w-40">
-              <SelectValue placeholder="Ordenar" />
+            <SelectTrigger className="h-10">
+              <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="recentes">Mais recentes</SelectItem>
@@ -355,6 +501,38 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = memo((props) => {
                   size="sm"
                   className="ml-1 h-auto p-0"
                   onClick={() => updateFilter('categoria', 'todas')}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+
+            {filters.subcategoria && (
+              <Badge variant="secondary" className="text-xs">
+                {filters.subcategoria}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => updateFilter('subcategoria', '')}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
+            )}
+
+            {filters.location && (
+              <Badge variant="secondary" className="text-xs">
+                <MapPin className="w-3 h-3 mr-1" />
+                {filters.location.cidade}, {filters.location.estado}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-1 h-auto p-0"
+                  onClick={() => {
+                    updateFilter('location', null);
+                    updateFilter('locationDetected', false);
+                  }}
                 >
                   <X className="w-3 h-3" />
                 </Button>
