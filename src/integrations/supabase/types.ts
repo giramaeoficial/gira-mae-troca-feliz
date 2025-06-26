@@ -264,6 +264,48 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias_tamanhos: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          created_at: string | null
+          id: string
+          idade_maxima_meses: number | null
+          idade_minima_meses: number | null
+          label_display: string
+          ordem: number
+          subcategoria: string | null
+          tipo_tamanho: string
+          valor: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: string
+          created_at?: string | null
+          id?: string
+          idade_maxima_meses?: number | null
+          idade_minima_meses?: number | null
+          label_display: string
+          ordem: number
+          subcategoria?: string | null
+          tipo_tamanho: string
+          valor: string
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          id?: string
+          idade_maxima_meses?: number | null
+          idade_minima_meses?: number | null
+          label_display?: string
+          ordem?: number
+          subcategoria?: string | null
+          tipo_tamanho?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       compras_girinhas: {
         Row: {
           created_at: string
@@ -774,13 +816,17 @@ export type Database = {
           estado_manual: string | null
           filho_id: string | null
           fotos: string[] | null
+          genero: string | null
           id: string
           instrucoes_retirada: string | null
           ponto_referencia: string | null
           publicado_por: string
           raio_entrega_km: number | null
           status: string
+          subcategoria: string | null
           tamanho: string | null
+          tamanho_categoria: string | null
+          tamanho_valor: string | null
           titulo: string
           updated_at: string
           valor_girinhas: number
@@ -802,13 +848,17 @@ export type Database = {
           estado_manual?: string | null
           filho_id?: string | null
           fotos?: string[] | null
+          genero?: string | null
           id?: string
           instrucoes_retirada?: string | null
           ponto_referencia?: string | null
           publicado_por: string
           raio_entrega_km?: number | null
           status?: string
+          subcategoria?: string | null
           tamanho?: string | null
+          tamanho_categoria?: string | null
+          tamanho_valor?: string | null
           titulo: string
           updated_at?: string
           valor_girinhas: number
@@ -830,13 +880,17 @@ export type Database = {
           estado_manual?: string | null
           filho_id?: string | null
           fotos?: string[] | null
+          genero?: string | null
           id?: string
           instrucoes_retirada?: string | null
           ponto_referencia?: string | null
           publicado_por?: string
           raio_entrega_km?: number | null
           status?: string
+          subcategoria?: string | null
           tamanho?: string | null
+          tamanho_categoria?: string | null
+          tamanho_valor?: string | null
           titulo?: string
           updated_at?: string
           valor_girinhas?: number
@@ -1521,6 +1575,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subcategorias: {
+        Row: {
+          ativo: boolean | null
+          categoria_pai: string
+          created_at: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria_pai: string
+          created_at?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria_pai?: string
+          created_at?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: []
       }
       subcategorias_itens: {
         Row: {
