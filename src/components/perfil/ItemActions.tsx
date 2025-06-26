@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Edit, Trash2, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useItensOptimized } from '@/hooks/useItensOptimized';
+import { useAtualizarItem } from '@/hooks/useItensOptimized';
 import { Tables } from '@/integrations/supabase/types';
 import EditarItem from './EditarItem';
 import { toast } from '@/components/ui/use-toast';
@@ -19,7 +19,6 @@ const ItemActions: React.FC<ItemActionsProps> = ({ item, onUpdate }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  const { useAtualizarItem } = useItensOptimized;
   const atualizarItemMutation = useAtualizarItem();
 
   const handleDelete = async () => {

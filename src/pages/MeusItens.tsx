@@ -10,13 +10,13 @@ import EmptyState from '@/components/loading/EmptyState';
 import ItemCardWithActions from '@/components/shared/ItemCardWithActions';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { useAuth } from '@/hooks/useAuth';
-import { useItensOptimized } from '@/hooks/useItensOptimized';
+import { useMeusItens } from '@/hooks/useItensOptimized';
 
 const MeusItens = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const { data: itens = [], isLoading, error, refetch } = useItensOptimized.useMeusItens(user?.id || '');
+  const { data: itens = [], isLoading, error, refetch } = useMeusItens(user?.id || '');
 
   const handleItemClick = (itemId: string) => {
     navigate(`/item/${itemId}`);
