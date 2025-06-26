@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, MapPin, Search, Filter } from 'lucide-react';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
@@ -24,6 +24,9 @@ const BuscarItens = () => {
   const [genero, setGenero] = useState('todos');
   const [idadeTamanho, setIdadeTamanho] = useState('todos');
   const [precoRange, setPrecoRange] = useState([0, 200]);
+  
+  // Estado para mostrar filtros avançados
+  const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   
   // Geolocalização
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
@@ -72,6 +75,7 @@ const BuscarItens = () => {
     setPrecoRange([0, 200]);
     limparLocalizacao();
     setFiltrosAplicados(false);
+    setMostrarFiltrosAvancados(false);
   };
 
   const handleLocationClick = () => {
@@ -80,6 +84,10 @@ const BuscarItens = () => {
     } else {
       detectarLocalizacao();
     }
+  };
+
+  const toggleFiltrosAvancados = () => {
+    setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
   };
 
   return (
@@ -93,7 +101,7 @@ const BuscarItens = () => {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Campo de busca */}
+        {/* Campo de busca com ícone de filtro */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
@@ -101,169 +109,180 @@ const BuscarItens = () => {
             placeholder="Busque por vestido, carrinho, lego..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="pl-10 h-12 text-base"
+            className="pl-10 pr-12 h-12 text-base"
           />
-        </div>
-
-        {/* Seção Localização */}
-        <div>
-          <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">LOCALIZAÇÃO</h3>
-          
-          <Input
-            type="text"
-            placeholder="Digite sua cidade..."
-            value={cidadeManual}
-            onChange={(e) => setCidadeManual(e.target.value)}
-            className="w-full h-12 text-base mb-3"
-          />
-          
-          <Button
-            onClick={handleLocationClick}
-            disabled={geoLoading}
-            variant="outline"
-            className="w-full h-12 flex items-center justify-start"
+          <button
+            onClick={toggleFiltrosAvancados}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
           >
-            <MapPin className="w-4 h-4 mr-2" />
-            {geoLoading ? 'Detectando localização...' : 
-             location ? `✅ ${location.cidade}, ${location.estado} - Alterar` :
-             '📍 Usar Minha Localização Atual'}
-          </Button>
-          
-          {geoError && (
-            <p className="text-red-500 text-sm mt-2">{geoError}</p>
-          )}
+            <Filter className="w-5 h-5 text-gray-400" />
+          </button>
         </div>
 
-        {/* Tipo de Entrega */}
-        <div>
-          <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">TIPO DE ENTREGA</h3>
-          <Select value={tipoEntrega} onValueChange={setTipoEntrega}>
-            <SelectTrigger className="h-12">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas as opções</SelectItem>
-              <SelectItem value="presencial">Entrega presencial</SelectItem>
-              <SelectItem value="correios">Pelos Correios</SelectItem>
-              <SelectItem value="motoboy">Motoboy</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Filtros Avançados - só aparecem quando clicado no ícone */}
+        {mostrarFiltrosAvancados && (
+          <>
+            {/* Seção Localização */}
+            <div>
+              <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">LOCALIZAÇÃO</h3>
+              
+              <Input
+                type="text"
+                placeholder="Digite sua cidade..."
+                value={cidadeManual}
+                onChange={(e) => setCidadeManual(e.target.value)}
+                className="w-full h-12 text-base mb-3"
+              />
+              
+              <Button
+                onClick={handleLocationClick}
+                disabled={geoLoading}
+                variant="outline"
+                className="w-full h-12 flex items-center justify-start"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                {geoLoading ? 'Detectando localização...' : 
+                 location ? `✅ ${location.cidade}, ${location.estado} - Alterar` :
+                 '📍 Usar Minha Localização Atual'}
+              </Button>
+              
+              {geoError && (
+                <p className="text-red-500 text-sm mt-2">{geoError}</p>
+              )}
+            </div>
 
-        {/* Categoria e Subcategoria */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
-            <Select value={categoria} onValueChange={(value) => {
-              setCategoria(value);
-              setSubcategoria('todas'); // Reset subcategoria quando categoria muda
-            }}>
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {categorias && categorias.map((cat) => (
-                  <SelectItem key={cat.codigo} value={cat.nome}>
-                    {cat.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Tipo de Entrega */}
+            <div>
+              <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">TIPO DE ENTREGA</h3>
+              <Select value={tipoEntrega} onValueChange={setTipoEntrega}>
+                <SelectTrigger className="h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as opções</SelectItem>
+                  <SelectItem value="presencial">Entrega presencial</SelectItem>
+                  <SelectItem value="correios">Pelos Correios</SelectItem>
+                  <SelectItem value="motoboy">Motoboy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
-            <Select 
-              value={subcategoria} 
-              onValueChange={setSubcategoria}
-              disabled={categoria === 'todas' || subcategoriasFiltradas.length === 0}
-            >
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas</SelectItem>
-                {subcategoriasFiltradas && subcategoriasFiltradas.map((sub) => (
-                  <SelectItem key={sub.id} value={sub.nome}>
-                    {sub.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            {/* Categoria e Subcategoria */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
+                <Select value={categoria} onValueChange={(value) => {
+                  setCategoria(value);
+                  setSubcategoria('todas'); // Reset subcategoria quando categoria muda
+                }}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {categorias && categorias.map((cat) => (
+                      <SelectItem key={cat.codigo} value={cat.nome}>
+                        {cat.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Idade/Tamanho e Gênero */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">IDADE/TAMANHO</h3>
-            <Select value={idadeTamanho} onValueChange={setIdadeTamanho}>
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="0-6m">0-6 meses</SelectItem>
-                <SelectItem value="6-12m">6-12 meses</SelectItem>
-                <SelectItem value="1-2a">1-2 anos</SelectItem>
-                <SelectItem value="3-4a">3-4 anos</SelectItem>
-                <SelectItem value="5-6a">5-6 anos</SelectItem>
-                <SelectItem value="7-8a">7-8 anos</SelectItem>
-                <SelectItem value="9-10a">9-10 anos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
+                <Select 
+                  value={subcategoria} 
+                  onValueChange={setSubcategoria}
+                  disabled={categoria === 'todas' || subcategoriasFiltradas.length === 0}
+                >
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {subcategoriasFiltradas && subcategoriasFiltradas.map((sub) => (
+                      <SelectItem key={sub.id} value={sub.nome}>
+                        {sub.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          <div>
-            <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
-            <Select value={genero} onValueChange={setGenero}>
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="menino">Menino</SelectItem>
-                <SelectItem value="menina">Menina</SelectItem>
-                <SelectItem value="unissex">Unissex</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+            {/* Idade/Tamanho e Gênero */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">IDADE/TAMANHO</h3>
+                <Select value={idadeTamanho} onValueChange={setIdadeTamanho}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="0-6m">0-6 meses</SelectItem>
+                    <SelectItem value="6-12m">6-12 meses</SelectItem>
+                    <SelectItem value="1-2a">1-2 anos</SelectItem>
+                    <SelectItem value="3-4a">3-4 anos</SelectItem>
+                    <SelectItem value="5-6a">5-6 anos</SelectItem>
+                    <SelectItem value="7-8a">7-8 anos</SelectItem>
+                    <SelectItem value="9-10a">9-10 anos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        {/* Faixa de Preço */}
-        <div>
-          <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-            PREÇO: {precoRange[0]} - {precoRange[1]} Girinhas
-          </h3>
-          <div className="px-2">
-            <Slider
-              value={precoRange}
-              onValueChange={setPrecoRange}
-              max={200}
-              min={0}
-              step={5}
-              className="w-full"
-            />
-          </div>
-        </div>
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
+                <Select value={genero} onValueChange={setGenero}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="menino">Menino</SelectItem>
+                    <SelectItem value="menina">Menina</SelectItem>
+                    <SelectItem value="unissex">Unissex</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        {/* Botões de ação */}
-        <div className="flex gap-3 pt-4">
-          <Button
-            onClick={handleLimparFiltros}
-            variant="outline"
-            className="flex-1 h-12"
-          >
-            Limpar Filtros
-          </Button>
-          <Button
-            onClick={handleAplicarFiltros}
-            className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500"
-          >
-            Aplicar Filtros
-          </Button>
-        </div>
+            {/* Faixa de Preço */}
+            <div>
+              <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                PREÇO: {precoRange[0]} - {precoRange[1]} Girinhas
+              </h3>
+              <div className="px-2">
+                <Slider
+                  value={precoRange}
+                  onValueChange={setPrecoRange}
+                  max={200}
+                  min={0}
+                  step={5}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {/* Botões de ação */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={handleLimparFiltros}
+                variant="outline"
+                className="flex-1 h-12"
+              >
+                Limpar Filtros
+              </Button>
+              <Button
+                onClick={handleAplicarFiltros}
+                className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500"
+              >
+                Aplicar Filtros
+              </Button>
+            </div>
+          </>
+        )}
 
         {/* Resultados */}
         {filtrosAplicados && (
