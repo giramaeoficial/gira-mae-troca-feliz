@@ -19,7 +19,12 @@ export const useTamanhosPorCategoria = (categoria?: string) => {
   return useQuery({
     queryKey: ['tamanhos-categoria', categoria],
     queryFn: async (): Promise<TamanhoCategoria[]> => {
-      if (!categoria) return [];
+      if (!categoria) {
+        console.log('⚠️ Nenhuma categoria fornecida para buscar tamanhos');
+        return [];
+      }
+      
+      console.log('🔍 Buscando tamanhos para categoria:', categoria);
       
       const { data, error } = await supabase
         .from('categorias_tamanhos')
@@ -28,7 +33,12 @@ export const useTamanhosPorCategoria = (categoria?: string) => {
         .eq('ativo', true)
         .order('ordem');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar tamanhos:', error);
+        throw error;
+      }
+
+      console.log('✅ Tamanhos encontrados:', data?.length || 0, data);
       return data || [];
     },
     enabled: !!categoria,
@@ -38,7 +48,7 @@ export const useTamanhosPorCategoria = (categoria?: string) => {
 };
 
 export const useTiposTamanho = (categoria?: string) => {
-  const { data: tamanhos = [] } = useTamanhosPorCategoria(categoria);
+  const { data: tamanhos = [], isLoading, error } = useTamanhosPorCategoria(categoria);
   
   // Agrupar tamanhos por tipo
   const tiposTamanho = tamanhos.reduce((acc, tamanho) => {
@@ -49,9 +59,16 @@ export const useTiposTamanho = (categoria?: string) => {
     return acc;
   }, {} as Record<string, TamanhoCategoria[]>);
 
+  console.log('🔍 Tipos de tamanho agrupados:', {
+    categoria,
+    tipos: Object.keys(tiposTamanho),
+    total_tamanhos: tamanhos.length
+  });
+
   return {
     tiposTamanho,
     tipos: Object.keys(tiposTamanho),
-    isLoading: !categoria
+    isLoading: isLoading || !categoria,
+    error
   };
 };

@@ -12,9 +12,11 @@ export interface Subcategoria {
 }
 
 export const useSubcategorias = () => {
-  const { data: subcategorias = [], isLoading } = useQuery({
+  const { data: subcategorias = [], isLoading, error } = useQuery({
     queryKey: ['subcategorias'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Subcategoria[]> => {
+      console.log('🔍 Buscando subcategorias...');
+      
       const { data, error } = await supabase
         .from('subcategorias')
         .select('*')
@@ -22,13 +24,21 @@ export const useSubcategorias = () => {
         .order('categoria_pai')
         .order('ordem');
 
-      if (error) throw error;
-      return data as Subcategoria[];
-    }
+      if (error) {
+        console.error('❌ Erro ao buscar subcategorias:', error);
+        throw error;
+      }
+
+      console.log('✅ Subcategorias encontradas:', data?.length || 0, data);
+      return data || [];
+    },
+    staleTime: 300000, // 5 minutos
+    gcTime: 600000 // 10 minutos
   });
 
   return {
     subcategorias,
-    isLoading
+    isLoading,
+    error
   };
 };
