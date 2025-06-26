@@ -12,7 +12,6 @@ import Cadastro from '@/pages/Cadastro';
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
-import MeusItens from '@/pages/MeusItens';
 import Mensagens from '@/pages/Mensagens';
 import Perfil from '@/pages/Perfil';
 import EditarPerfil from '@/pages/EditarPerfil';
@@ -43,7 +42,6 @@ function App() {
           <Route path="/feed" element={<FeedOptimized />} />
           <Route path="/buscar-itens" element={<BuscarItens />} />
           <Route path="/publicar" element={<PublicarItem />} />
-          <Route path="/meus-itens" element={<MeusItens />} />
           <Route path="/missoes" element={<Missoes />} />
           <Route path="/mensagens" element={<Mensagens />} />
           <Route path="/mensagens/:conversaId" element={<Mensagens />} />
