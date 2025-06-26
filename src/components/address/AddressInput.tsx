@@ -20,29 +20,27 @@ const AddressInput: React.FC<AddressInputProps> = ({
   showAllFields = true
 }) => {
   const { loading, error, fetchAddress, formatCep } = useAddress();
-  const [address, setAddress] = useState<Partial<Address>>({
-    cep: '',
-    endereco: '',
-    numero: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    complemento: '',
-    ponto_referencia: '',
-    ...value
+  const [address, setAddress] = useState<Address>({
+    cep: value.cep || '',
+    endereco: value.endereco || '',
+    numero: value.numero || '',
+    bairro: value.bairro || '',
+    cidade: value.cidade || '',
+    estado: value.estado || '',
+    complemento: value.complemento || '',
+    ponto_referencia: value.ponto_referencia || ''
   });
 
   useEffect(() => {
     setAddress({
-      cep: '',
-      endereco: '',
-      numero: '',
-      bairro: '',
-      cidade: '',
-      estado: '',
-      complemento: '',
-      ponto_referencia: '',
-      ...value
+      cep: value.cep || '',
+      endereco: value.endereco || '',
+      numero: value.numero || '',
+      bairro: value.bairro || '',
+      cidade: value.cidade || '',
+      estado: value.estado || '',
+      complemento: value.complemento || '',
+      ponto_referencia: value.ponto_referencia || ''
     });
   }, [value]);
 
@@ -54,10 +52,13 @@ const AddressInput: React.FC<AddressInputProps> = ({
     if (formattedCep.replace(/\D/g, '').length === 8) {
       const fetchedAddress = await fetchAddress(formattedCep);
       if (fetchedAddress) {
-        const completeAddress = {
-          ...newAddress,
-          ...fetchedAddress,
-          numero: address.numero || '', // Manter número se já preenchido
+        const completeAddress: Address = {
+          cep: fetchedAddress.cep || formattedCep,
+          endereco: fetchedAddress.endereco || '',
+          numero: address.numero, // Manter número se já preenchido
+          bairro: fetchedAddress.bairro || '',
+          cidade: fetchedAddress.cidade || '',
+          estado: fetchedAddress.estado || '',
           complemento: address.complemento || '',
           ponto_referencia: address.ponto_referencia || ''
         };
@@ -66,7 +67,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
         // Só chama onChange se todos os campos obrigatórios estão preenchidos
         if (completeAddress.cep && completeAddress.endereco && completeAddress.numero && 
             completeAddress.bairro && completeAddress.cidade && completeAddress.estado) {
-          onChange(completeAddress as Address);
+          onChange(completeAddress);
         }
       }
     }
@@ -79,7 +80,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
     // Só chama onChange se todos os campos obrigatórios estão preenchidos
     if (newAddress.cep && newAddress.endereco && newAddress.numero && 
         newAddress.bairro && newAddress.cidade && newAddress.estado) {
-      onChange(newAddress as Address);
+      onChange(newAddress);
     }
   };
 
@@ -97,7 +98,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
             <Input
               id="cep"
               placeholder="00000-000"
-              value={address.cep || ''}
+              value={address.cep}
               onChange={(e) => handleCepChange(e.target.value)}
               disabled={disabled}
               maxLength={9}
@@ -114,7 +115,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
           <Input
             id="estado"
             placeholder="SP"
-            value={address.estado || ''}
+            value={address.estado}
             onChange={(e) => handleFieldChange('estado', e.target.value.toUpperCase())}
             disabled={disabled}
             maxLength={2}
@@ -128,7 +129,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
           <Input
             id="endereco"
             placeholder="Rua, Avenida..."
-            value={address.endereco || ''}
+            value={address.endereco}
             onChange={(e) => handleFieldChange('endereco', e.target.value)}
             disabled={disabled}
           />
@@ -139,7 +140,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
           <Input
             id="numero"
             placeholder="123"
-            value={address.numero || ''}
+            value={address.numero}
             onChange={(e) => handleFieldChange('numero', e.target.value)}
             disabled={disabled}
           />
@@ -152,7 +153,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
           <Input
             id="bairro"
             placeholder="Nome do bairro"
-            value={address.bairro || ''}
+            value={address.bairro}
             onChange={(e) => handleFieldChange('bairro', e.target.value)}
             disabled={disabled}
           />
@@ -163,7 +164,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
           <Input
             id="cidade"
             placeholder="Nome da cidade"
-            value={address.cidade || ''}
+            value={address.cidade}
             onChange={(e) => handleFieldChange('cidade', e.target.value)}
             disabled={disabled}
           />

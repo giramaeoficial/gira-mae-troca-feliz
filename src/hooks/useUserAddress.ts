@@ -18,7 +18,7 @@ export const useUserAddress = () => {
         .from('profiles')
         .select('cep, endereco, numero, bairro, cidade, estado, complemento, ponto_referencia')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Erro ao buscar endereço:', error);

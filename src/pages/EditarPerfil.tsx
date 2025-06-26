@@ -191,7 +191,6 @@ const EditarPerfil = () => {
 
       console.log('Filho adicionado com sucesso:', data);
 
-      // Mapear a escola corretamente
       const filhoComEscola = {
         ...data,
         escola: data.escolas_inep,
@@ -374,7 +373,6 @@ const EditarPerfil = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Dados Pessoais */}
           <TabsContent value="pessoais" className="space-y-6">
             <Card>
               <CardHeader>
@@ -581,9 +579,7 @@ const EditarPerfil = () => {
             </Card>
           </TabsContent>
 
-          {/* Filhos */}
           <TabsContent value="filhos" className="space-y-6">
-            {/* Lista de filhos existentes */}
             {filhosForm.map((filho, index) => (
               <Card key={filho.id}>
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -675,7 +671,6 @@ const EditarPerfil = () => {
               </Card>
             ))}
 
-            {/* Adicionar novo filho */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -766,7 +761,6 @@ const EditarPerfil = () => {
             </Card>
           </TabsContent>
 
-          {/* Notificações */}
           <TabsContent value="notificacoes">
             <NotificationSettings />
           </TabsContent>
