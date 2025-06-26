@@ -120,9 +120,9 @@ const Feed = () => {
         const matchSubcategoria = !filters.subcategoria || 
             ((item as any).subcategoria && (item as any).subcategoria === filters.subcategoria);
         
-        const matchGenero = filters.genero === 'todos' || item.genero === filters.genero;
+        const matchGenero = filters.genero === 'todos' || (item.genero && item.genero === filters.genero);
         
-        const matchTamanho = filters.tamanho === 'todos' || item.tamanho_valor === filters.tamanho;
+        const matchTamanho = filters.tamanho === 'todos' || (item.tamanho_valor && item.tamanho_valor === filters.tamanho);
         
         const matchPreco = item.valor_girinhas >= filters.precoMin && item.valor_girinhas <= filters.precoMax;
         
@@ -260,10 +260,10 @@ const Feed = () => {
                                                 <Badge variant="secondary" className="text-xs">
                                                     {item.categoria}
                                                 </Badge>
-                                                {/* Fix: Use tamanho instead of tamanho_valor if it exists */}
-                                                {item.tamanho && (
+                                                {/* Fix: Use tamanho or tamanho_valor */}
+                                                {(item.tamanho || item.tamanho_valor) && (
                                                     <Badge variant="outline" className="text-xs">
-                                                        {item.tamanho}
+                                                        {item.tamanho || item.tamanho_valor}
                                                     </Badge>
                                                 )}
                                             </div>

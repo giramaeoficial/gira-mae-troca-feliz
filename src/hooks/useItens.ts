@@ -5,6 +5,8 @@ import { toast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
 
+type Escola = Tables<'escolas_inep'>;
+
 export interface Item {
   id: string;
   titulo: string;
@@ -12,6 +14,8 @@ export interface Item {
   categoria: string;
   estado_conservacao: string;
   tamanho?: string;
+  tamanho_valor?: string;
+  genero?: string;
   valor_girinhas: number;
   publicado_por: string;
   status: string;

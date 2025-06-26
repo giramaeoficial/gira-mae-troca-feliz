@@ -24,6 +24,7 @@ const Mensagens = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [novaMensagem, setNovaMensagem] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showChatModal, setShowChatModal] = useState(false);
 
   const {
     conversas,
