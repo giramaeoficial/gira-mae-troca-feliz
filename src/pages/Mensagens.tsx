@@ -112,50 +112,58 @@ const Mensagens = () => {
   const renderMobile = () => {
     if (conversaId) {
       return (
-        <div className="flex flex-col h-screen bg-background pb-16"> {/* pb-16 para espaço do QuickNav */}
+        <div className="flex flex-col h-screen bg-gray-50 pb-16"> {/* pb-16 para espaço do QuickNav */}
           <Header />
           
-          <div className="flex items-center bg-secondary px-4 py-2 border-b">
+          <div className="flex items-center bg-white px-4 py-3 border-b shadow-sm">
             <Button variant="ghost" size="icon" onClick={() => navigate('/mensagens')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 ml-2">
               <Avatar>
                 <AvatarImage src={conversaAtiva?.participante?.avatar_url || ""} />
                 <AvatarFallback>{conversaAtiva?.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-semibold">{conversaAtiva?.participante?.nome}</div>
-                <div className="text-xs text-muted-foreground">Online</div>
+                <div className="font-semibold text-gray-900">{conversaAtiva?.participante?.nome}</div>
+                <div className="text-xs text-gray-500">Online</div>
               </div>
             </div>
           </div>
 
-          <div className="flex-grow overflow-y-auto p-4">
+          <div className="flex-grow overflow-y-auto p-4 space-y-3">
             {mensagens?.map(msg => (
-              <div key={msg.id} className={`mb-2 flex flex-col ${msg.remetente_id === user?.id ? 'items-end' : 'items-start'}`}>
-                <div className={`rounded-lg px-3 py-2 text-sm ${msg.remetente_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
-                  <MessageText>{msg.conteudo}</MessageText>
+              <div key={msg.id} className={`flex ${msg.remetente_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] ${msg.remetente_id === user?.id ? 'order-1' : 'order-2'}`}>
+                  <div className={`rounded-2xl px-4 py-2 text-sm ${
+                    msg.remetente_id === user?.id 
+                      ? 'bg-primary text-white' 
+                      : 'bg-white border shadow-sm text-gray-900'
+                  }`}>
+                    <MessageText>{msg.conteudo}</MessageText>
+                  </div>
+                  <span className={`text-xs text-gray-400 mt-1 block ${
+                    msg.remetente_id === user?.id ? 'text-right' : 'text-left'
+                  }`}>
+                    {formatarData(msg.created_at)}
+                  </span>
                 </div>
-                <span className="text-xs text-muted-foreground mt-1">
-                  {formatarData(msg.created_at)}
-                </span>
               </div>
             ))}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="bg-secondary border-t p-4">
+          <div className="bg-white border-t p-4 shadow-lg">
             <div className="flex space-x-2">
               <Input
                 placeholder="Digite sua mensagem..."
                 value={novaMensagem}
                 onChange={handleNovaMensagemChange}
                 onKeyDown={handleKeyPress}
+                className="flex-1"
               />
-              <Button onClick={handleEnviarMensagem}>
-                <Send className="h-4 w-4 mr-2" />
-                Enviar
+              <Button onClick={handleEnviarMensagem} size="sm" className="px-4">
+                <Send className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -164,39 +172,53 @@ const Mensagens = () => {
     }
 
     return (
-      <div className="flex flex-col h-screen bg-background pb-16"> {/* pb-16 para espaço do QuickNav */}
+      <div className="flex flex-col h-screen bg-gray-50 pb-16"> {/* pb-16 para espaço do QuickNav */}
         <Header />
         
         <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Mensagens</h1>
+              <p className="text-gray-600">Suas conversas</p>
+            </div>
+            <Button onClick={() => setShowChatModal(true)} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Nova
+            </Button>
+          </div>
+          
           <Input
             type="search"
             placeholder="Buscar conversas..."
             value={searchTerm}
             onChange={(e) => filtrarConversas(e.target.value)}
+            className="mb-4"
           />
         </div>
 
-        <div className="flex-grow overflow-y-auto">
+        <div className="flex-grow overflow-y-auto px-4 space-y-2">
           {conversasFiltradas?.map(conversa => (
             <Card
               key={conversa.id}
-              className="mb-2 border-none shadow-sm hover:bg-accent transition-colors"
+              className="hover:shadow-md transition-shadow cursor-pointer bg-white"
               onClick={() => navigate(`/mensagens/${conversa.id}`)}
             >
-              <CardContent className="flex items-center space-x-4 p-3">
-                <Avatar>
+              <CardContent className="flex items-center space-x-4 p-4">
+                <Avatar className="w-12 h-12">
                   <AvatarImage src={conversa.participante?.avatar_url || ""} />
                   <AvatarFallback>{conversa.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <div className="font-semibold">{conversa.participante?.nome}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {conversa.ultimaMensagem?.conteudo}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-gray-900 truncate">{conversa.participante?.nome}</div>
+                    {conversa.naoLidas > 0 && (
+                      <Badge variant="secondary" className="bg-primary text-white ml-2">Nova</Badge>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-600 truncate">
+                    {conversa.ultimaMensagem?.conteudo || 'Nenhuma mensagem ainda'}
                   </div>
                 </div>
-                {conversa.naoLidas > 0 && (
-                  <Badge variant="secondary" className="ml-auto">Nova</Badge>
-                )}
               </CardContent>
             </Card>
           ))}
@@ -206,13 +228,19 @@ const Mensagens = () => {
   };
 
   const renderDesktop = () => (
-    <div className="flex flex-col h-screen bg-background"> {/* Sem padding bottom no desktop */}
+    <div className="flex flex-col h-screen bg-gray-50"> {/* Sem padding bottom no desktop */}
       <Header />
       
       <div className="flex h-full">
         {/* Lista de Conversas (Esquerda) */}
-        <div className="w-1/3 border-r bg-secondary">
-          <div className="p-4">
+        <div className="w-1/3 bg-white border-r border-gray-200 shadow-sm">
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Mensagens</h2>
+              <Button onClick={() => setShowChatModal(true)} size="sm" variant="outline">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
             <Input
               type="search"
               placeholder="Buscar conversas..."
@@ -221,72 +249,87 @@ const Mensagens = () => {
             />
           </div>
 
-          <div className="overflow-y-auto">
+          <div className="overflow-y-auto h-full">
             {conversasFiltradas?.map(conversa => (
-              <Card
+              <div
                 key={conversa.id}
-                className={`mb-2 border-none shadow-sm hover:bg-accent transition-colors ${conversa.id === conversaId ? 'bg-accent' : ''}`}
+                className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${
+                  conversa.id === conversaId ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+                }`}
                 onClick={() => navigate(`/mensagens/${conversa.id}`)}
               >
-                <CardContent className="flex items-center space-x-4 p-3">
-                  <Avatar>
+                <div className="flex items-center space-x-3">
+                  <Avatar className="w-12 h-12">
                     <AvatarImage src={conversa.participante?.avatar_url || ""} />
                     <AvatarFallback>{conversa.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
-                  <div>
-                    <div className="font-semibold">{conversa.participante?.nome}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {conversa.ultimaMensagem?.conteudo}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-gray-900 truncate">{conversa.participante?.nome}</div>
+                      {conversa.naoLidas > 0 && (
+                        <Badge variant="secondary" className="bg-primary text-white text-xs">
+                          {conversa.naoLidas}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600 truncate">
+                      {conversa.ultimaMensagem?.conteudo || 'Nenhuma mensagem ainda'}
                     </div>
                   </div>
-                  {conversa.naoLidas > 0 && (
-                    <Badge variant="secondary" className="ml-auto">Nova</Badge>
-                  )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
 
         {/* Área de Mensagens (Direita) */}
         {conversaId ? (
-          <div className="w-2/3 flex flex-col h-full">
-            <div className="flex items-center bg-secondary px-4 py-2 border-b">
-              <div className="flex items-center space-x-2">
-                <Avatar>
+          <div className="w-2/3 flex flex-col h-full bg-white">
+            <div className="flex items-center px-6 py-4 border-b border-gray-200 bg-white">
+              <div className="flex items-center space-x-3">
+                <Avatar className="w-10 h-10">
                   <AvatarImage src={conversaAtiva?.participante?.avatar_url || ""} />
                   <AvatarFallback>{conversaAtiva?.participante?.nome?.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-semibold">{conversaAtiva?.participante?.nome}</div>
-                  <div className="text-xs text-muted-foreground">Online</div>
+                  <div className="font-semibold text-gray-900">{conversaAtiva?.participante?.nome}</div>
+                  <div className="text-xs text-gray-500">Online</div>
                 </div>
               </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto p-4">
+            <div className="flex-grow overflow-y-auto p-6 bg-gray-50 space-y-4">
               {mensagens?.map(msg => (
-                <div key={msg.id} className={`mb-2 flex flex-col ${msg.remetente_id === user?.id ? 'items-end' : 'items-start'}`}>
-                  <div className={`rounded-lg px-3 py-2 text-sm ${msg.remetente_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
-                    <MessageText>{msg.conteudo}</MessageText>
+                <div key={msg.id} className={`flex ${msg.remetente_id === user?.id ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[70%] ${msg.remetente_id === user?.id ? 'order-1' : 'order-2'}`}>
+                    <div className={`rounded-2xl px-4 py-3 text-sm ${
+                      msg.remetente_id === user?.id 
+                        ? 'bg-primary text-white' 
+                        : 'bg-white border shadow-sm text-gray-900'
+                    }`}>
+                      <MessageText>{msg.conteudo}</MessageText>
+                    </div>
+                    <span className={`text-xs text-gray-400 mt-1 block ${
+                      msg.remetente_id === user?.id ? 'text-right' : 'text-left'
+                    }`}>
+                      {formatarData(msg.created_at)}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {formatarData(msg.created_at)}
-                  </span>
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="bg-secondary border-t p-4">
-              <div className="flex space-x-2">
+            <div className="bg-white border-t border-gray-200 p-4">
+              <div className="flex space-x-3">
                 <Input
                   placeholder="Digite sua mensagem..."
                   value={novaMensagem}
                   onChange={handleNovaMensagemChange}
                   onKeyDown={handleKeyPress}
+                  className="flex-1"
                 />
-                <Button onClick={handleEnviarMensagem}>
+                <Button onClick={handleEnviarMensagem} size="sm" className="px-6">
                   <Send className="h-4 w-4 mr-2" />
                   Enviar
                 </Button>
@@ -294,17 +337,16 @@ const Mensagens = () => {
             </div>
           </div>
         ) : (
-          <div className="w-2/3 flex items-center justify-center h-full">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center space-y-4">
-                <MessageCircle className="h-10 w-10 text-muted-foreground" />
-                <p className="text-lg font-semibold">Selecione uma conversa para visualizar</p>
-                <Button onClick={() => setShowChatModal(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Conversa
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="w-2/3 flex items-center justify-center h-full bg-white">
+            <div className="text-center">
+              <MessageCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-xl font-semibold text-gray-900 mb-2">Selecione uma conversa</p>
+              <p className="text-gray-600 mb-6">Escolha uma conversa para começar a conversar</p>
+              <Button onClick={() => setShowChatModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Conversa
+              </Button>
+            </div>
           </div>
         )}
       </div>
