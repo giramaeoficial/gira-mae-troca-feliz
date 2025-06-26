@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
-import LocationFilter from "@/components/shared/LocationFilter";
 import AdvancedFilters from "@/components/shared/AdvancedFilters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -161,14 +161,6 @@ const Feed = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
             <Header />
-            
-            {/* Filtro de Localização - Discreto no topo */}
-            <div className="container mx-auto px-4 py-2 border-b bg-white/80 backdrop-blur-sm">
-                <LocationFilter 
-                    value={location}
-                    onChange={handleLocationChange}
-                />
-            </div>
 
             <main className="container mx-auto px-4 py-6">
                 {/* Hero Section - só mostra se tem localização */}
@@ -192,7 +184,11 @@ const Feed = () => {
                 />
 
                 {/* Grid de Itens - só mostra se tem localização e já fez busca */}
-                {!location ? null : loading ? (
+                {!location ? (
+                    <div className="text-center py-12">
+                        <p className="text-gray-500">Use o FeedOptimized para uma experiência melhor com localização automática</p>
+                    </div>
+                ) : loading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                         <ItemCardSkeleton count={10} />
                     </div>
