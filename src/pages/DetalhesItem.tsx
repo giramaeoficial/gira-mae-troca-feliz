@@ -39,6 +39,7 @@ import { Tables } from "@/integrations/supabase/types";
 import LazyImage from "@/components/ui/lazy-image";
 import { cn } from "@/lib/utils";
 import ActionFeedback from "@/components/loading/ActionFeedback";
+import ItensRelacionados from "@/components/item/ItensRelacionados";
 
 type ItemComPerfil = Tables<'itens'> & {
   profiles?: {
@@ -643,6 +644,20 @@ const DetalhesItem = () => {
                     </Card>
                 )}
             </main>
+
+            {/* ✅ ADICIONADO: Itens Relacionados */}
+            {item && (
+                <div className="max-w-4xl mx-auto p-4">
+                    <ItensRelacionados 
+                        itemAtual={item}
+                        location={item.profiles ? {
+                            cidade: item.profiles.cidade || '',
+                            estado: item.profiles.estado || '',
+                            bairro: item.profiles.bairro || undefined
+                        } : null}
+                    />
+                </div>
+            )}
 
             {/* ✅ ADICIONADO: Modal de Zoom da Imagem */}
             {showImageModal && (
