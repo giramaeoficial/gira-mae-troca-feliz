@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 export interface Address {
   cep: string;
   endereco: string;
+  numero: string;
   bairro: string;
   cidade: string;
   estado: string;
@@ -36,7 +37,7 @@ export const useAddress = () => {
     return numbers.length === 8;
   };
 
-  const fetchAddress = async (cep: string): Promise<Address | null> => {
+  const fetchAddress = async (cep: string): Promise<Partial<Address> | null> => {
     const cleanCep = cep.replace(/\D/g, '');
     
     if (!validateCep(cleanCep)) {
@@ -57,12 +58,13 @@ export const useAddress = () => {
         return null;
       }
 
-      const address: Address = {
+      const address: Partial<Address> = {
         cep: formatCep(data.cep),
         endereco: data.logradouro,
         bairro: data.bairro,
         cidade: data.localidade,
         estado: data.uf,
+        numero: '',
         complemento: '',
         ponto_referencia: ''
       };
@@ -77,11 +79,25 @@ export const useAddress = () => {
     }
   };
 
+  const validateAddress = (address: Partial<Address>): string[] => {
+    const errors: string[] = [];
+    
+    if (!address.cep) errors.push('CEP é obrigatório');
+    if (!address.endereco) errors.push('Endereço é obrigatório');
+    if (!address.numero) errors.push('Número é obrigatório');
+    if (!address.bairro) errors.push('Bairro é obrigatório');
+    if (!address.cidade) errors.push('Cidade é obrigatória');
+    if (!address.estado) errors.push('Estado é obrigatório');
+    
+    return errors;
+  };
+
   return {
     loading,
     error,
     fetchAddress,
     formatCep,
-    validateCep
+    validateCep,
+    validateAddress
   };
 };

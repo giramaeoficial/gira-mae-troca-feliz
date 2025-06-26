@@ -11,13 +11,20 @@ export const validateCep = (cep: string): boolean => {
 
 export const formatAddress = (address: {
   endereco?: string;
+  numero?: string;
   bairro?: string;
   cidade?: string;
   estado?: string;
 }): string => {
   const parts = [];
   
-  if (address.endereco) parts.push(address.endereco);
+  if (address.endereco) {
+    if (address.numero) {
+      parts.push(`${address.endereco}, ${address.numero}`);
+    } else {
+      parts.push(address.endereco);
+    }
+  }
   if (address.bairro) parts.push(address.bairro);
   if (address.cidade && address.estado) {
     parts.push(`${address.cidade}/${address.estado}`);
@@ -61,4 +68,16 @@ export const calculateDistance = (
   const distance = R * c;
   
   return Math.round(distance * 10) / 10; // Arredondar para 1 casa decimal
+};
+
+// Validar endereço completo
+export const isAddressComplete = (address: any): boolean => {
+  return !!(
+    address?.cep && 
+    address?.endereco && 
+    address?.numero && 
+    address?.bairro && 
+    address?.cidade && 
+    address?.estado
+  );
 };

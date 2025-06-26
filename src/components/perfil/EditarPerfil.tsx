@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Info, X, Camera } from 'lucide-react';
-import AddressInput from '@/components/address/AddressInput';
+import SimpleAddressForm from '@/components/address/SimpleAddressForm';
 import NotificationSettings from '@/components/location/NotificationSettings';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,14 +31,7 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
     profissao: '',
     instagram: '',
     telefone: '',
-    interesses: [] as string[],
-    cep: '',
-    endereco: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    complemento: '',
-    ponto_referencia: ''
+    interesses: [] as string[]
   });
 
   const [newInteresse, setNewInteresse] = useState('');
@@ -51,14 +44,7 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
         profissao: profile.profissao || '',
         instagram: profile.instagram || '',
         telefone: profile.telefone || '',
-        interesses: profile.interesses || [],
-        cep: profile.cep || '',
-        endereco: profile.endereco || '',
-        bairro: profile.bairro || '',
-        cidade: profile.cidade || '',
-        estado: profile.estado || '',
-        complemento: profile.complemento || '',
-        ponto_referencia: profile.ponto_referencia || ''
+        interesses: profile.interesses || []
       });
     }
   }, [profile]);
@@ -92,19 +78,6 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAddressChange = (address: any) => {
-    setProfileData(prev => ({
-      ...prev,
-      cep: address.cep || '',
-      endereco: address.endereco || '',
-      bairro: address.bairro || '',
-      cidade: address.cidade || '',
-      estado: address.estado || '',
-      complemento: address.complemento || '',
-      ponto_referencia: address.ponto_referencia || ''
-    }));
   };
 
   const addInteresse = () => {
@@ -267,24 +240,14 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
           {tab === 'endereco' && (
             <div className="space-y-4">
               <div>
-                <h3 className="font-medium text-lg mb-2">📍 Onde você mora?</h3>
+                <h3 className="font-medium text-lg mb-2">📍 Seu Endereço Principal</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Seu endereço ajuda outras mães a encontrarem itens próximos e facilita as trocas.
+                  Cadastre seu endereço principal. Ele será usado para todos os itens que você publicar
+                  e ajudará outras mães a encontrarem produtos próximos.
                 </p>
               </div>
 
-              <AddressInput
-                value={{
-                  cep: profileData.cep,
-                  endereco: profileData.endereco,
-                  bairro: profileData.bairro,
-                  cidade: profileData.cidade,
-                  estado: profileData.estado,
-                  complemento: profileData.complemento,
-                  ponto_referencia: profileData.ponto_referencia
-                }}
-                onChange={handleAddressChange}
-              />
+              <SimpleAddressForm />
 
               <Alert className="bg-blue-50 border-blue-200">
                 <Info className="w-4 h-4" />
@@ -310,23 +273,25 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
           )}
         </div>
 
-        {/* Botão de salvar fixo */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
-          <Button 
-            className="w-full"
-            onClick={handleSave}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              'Salvar alterações'
-            )}
-          </Button>
-        </div>
+        {/* Botão de salvar fixo - apenas para aba básico */}
+        {tab === 'basico' && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t">
+            <Button 
+              className="w-full"
+              onClick={handleSave}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar alterações'
+              )}
+            </Button>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

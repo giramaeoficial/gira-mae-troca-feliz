@@ -1,3 +1,6 @@
+// DEPRECATED: Este hook não é mais utilizado.
+// O sistema agora usa apenas um endereço principal por usuário.
+// Veja useUserAddress.ts para a nova implementação.
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
