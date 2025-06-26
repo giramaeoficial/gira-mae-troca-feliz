@@ -71,7 +71,7 @@ const Feed = () => {
     const filteredItens = itens.filter(item => {
         const matchBusca = !filters.busca || 
             item.titulo.toLowerCase().includes(filters.busca.toLowerCase()) ||
-            item.descricao.toLowerCase().includes(filters.descricao.toLowerCase());
+            item.descricao.toLowerCase().includes(filters.busca.toLowerCase());
         
         const matchCategoria = filters.categoria === 'todas' || item.categoria === filters.categoria;
         
