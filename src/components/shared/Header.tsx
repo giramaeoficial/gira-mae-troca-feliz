@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, User, Menu, X, ChevronDown } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -14,22 +13,56 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { toast } from 'sonner';
+import { cn } from "@/lib/utils";
+
+const NavLink: React.FC<{ to: string; icon: React.ElementType; children: React.ReactNode }> = ({ to, icon: Icon, children }) => {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  return (
+    <Link
+      to={to}
+      className={cn(
+        "flex items-center gap-2 hover:text-pink-600 transition-colors",
+        isActive ? "text-pink-600 border-b-2 border-pink-600 pb-4" : "text-gray-800"
+      )}
+    >
+      <Icon className="w-4 h-4" />
+      <span>{children}</span>
+    </Link>
+  );
+};
+
+const DesktopNav: React.FC = () => {
+  return (
+    <nav className="flex gap-8 items-center text-sm font-medium">
+      {/* Bloco de Ações Principais */}
+      <NavLink to="/feed" icon={Home}>Feed</NavLink>
+      <NavLink to="/publicar" icon={Plus}>Publicar</NavLink>
+      <NavLink to="/minhas-reservas" icon={Package}>Reservas</NavLink>
+      
+      {/* Separador Vertical */}
+      <div className="border-l h-6 border-gray-300 mx-2"></div>
+      
+      {/* Bloco de Funcionalidades */}
+      <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
+      <NavLink to="/mensagens" icon={MessageCircle}>Mensagens</NavLink>
+      
+      {/* Separador Vertical */}
+      <div className="border-l h-6 border-gray-300 mx-2"></div>
+      
+      {/* Bloco de Gamificação */}
+      <NavLink to="/missoes" icon={Trophy}>Missões</NavLink>
+      <NavLink to="/indicacoes" icon={Users}>Indicações</NavLink>
+    </nav>
+  );
+};
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/feed?busca=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm('');
-    }
-  };
 
   const handleSignOut = async () => {
     try {
@@ -42,12 +75,12 @@ const Header: React.FC = () => {
   };
 
   const desktopNavItems = [
-    { label: 'Feed', path: '/feed' },
-    { label: 'Publicar', path: '/publicar' },
-    { label: 'Carteira', path: '/carteira' },
-    { label: 'Missões', path: '/missoes' },
-    { label: 'Mensagens', path: '/mensagens' },
-    { label: 'Reservas', path: '/minhas-reservas' }
+    { label: 'Feed', path: '/feed', icon: Home },
+    { label: 'Publicar', path: '/publicar', icon: Plus },
+    { label: 'Carteira', path: '/carteira', icon: Wallet },
+    { label: 'Missões', path: '/missoes', icon: Trophy },
+    { label: 'Mensagens', path: '/mensagens', icon: MessageCircle },
+    { label: 'Reservas', path: '/minhas-reservas', icon: Package }
   ];
 
   if (!user) {
@@ -55,7 +88,14 @@ const Header: React.FC = () => {
       <header className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center">
+            <Link to="/" className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles h-8 w-8 text-primary">
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+                <path d="M20 3v4"></path>
+                <path d="M22 5h-4"></path>
+                <path d="M4 17v2"></path>
+                <path d="M5 18H3"></path>
+              </svg>
               <span className="text-2xl font-bold text-primary">GiraMãe</span>
             </Link>
             
@@ -79,40 +119,21 @@ const Header: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to="/feed" className="flex items-center">
+            <Link to="/feed" className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles h-8 w-8 text-primary">
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+                <path d="M20 3v4"></path>
+                <path d="M22 5h-4"></path>
+                <path d="M4 17v2"></path>
+                <path d="M5 18H3"></path>
+              </svg>
               <span className="text-2xl font-bold text-primary">GiraMãe</span>
             </Link>
 
             {/* Desktop Navigation - Hidden on mobile */}
-            <nav className="hidden md:flex items-center space-x-6">
-              {desktopNavItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`text-sm font-medium transition-colors hover:text-primary ${
-                    location.pathname === item.path 
-                      ? 'text-primary border-b-2 border-primary pb-4' 
-                      : 'text-gray-600'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Search Bar - Hidden on mobile */}
-            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-6">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Buscar itens..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-            </form>
+            <div className="hidden md:flex flex-1 justify-center">
+              <DesktopNav />
+            </div>
 
             {/* Right side - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
@@ -146,9 +167,6 @@ const Header: React.FC = () => {
                   <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
                     Configurações
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/indicacoes')}>
-                    Indicações
-                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleSignOut}>
                     Sair
                   </DropdownMenuItem>
@@ -169,22 +187,6 @@ const Header: React.FC = () => {
               </Button>
             </div>
           </div>
-        </div>
-
-        {/* Mobile Search Bar */}
-        <div className="md:hidden px-4 pb-4">
-          <form onSubmit={handleSearch}>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Buscar itens..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full"
-              />
-            </div>
-          </form>
         </div>
       </header>
 
@@ -221,50 +223,50 @@ const Header: React.FC = () => {
             </div>
 
             <nav className="p-4 space-y-2">
-              {desktopNavItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`block py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === item.path
-                      ? 'bg-primary text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {desktopNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-3 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === item.path
+                        ? 'bg-primary text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
               
               <hr className="my-4" />
               
               <Link
                 to="/perfil"
-                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className="flex items-center gap-3 py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
                 onClick={() => setMobileMenuOpen(false)}
               >
+                <User className="w-4 h-4" />
                 Meu Perfil
               </Link>
               <Link
                 to="/perfil/editar"
-                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className="flex items-center gap-3 py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
                 onClick={() => setMobileMenuOpen(false)}
               >
+                <User className="w-4 h-4" />
                 Editar Perfil
               </Link>
               <Link
                 to="/configuracoes"
-                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className="flex items-center gap-3 py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
                 onClick={() => setMobileMenuOpen(false)}
               >
+                <User className="w-4 h-4" />
                 Configurações
-              </Link>
-              <Link
-                to="/indicacoes"
-                className="block py-2 px-3 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Indicações
               </Link>
               
               <hr className="my-4" />
@@ -274,8 +276,9 @@ const Header: React.FC = () => {
                   handleSignOut();
                   setMobileMenuOpen(false);
                 }}
-                className="block w-full text-left py-2 px-3 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+                className="flex items-center gap-3 w-full text-left py-2 px-3 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
               >
+                <X className="w-4 h-4" />
                 Sair
               </button>
             </nav>
