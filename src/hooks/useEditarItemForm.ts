@@ -1,9 +1,8 @@
-import { useState, useCallback, useEffect } from 'react';
+
+import { useState, useCallback } from 'react';
 import { toast } from "sonner";
 import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { useSubcategorias } from '@/hooks/useSubcategorias';
-import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -26,9 +25,7 @@ interface ValidationErrors {
 }
 
 export const useEditarItemForm = (initialItem: Item) => {
-  const { validarValorCategoria, configuracoes } = useConfigCategorias();
-  const { subcategorias, isLoading: isLoadingSubcategorias } = useSubcategorias();
-  const { tiposTamanho, isLoading: isLoadingTamanhos } = useTiposTamanho(initialItem?.categoria || '');
+  const { validarValorCategoria } = useConfigCategorias();
   const { mutate: atualizarItem, isPending: loading } = useAtualizarItem();
 
   const [formData, setFormData] = useState<EditFormData>({
@@ -47,35 +44,9 @@ export const useEditarItemForm = (initialItem: Item) => {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [formInitialized, setFormInitialized] = useState(false);
-
-  // Aguardar o carregamento das opções antes de resetar o formulário
-  const shouldWaitForOptions = useCallback(() => {
-    if (!initialItem) return false;
-    
-    // Verificar se as configurações de categoria estão carregadas
-    const hasConfiguracoes = configuracoes && configuracoes.length > 0;
-    
-    // Verificar se as subcategorias estão carregadas (se necessário)
-    const needsSubcategorias = initialItem.subcategoria && initialItem.subcategoria.trim() !== '';
-    const hasSubcategorias = !needsSubcategorias || (!isLoadingSubcategorias && subcategorias && subcategorias.length > 0);
-    
-    // Verificar se os tamanhos estão carregados (se necessário)
-    const needsTamanhos = initialItem.tamanho_valor && initialItem.tamanho_valor.trim() !== '';
-    const hasTamanhos = !needsTamanhos || (!isLoadingTamanhos && tiposTamanho && Object.keys(tiposTamanho).length > 0);
-    
-    return hasConfiguracoes && hasSubcategorias && hasTamanhos;
-  }, [initialItem, configuracoes, isLoadingSubcategorias, subcategorias, isLoadingTamanhos, tiposTamanho]);
 
   const resetForm = useCallback((item: Item) => {
     console.log('🔄 Resetando form com item:', item);
-    
-    // Aguardar o carregamento das opções necessárias
-    if (!shouldWaitForOptions()) {
-      console.log('⏳ Aguardando carregamento das opções dos dropdowns...');
-      return;
-    }
-    
     setFormData({
       titulo: item.titulo || '',
       descricao: item.descricao || '',
@@ -90,17 +61,7 @@ export const useEditarItemForm = (initialItem: Item) => {
       imagensExistentes: Array.isArray(item.fotos) ? item.fotos : []
     });
     setErrors({});
-    setFormInitialized(true);
-    console.log('✅ Formulário resetado com sucesso');
-  }, [shouldWaitForOptions]);
-
-  // Effect para tentar resetar o formulário quando as opções estiverem carregadas
-  useEffect(() => {
-    if (initialItem && !formInitialized && shouldWaitForOptions()) {
-      console.log('🔄 Tentando resetar formulário após carregamento das opções');
-      resetForm(initialItem);
-    }
-  }, [initialItem, formInitialized, shouldWaitForOptions, resetForm]);
+  }, []);
 
   const updateFormData = useCallback((updates: Partial<EditFormData>) => {
     setFormData(prev => {
@@ -284,7 +245,6 @@ export const useEditarItemForm = (initialItem: Item) => {
     loading: loading || uploadingImages,
     handleSubmit,
     resetForm,
-    isValid: Object.keys(errors).length === 0,
-    formInitialized
+    isValid: Object.keys(errors).length === 0
   };
 };

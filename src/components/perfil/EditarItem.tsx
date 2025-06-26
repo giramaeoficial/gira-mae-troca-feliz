@@ -22,8 +22,7 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
     errors,
     loading,
     handleSubmit,
-    resetForm,
-    formInitialized
+    resetForm
   } = useEditarItemForm(item);
 
   useEffect(() => {
@@ -58,51 +57,44 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
         </div>
         
         <div className="p-6">
-          {!formInitialized ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
-              <span className="ml-2 text-gray-600">Carregando dados do formulário...</span>
-            </div>
-          ) : (
-            <form onSubmit={onSubmitForm} className="space-y-6">
-              <SimpleItemForm
-                formData={formData}
-                onFieldChange={handleFieldChange}
-                onRemoverImagemExistente={removerImagemExistente}
-                errors={errors}
-                isEditing={true}
-              />
+          <form onSubmit={onSubmitForm} className="space-y-6">
+            <SimpleItemForm
+              formData={formData}
+              onFieldChange={handleFieldChange}
+              onRemoverImagemExistente={removerImagemExistente}
+              errors={errors}
+              isEditing={true}
+            />
 
-              <div className="pt-4 border-t border-gray-100 flex gap-3">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={onClose}
-                  className="flex-1"
-                  disabled={loading}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 h-12 text-base bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg rounded-lg transition-all duration-200"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Salvar Alterações
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          )}
+            <div className="pt-4 border-t border-gray-100 flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                className="flex-1"
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit"
+                disabled={loading}
+                className="flex-1 h-12 text-base bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg rounded-lg transition-all duration-200"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Salvar Alterações
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
         </div>
       </DialogContent>
     </Dialog>
