@@ -19,6 +19,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
+import { useTamanhosPorCategoria } from '@/hooks/useTamanhosPorCategoria';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
@@ -30,6 +31,8 @@ const FeedOptimized = () => {
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
   const [subcategoria, setSubcategoria] = useState('todas');
+  const [genero, setGenero] = useState('todos');
+  const [tamanho, setTamanho] = useState('todos');
   const [precoRange, setPrecoRange] = useState([0, 200]);
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true); // Sempre mostrar itens por padrão
@@ -38,13 +41,17 @@ const FeedOptimized = () => {
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   
   // Dados dos dropdowns
-  const { configuracoes: categorias = [] } = useConfigCategorias();
-  const { subcategorias: todasSubcategorias = [] } = useSubcategorias();
+  const { configuracoes: categorias = [], isLoading: loadingCategorias } = useConfigCategorias();
+  const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
+  const { tamanhos: todosTamanhos = [], isLoading: loadingTamanhos } = useTamanhosPorCategoria(categoria !== 'todas' ? categoria : undefined);
   
   // Filtrar subcategorias baseado na categoria selecionada
   const subcategoriasFiltradas = categoria !== 'todas' 
     ? todasSubcategorias.filter(sub => sub.categoria_pai === categoria)
     : [];
+
+  // Filtrar tamanhos baseado na categoria selecionada
+  const tamanhosFiltrados = categoria !== 'todas' ? todosTamanhos : [];
 
   const debouncedBusca = useDebounce(busca, 500);
 
@@ -89,6 +96,8 @@ const FeedOptimized = () => {
     setCidadeManual('');
     setCategoria('todas');
     setSubcategoria('todas');
+    setGenero('todos');
+    setTamanho('todos');
     setPrecoRange([0, 200]);
     limparLocalizacao();
     setMostrarFiltrosAvancados(false);
@@ -105,6 +114,12 @@ const FeedOptimized = () => {
 
   const toggleFiltrosAvancados = () => {
     setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
+  };
+
+  const handleCategoriaChange = (novaCategoria: string) => {
+    setCategoria(novaCategoria);
+    setSubcategoria('todas'); // Reset subcategoria
+    setTamanho('todos'); // Reset tamanho
   };
 
   if (!user) {
@@ -222,20 +237,21 @@ const FeedOptimized = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
-                  <Select value={categoria} onValueChange={(value) => {
-                    setCategoria(value);
-                    setSubcategoria('todas');
-                  }}>
+                  <Select value={categoria} onValueChange={handleCategoriaChange}>
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todas</SelectItem>
-                      {categorias && categorias.map((cat) => (
-                        <SelectItem key={cat.codigo} value={cat.nome}>
-                          {cat.nome}
-                        </SelectItem>
-                      ))}
+                      {loadingCategorias ? (
+                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                      ) : (
+                        categorias.map((cat) => (
+                          <SelectItem key={cat.codigo} value={cat.nome}>
+                            {cat.nome}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -245,18 +261,65 @@ const FeedOptimized = () => {
                   <Select 
                     value={subcategoria} 
                     onValueChange={setSubcategoria}
-                    disabled={categoria === 'todas' || subcategoriasFiltradas.length === 0}
+                    disabled={categoria === 'todas' || subcategoriasFiltradas.length === 0 || loadingSubcategorias}
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="todas">Todas</SelectItem>
-                      {subcategoriasFiltradas && subcategoriasFiltradas.map((sub) => (
-                        <SelectItem key={sub.id} value={sub.nome}>
-                          {sub.nome}
-                        </SelectItem>
-                      ))}
+                      {loadingSubcategorias ? (
+                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                      ) : (
+                        subcategoriasFiltradas.map((sub) => (
+                          <SelectItem key={sub.id} value={sub.nome}>
+                            {sub.nome}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Gênero e Tamanho */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
+                  <Select value={genero} onValueChange={setGenero}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="menino">Menino</SelectItem>
+                      <SelectItem value="menina">Menina</SelectItem>
+                      <SelectItem value="unissex">Unissex</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">TAMANHO</h3>
+                  <Select 
+                    value={tamanho} 
+                    onValueChange={setTamanho}
+                    disabled={categoria === 'todas' || tamanhosFiltrados.length === 0 || loadingTamanhos}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {loadingTamanhos ? (
+                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                      ) : (
+                        tamanhosFiltrados.map((tam) => (
+                          <SelectItem key={tam.id} value={tam.valor}>
+                            {tam.label_display}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
