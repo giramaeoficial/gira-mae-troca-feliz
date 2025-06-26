@@ -3,14 +3,13 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { useItens } from "@/hooks/useItens";
+import { useMeusItens } from "@/hooks/useItensOptimized";
 import { Star, MapPin, Calendar, Plus, Edit3, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,19 +18,12 @@ import EmptyState from "@/components/loading/EmptyState";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import FriendlyError from "@/components/error/FriendlyError";
 import LazyImage from "@/components/ui/lazy-image";
+import ItemCardWithActions from "@/components/shared/ItemCardWithActions";
 
 const Perfil = () => {
     const { user } = useAuth();
-    const { profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useProfile();
-    const { buscarMeusItens, loading: itensLoading, error: itensError, itens: meusItens } = useItens();
-    const [activeTab, setActiveTab] = useState("ativos");
-
-    // Carregar meus itens quando o usuário estiver disponível
-    useEffect(() => {
-        if (user) {
-            buscarMeusItens(user.id);
-        }
-    }, [user, buscarMeusItens]);
+    const { profile, loading: profileLoading, error: profileError } = useProfile();
+    const { data: meusItens, isLoading: itensLoading, error: itensError } = useMeusItens(user?.id || '');
 
     if (!user) {
         return (
@@ -76,10 +68,6 @@ const Perfil = () => {
         );
     }
 
-    const itensAtivos = meusItens?.filter(item => item.status === 'disponivel') || [];
-    const itensReservados = meusItens?.filter(item => item.status === 'reservado') || [];
-    const itensTrocados = meusItens?.filter(item => item.status === 'entregue') || [];
-
     const getInitials = (name: string) => {
         return name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U';
     };
@@ -91,57 +79,6 @@ const Perfil = () => {
             return 'Data inválida';
         }
     };
-
-    const renderItemCard = (item: any) => (
-        <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white/90 backdrop-blur-sm border-0">
-            <div className="aspect-square bg-gray-100 overflow-hidden relative">
-                {item.fotos && item.fotos.length > 0 ? (
-                    <LazyImage
-                        src={item.fotos[0]}
-                        alt={item.titulo}
-                        bucket="itens"
-                        size="medium"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        placeholder="📷"
-                        onError={() => console.error('Erro ao carregar item do perfil:', item.id)}
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        <span className="text-4xl">📷</span>
-                    </div>
-                )}
-                <div className="absolute top-2 right-2">
-                    <Badge className={`${
-                        item.status === 'disponivel' ? 'bg-green-500' : 
-                        item.status === 'reservado' ? 'bg-orange-500' : 
-                        'bg-gray-500'
-                    } text-white`}>
-                        {item.status === 'disponivel' ? 'Ativo' : 
-                         item.status === 'reservado' ? 'Reservado' : 
-                         'Trocado'}
-                    </Badge>
-                </div>
-            </div>
-            <CardContent className="p-4">
-                <h3 className="font-semibold mb-2 line-clamp-2">
-                    {item.titulo}
-                </h3>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                        <Sparkles className="w-4 h-4 text-primary" />
-                        <span className="font-bold text-primary">
-                            {item.valor_girinhas}
-                        </span>
-                    </div>
-                    <Button size="sm" variant="outline" asChild>
-                        <Link to={item.status === 'reservado' ? `/minhas-reservas` : `/item/${item.id}`}>
-                            {item.status === 'reservado' ? 'Ver Reserva' : 'Ver Detalhes'}
-                        </Link>
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-    );
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
@@ -215,41 +152,14 @@ const Perfil = () => {
                         </Card>
                     </div>
 
-                    {/* Conteúdo Principal */}
+                    {/* Conteúdo Principal - Meus Itens */}
                     <div className="w-full lg:w-2/3">
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <Card className="shadow-lg border-0 bg-white/60 backdrop-blur-sm mb-6">
-                                <CardContent className="p-2">
-                                    <TabsList className="grid w-full grid-cols-4 bg-transparent gap-2">
-                                        <TabsTrigger 
-                                            value="ativos" 
-                                            className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
-                                        >
-                                            Ativos ({itensAtivos.length})
-                                        </TabsTrigger>
-                                        <TabsTrigger 
-                                            value="reservados"
-                                            className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
-                                        >
-                                            Reservados ({itensReservados.length})
-                                        </TabsTrigger>
-                                        <TabsTrigger 
-                                            value="trocados"
-                                            className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
-                                        >
-                                            Trocados ({itensTrocados.length})
-                                        </TabsTrigger>
-                                        <TabsTrigger 
-                                            value="estatisticas"
-                                            className="data-[state=active]:bg-primary data-[state=active]:text-white text-sm"
-                                        >
-                                            Stats
-                                        </TabsTrigger>
-                                    </TabsList>
-                                </CardContent>
-                            </Card>
-
-                            <TabsContent value="ativos">
+                        <Card className="shadow-lg border-0 bg-white/60 backdrop-blur-sm mb-6">
+                            <CardContent className="p-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">
+                                    Meus Itens ({meusItens?.length || 0})
+                                </h2>
+                                
                                 {itensLoading ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                         <ItemCardSkeleton count={6} />
@@ -257,77 +167,25 @@ const Perfil = () => {
                                 ) : itensError ? (
                                     <FriendlyError 
                                         title="Erro ao carregar itens"
-                                        message={itensError}
+                                        message={itensError.message}
                                         onRetry={() => window.location.reload()}
                                     />
-                                ) : itensAtivos.length === 0 ? (
+                                ) : !meusItens || meusItens.length === 0 ? (
                                     <EmptyState 
                                         type="items"
-                                        onAction={() => window.location.href = '/publicar-item'}
+                                        title="Nenhum item publicado"
+                                        description="Você ainda não publicou nenhum item. Comece agora!"
+                                        onAction={() => window.location.href = '/publicar'}
                                     />
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {itensAtivos.map(renderItemCard)}
+                                        {meusItens.map((item) => (
+                                            <ItemCardWithActions key={item.id} item={item} />
+                                        ))}
                                     </div>
                                 )}
-                            </TabsContent>
-
-                            <TabsContent value="reservados">
-                                {itensLoading ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        <ItemCardSkeleton count={6} />
-                                    </div>
-                                ) : itensReservados.length === 0 ? (
-                                    <EmptyState 
-                                        type="reservas"
-                                        title="Nenhum item reservado"
-                                        description="Você não tem itens com reservas no momento."
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {itensReservados.map(renderItemCard)}
-                                    </div>
-                                )}
-                            </TabsContent>
-
-                            <TabsContent value="trocados">
-                                {itensTrocados.length === 0 ? (
-                                    <EmptyState 
-                                        type="items"
-                                        title="Nenhuma troca realizada"
-                                        description="Você ainda não completou nenhuma troca."
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {itensTrocados.map(renderItemCard)}
-                                    </div>
-                                )}
-                            </TabsContent>
-
-                            <TabsContent value="estatisticas">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-                                        <CardHeader>
-                                            <CardTitle>Resumo de Atividade</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <div className="flex justify-between">
-                                                <span>Itens Publicados</span>
-                                                <Badge variant="secondary">{meusItens?.length || 0}</Badge>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span>Trocas Realizadas</span>
-                                                <Badge variant="secondary">{itensTrocados.length}</Badge>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span>Avaliação Média</span>
-                                                <Badge variant="secondary">{(profile?.reputacao || 0).toFixed(1)} ⭐</Badge>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </TabsContent>
-                        </Tabs>
+                            </CardContent>
+                        </Card>
 
                         {/* Botão de Ação Flutuante */}
                         <Button 
@@ -335,7 +193,7 @@ const Perfil = () => {
                             className="fixed bottom-20 right-4 rounded-full w-14 h-14 shadow-lg bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 z-40"
                             asChild
                         >
-                            <Link to="/publicar-item">
+                            <Link to="/publicar">
                                 <Plus className="w-6 h-6" />
                             </Link>
                         </Button>
