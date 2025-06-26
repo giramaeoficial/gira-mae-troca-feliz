@@ -112,7 +112,7 @@ const Mensagens = () => {
   const renderMobile = () => {
     if (conversaId) {
       return (
-        <div className="flex flex-col h-screen bg-gray-50 pb-16"> {/* pb-16 para espaço do QuickNav */}
+        <div className="flex flex-col h-screen bg-pink-50 pb-16"> {/* pb-16 para espaço do QuickNav */}
           <Header />
           
           <div className="flex items-center bg-white px-4 py-3 border-b shadow-sm">
@@ -172,7 +172,7 @@ const Mensagens = () => {
     }
 
     return (
-      <div className="flex flex-col h-screen bg-gray-50 pb-16"> {/* pb-16 para espaço do QuickNav */}
+      <div className="flex flex-col h-screen bg-pink-50 pb-16"> {/* pb-16 para espaço do QuickNav */}
         <Header />
         
         <div className="p-4">
@@ -228,7 +228,7 @@ const Mensagens = () => {
   };
 
   const renderDesktop = () => (
-    <div className="flex flex-col h-screen bg-gray-50"> {/* Sem padding bottom no desktop */}
+    <div className="flex flex-col h-screen bg-pink-50"> {/* Sem padding bottom no desktop */}
       <Header />
       
       <div className="flex h-full">
@@ -298,7 +298,7 @@ const Mensagens = () => {
               </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto p-6 bg-gray-50 space-y-4">
+            <div className="flex-grow overflow-y-auto p-6 bg-pink-50 space-y-4">
               {mensagens?.map(msg => (
                 <div key={msg.id} className={`flex ${msg.remetente_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[70%] ${msg.remetente_id === user?.id ? 'order-1' : 'order-2'}`}>
