@@ -25,6 +25,11 @@ const Perfil = () => {
     const { profile, loading: profileLoading, error: profileError } = useProfile();
     const { data: meusItens, isLoading: itensLoading, error: itensError } = useMeusItens(user?.id || '');
 
+    // Filtrar apenas itens com status permitidos
+    const itensFiltrados = meusItens?.filter(item => 
+        ['disponivel', 'reservado', 'inativo', 'cancelado'].includes(item.status)
+    ) || [];
+
     if (!user) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
@@ -157,7 +162,7 @@ const Perfil = () => {
                         <Card className="shadow-lg border-0 bg-white/60 backdrop-blur-sm mb-6">
                             <CardContent className="p-6">
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">
-                                    Meus Itens ({meusItens?.length || 0})
+                                    Meus Itens ({itensFiltrados.length})
                                 </h2>
                                 
                                 {itensLoading ? (
@@ -170,7 +175,7 @@ const Perfil = () => {
                                         message={itensError.message}
                                         onRetry={() => window.location.reload()}
                                     />
-                                ) : !meusItens || meusItens.length === 0 ? (
+                                ) : !itensFiltrados || itensFiltrados.length === 0 ? (
                                     <EmptyState 
                                         type="items"
                                         title="Nenhum item publicado"
@@ -179,7 +184,7 @@ const Perfil = () => {
                                     />
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {meusItens.map((item) => (
+                                        {itensFiltrados.map((item) => (
                                             <ItemCardWithActions key={item.id} item={item} />
                                         ))}
                                     </div>

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreVertical, Edit, Eye, EyeOff, Trash2, Sparkles } from 'lucide-react';
+import { MoreVertical, Edit, Eye, EyeOff, Trash2, Sparkles, Play } from 'lucide-react';
 import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
 import { toast } from '@/components/ui/use-toast';
 import LazyImage from '@/components/ui/lazy-image';
@@ -21,7 +21,7 @@ const ItemCardWithActions: React.FC<ItemCardWithActionsProps> = ({ item }) => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const { mutate: atualizarItem, isPending } = useAtualizarItem();
 
-  const handleDesativar = () => {
+  const handleToggleStatus = () => {
     const novoStatus = item.status === 'disponivel' ? 'inativo' : 'disponivel';
     
     atualizarItem({
@@ -60,11 +60,25 @@ const ItemCardWithActions: React.FC<ItemCardWithActionsProps> = ({ item }) => {
         return <Badge className="bg-orange-500 text-white">Reservado</Badge>;
       case 'inativo':
         return <Badge className="bg-gray-500 text-white">Inativo</Badge>;
+      case 'cancelado':
+        return <Badge className="bg-red-500 text-white">Cancelado</Badge>;
       case 'entregue':
         return <Badge className="bg-blue-500 text-white">Vendido</Badge>;
       default:
         return <Badge variant="secondary">{item.status}</Badge>;
     }
+  };
+
+  const canToggleStatus = () => {
+    return ['disponivel', 'inativo'].includes(item.status);
+  };
+
+  const canEdit = () => {
+    return ['disponivel', 'inativo'].includes(item.status);
+  };
+
+  const canDelete = () => {
+    return ['disponivel', 'inativo', 'cancelado'].includes(item.status);
   };
 
   return (
@@ -84,32 +98,38 @@ const ItemCardWithActions: React.FC<ItemCardWithActionsProps> = ({ item }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editar item
-              </DropdownMenuItem>
+              {canEdit() && (
+                <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar item
+                </DropdownMenuItem>
+              )}
               
-              <DropdownMenuItem onClick={handleDesativar}>
-                {item.status === 'disponivel' ? (
-                  <>
-                    <EyeOff className="mr-2 h-4 w-4" />
-                    Desativar item
-                  </>
-                ) : (
-                  <>
-                    <Eye className="mr-2 h-4 w-4" />
-                    Ativar item
-                  </>
-                )}
-              </DropdownMenuItem>
+              {canToggleStatus() && (
+                <DropdownMenuItem onClick={handleToggleStatus}>
+                  {item.status === 'disponivel' ? (
+                    <>
+                      <EyeOff className="mr-2 h-4 w-4" />
+                      Desativar item
+                    </>
+                  ) : (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Ativar item
+                    </>
+                  )}
+                </DropdownMenuItem>
+              )}
               
-              <DropdownMenuItem 
-                onClick={() => setShowDeleteDialog(true)}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir item
-              </DropdownMenuItem>
+              {canDelete() && (
+                <DropdownMenuItem 
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir item
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
