@@ -53,6 +53,12 @@ export const useEditarItemForm = (initialItem: Item) => {
   useEffect(() => {
     if (initialItem && !loadingSubcategorias && !loadingTamanhos && !isFormInitialized) {
       console.log('🔄 Inicializando form com dados completos do item:', initialItem.id);
+      console.log('📏 Tamanhos disponíveis:', tiposTamanho);
+      console.log('📏 Tamanho salvo do item:', {
+        categoria: initialItem.tamanho_categoria,
+        valor: initialItem.tamanho_valor
+      });
+      
       setFormData({
         titulo: initialItem.titulo || '',
         descricao: initialItem.descricao || '',
@@ -69,7 +75,33 @@ export const useEditarItemForm = (initialItem: Item) => {
       setErrors({});
       setIsFormInitialized(true);
     }
-  }, [initialItem, loadingSubcategorias, loadingTamanhos, isFormInitialized]);
+  }, [initialItem, loadingSubcategorias, loadingTamanhos, isFormInitialized, tiposTamanho]);
+
+  // Efeito adicional para garantir que o tamanho seja definido quando as opções estiverem prontas
+  useEffect(() => {
+    if (isFormInitialized && initialItem && tiposTamanho && Object.keys(tiposTamanho).length > 0) {
+      const tamanhoSalvo = initialItem.tamanho_valor;
+      
+      if (tamanhoSalvo && formData.tamanho_valor !== tamanhoSalvo) {
+        console.log('🔧 Ajustando tamanho após carregamento das opções:', tamanhoSalvo);
+        
+        // Verificar se o tamanho salvo existe nas opções disponíveis
+        const todosOsTamanhos = Object.values(tiposTamanho).flat();
+        const tamanhoEncontrado = todosOsTamanhos.find(t => t.valor === tamanhoSalvo);
+        
+        if (tamanhoEncontrado) {
+          setFormData(prev => ({
+            ...prev,
+            tamanho_categoria: initialItem.tamanho_categoria || Object.keys(tiposTamanho)[0] || '',
+            tamanho_valor: tamanhoSalvo
+          }));
+          console.log('✅ Tamanho ajustado com sucesso:', tamanhoSalvo);
+        } else {
+          console.log('⚠️ Tamanho salvo não encontrado nas opções disponíveis:', tamanhoSalvo);
+        }
+      }
+    }
+  }, [isFormInitialized, initialItem, tiposTamanho, formData.tamanho_valor]);
 
   const resetForm = useCallback((item: Item) => {
     console.log('🔄 Resetando form com item:', item);
