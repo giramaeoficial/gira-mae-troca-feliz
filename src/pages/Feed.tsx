@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -117,7 +116,8 @@ const Feed = () => {
         
         const matchCategoria = filters.categoria === 'todas' || item.categoria === filters.categoria;
         
-        const matchSubcategoria = !filters.subcategoria || item.subcategoria === filters.subcategoria;
+        // Fix: Check if subcategoria exists on item before filtering
+        const matchSubcategoria = !filters.subcategoria || (item.subcategoria && item.subcategoria === filters.subcategoria);
         
         const matchPreco = item.valor_girinhas >= filters.precoMin && item.valor_girinhas <= filters.precoMax;
         
@@ -250,9 +250,10 @@ const Feed = () => {
                                                 <Badge variant="secondary" className="text-xs">
                                                     {item.categoria}
                                                 </Badge>
-                                                {item.tamanho_valor && (
+                                                {/* Fix: Use tamanho instead of tamanho_valor if it exists */}
+                                                {item.tamanho && (
                                                     <Badge variant="outline" className="text-xs">
-                                                        {item.tamanho_valor}
+                                                        {item.tamanho}
                                                     </Badge>
                                                 )}
                                             </div>
