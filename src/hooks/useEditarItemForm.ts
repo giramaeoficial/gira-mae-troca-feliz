@@ -1,8 +1,9 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from "sonner";
 import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { useSubcategorias } from '@/hooks/useSubcategorias';
+import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,6 +28,8 @@ interface ValidationErrors {
 export const useEditarItemForm = (initialItem: Item) => {
   const { validarValorCategoria } = useConfigCategorias();
   const { mutate: atualizarItem, isPending: loading } = useAtualizarItem();
+  const { subcategorias, isLoading: loadingSubcategorias } = useSubcategorias();
+  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(initialItem?.categoria);
 
   const [formData, setFormData] = useState<EditFormData>({
     titulo: '',
@@ -44,6 +47,29 @@ export const useEditarItemForm = (initialItem: Item) => {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+
+  // Aguardar carregamento das opções para inicializar o formulário
+  useEffect(() => {
+    if (initialItem && !loadingSubcategorias && !loadingTamanhos && !isFormInitialized) {
+      console.log('🔄 Inicializando form com dados completos do item:', initialItem.id);
+      setFormData({
+        titulo: initialItem.titulo || '',
+        descricao: initialItem.descricao || '',
+        categoria_id: initialItem.categoria || '',
+        subcategoria: initialItem.subcategoria || '',
+        genero: (initialItem.genero as 'menino' | 'menina' | 'unissex') || 'unissex',
+        tamanho_categoria: initialItem.tamanho_categoria || '',
+        tamanho_valor: initialItem.tamanho_valor || '',
+        estado_conservacao: (initialItem.estado_conservacao as 'novo' | 'seminovo' | 'usado' | 'muito_usado') || 'usado',
+        preco: initialItem.valor_girinhas?.toString() || '',
+        imagens: [],
+        imagensExistentes: Array.isArray(initialItem.fotos) ? initialItem.fotos : []
+      });
+      setErrors({});
+      setIsFormInitialized(true);
+    }
+  }, [initialItem, loadingSubcategorias, loadingTamanhos, isFormInitialized]);
 
   const resetForm = useCallback((item: Item) => {
     console.log('🔄 Resetando form com item:', item);
@@ -61,6 +87,7 @@ export const useEditarItemForm = (initialItem: Item) => {
       imagensExistentes: Array.isArray(item.fotos) ? item.fotos : []
     });
     setErrors({});
+    setIsFormInitialized(false); // Resetar para recarregar
   }, []);
 
   const updateFormData = useCallback((updates: Partial<EditFormData>) => {
@@ -245,6 +272,8 @@ export const useEditarItemForm = (initialItem: Item) => {
     loading: loading || uploadingImages,
     handleSubmit,
     resetForm,
-    isValid: Object.keys(errors).length === 0
+    isValid: Object.keys(errors).length === 0,
+    isFormInitialized,
+    isLoadingOptions: loadingSubcategorias || loadingTamanhos
   };
 };

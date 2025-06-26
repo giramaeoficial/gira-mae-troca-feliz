@@ -22,7 +22,9 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
     errors,
     loading,
     handleSubmit,
-    resetForm
+    resetForm,
+    isFormInitialized,
+    isLoadingOptions
   } = useEditarItemForm(item);
 
   useEffect(() => {
@@ -45,6 +47,27 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
       onClose();
     }
   };
+
+  // Mostrar loading enquanto as opções estão carregando ou o formulário não foi inicializado
+  if (isLoadingOptions || !isFormInitialized) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white p-6 rounded-t-lg">
+            <DialogTitle className="text-xl font-semibold text-center flex items-center justify-center gap-2">
+              <Save className="w-5 h-5" />
+              Editar Item
+            </DialogTitle>
+          </div>
+          
+          <div className="p-6 flex flex-col items-center justify-center min-h-[200px]">
+            <Loader2 className="h-8 w-8 animate-spin text-pink-500 mb-4" />
+            <p className="text-gray-600">Carregando dados do item...</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
