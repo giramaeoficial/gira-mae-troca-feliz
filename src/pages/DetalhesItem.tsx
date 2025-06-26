@@ -1,3 +1,4 @@
+
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -98,7 +99,6 @@ const DetalhesItem = () => {
     const isProprio = item.publicado_por === user?.id;
     const isFavorite = verificarSeFavorito(item.id);
 
-    // FUNÇÃO ATUALIZADA: Sistema V2 agora simplificado (apenas 1 parâmetro)
     const handleReservar = async () => {
         if (isProprio) {
             toast({
@@ -127,7 +127,6 @@ const DetalhesItem = () => {
             return;
         }
 
-        // Sistema V2: entrarNaFila agora aceita apenas 1 parâmetro e é atômico
         const sucesso = await entrarNaFila(item.id);
         if (sucesso) {
             await carregarItem();
@@ -157,21 +156,21 @@ const DetalhesItem = () => {
     const formatarEstado = (estado: string) => {
         const estados = {
             'novo': 'Novo',
-            'otimo': 'Ótimo estado',
-            'bom': 'Bom estado',
-            'razoavel': 'Estado razoável'
+            'seminovo': 'Seminovo',
+            'usado': 'Usado',
+            'muito usado': 'Muito Usado'
         };
         return estados[estado as keyof typeof estados] || estado;
     };
 
     const formatarCategoria = (categoria: string) => {
         const categorias = {
-            'roupa': 'Roupas',
-            'brinquedo': 'Brinquedos',
-            'calcado': 'Calçados',
-            'acessorio': 'Acessórios',
-            'kit': 'Kits',
-            'outro': 'Outros'
+            'roupas': 'Roupas',
+            'brinquedos': 'Brinquedos',
+            'calcados': 'Calçados',
+            'acessorios': 'Acessórios',
+            'equipamentos': 'Equipamentos',
+            'livros': 'Livros'
         };
         return categorias[categoria as keyof typeof categorias] || categoria;
     };
@@ -263,8 +262,8 @@ const DetalhesItem = () => {
                                     <div>
                                         <CardTitle className="text-2xl text-gray-800 mb-2">{item.titulo}</CardTitle>
                                         <div className="flex items-center gap-4 text-sm text-gray-600">
-                                            {item.tamanho && <span>Tamanho: {item.tamanho}</span>}
-                                            {item.tamanho && <span>•</span>}
+                                            {item.tamanho_valor && <span>Tamanho: {item.tamanho_valor}</span>}
+                                            {item.tamanho_valor && <span>•</span>}
                                             <span>{formatarCategoria(item.categoria)}</span>
                                             <span>•</span>
                                             <div className="flex items-center gap-1">

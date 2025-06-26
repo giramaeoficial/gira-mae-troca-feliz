@@ -17,13 +17,13 @@ import LazyImage from "@/components/ui/lazy-image";
 const itemSchema = z.object({
   titulo: z.string().min(3, "Título deve ter pelo menos 3 caracteres"),
   descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
-  categoria: z.enum(["roupa", "brinquedo", "calcado", "acessorio", "kit", "outro"], {
+  categoria: z.enum(["roupas", "brinquedos", "calcados", "acessorios", "equipamentos", "livros"], {
     required_error: "Selecione uma categoria"
   }),
-  estado_conservacao: z.enum(["novo", "otimo", "bom", "razoavel"], {
+  estado_conservacao: z.enum(["novo", "seminovo", "usado", "muito usado"], {
     required_error: "Selecione o estado de conservação"
   }),
-  tamanho: z.string().optional(),
+  tamanho_valor: z.string().optional(),
   valor_girinhas: z.number().min(1, "Valor deve ser maior que 0").max(500, "Valor máximo de 500 Girinhas")
 });
 
@@ -48,7 +48,7 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
       descricao: item.descricao,
       categoria: item.categoria as any,
       estado_conservacao: item.estado_conservacao as any,
-      tamanho: item.tamanho || "",
+      tamanho_valor: item.tamanho_valor || "",
       valor_girinhas: Number(item.valor_girinhas)
     }
   });
@@ -61,7 +61,7 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
         descricao: item.descricao,
         categoria: item.categoria as any,
         estado_conservacao: item.estado_conservacao as any,
-        tamanho: item.tamanho || "",
+        tamanho_valor: item.tamanho_valor || "",
         valor_girinhas: Number(item.valor_girinhas)
       });
       setSelectedFiles([]);
@@ -74,7 +74,7 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
       descricao: data.descricao,
       categoria: data.categoria,
       estado_conservacao: data.estado_conservacao,
-      tamanho: data.tamanho || null,
+      tamanho_valor: data.tamanho_valor || null,
       valor_girinhas: data.valor_girinhas
     };
     
@@ -170,12 +170,12 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="roupa">Roupa</SelectItem>
-                        <SelectItem value="brinquedo">Brinquedo</SelectItem>
-                        <SelectItem value="calcado">Calçado</SelectItem>
-                        <SelectItem value="acessorio">Acessório</SelectItem>
-                        <SelectItem value="kit">Kit</SelectItem>
-                        <SelectItem value="outro">Outro</SelectItem>
+                        <SelectItem value="roupas">👕 Roupas</SelectItem>
+                        <SelectItem value="brinquedos">🧸 Brinquedos</SelectItem>
+                        <SelectItem value="calcados">👟 Calçados</SelectItem>
+                        <SelectItem value="acessorios">🎒 Acessórios</SelectItem>
+                        <SelectItem value="equipamentos">🍼 Equipamentos</SelectItem>
+                        <SelectItem value="livros">📚 Livros</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -196,10 +196,10 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="novo">Novo (com etiqueta)</SelectItem>
-                        <SelectItem value="otimo">Ótimo estado</SelectItem>
-                        <SelectItem value="bom">Bom estado</SelectItem>
-                        <SelectItem value="razoavel">Razoável</SelectItem>
+                        <SelectItem value="novo">✨ Novo</SelectItem>
+                        <SelectItem value="seminovo">⭐ Seminovo</SelectItem>
+                        <SelectItem value="usado">👍 Usado</SelectItem>
+                        <SelectItem value="muito usado">🔄 Muito Usado</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -211,7 +211,7 @@ const EditarItem = ({ item, isOpen, onClose, onSuccess }: EditarItemProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <FormField
                 control={form.control}
-                name="tamanho"
+                name="tamanho_valor"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tamanho (opcional)</FormLabel>

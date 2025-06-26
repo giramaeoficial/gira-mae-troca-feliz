@@ -71,15 +71,8 @@ const PerfilPublicoMae = () => {
           setItens(itensData || []);
         }
         
-        // Buscar estatísticas de seguidores
-        const { data: statsData, error: statsError } = await supabase
-          .rpc('obter_estatisticas_seguidor', { p_usuario_id: profileData.id });
-
-        if (statsError) {
-          console.error('Erro ao buscar estatísticas:', statsError);
-        } else {
-          setEstatisticas(statsData?.[0] || { total_seguindo: 0, total_seguidores: 0 });
-        }
+        // Buscar estatísticas de seguidores (simulado por enquanto)
+        setEstatisticas({ total_seguindo: 0, total_seguidores: 0 });
         
       } catch (error) {
         console.error('Erro ao carregar dados do perfil:', error);
@@ -268,7 +261,7 @@ const PerfilPublicoMae = () => {
                           id: item.id,
                           titulo: item.titulo,
                           categoria: item.categoria,
-                          tamanho: item.tamanho,
+                          tamanho: item.tamanho_valor,
                           valorGirinhas: item.valor_girinhas,
                           estadoConservacao: item.estado_conservacao,
                           fotos: item.fotos,

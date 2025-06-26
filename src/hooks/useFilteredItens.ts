@@ -32,8 +32,7 @@ export const useFilteredItens = (filters: FilteredItensParams) => {
         .from('itens')
         .select(`
           *,
-          publicado_por_profile:profiles!publicado_por(*),
-          escolas_inep!escola_id(*)
+          publicado_por_profile:profiles!publicado_por(*)
         `)
         .eq('status', 'disponivel')
         .neq('publicado_por', user?.id || '');
@@ -55,7 +54,7 @@ export const useFilteredItens = (filters: FilteredItensParams) => {
 
       // Filtro por tamanho
       if (filters.tamanho) {
-        query = query.eq('tamanho', filters.tamanho);
+        query = query.eq('tamanho_valor', filters.tamanho);
       }
 
       // Filtro por valor
@@ -66,20 +65,33 @@ export const useFilteredItens = (filters: FilteredItensParams) => {
         query = query.lte('valor_girinhas', parseFloat(filters.valorMax));
       }
 
-      // Filtro por localização
-      if (filters.estado) {
-        query = query.eq('endereco_estado', filters.estado);
-      }
-      if (filters.cidade) {
-        query = query.eq('endereco_cidade', filters.cidade);
-      }
-      if (filters.bairro) {
-        query = query.eq('endereco_bairro', filters.bairro);
-      }
+      // Filtros de localização usando join com profiles
+      if (filters.estado || filters.cidade || filters.bairro || filters.mesmoBairro) {
+        // Buscar primeiro os IDs dos usuários que atendem aos critérios de localização
+        let profileQuery = supabase.from('profiles').select('id');
+        
+        if (filters.estado) {
+          profileQuery = profileQuery.eq('estado', filters.estado);
+        }
+        if (filters.cidade) {
+          profileQuery = profileQuery.eq('cidade', filters.cidade);
+        }
+        if (filters.bairro) {
+          profileQuery = profileQuery.eq('bairro', filters.bairro);
+        }
+        if (filters.mesmoBairro && profile?.bairro) {
+          profileQuery = profileQuery.eq('bairro', profile.bairro);
+        }
 
-      // Filtro mesmo bairro
-      if (filters.mesmoBairro && profile?.bairro) {
-        query = query.eq('endereco_bairro', profile.bairro);
+        const { data: profilesData } = await profileQuery;
+        const userIds = profilesData?.map(p => p.id) || [];
+        
+        if (userIds.length > 0) {
+          query = query.in('publicado_por', userIds);
+        } else {
+          // Se não há usuários que atendem aos critérios, retornar vazio
+          return [];
+        }
       }
 
       // Ordenação
