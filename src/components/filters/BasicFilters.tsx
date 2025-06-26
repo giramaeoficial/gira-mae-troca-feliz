@@ -1,6 +1,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGeneros } from '@/hooks/useGeneros';
 
 interface Categoria {
   id: string;
@@ -47,6 +48,8 @@ export const BasicFilters: React.FC<BasicFiltersProps> = ({
   onGeneroChange,
   onTamanhoChange
 }) => {
+  // ✅ ADICIONADO: Hook para buscar gêneros
+  const { data: generos = [] } = useGeneros();
   return (
     <div className="space-y-4">
       {/* Filtros Básicos - Layout em grid compacto */}
@@ -114,9 +117,11 @@ export const BasicFilters: React.FC<BasicFiltersProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
-              <SelectItem value="menino">Menino</SelectItem>
-              <SelectItem value="menina">Menina</SelectItem>
-              <SelectItem value="unissex">Unissex</SelectItem>
+              {generos.map((gen) => (
+                <SelectItem key={gen.codigo} value={gen.codigo}>
+                  {gen.icone ? `${gen.icone} ${gen.nome}` : gen.nome}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
