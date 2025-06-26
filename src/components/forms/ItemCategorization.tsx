@@ -79,10 +79,9 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     <div className="space-y-5">
       {/* Categoria Principal */}
       <div className="space-y-2">
-        <Label htmlFor="categoria" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <span className="text-base">🏷️</span>
+        <Label htmlFor="categoria" className="text-sm font-medium text-gray-700">
           Categoria
-          <span className="text-red-400">*</span>
+          <span className="text-red-400 ml-1">*</span>
         </Label>
         <Select value={formData.categoria_id} onValueChange={handleCategoriaChange}>
           <SelectTrigger className="w-full border-gray-200 focus:border-pink-300 focus:ring-pink-200 rounded-lg text-sm">
@@ -138,12 +137,11 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
       <div className="grid grid-cols-2 gap-4">
         {/* Tamanho/Idade */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-            <span className="text-base">📏</span>
+          <Label className="text-sm font-medium text-gray-700">
             {formData.categoria_id === 'calcados' ? 'Número' : 
              formData.categoria_id === 'brinquedos' ? 'Idade' : 
              formData.categoria_id === 'livros' ? 'Faixa Etária' : 'Tamanho'}
-            <span className="text-red-400">*</span>
+            <span className="text-red-400 ml-1">*</span>
           </Label>
           <Select 
             value={formData.tamanho_valor} 
@@ -170,10 +168,9 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
 
         {/* Gênero */}
         <div className="space-y-2">
-          <Label htmlFor="genero" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-            <span className="text-base">👶</span>
+          <Label htmlFor="genero" className="text-sm font-medium text-gray-700">
             Gênero
-            <span className="text-red-400">*</span>
+            <span className="text-red-400 ml-1">*</span>
           </Label>
           <Select value={formData.genero} onValueChange={(value) => onFieldChange('genero', value)}>
             <SelectTrigger className="border-gray-200 focus:border-pink-300 focus:ring-pink-200 rounded-lg text-sm">
@@ -206,10 +203,9 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
 
       {/* Estado do Produto */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <span className="text-base">⭐</span>
+        <Label className="text-sm font-medium text-gray-700">
           Estado do Produto
-          <span className="text-red-400">*</span>
+          <span className="text-red-400 ml-1">*</span>
         </Label>
         <Select value={formData.estado_conservacao} onValueChange={(value) => onFieldChange('estado_conservacao', value)}>
           <SelectTrigger className="w-full border-gray-200 focus:border-pink-300 focus:ring-pink-200 rounded-lg text-sm">

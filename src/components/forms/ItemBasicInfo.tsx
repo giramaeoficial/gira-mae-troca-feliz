@@ -32,25 +32,24 @@ export const ItemBasicInfo: React.FC<ItemBasicInfoProps> = ({
     <div className="space-y-6">
       {/* Fotos do Item */}
       <div className="bg-gradient-to-br from-pink-25 to-purple-25 p-4 rounded-xl border border-pink-100">
-        <Label className="text-sm font-medium mb-4 block text-gray-700 flex items-center gap-2">
-          <span className="text-lg">📸</span>
+        <Label className="text-sm font-medium mb-4 block text-gray-700">
           Fotos do Item
-          <span className="text-red-400">*</span>
+          <span className="text-red-400 ml-1">*</span>
         </Label>
         <ImageUpload 
           value={formData.imagens} 
           onChange={(files) => onFieldChange('imagens', files)}
+          maxFiles={6}
         />
-        <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. Primeira foto será a capa do anúncio.</p>
+        <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. A primeira foto será a capa do anúncio.</p>
         {errors.imagens && <p className="text-red-500 text-sm mt-2">{errors.imagens}</p>}
       </div>
 
       {/* Título */}
       <div className="space-y-2">
-        <Label htmlFor="titulo" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <span className="text-base">✏️</span>
+        <Label htmlFor="titulo" className="text-sm font-medium text-gray-700">
           Título do Anúncio
-          <span className="text-red-400">*</span>
+          <span className="text-red-400 ml-1">*</span>
         </Label>
         <Input
           type="text"
@@ -66,8 +65,7 @@ export const ItemBasicInfo: React.FC<ItemBasicInfoProps> = ({
 
       {/* Descrição Detalhada */}
       <div className="space-y-2">
-        <Label htmlFor="descricao" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <span className="text-base">📝</span>
+        <Label htmlFor="descricao" className="text-sm font-medium text-gray-700">
           Descrição Detalhada
         </Label>
         <Textarea
@@ -85,8 +83,10 @@ export const ItemBasicInfo: React.FC<ItemBasicInfoProps> = ({
       {/* Preço */}
       <div className="space-y-2">
         <Label htmlFor="preco" className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <span className="text-base">💰</span>
-          Preço (Girinhas)
+          Preço
+          <svg className="w-4 h-4 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+          </svg>
           <span className="text-red-400">*</span>
         </Label>
         <Input
