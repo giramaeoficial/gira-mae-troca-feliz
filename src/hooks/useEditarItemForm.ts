@@ -64,7 +64,20 @@ export const useEditarItemForm = (initialItem: Item) => {
   }, []);
 
   const updateFormData = useCallback((updates: Partial<EditFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => {
+      const newData = { ...prev, ...updates };
+      
+      // Se a categoria mudou, mas não estamos atualizando o tamanho especificamente,
+      // preservar os valores de tamanho existentes
+      if (updates.categoria_id && !updates.tamanho_valor && !updates.tamanho_categoria) {
+        // Manter os valores de tamanho atuais
+        newData.tamanho_categoria = prev.tamanho_categoria;
+        newData.tamanho_valor = prev.tamanho_valor;
+      }
+      
+      return newData;
+    });
+    
     // Limpar erros dos campos que foram atualizados
     const updatedFields = Object.keys(updates);
     setErrors(prev => {
