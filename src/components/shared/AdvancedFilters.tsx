@@ -57,9 +57,9 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
     icone: config.icone
   })) || [];
 
-  // Get subcategorias for selected category
+  // Get subcategorias for selected category - using categoria_pai instead of categoria
   const subcategorias = filters.categoria !== 'todas' 
-    ? allSubcategorias.filter(sub => sub.categoria === filters.categoria).map(sub => sub.nome)
+    ? allSubcategorias.filter(sub => sub.categoria_pai === filters.categoria).map(sub => sub.nome)
     : [];
 
   const activeFiltersCount = getActiveFiltersCount();

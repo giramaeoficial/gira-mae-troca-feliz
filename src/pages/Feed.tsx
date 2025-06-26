@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -19,6 +20,7 @@ import ActionFeedback from "@/components/loading/ActionFeedback";
 import LazyImage from "@/components/ui/lazy-image";
 import { Tables } from "@/integrations/supabase/types";
 import { useState as useActionState } from "react";
+import { useFeedFilters } from "@/contexts/FeedFiltersContext";
 
 type Escola = Tables<'escolas_inep'>;
 
@@ -32,6 +34,7 @@ const Feed = () => {
     const { entrarNaFila, isItemReservado } = useReservas();
     const { obterFilaItem } = useFilaEspera();
     const { saldo } = useCarteira();
+    const { filters } = useFeedFilters();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
     const [filasInfo, setFilasInfo] = useState<Record<string, { total_fila: number; posicao_usuario: number }>>({});
 
@@ -106,6 +109,30 @@ const Feed = () => {
         }
     };
 
+    // Apply filters to items
+    const filteredItens = itens.filter(item => {
+        const matchBusca = !filters.busca || 
+            item.titulo.toLowerCase().includes(filters.busca.toLowerCase()) ||
+            item.descricao.toLowerCase().includes(filters.busca.toLowerCase());
+        
+        const matchCategoria = filters.categoria === 'todas' || item.categoria === filters.categoria;
+        
+        const matchSubcategoria = !filters.subcategoria || item.subcategoria === filters.subcategoria;
+        
+        const matchPreco = item.valor_girinhas >= filters.precoMin && item.valor_girinhas <= filters.precoMax;
+        
+        return matchBusca && matchCategoria && matchSubcategoria && matchPreco;
+    }).sort((a, b) => {
+        if (filters.ordem === "recentes") {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        } else if (filters.ordem === "menor-preco") {
+            return a.valor_girinhas - b.valor_girinhas;
+        } else if (filters.ordem === "maior-preco") {
+            return b.valor_girinhas - a.valor_girinhas;
+        }
+        return 0;
+    });
+
     if (error) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
@@ -158,11 +185,9 @@ const Feed = () => {
                     </div>
                 ) : filteredItens.length === 0 ? (
                     <EmptyState 
-                        type={filtros.busca || filtros.categoria !== "todas" || filtros.escola ? "search" : "items"}
+                        type={filters.busca || filters.categoria !== "todas" ? "search" : "items"}
                         onAction={() => {
-                            if (filtros.busca || filtros.categoria !== "todas" || filtros.escola) {
-                                setFiltros({ busca: "", categoria: "todas", ordem: "recentes", escola: null });
-                            }
+                            // Reset filters functionality would be handled by the context
                         }}
                     />
                 ) : (
@@ -225,9 +250,9 @@ const Feed = () => {
                                                 <Badge variant="secondary" className="text-xs">
                                                     {item.categoria}
                                                 </Badge>
-                                                {item.tamanho && (
+                                                {item.tamanho_valor && (
                                                     <Badge variant="outline" className="text-xs">
-                                                        {item.tamanho}
+                                                        {item.tamanho_valor}
                                                     </Badge>
                                                 )}
                                             </div>
