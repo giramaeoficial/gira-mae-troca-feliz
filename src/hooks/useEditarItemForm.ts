@@ -1,8 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import { toast } from "sonner";
 import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { uploadImage, generateImagePath, deleteImage } from '@/utils/supabaseStorage';
+import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EditFormData {
@@ -161,12 +162,15 @@ export const useEditarItemForm = (initialItem: Item) => {
           try {
             const fileName = generateImagePath(initialItem.publicado_por, foto.name);
             
-            await uploadImage({
+            const uploadResult = await uploadImage({
               bucket: 'itens',
               path: fileName,
               file: foto
             });
 
+            console.log('✅ Upload result:', uploadResult);
+
+            // Gerar URL pública usando supabase client
             const { data: { publicUrl } } = supabase.storage
               .from('itens')
               .getPublicUrl(fileName);
