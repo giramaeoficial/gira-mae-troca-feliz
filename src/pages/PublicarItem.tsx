@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import ImageUpload from "@/components/ui/image-upload";
 import PriceSuggestions from "@/components/ui/price-suggestions";
-import AddressInput from "@/components/address/AddressInput";
+import SimpleAddressForm from "@/components/address/SimpleAddressForm";
 import SchoolSelect from "@/components/address/SchoolSelect";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -289,10 +288,7 @@ const PublicarItem = () => {
 
                   {formData.endereco_tipo === 'outro' && (
                     <div className="mt-4">
-                      <AddressInput
-                        value={formData.endereco_personalizado}
-                        onChange={handleEnderecoPersonalizadoChange}
-                      />
+                      <SimpleAddressForm />
                     </div>
                   )}
 
