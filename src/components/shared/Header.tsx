@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, User, Menu, X, ChevronDown } from 'lucide-react';
@@ -12,13 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/useAuth';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import { useProfile } from '@/hooks/useProfile';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { toast } from 'sonner';
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { profile } = useUserProfile();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
