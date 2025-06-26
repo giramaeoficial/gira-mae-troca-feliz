@@ -4,6 +4,7 @@ import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { ItemBasicInfo } from './ItemBasicInfo';
 import { ItemCategorization } from './ItemCategorization';
 import { ItemPricing } from './ItemPricing';
+import ImageUploadEditor from '@/components/ui/image-upload-editor';
 
 interface SimpleItemFormProps {
   formData: {
@@ -17,32 +18,63 @@ interface SimpleItemFormProps {
     estado_conservacao: string;
     preco: string;
     imagens: File[];
+    imagensExistentes?: string[];
   };
   onFieldChange: (field: string, value: any) => void;
+  onRemoverImagemExistente?: (url: string) => void;
   errors: any;
+  isEditing?: boolean;
 }
 
 export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   formData,
   onFieldChange,
-  errors
+  onRemoverImagemExistente,
+  errors,
+  isEditing = false
 }) => {
   const { getFaixaValores } = useConfigCategorias();
   const faixaPrecos = getFaixaValores(formData.categoria_id);
 
   return (
     <div className="space-y-6">
-      {/* Dados Básicos (sem preço) */}
+      {/* Fotos do Item - Componente diferente para edição */}
+      <div className="bg-gradient-to-br from-pink-25 to-purple-25 p-4 rounded-xl border border-pink-100">
+        <label className="text-sm font-medium mb-4 block text-gray-700">
+          Fotos do Item
+          <span className="text-red-400 ml-1">*</span>
+        </label>
+        
+        {isEditing ? (
+          <ImageUploadEditor
+            imagensExistentes={formData.imagensExistentes || []}
+            novasImagens={formData.imagens}
+            onRemoverExistente={onRemoverImagemExistente || (() => {})}
+            onAdicionarNovas={(files) => onFieldChange('imagens', files)}
+            maxFiles={6}
+          />
+        ) : (
+          <div>
+            {/* Usar componente original para criação */}
+            <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. A primeira foto será a capa do anúncio.</p>
+          </div>
+        )}
+        
+        {errors.imagens && <p className="text-red-500 text-sm mt-2">{errors.imagens}</p>}
+      </div>
+
+      {/* Dados Básicos (sem imagens, já tratadas acima) */}
       <ItemBasicInfo
         formData={{
           titulo: formData.titulo,
           descricao: formData.descricao,
-          preco: '', // Não mostrar preço aqui
-          imagens: formData.imagens
+          preco: '',
+          imagens: []
         }}
         onFieldChange={onFieldChange}
         errors={errors}
-        faixaPrecos={null} // Não mostrar faixa aqui
+        faixaPrecos={null}
+        hideImageUpload={true}
       />
       
       {/* Categorização */}

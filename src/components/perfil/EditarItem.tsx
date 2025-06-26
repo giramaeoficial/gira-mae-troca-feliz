@@ -2,7 +2,6 @@
 import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Loader2, Save } from "lucide-react";
 import { SimpleItemForm } from '@/components/forms/SimpleItemForm';
 import { useEditarItemForm } from '@/hooks/useEditarItemForm';
@@ -19,6 +18,7 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
   const {
     formData,
     updateFormData,
+    removerImagemExistente,
     errors,
     loading,
     handleSubmit,
@@ -27,6 +27,7 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
 
   useEffect(() => {
     if (isOpen && item) {
+      console.log('🔄 Resetando form para edição do item:', item.id);
       resetForm(item);
     }
   }, [isOpen, item, resetForm]);
@@ -37,6 +38,7 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
 
   const onSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('📝 Submetendo formulário de edição...');
     const success = await handleSubmit();
     if (success) {
       onSuccess();
@@ -59,7 +61,9 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
             <SimpleItemForm
               formData={formData}
               onFieldChange={handleFieldChange}
+              onRemoverImagemExistente={removerImagemExistente}
               errors={errors}
+              isEditing={true}
             />
 
             <div className="pt-4 border-t border-gray-100 flex gap-3">

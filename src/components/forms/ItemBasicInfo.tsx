@@ -15,13 +15,15 @@ interface ItemBasicInfoProps {
   onFieldChange: (field: string, value: any) => void;
   errors: any;
   faixaPrecos?: { minimo: number; maximo: number } | null;
+  hideImageUpload?: boolean;
 }
 
 export const ItemBasicInfo: React.FC<ItemBasicInfoProps> = ({
   formData,
   onFieldChange,
   errors,
-  faixaPrecos
+  faixaPrecos,
+  hideImageUpload = false
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -30,20 +32,22 @@ export const ItemBasicInfo: React.FC<ItemBasicInfoProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Fotos do Item */}
-      <div className="bg-gradient-to-br from-pink-25 to-purple-25 p-4 rounded-xl border border-pink-100">
-        <Label className="text-sm font-medium mb-4 block text-gray-700">
-          Fotos do Item
-          <span className="text-red-400 ml-1">*</span>
-        </Label>
-        <ImageUpload 
-          value={formData.imagens} 
-          onChange={(files) => onFieldChange('imagens', files)}
-          maxFiles={6}
-        />
-        <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. A primeira foto será a capa do anúncio.</p>
-        {errors.imagens && <p className="text-red-500 text-sm mt-2">{errors.imagens}</p>}
-      </div>
+      {/* Fotos do Item - só mostra se não estiver oculto */}
+      {!hideImageUpload && (
+        <div className="bg-gradient-to-br from-pink-25 to-purple-25 p-4 rounded-xl border border-pink-100">
+          <Label className="text-sm font-medium mb-4 block text-gray-700">
+            Fotos do Item
+            <span className="text-red-400 ml-1">*</span>
+          </Label>
+          <ImageUpload 
+            value={formData.imagens} 
+            onChange={(files) => onFieldChange('imagens', files)}
+            maxFiles={6}
+          />
+          <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. A primeira foto será a capa do anúncio.</p>
+          {errors.imagens && <p className="text-red-500 text-sm mt-2">{errors.imagens}</p>}
+        </div>
+      )}
 
       {/* Título */}
       <div className="space-y-2">
