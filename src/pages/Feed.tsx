@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -25,12 +24,6 @@ type Escola = Tables<'escolas_inep'>;
 
 const Feed = () => {
     const [location, setLocation] = useState<{ estado: string; cidade: string } | null>(null);
-    const [filtros, setFiltros] = useState({
-        busca: "",
-        categoria: "todas",
-        ordem: "recentes",
-        escola: null as Escola | null
-    });
     const [shouldSearch, setShouldSearch] = useState(false);
     
     const { user } = useAuth();
@@ -65,12 +58,6 @@ const Feed = () => {
             setShouldSearch(false);
         }
     }, [location, shouldSearch, refetch]);
-
-    const handleLocationChange = (newLocation: { estado: string; cidade: string } | null) => {
-        setLocation(newLocation);
-        // Limpar escola selecionada quando muda localização
-        setFiltros(prev => ({ ...prev, escola: null }));
-    };
 
     const handleSearch = () => {
         if (location) {
@@ -119,28 +106,6 @@ const Feed = () => {
         }
     };
 
-    const filteredItens = itens.filter(item => {
-        const matchBusca = !filtros.busca || 
-            item.titulo.toLowerCase().includes(filtros.busca.toLowerCase()) ||
-            item.descricao.toLowerCase().includes(filtros.busca.toLowerCase());
-        
-        const matchCategoria = filtros.categoria === "todas" || item.categoria === filtros.categoria;
-        
-        // Filtro por escola - por enquanto desabilitado até implementarmos corretamente
-        const matchEscola = !filtros.escola || true;
-        
-        return matchBusca && matchCategoria && matchEscola;
-    }).sort((a, b) => {
-        if (filtros.ordem === "recentes") {
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        } else if (filtros.ordem === "menor-preco") {
-            return a.valor_girinhas - b.valor_girinhas;
-        } else if (filtros.ordem === "maior-preco") {
-            return b.valor_girinhas - a.valor_girinhas;
-        }
-        return 0;
-    });
-
     if (error) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
@@ -176,12 +141,7 @@ const Feed = () => {
                 )}
 
                 {/* Filtros Avançados */}
-                <AdvancedFilters
-                    filters={filtros}
-                    onFilterChange={setFiltros}
-                    onSearch={handleSearch}
-                    location={location}
-                />
+                <AdvancedFilters onSearch={handleSearch} />
 
                 {/* Grid de Itens - só mostra se tem localização e já fez busca */}
                 {!location ? (

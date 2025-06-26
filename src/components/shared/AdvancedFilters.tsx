@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { LocationDetectionButton } from '@/components/location/LocationDetectionButton';
 import { useFeedFilters } from '@/contexts/FeedFiltersContext';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { useSubcategorias } from '@/hooks/useSubcategorias';
 
 interface AdvancedFiltersProps {
   onSearch?: () => void;
@@ -19,7 +20,8 @@ interface AdvancedFiltersProps {
 
 const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
   const { filters, updateFilter, updateFilters, getActiveFiltersCount, setLocationDetected } = useFeedFilters();
-  const { categorias, subcategoriasPorCategoria } = useConfigCategorias();
+  const { configuracoes } = useConfigCategorias();
+  const { subcategorias: allSubcategorias } = useSubcategorias();
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleSearch = () => {
@@ -48,8 +50,16 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
     });
   };
 
+  // Convert configuracoes to categorias format
+  const categorias = configuracoes?.map(config => ({
+    id: config.codigo,
+    nome: config.nome,
+    icone: config.icone
+  })) || [];
+
+  // Get subcategorias for selected category
   const subcategorias = filters.categoria !== 'todas' 
-    ? subcategoriasPorCategoria[filters.categoria] || []
+    ? allSubcategorias.filter(sub => sub.categoria === filters.categoria).map(sub => sub.nome)
     : [];
 
   const activeFiltersCount = getActiveFiltersCount();
