@@ -23,7 +23,7 @@ const NavLink: React.FC<{ to: string; icon: React.ElementType; children: React.R
       to={to}
       className={cn(
         "flex items-center gap-2 hover:text-pink-600 transition-colors",
-        isActive ? "text-pink-600 border-b-2 border-pink-600 pb-4" : "text-gray-800"
+        isActive ? "text-pink-600" : "text-gray-800"
       )}
     >
       <Icon className="w-4 h-4" />
@@ -34,25 +34,27 @@ const NavLink: React.FC<{ to: string; icon: React.ElementType; children: React.R
 
 const DesktopNav: React.FC = () => {
   return (
-    <nav className="flex gap-8 items-center text-sm font-medium">
-      {/* Bloco de Ações Principais */}
-      <NavLink to="/feed" icon={Home}>Feed</NavLink>
-      <NavLink to="/publicar" icon={Plus}>Publicar</NavLink>
-      <NavLink to="/minhas-reservas" icon={Package}>Reservas</NavLink>
-      
-      {/* Separador Vertical */}
-      <div className="border-l h-6 border-gray-300 mx-2"></div>
-      
-      {/* Bloco de Funcionalidades */}
-      <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
-      <NavLink to="/mensagens" icon={MessageCircle}>Mensagens</NavLink>
-      
-      {/* Separador Vertical */}
-      <div className="border-l h-6 border-gray-300 mx-2"></div>
-      
-      {/* Bloco de Gamificação */}
-      <NavLink to="/missoes" icon={Trophy}>Missões</NavLink>
-      <NavLink to="/indicacoes" icon={Users}>Indicações</NavLink>
+    <nav className="flex justify-center items-center text-sm font-medium w-full">
+      <div className="flex gap-12 items-center">
+        {/* Bloco de Ações Principais */}
+        <NavLink to="/feed" icon={Home}>Feed</NavLink>
+        <NavLink to="/publicar" icon={Plus}>Publicar</NavLink>
+        <NavLink to="/minhas-reservas" icon={Package}>Reservas</NavLink>
+        
+        {/* Separador Vertical */}
+        <div className="border-l h-6 border-gray-300 mx-4"></div>
+        
+        {/* Bloco de Funcionalidades */}
+        <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
+        <NavLink to="/mensagens" icon={MessageCircle}>Mensagens</NavLink>
+        
+        {/* Separador Vertical */}
+        <div className="border-l h-6 border-gray-300 mx-4"></div>
+        
+        {/* Bloco de Gamificação */}
+        <NavLink to="/missoes" icon={Trophy}>Missões</NavLink>
+        <NavLink to="/indicacoes" icon={Users}>Indicações</NavLink>
+      </div>
     </nav>
   );
 };
