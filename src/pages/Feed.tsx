@@ -68,7 +68,7 @@ const Feed = () => {
     };
 
     // Aplicar filtros aos itens
-    const filteredItens = itens.filter(item => {
+    const filteredItens = itens?.filter(item => {
         const matchBusca = !filters.busca || 
             item.titulo.toLowerCase().includes(filters.busca.toLowerCase()) ||
             item.descricao.toLowerCase().includes(filters.busca.toLowerCase());
@@ -87,7 +87,7 @@ const Feed = () => {
             ((item as any).tamanho_valor && (item as any).tamanho_valor === filters.tamanho);
         
         return matchBusca && matchCategoria && matchSubcategoria && matchPreco && matchGenero && matchTamanho;
-    }).sort((a, b) => {
+    })?.sort((a, b) => {
         if (filters.ordem === "recentes") {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         } else if (filters.ordem === "menor-preco") {
@@ -96,7 +96,7 @@ const Feed = () => {
             return b.valor_girinhas - a.valor_girinhas;
         }
         return 0;
-    });
+    }) || [];
 
     if (error) {
         return (
