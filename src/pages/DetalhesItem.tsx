@@ -13,7 +13,6 @@ import {
   Heart, 
   Share2, 
   Flag, 
-  Calendar,
   Clock,
   User,
   Truck,
@@ -23,9 +22,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ZoomIn,
-  MessageCircle,
   Shield,
-  Package
+  Package,
+  Users
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -35,11 +34,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { useCommonSchool } from "@/hooks/useCommonSchool";
+import { useItemCompatibility } from "@/hooks/useItemCompatibility";
 import { Tables } from "@/integrations/supabase/types";
 import LazyImage from "@/components/ui/lazy-image";
 import { cn } from "@/lib/utils";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import ItensRelacionados from "@/components/item/ItensRelacionados";
+import { useFilaEspera } from "@/hooks/useFilaEspera";
 
 type ItemComPerfil = Tables<'itens'> & {
   profiles?: {
@@ -61,19 +62,27 @@ const DetalhesItem = () => {
     const { saldo } = useCarteira();
     const { buscarItemPorId, loading } = useItens();
     const { verificarSeFavorito, toggleFavorito } = useFavoritos();
+    const { obterFilaItem } = useFilaEspera();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [item, setItem] = useState<ItemComPerfil | null>(null);
     const [actionState, setActionState] = useState<'loading' | 'success' | 'error' | 'idle'>('idle');
     const [showImageModal, setShowImageModal] = useState(false);
+    const [filaInfo, setFilaInfo] = useState({ total_fila: 0, posicao_usuario: 0 });
     
-    // ✅ ADICIONADO: Hook para escola em comum
     const { hasCommonSchool } = useCommonSchool(item?.publicado_por || '');
+    const { isCompatible, compatibleChildren } = useItemCompatibility(item || {} as Tables<'itens'>);
     
     useEffect(() => {
         if (id) {
             carregarItem();
         }
     }, [id]);
+
+    useEffect(() => {
+        if (item?.id) {
+            carregarFilaInfo();
+        }
+    }, [item?.id]);
 
     const carregarItem = async () => {
         if (!id) return;
@@ -92,7 +101,16 @@ const DetalhesItem = () => {
         }
     };
 
-    // ✅ MELHORADO: Função para obter ícone de gênero
+    const carregarFilaInfo = async () => {
+        if (!item?.id) return;
+        try {
+            const info = await obterFilaItem(item.id);
+            setFilaInfo(info);
+        } catch (error) {
+            console.error('Erro ao carregar fila:', error);
+        }
+    };
+
     const getGeneroInfo = (genero?: string) => {
         switch (genero) {
             case 'menino': 
@@ -106,7 +124,6 @@ const DetalhesItem = () => {
         }
     };
 
-    // ✅ MELHORADO: Função para obter cor do estado
     const getEstadoInfo = (estado: string) => {
         switch (estado) {
             case 'novo': 
@@ -122,7 +139,6 @@ const DetalhesItem = () => {
         }
     };
 
-    // ✅ ADICIONADO: Função para formatar categoria
     const formatarCategoria = (categoria: string) => {
         const categorias = {
             'roupas': 'Roupas',
@@ -135,7 +151,6 @@ const DetalhesItem = () => {
         return categorias[categoria as keyof typeof categorias] || categoria;
     };
 
-    // ✅ ADICIONADO: Função para calcular tempo desde publicação
     const getTempoPublicacao = (dataPublicacao: string) => {
         const agora = new Date();
         const publicacao = new Date(dataPublicacao);
@@ -188,10 +203,10 @@ const DetalhesItem = () => {
         
         if (sucesso) {
             setActionState('success');
-            await carregarItem();
+            await Promise.all([carregarItem(), carregarFilaInfo()]);
             toast({
                 title: "Sucesso!",
-                description: "Você entrou na fila para este item.",
+                description: filaInfo.total_fila === 0 ? "Item reservado!" : "Você entrou na fila para este item.",
             });
         } else {
             setActionState('error');
@@ -229,7 +244,6 @@ const DetalhesItem = () => {
         }
     };
 
-    // ✅ MELHORADO: Navegação de imagens
     const nextImage = () => {
         if (!item?.fotos) return;
         setCurrentImageIndex((prev) => 
@@ -285,16 +299,23 @@ const DetalhesItem = () => {
     const generoInfo = getGeneroInfo(item.genero);
     const estadoInfo = getEstadoInfo(item.estado_conservacao);
 
-    // ✅ MELHORADO: Garantir que sempre temos imagens válidas
     const imagens = item.fotos && item.fotos.length > 0 
         ? item.fotos 
         : ['/placeholder-item.jpg'];
 
+    // Determinar texto do botão baseado na situação real
+    const getButtonText = () => {
+        if (isReserved) {
+            return filaInfo.posicao_usuario > 0 ? `Na fila (posição ${filaInfo.posicao_usuario})` : 'Item Reservado';
+        }
+        return filaInfo.total_fila === 0 ? 'Reservar Item' : 'Entrar na Fila';
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-            {/* ✅ MELHORADO: Header com navegação */}
+            {/* Header mobile-first */}
             <header className="bg-white shadow-sm border-b border-pink-100 sticky top-0 z-10">
-                <div className="max-w-4xl mx-auto px-4 py-4">
+                <div className="max-w-4xl mx-auto px-4 py-3">
                     <div className="flex items-center justify-between">
                         <Button 
                             variant="ghost" 
@@ -304,17 +325,17 @@ const DetalhesItem = () => {
                         >
                             <ArrowLeft size={20} />
                         </Button>
-                        <h1 className="text-lg font-semibold text-gray-800 text-center flex-1">
-                            Detalhes do Item
+                        <h1 className="text-base font-semibold text-gray-800 text-center flex-1 px-4 truncate">
+                            {item.titulo}
                         </h1>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={handleShare}
                                 className="p-2"
                             >
-                                <Share2 size={20} className="text-gray-600" />
+                                <Share2 size={18} className="text-gray-600" />
                             </Button>
                             <Button 
                                 variant="ghost" 
@@ -323,7 +344,7 @@ const DetalhesItem = () => {
                                 className="p-2"
                             >
                                 <Heart 
-                                    size={20} 
+                                    size={18} 
                                     className={cn(
                                         isFavorite 
                                             ? "fill-red-500 text-red-500" 
@@ -336,8 +357,8 @@ const DetalhesItem = () => {
                 </div>
             </header>
 
-            <main className="max-w-4xl mx-auto p-4 space-y-6">
-                {/* ✅ MELHORADO: Galeria de Imagens */}
+            <main className="max-w-4xl mx-auto p-3 space-y-4">
+                {/* Galeria de Imagens - Mobile first */}
                 <Card className="overflow-hidden shadow-lg">
                     <div className="relative">
                         <div className="aspect-square md:aspect-[4/3] relative">
@@ -347,13 +368,13 @@ const DetalhesItem = () => {
                                 className="w-full h-full object-cover"
                             />
                             
-                            {/* ✅ ADICIONADO: Controles de navegação */}
+                            {/* Controles de navegação para múltiplas fotos */}
                             {imagens.length > 1 && (
                                 <>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90"
+                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90 p-2"
                                         onClick={prevImage}
                                     >
                                         <ChevronLeft size={20} />
@@ -361,41 +382,39 @@ const DetalhesItem = () => {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90"
+                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90 p-2"
                                         onClick={nextImage}
                                     >
                                         <ChevronRight size={20} />
                                     </Button>
+                                    
+                                    {/* Indicador de imagem atual */}
+                                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
+                                        {currentImageIndex + 1} / {imagens.length}
+                                    </div>
                                 </>
                             )}
 
-                            {/* ✅ ADICIONADO: Indicador de imagem atual */}
-                            {imagens.length > 1 && (
-                                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
-                                    {currentImageIndex + 1} / {imagens.length}
-                                </div>
-                            )}
-
-                            {/* ✅ ADICIONADO: Botão de zoom */}
+                            {/* Botão de zoom */}
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="absolute top-2 right-2 bg-white/80 hover:bg-white/90"
+                                className="absolute top-2 right-2 bg-white/80 hover:bg-white/90 p-2"
                                 onClick={() => setShowImageModal(true)}
                             >
                                 <ZoomIn size={16} />
                             </Button>
                         </div>
 
-                        {/* ✅ MELHORADO: Miniaturas das imagens */}
+                        {/* Miniaturas das imagens */}
                         {imagens.length > 1 && (
-                            <div className="flex space-x-2 p-4 overflow-x-auto bg-gray-50">
+                            <div className="flex space-x-2 p-3 overflow-x-auto bg-gray-50">
                                 {imagens.map((image, index) => (
                                     <button
                                         key={index}
                                         onClick={() => setCurrentImageIndex(index)}
                                         className={cn(
-                                            "w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all",
+                                            "w-12 h-12 md:w-16 md:h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all",
                                             index === currentImageIndex
                                                 ? "border-primary shadow-md"
                                                 : "border-gray-200 hover:border-gray-300"
@@ -413,229 +432,217 @@ const DetalhesItem = () => {
                     </div>
                 </Card>
 
-                {/* ✅ MELHORADO: Informações Principais */}
+                {/* Informações Principais */}
                 <Card className="shadow-lg">
-                    <CardContent className="p-6">
+                    <CardContent className="p-4">
                         {/* Status e badges */}
                         <div className="flex flex-wrap gap-2 mb-4">
                             {isReserved && (
-                                <Badge variant="destructive">Reservado</Badge>
+                                <Badge variant="destructive" className="text-xs">
+                                    {filaInfo.posicao_usuario > 0 ? `Fila - Posição ${filaInfo.posicao_usuario}` : 'Reservado'}
+                                </Badge>
                             )}
+                            
+                            {filaInfo.total_fila > 0 && !isReserved && (
+                                <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                    <Users className="w-3 h-3 mr-1" />
+                                    {filaInfo.total_fila} na fila
+                                </Badge>
+                            )}
+                            
                             {hasCommonSchool && (
-                                <Badge className="bg-green-100 text-green-800">
+                                <Badge className="bg-green-100 text-green-800 text-xs">
                                     <School className="w-3 h-3 mr-1" />
                                     Mesma escola!
                                 </Badge>
                             )}
-                            <Badge className={estadoInfo.color}>
+                            
+                            {/* Badges de compatibilidade com filhos */}
+                            {isCompatible && compatibleChildren.map((child, index) => (
+                                <Badge key={index} className="bg-purple-100 text-purple-800 text-xs">
+                                    <Shield className="w-3 h-3 mr-1" />
+                                    Serve para {child.nome}
+                                </Badge>
+                            ))}
+                            
+                            <Badge className={cn("text-xs", estadoInfo.color)}>
                                 {estadoInfo.label}
                             </Badge>
                         </div>
 
                         {/* Título e preço */}
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-                            <div className="flex-1">
-                                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                                    {item.titulo}
-                                </h1>
+                        <div className="flex flex-col gap-3 mb-4">
+                            <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+                                {item.titulo}
+                            </h1>
+                            
+                            {/* Informações detalhadas */}
+                            <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                                <span className="flex items-center gap-1">
+                                    <Package className="w-4 h-4" />
+                                    {formatarCategoria(item.categoria)}
+                                </span>
                                 
-                                {/* ✅ ADICIONADO: Informações detalhadas */}
-                                <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                                    <span className="flex items-center gap-1">
-                                        <Package className="w-4 h-4" />
-                                        {formatarCategoria(item.categoria)}
-                                    </span>
-                                    
-                                    {item.subcategoria && (
-                                        <span>• {item.subcategoria}</span>
-                                    )}
-                                    
-                                    {item.tamanho_valor && (
-                                        <span>• {item.tamanho_valor}</span>
-                                    )}
-                                    
-                                    <span className="flex items-center gap-1">
-                                        <Clock className="w-4 h-4" />
-                                        {getTempoPublicacao(item.created_at)}
-                                    </span>
-                                </div>
+                                {item.subcategoria && (
+                                    <span>• {item.subcategoria}</span>
+                                )}
+                                
+                                {item.tamanho_valor && (
+                                    <span>• {item.tamanho_valor}</span>
+                                )}
+                                
+                                <span className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    {getTempoPublicacao(item.created_at)}
+                                </span>
                             </div>
 
-                            <div className="text-right">
-                                <div className="flex items-center justify-end gap-2 mb-2">
-                                    <Sparkles className="w-6 h-6 text-yellow-500" />
-                                    <span className="text-3xl font-bold text-primary">
-                                        {item.valor_girinhas}
-                                    </span>
-                                    <span className="text-lg text-gray-600">Girinhas</span>
-                                </div>
+                            {/* Preço */}
+                            <div className="flex items-center gap-2 py-2">
+                                <Sparkles className="w-6 h-6 text-yellow-500" />
+                                <span className="text-2xl md:text-3xl font-bold text-primary">
+                                    {item.valor_girinhas}
+                                </span>
+                                <span className="text-lg text-gray-600">Girinhas</span>
                                 
                                 {semSaldo && !isProprio && (
-                                    <p className="text-sm text-red-600">
+                                    <Badge variant="destructive" className="ml-auto text-xs">
                                         Saldo insuficiente
-                                    </p>
+                                    </Badge>
                                 )}
                             </div>
                         </div>
 
-                        {/* ✅ ADICIONADO: Badges de atributos */}
-                        <div className="flex flex-wrap gap-2 mb-6">
-                            {generoInfo && (
-                                <Badge className={generoInfo.color}>
+                        {/* Badges de atributos */}
+                        {generoInfo && (
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                <Badge className={cn("text-xs", generoInfo.color)}>
                                     {generoInfo.icon} {generoInfo.label}
                                 </Badge>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
                         {/* Descrição */}
                         {item.descricao && (
-                            <div className="mb-6">
-                                <h3 className="font-semibold text-lg mb-2">Descrição</h3>
-                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                            <div className="mb-4">
+                                <h3 className="font-semibold text-base mb-2">Descrição</h3>
+                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">
                                     {item.descricao}
                                 </p>
                             </div>
                         )}
+                    </CardContent>
+                </Card>
 
-                        <Separator className="my-6" />
-
-                        {/* ✅ MELHORADO: Informações de Entrega */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                                    <Truck className="w-5 h-5" />
-                                    Entrega e Retirada
-                                </h3>
-                                
-                                {item.aceita_entrega ? (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 text-green-600">
-                                            <Truck className="w-4 h-4" />
-                                            <span>Entrega disponível até {item.raio_entrega_km}km</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Home className="w-4 h-4" />
-                                            <span>Retirada no local também disponível</span>
-                                        </div>
-                                    </div>
-                                ) : (
+                {/* Informações de Entrega e Vendedor - Mobile optimized */}
+                <div className="grid grid-cols-1 gap-4">
+                    {/* Entrega */}
+                    <Card className="shadow-lg">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Truck className="w-5 h-5" />
+                                Entrega e Retirada
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center gap-2 text-gray-600">
+                                    <Home className="w-4 h-4" />
+                                    <span>Retirada no local</span>
+                                </div>
+                                {item.profiles?.bairro && (
                                     <div className="flex items-center gap-2 text-gray-600">
-                                        <Home className="w-4 h-4" />
-                                        <span>Apenas retirada no local</span>
+                                        <MapPin className="w-4 h-4" />
+                                        <span>{item.profiles.bairro}, {item.profiles.cidade}</span>
                                     </div>
                                 )}
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            <div>
-                                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                                    <MapPin className="w-5 h-5" />
-                                    Localização
-                                </h3>
-                                <div className="text-gray-600 space-y-1">
-                                    {item.profiles?.bairro && (
-                                        <p>{item.profiles.bairro}</p>
-                                    )}
-                                    {item.profiles?.cidade && (
-                                        <p>{item.profiles.cidade}, {item.profiles.estado}</p>
-                                    )}
+                    {/* Vendedor */}
+                    <Card className="shadow-lg">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <User className="w-5 h-5" />
+                                Vendedor
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="w-10 h-10">
+                                        <AvatarImage src={item.profiles?.avatar_url || undefined} />
+                                        <AvatarFallback className="text-sm">
+                                            {item.profiles?.nome?.[0]?.toUpperCase() || '?'}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    
+                                    <div>
+                                        <h3 className="font-semibold text-sm">
+                                            {item.profiles?.nome || 'Usuário'}
+                                        </h3>
+                                        {item.profiles?.reputacao && (
+                                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                                <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                                                <span>{item.profiles.reputacao.toFixed(1)}</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
 
-                {/* ✅ MELHORADO: Informações do Vendedor */}
-                <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <User className="w-5 h-5" />
-                            Vendedor
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="w-12 h-12">
-                                    <AvatarImage src={item.profiles?.avatar_url || undefined} />
-                                    <AvatarFallback>
-                                        {item.profiles?.nome?.[0]?.toUpperCase() || '?'}
-                                    </AvatarFallback>
-                                </Avatar>
-                                
-                                <div>
-                                    <h3 className="font-semibold text-lg">
-                                        {item.profiles?.nome || 'Usuário'}
-                                    </h3>
-                                    {item.profiles?.reputacao && (
-                                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                                            <span>{item.profiles.reputacao.toFixed(1)}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="sm">
-                                    <MessageCircle className="w-4 h-4 mr-2" />
-                                    Conversar
-                                </Button>
-                                <Button variant="outline" size="sm">
-                                    <Eye className="w-4 h-4 mr-2" />
+                                <Button variant="outline" size="sm" className="text-xs">
+                                    <Eye className="w-3 h-3 mr-1" />
                                     Ver Perfil
                                 </Button>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                {/* ✅ MELHORADO: Botões de Ação */}
+                {/* Botões de Ação - Mobile first */}
                 {!isProprio && (
                     <Card className="shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="flex flex-col gap-4">
+                        <CardContent className="p-4">
+                            <div className="space-y-3">
                                 {actionState !== 'idle' && (
                                     <ActionFeedback
                                         state={actionState}
-                                        successMessage="Você entrou na fila para este item!"
-                                        errorMessage="Erro ao entrar na fila. Tente novamente."
+                                        successMessage={filaInfo.total_fila === 0 ? "Item reservado!" : "Você entrou na fila!"}
+                                        errorMessage="Erro ao reservar. Tente novamente."
                                     />
                                 )}
                                 
                                 <Button
                                     size="lg"
-                                    className="w-full text-lg font-semibold bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+                                    className="w-full text-base font-semibold bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
                                     onClick={handleReservar}
                                     disabled={isReserved || semSaldo || actionState === 'loading'}
                                 >
                                     {actionState === 'loading' ? (
                                         <div className="flex items-center gap-2">
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            Entrando na fila...
+                                            {filaInfo.total_fila === 0 ? 'Reservando...' : 'Entrando na fila...'}
                                         </div>
-                                    ) : isReserved ? (
-                                        'Item Reservado'
-                                    ) : semSaldo ? (
-                                        'Saldo Insuficiente'
                                     ) : (
-                                        'Entrar na Fila'
+                                        getButtonText()
                                     )}
                                 </Button>
 
                                 <div className="flex gap-2">
                                     <Button 
                                         variant="outline" 
-                                        className="flex-1"
+                                        className="flex-1 text-sm"
                                         onClick={handleToggleFavorite}
                                     >
                                         <Heart className={cn(
                                             "w-4 h-4 mr-2",
                                             isFavorite && "fill-current text-red-500"
                                         )} />
-                                        {isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
+                                        {isFavorite ? 'Favorito' : 'Favoritar'}
                                     </Button>
                                     
-                                    <Button variant="outline" size="sm">
+                                    <Button variant="outline" size="sm" className="px-3">
                                         <Flag className="w-4 h-4" />
                                     </Button>
                                 </div>
@@ -643,23 +650,22 @@ const DetalhesItem = () => {
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Itens Relacionados */}
+                <ItensRelacionados 
+                    itemAtual={{
+                        ...item,
+                        publicado_por_profile: item.profiles
+                    }}
+                    location={item.profiles ? {
+                        cidade: item.profiles.cidade || '',
+                        estado: item.profiles.estado || '',
+                        bairro: item.profiles.bairro || undefined
+                    } : null}
+                />
             </main>
 
-            {/* ✅ ADICIONADO: Itens Relacionados */}
-            {item && (
-                <div className="max-w-4xl mx-auto p-4">
-                    <ItensRelacionados 
-                        itemAtual={item}
-                        location={item.profiles ? {
-                            cidade: item.profiles.cidade || '',
-                            estado: item.profiles.estado || '',
-                            bairro: item.profiles.bairro || undefined
-                        } : null}
-                    />
-                </div>
-            )}
-
-            {/* ✅ ADICIONADO: Modal de Zoom da Imagem */}
+            {/* Modal de Zoom da Imagem */}
             {showImageModal && (
                 <div 
                     className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
@@ -674,7 +680,7 @@ const DetalhesItem = () => {
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white"
+                            className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white text-xl"
                             onClick={() => setShowImageModal(false)}
                         >
                             ×
