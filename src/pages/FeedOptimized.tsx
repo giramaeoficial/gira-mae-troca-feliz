@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -44,13 +45,49 @@ const FeedOptimized = () => {
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
   const { data: todosTamanhos = [], isLoading: loadingTamanhos } = useTamanhosPorCategoria(categoria !== 'todas' ? categoria : undefined);
   
+  // Debug logs para verificar os dados
+  console.log('🔍 Debug FeedOptimized:', {
+    categoria,
+    subcategoria,
+    tamanho,
+    genero,
+    categorias: categorias.length,
+    todasSubcategorias: todasSubcategorias.length,
+    todosTamanhos: todosTamanhos.length,
+    loadingCategorias,
+    loadingSubcategorias,
+    loadingTamanhos
+  });
+
   // Filtrar subcategorias baseado na categoria selecionada
   const subcategoriasFiltradas = categoria !== 'todas' 
-    ? todasSubcategorias.filter(sub => sub.categoria_pai === categoria)
+    ? todasSubcategorias.filter(sub => {
+        // Tentar diferentes variações do nome da categoria
+        const categoriaNormalizada = categoria.toLowerCase();
+        const categoriaPaiNormalizada = sub.categoria_pai.toLowerCase();
+        
+        return categoriaPaiNormalizada === categoriaNormalizada ||
+               categoriaPaiNormalizada === categoriaNormalizada + 's' ||
+               categoriaPaiNormalizada === categoriaNormalizada.slice(0, -1);
+      })
     : [];
 
   // Filtrar tamanhos baseado na categoria selecionada
   const tamanhosFiltrados = categoria !== 'todas' ? todosTamanhos : [];
+
+  // Debug para subcategorias
+  console.log('🔍 Debug Subcategorias:', {
+    categoria,
+    subcategoriasFiltradas: subcategoriasFiltradas.length,
+    exemplos: subcategoriasFiltradas.slice(0, 3).map(s => ({ nome: s.nome, categoria_pai: s.categoria_pai }))
+  });
+
+  // Debug para tamanhos
+  console.log('🔍 Debug Tamanhos:', {
+    categoria,
+    tamanhosFiltrados: tamanhosFiltrados.length,
+    exemplos: tamanhosFiltrados.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display }))
+  });
 
   const debouncedBusca = useDebounce(busca, 500);
 
@@ -260,7 +297,7 @@ const FeedOptimized = () => {
                   <Select 
                     value={subcategoria} 
                     onValueChange={setSubcategoria}
-                    disabled={categoria === 'todas' || subcategoriasFiltradas.length === 0 || loadingSubcategorias}
+                    disabled={categoria === 'todas' || loadingSubcategorias}
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue />
@@ -269,6 +306,8 @@ const FeedOptimized = () => {
                       <SelectItem value="todas">Todas</SelectItem>
                       {loadingSubcategorias ? (
                         <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                      ) : subcategoriasFiltradas.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhuma subcategoria encontrada</SelectItem>
                       ) : (
                         subcategoriasFiltradas.map((sub) => (
                           <SelectItem key={sub.id} value={sub.nome}>
@@ -303,7 +342,7 @@ const FeedOptimized = () => {
                   <Select 
                     value={tamanho} 
                     onValueChange={setTamanho}
-                    disabled={categoria === 'todas' || tamanhosFiltrados.length === 0 || loadingTamanhos}
+                    disabled={categoria === 'todas' || loadingTamanhos}
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue />
@@ -312,6 +351,8 @@ const FeedOptimized = () => {
                       <SelectItem value="todos">Todos</SelectItem>
                       {loadingTamanhos ? (
                         <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                      ) : tamanhosFiltrados.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhum tamanho encontrado</SelectItem>
                       ) : (
                         tamanhosFiltrados.map((tam) => (
                           <SelectItem key={tam.id} value={tam.valor}>
