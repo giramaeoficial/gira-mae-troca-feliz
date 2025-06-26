@@ -1,9 +1,9 @@
-
 import { useState, useCallback } from 'react';
 import { toast } from "sonner";
 import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { uploadImage, generateImagePath, deleteImage } from '@/utils/supabaseStorage';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EditFormData {
   titulo: string;
