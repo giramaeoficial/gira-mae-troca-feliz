@@ -10,6 +10,7 @@ import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
 import Cadastro from '@/pages/Cadastro';
 import FeedOptimized from '@/pages/FeedOptimized';
+import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
 import Mensagens from '@/pages/Mensagens';
 import Perfil from '@/pages/Perfil';
@@ -39,6 +40,7 @@ function App() {
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/feed" element={<FeedOptimized />} />
+          <Route path="/buscar-itens" element={<BuscarItens />} />
           <Route path="/publicar" element={<PublicarItem />} />
           <Route path="/missoes" element={<Missoes />} />
           <Route path="/mensagens" element={<Mensagens />} />
