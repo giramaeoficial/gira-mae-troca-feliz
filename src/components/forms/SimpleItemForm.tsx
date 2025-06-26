@@ -4,6 +4,7 @@ import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { ItemBasicInfo } from './ItemBasicInfo';
 import { ItemCategorization } from './ItemCategorization';
 import { ItemPricing } from './ItemPricing';
+import ImageUpload from '@/components/ui/image-upload';
 import ImageUploadEditor from '@/components/ui/image-upload-editor';
 
 interface SimpleItemFormProps {
@@ -38,7 +39,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Fotos do Item - Componente diferente para edição */}
+      {/* Fotos do Item */}
       <div className="bg-gradient-to-br from-pink-25 to-purple-25 p-4 rounded-xl border border-pink-100">
         <label className="text-sm font-medium mb-4 block text-gray-700">
           Fotos do Item
@@ -54,12 +55,14 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
             maxFiles={6}
           />
         ) : (
-          <div>
-            {/* Usar componente original para criação */}
-            <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. A primeira foto será a capa do anúncio.</p>
-          </div>
+          <ImageUpload
+            value={formData.imagens}
+            onChange={(files) => onFieldChange('imagens', files)}
+            maxFiles={6}
+          />
         )}
         
+        <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. A primeira foto será a capa do anúncio.</p>
         {errors.imagens && <p className="text-red-500 text-sm mt-2">{errors.imagens}</p>}
       </div>
 
