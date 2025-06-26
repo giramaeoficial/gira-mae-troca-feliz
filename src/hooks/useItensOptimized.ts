@@ -161,39 +161,59 @@ export const usePublicarItem = () => {
 
   return useMutation({
     mutationFn: async ({ itemData, fotos }: { itemData: any, fotos: File[] }) => {
-      console.log('📤 Iniciando upload de', fotos.length, 'fotos...');
+      console.log('📤 Iniciando publicação de item com', fotos.length, 'fotos...');
       
+      if (!itemData.publicado_por) {
+        throw new Error('Usuário não identificado');
+      }
+
       // Upload das fotos
       const fotosUrls: string[] = [];
       
-      for (const foto of fotos) {
-        const fileName = generateImagePath(itemData.publicado_por, foto.name);
-        console.log('⬆️ Fazendo upload da foto:', fileName);
+      for (let i = 0; i < fotos.length; i++) {
+        const foto = fotos[i];
+        console.log(`⬆️ Fazendo upload da foto ${i + 1}/${fotos.length}:`, foto.name);
         
-        await uploadImage({
-          bucket: 'itens',
-          path: fileName,
-          file: foto
-        });
+        try {
+          const fileName = generateImagePath(itemData.publicado_por, foto.name);
+          
+          await uploadImage({
+            bucket: 'itens',
+            path: fileName,
+            file: foto
+          });
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('itens')
-          .getPublicUrl(fileName);
-        
-        fotosUrls.push(publicUrl);
+          const { data: { publicUrl } } = supabase.storage
+            .from('itens')
+            .getPublicUrl(fileName);
+          
+          fotosUrls.push(publicUrl);
+          console.log(`✅ Foto ${i + 1} uploaded:`, publicUrl);
+        } catch (uploadError: any) {
+          console.error(`❌ Erro no upload da foto ${i + 1}:`, uploadError);
+          throw new Error(`Erro no upload da imagem ${i + 1}: ${uploadError.message}`);
+        }
       }
 
+      console.log('📝 Inserindo item no banco com', fotosUrls.length, 'fotos...');
+
       // Inserir item no banco
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('itens')
         .insert({
           ...itemData,
           fotos: fotosUrls
-        });
+        })
+        .select()
+        .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('❌ Erro ao inserir item:', insertError);
+        throw new Error(`Erro ao salvar item: ${insertError.message}`);
+      }
 
-      return true;
+      console.log('✅ Item publicado com sucesso:', data);
+      return data;
     },
     onSuccess: () => {
       // Invalidar apenas queries específicas

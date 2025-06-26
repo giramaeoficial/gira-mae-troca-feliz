@@ -1,5 +1,4 @@
-
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, X, Upload, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,39 +30,66 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generatePreviews = useCallback((files: File[]) => {
+    // Limpar previews antigos
+    previews.forEach(url => URL.revokeObjectURL(url));
+    
     const newPreviews = files.map(file => URL.createObjectURL(file));
-    setPreviews(prev => {
-      prev.forEach(url => URL.revokeObjectURL(url));
-      return newPreviews;
-    });
-  }, []);
+    setPreviews(newPreviews);
+  }, [previews]);
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const remainingSlots = maxFiles - value.length;
     const filesToProcess = fileArray.slice(0, remainingSlots);
 
-    const oversizedFiles = filesToProcess.filter(file => file.size > maxSizeKB * 1024);
-    if (oversizedFiles.length > 0) {
-      toast({
-        title: "Arquivos muito grandes",
-        description: `${oversizedFiles.length} arquivo(s) excedem o limite de ${maxSizeKB}KB`,
-        variant: "destructive"
-      });
+    console.log('🔄 Processando', filesToProcess.length, 'arquivos...');
+
+    const validFiles: File[] = [];
+    
+    for (const file of filesToProcess) {
+      // Verificar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: `${file.name} não é uma imagem válida`,
+          variant: "destructive"
+        });
+        continue;
+      }
+
+      // Verificar tamanho
+      if (file.size > maxSizeKB * 1024) {
+        toast({
+          title: "Arquivo muito grande",
+          description: `${file.name} excede o limite de ${maxSizeKB}KB`,
+          variant: "destructive"
+        });
+        continue;
+      }
+
+      validFiles.push(file);
     }
 
-    const validFiles = filesToProcess.filter(file => file.size <= maxSizeKB * 1024);
     if (validFiles.length === 0) return;
 
     setIsUploading(true);
     try {
+      console.log('📸 Comprimindo', validFiles.length, 'imagens...');
+      
       const compressedFiles = await Promise.all(
-        validFiles.map(file => compressImage(file, {
-          maxWidth: 1024,
-          maxHeight: 1024,
-          quality: 0.8,
-          format: 'jpeg'
-        }))
+        validFiles.map(async (file) => {
+          try {
+            return await compressImage(file, {
+              maxWidth: 1024,
+              maxHeight: 1024,
+              quality: 0.8,
+              format: 'jpeg'
+            });
+          } catch (error) {
+            console.error('Erro ao comprimir imagem:', error);
+            return file; // Usar arquivo original se compressão falhar
+          }
+        })
       );
 
       const newFiles = [...value, ...compressedFiles];
@@ -71,10 +97,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       generatePreviews(newFiles);
 
       toast({
-        title: "Imagens processadas",
+        title: "Imagens adicionadas",
         description: `${compressedFiles.length} imagem(ns) adicionada(s)`,
       });
     } catch (error) {
+      console.error('Erro no processamento das imagens:', error);
       toast({
         title: "Erro no processamento",
         description: "Falha ao processar as imagens",
@@ -132,6 +159,20 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     fileInputRef.current?.click();
   };
 
+  // Atualizar previews quando value mudar
+  React.useEffect(() => {
+    if (value.length > 0) {
+      generatePreviews(value);
+    }
+  }, [value]);
+
+  // Cleanup previews on unmount
+  React.useEffect(() => {
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
+
   return (
     <div className={cn('space-y-4', className)}>
       {/* Preview das imagens */}
@@ -162,7 +203,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         </div>
       )}
 
-      {/* Upload area com drag & drop */}
+      {/* Upload area */}
       {value.length < maxFiles && (
         <div 
           className={cn(

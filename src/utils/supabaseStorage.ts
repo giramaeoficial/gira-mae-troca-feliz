@@ -16,16 +16,37 @@ export const uploadImage = async ({
   file,
   generateSizes = true
 }: UploadImageOptions) => {
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(path, file, {
-      cacheControl: '3600',
-      upsert: false
-    });
+  console.log('🔄 Iniciando upload:', { bucket, path, fileSize: file.size, fileType: file.type });
 
-  if (error) throw error;
+  // Verificar se o arquivo é uma imagem válida
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Arquivo deve ser uma imagem');
+  }
 
-  return data;
+  // Verificar tamanho do arquivo (máximo 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('Arquivo muito grande. Máximo 5MB permitido.');
+  }
+
+  try {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: true // Permite sobrescrever se já existir
+      });
+
+    if (error) {
+      console.error('❌ Erro no upload:', error);
+      throw new Error(`Erro no upload: ${error.message}`);
+    }
+
+    console.log('✅ Upload realizado com sucesso:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Erro no processo de upload:', error);
+    throw error;
+  }
 };
 
 export const getImageUrl = (
@@ -73,6 +94,7 @@ export const deleteImage = async (bucket: string, path: string) => {
 
 export const generateImagePath = (userId: string, filename: string): string => {
   const timestamp = Date.now();
-  const extension = filename.split('.').pop();
-  return `${userId}/${timestamp}.${extension}`;
+  const extension = filename.split('.').pop()?.toLowerCase();
+  const cleanFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+  return `${userId}/${timestamp}_${cleanFilename}`;
 };
