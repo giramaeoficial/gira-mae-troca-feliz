@@ -1,3 +1,4 @@
+
 import { lazy } from 'react';
 
 // Cache para componentes já carregados
@@ -5,7 +6,7 @@ const routeCache = new Map<string, Promise<any>>();
 
 // Mapeamento de rotas para imports dinâmicos
 const routeImports: Record<string, () => Promise<any>> = {
-  '/feed': () => import('../pages/Feed'),
+  '/feed': () => import('../pages/FeedOptimized'),
   '/perfil': () => import('../pages/Perfil'),
   '/carteira': () => import('../pages/Carteira'),
   '/reservas': () => import('../pages/MinhasReservas'),
