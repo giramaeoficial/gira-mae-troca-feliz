@@ -17,8 +17,11 @@ interface Item {
   titulo: string;
   descricao: string;
   categoria: string;
+  subcategoria?: string;
   estado_conservacao: string;
   tamanho_valor?: string;
+  tamanho_categoria?: string;
+  genero?: string;
   valor_girinhas: number;
   publicado_por: string;
   status: string;
