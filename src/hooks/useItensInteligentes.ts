@@ -1,3 +1,4 @@
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,6 +7,7 @@ import { useFavoritos } from '@/hooks/useFavoritos';
 import { useSeguidores } from '@/hooks/useSeguidores';
 
 interface ItensInteligentesFiltros {
+  busca?: string;
   categoria?: string;
   subcategoria?: string;
   genero?: string;
@@ -34,6 +36,10 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros = {}) => 
         .eq('status', 'disponivel');
 
       // Filtros
+      if (filtros.busca) {
+        query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
+      }
+
       if (filtros.categoria) {
         query = query.eq('categoria', filtros.categoria);
       }

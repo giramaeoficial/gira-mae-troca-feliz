@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -34,7 +35,7 @@ const Feed = () => {
     const { entrarNaFila, isItemReservado } = useReservas();
     const { obterFilaItem } = useFilaEspera();
     const { saldo } = useCarteira();
-    const { filters, setFiltros } = useFeedFilters();
+    const { filters, updateFilters } = useFeedFilters();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
     const [filasInfo, setFilasInfo] = useActionState<Record<string, any>>({});
 
@@ -42,7 +43,6 @@ const Feed = () => {
         setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
         
         try {
-            // CORREÇÃO: entrarNaFila agora aceita apenas 1 parâmetro
             const sucesso = await entrarNaFila(itemId);
             if (sucesso) {
                 setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
@@ -62,11 +62,11 @@ const Feed = () => {
         }
     };
 
-    const handleSearch = (searchTerm: string) => {
-        setFiltros(prev => ({ ...prev, busca: searchTerm }));
+    const handleFiltrosChange = (novosFiltros: any) => {
+        updateFilters(novosFiltros);
     };
 
-    // ✅ CORRIGIDO: Apply filters to items incluindo gênero e tamanho
+    // Apply filters to items
     const filteredItens = itens.filter(item => {
         const matchBusca = !filters.busca || 
             item.titulo.toLowerCase().includes(filters.busca.toLowerCase()) ||
@@ -74,17 +74,14 @@ const Feed = () => {
         
         const matchCategoria = filters.categoria === 'todas' || item.categoria === filters.categoria;
         
-        // Fix: Safely check subcategoria property using type assertion
         const matchSubcategoria = !filters.subcategoria || 
             ((item as any).subcategoria && (item as any).subcategoria === filters.subcategoria);
         
         const matchPreco = item.valor_girinhas >= filters.precoMin && item.valor_girinhas <= filters.precoMax;
         
-        // ✅ ADICIONADO: Filtro por gênero
         const matchGenero = filters.genero === 'todos' || 
             ((item as any).genero && (item as any).genero === filters.genero);
         
-        // ✅ ADICIONADO: Filtro por tamanho
         const matchTamanho = filters.tamanho === 'todos' || 
             ((item as any).tamanho_valor && (item as any).tamanho_valor === filters.tamanho);
         
@@ -123,7 +120,7 @@ const Feed = () => {
 
             <main className="flex-grow pb-32 md:pb-8">
                 <div className="container mx-auto px-4 py-6">
-                    {/* Hero Section - só mostra se tem localização */}
+                    {/* Hero Section */}
                     {location && (
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
@@ -136,9 +133,12 @@ const Feed = () => {
                     )}
 
                     {/* Filtros Avançados */}
-                    <AdvancedFilters onSearch={handleSearch} />
+                    <AdvancedFilters 
+                        filtros={filters} 
+                        onFiltrosChange={handleFiltrosChange} 
+                    />
 
-                    {/* Grid de Itens - só mostra se tem localização e já fez busca */}
+                    {/* Grid de Itens */}
                     {!location ? (
                         <div className="text-center py-12">
                             <p className="text-gray-500">Use a localização para ver itens próximos a você</p>
@@ -162,7 +162,7 @@ const Feed = () => {
                         />
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {itens.map((item) => (
+                            {filteredItens.map((item) => (
                                 <ItemCard
                                     key={item.id}
                                     item={item}

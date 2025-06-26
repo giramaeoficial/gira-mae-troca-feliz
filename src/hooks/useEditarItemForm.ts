@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -5,7 +6,7 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 
 const formSchema = z.object({
@@ -37,50 +38,79 @@ const formSchema = z.object({
 
 interface FormValues extends z.infer<typeof formSchema> {}
 
-export const useEditarItemForm = (itemId: string) => {
+export const useEditarItemForm = (item: any) => {
   const { data: tiposTamanho } = useTiposTamanho();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    titulo: item?.titulo || '',
+    descricao: item?.descricao || '',
+    categoria_id: item?.categoria || '',
+    subcategoria: item?.subcategoria || '',
+    genero: item?.genero || '',
+    estado_conservacao: item?.estado_conservacao || '',
+    preco: item?.valor_girinhas?.toString() || '0',
+    imagens: [] as File[],
+    imagensExistentes: item?.imagens || [],
+    tamanho_categoria: '',
+    tamanho_valor: item?.tamanho_valor || '',
+  });
+  const [errors, setErrors] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(true);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      titulo: "",
-      descricao: "",
-      categoria: "",
-      subcategoria: "",
-      genero: "",
-      estado_conservacao: "",
-      valor_girinhas: "0",
+      titulo: item?.titulo || "",
+      descricao: item?.descricao || "",
+      categoria: item?.categoria || "",
+      subcategoria: item?.subcategoria || "",
+      genero: item?.genero || "",
+      estado_conservacao: item?.estado_conservacao || "",
+      valor_girinhas: item?.valor_girinhas?.toString() || "0",
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const updateFormData = (updates: Partial<typeof formData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const removerImagemExistente = (url: string) => {
+    setFormData(prev => ({
+      ...prev,
+      imagensExistentes: prev.imagensExistentes?.filter(img => img !== url) || []
+    }));
+  };
+
+  const handleSubmit = async (): Promise<boolean> => {
     try {
+      setLoading(true);
       setIsSubmitting(true);
 
       const updateData: any = {
-        titulo: values.titulo,
-        descricao: values.descricao,
-        categoria: values.categoria,
-        subcategoria: values.subcategoria || null,
-        genero: values.genero || null,
-        estado_conservacao: values.estado_conservacao,
-        valor_girinhas: Number(values.valor_girinhas),
+        titulo: formData.titulo,
+        descricao: formData.descricao,
+        categoria: formData.categoria_id,
+        subcategoria: formData.subcategoria || null,
+        genero: formData.genero || null,
+        estado_conservacao: formData.estado_conservacao,
+        valor_girinhas: Number(formData.preco),
         updated_at: new Date().toISOString()
       };
 
-      // Adicionar tamanho se especificado
-      if (values.tamanho && typeof values.tamanho === 'object' && 'valor' in values.tamanho) {
-        updateData.tamanho_valor = values.tamanho.valor;
+      if (formData.tamanho_valor) {
+        updateData.tamanho_valor = formData.tamanho_valor;
       }
 
       const { error } = await supabase
         .from('itens')
         .update(updateData)
-        .eq('id', itemId);
+        .eq('id', item.id);
 
       if (error) {
         console.error("Erro ao atualizar item:", error);
@@ -89,7 +119,7 @@ export const useEditarItemForm = (itemId: string) => {
           description: "Não foi possível atualizar o item. Tente novamente.",
           variant: "destructive",
         });
-        return;
+        return false;
       }
 
       toast({
@@ -97,9 +127,9 @@ export const useEditarItemForm = (itemId: string) => {
         description: "Item atualizado com sucesso!",
       });
 
-      // Invalida o cache para refetch dos dados
-      await queryClient.invalidateQueries({ queryKey: ['item', itemId] });
-      router.push(`/item/${itemId}`);
+      await queryClient.invalidateQueries({ queryKey: ['item', item.id] });
+      navigate(`/item/${item.id}`);
+      return true;
 
     } catch (error) {
       console.error("Erro ao atualizar item:", error);
@@ -108,10 +138,46 @@ export const useEditarItemForm = (itemId: string) => {
         description: "Ocorreu um erro ao atualizar o item.",
         variant: "destructive",
       });
+      return false;
     } finally {
+      setLoading(false);
       setIsSubmitting(false);
     }
   };
 
-  return { form, onSubmit, isSubmitting, tiposTamanho };
+  const resetForm = (itemData: any) => {
+    setFormData({
+      titulo: itemData?.titulo || '',
+      descricao: itemData?.descricao || '',
+      categoria_id: itemData?.categoria || '',
+      subcategoria: itemData?.subcategoria || '',
+      genero: itemData?.genero || '',
+      estado_conservacao: itemData?.estado_conservacao || '',
+      preco: itemData?.valor_girinhas?.toString() || '0',
+      imagens: [] as File[],
+      imagensExistentes: itemData?.imagens || [],
+      tamanho_categoria: '',
+      tamanho_valor: itemData?.tamanho_valor || '',
+    });
+  };
+
+  const onSubmit = async (values: FormValues) => {
+    return await handleSubmit();
+  };
+
+  return { 
+    form, 
+    onSubmit, 
+    isSubmitting, 
+    tiposTamanho,
+    formData,
+    updateFormData,
+    removerImagemExistente,
+    errors,
+    loading,
+    handleSubmit,
+    resetForm,
+    isFormInitialized,
+    isLoadingOptions
+  };
 };

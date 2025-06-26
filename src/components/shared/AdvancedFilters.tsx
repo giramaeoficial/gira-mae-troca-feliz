@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,18 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
         <AccordionTrigger>Filtros Avançados</AccordionTrigger>
         <AccordionContent>
           <div className="grid gap-4">
+            {/* Busca */}
+            <div>
+              <Label htmlFor="busca">Buscar</Label>
+              <Input
+                type="text"
+                name="busca"
+                placeholder="Digite o que procura..."
+                value={filtros.busca || ''}
+                onChange={handleInputChange}
+              />
+            </div>
+
             {/* Categoria e Subcategoria */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
