@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -116,8 +117,9 @@ const Feed = () => {
         
         const matchCategoria = filters.categoria === 'todas' || item.categoria === filters.categoria;
         
-        // Fix: Check if subcategoria exists on item before filtering
-        const matchSubcategoria = !filters.subcategoria || (item.subcategoria && item.subcategoria === filters.subcategoria);
+        // Fix: Safely check subcategoria property using type assertion
+        const matchSubcategoria = !filters.subcategoria || 
+            ((item as any).subcategoria && (item as any).subcategoria === filters.subcategoria);
         
         const matchPreco = item.valor_girinhas >= filters.precoMin && item.valor_girinhas <= filters.precoMax;
         
