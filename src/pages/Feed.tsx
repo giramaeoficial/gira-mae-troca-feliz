@@ -20,6 +20,7 @@ import LazyImage from "@/components/ui/lazy-image";
 import { Tables } from "@/integrations/supabase/types";
 import { useState as useActionState } from "react";
 import { useFeedFilters } from "@/contexts/FeedFiltersContext";
+import { ItemCard } from '@/components/shared/ItemCard';
 
 type Escola = Tables<'escolas_inep'>;
 
@@ -33,7 +34,7 @@ const Feed = () => {
     const { entrarNaFila, isItemReservado } = useReservas();
     const { obterFilaItem } = useFilaEspera();
     const { saldo } = useCarteira();
-    const { filters } = useFeedFilters();
+    const { filters, setFiltros } = useFeedFilters();
     const [actionStates, setActionStates] = useActionState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
     const [filasInfo, setFilasInfo] = useActionState<Record<string, any>>({});
 
@@ -59,6 +60,10 @@ const Feed = () => {
                 setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
             }, 2000);
         }
+    };
+
+    const handleSearch = (searchTerm: string) => {
+        setFiltros(prev => ({ ...prev, busca: searchTerm }));
     };
 
     // ✅ CORRIGIDO: Apply filters to items incluindo gênero e tamanho
@@ -113,63 +118,60 @@ const Feed = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
             <Header />
 
-            <main className="container mx-auto px-4 py-6">
-                {/* Hero Section - só mostra se tem localização */}
-                {location && (
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-                            Encontre Tesouros em {location.cidade}
-                        </h1>
-                        <p className="text-gray-600 text-lg">
-                            Descubra itens incríveis compartilhados pela comunidade
-                        </p>
-                    </div>
-                )}
+            <main className="flex-grow pb-32 md:pb-8">
+                <div className="container mx-auto px-4 py-6">
+                    {/* Hero Section - só mostra se tem localização */}
+                    {location && (
+                        <div className="text-center mb-8">
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
+                                Encontre Tesouros em {location.cidade}
+                            </h1>
+                            <p className="text-gray-600 text-lg">
+                                Descubra itens incríveis compartilhados pela comunidade
+                            </p>
+                        </div>
+                    )}
 
-                {/* Filtros Avançados */}
-                <AdvancedFilters onSearch={handleSearch} />
+                    {/* Filtros Avançados */}
+                    <AdvancedFilters onSearch={handleSearch} />
 
-                {/* Grid de Itens - só mostra se tem localização e já fez busca */}
-                {!location ? (
-                    <div className="text-center py-12">
-                        <p className="text-gray-500">Use a localização para ver itens próximos a você</p>
-                    </div>
-                ) : loading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        <ItemCardSkeleton count={10} />
-                    </div>
-                ) : filteredItens.length === 0 ? (
-                    <EmptyState 
-                        type={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "search" : "items"}
-                        title={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "Nenhum item encontrado" : "Nenhum item disponível"}
-                        description={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "Tente ajustar os filtros para encontrar mais itens." : "Seja o primeiro a compartilhar um item!"}
-                        actionLabel={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "Limpar Filtros" : "Publicar Item"}
-                        onAction={() => {
-                            if (filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos") {
-                                // Reset filters logic here
-                            }
-                        }}
-                        className="mx-4"
-                    />
-                ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {filteredItens.map((item) => (
-                            <ItemCard
-                                key={item.id}
-                                item={item}
-                                isFavorito={favoritos.some(fav => fav.item_id === item.id)}
-                                onToggleFavorito={() => toggleFavorito(item.id)}
-                                onEntrarFila={() => handleEntrarFila(item.id)}
-                                actionState={actionStates[item.id] || 'idle'}
-                                filaInfo={filasInfo[item.id]}
-                                isReservado={isItemReservado(item.id)}
-                            />
-                        ))}
-                    </div>
-                )}
+                    {/* Grid de Itens - só mostra se tem localização e já fez busca */}
+                    {!location ? (
+                        <div className="text-center py-12">
+                            <p className="text-gray-500">Use a localização para ver itens próximos a você</p>
+                        </div>
+                    ) : loading ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <ItemCardSkeleton count={10} />
+                        </div>
+                    ) : filteredItens.length === 0 ? (
+                        <EmptyState 
+                            type={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "search" : "items"}
+                            title={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "Nenhum item encontrado" : "Nenhum item disponível"}
+                            description={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "Tente ajustar os filtros para encontrar mais itens." : "Seja o primeiro a compartilhar um item!"}
+                            actionLabel={filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos" ? "Limpar Filtros" : "Publicar Item"}
+                            onAction={() => {
+                                if (filters.busca || filters.categoria !== "todas" || filters.genero !== "todos" || filters.tamanho !== "todos") {
+                                    // Reset filters logic here
+                                }
+                            }}
+                            className="mx-4"
+                        />
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {itens.map((item) => (
+                                <ItemCard
+                                    key={item.id}
+                                    item={item}
+                                    onItemClick={(itemId) => window.location.href = `/item/${itemId}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </main>
 
             <QuickNav />

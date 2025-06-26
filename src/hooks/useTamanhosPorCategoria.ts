@@ -2,57 +2,49 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface TamanhoItem {
-  id: string;
-  categoria: string;
-  subcategoria?: string;
-  tipo_tamanho: string;
+export interface TamanhoItem {
   valor: string;
   label_display: string;
   idade_minima_meses?: number;
   idade_maxima_meses?: number;
-  ordem: number;
-  ativo: boolean;
 }
 
-export const useTiposTamanho = (categoria?: string) => {
+export const useTamanhosPorCategoria = (categoria?: string) => {
   return useQuery({
-    queryKey: ['tipos-tamanho', categoria],
-    queryFn: async () => {
-      console.log('🔍 Buscando tamanhos para categoria:', categoria);
-
-      let query = supabase
+    queryKey: ['tamanhos-categoria', categoria],
+    queryFn: async (): Promise<Record<string, TamanhoItem[]>> => {
+      const { data, error } = await supabase
         .from('categorias_tamanhos')
         .select('*')
         .eq('ativo', true)
         .order('ordem');
 
-      if (categoria) {
-        query = query.eq('categoria', categoria);
-      }
+      if (error) throw error;
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('❌ Erro ao buscar tamanhos:', error);
-        throw error;
-      }
-
-      console.log('✅ Tamanhos encontrados:', data?.length || 0);
-
-      // Agrupar por tipo_tamanho
-      const tiposTamanho: Record<string, TamanhoItem[]> = {};
-      
-      data?.forEach(item => {
-        if (!tiposTamanho[item.tipo_tamanho]) {
-          tiposTamanho[item.tipo_tamanho] = [];
+      const grouped = data.reduce((acc, item) => {
+        if (!acc[item.categoria]) {
+          acc[item.categoria] = [];
         }
-        tiposTamanho[item.tipo_tamanho].push(item);
-      });
+        acc[item.categoria].push({
+          valor: item.valor,
+          label_display: item.label_display,
+          idade_minima_meses: item.idade_minima_meses,
+          idade_maxima_meses: item.idade_maxima_meses
+        });
+        return acc;
+      }, {} as Record<string, TamanhoItem[]>);
 
-      return tiposTamanho;
+      return grouped;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutos
-    gcTime: 30 * 60 * 1000, // 30 minutos
+    enabled: true
   });
+};
+
+export const useTiposTamanho = (categoria?: string) => {
+  const query = useTamanhosPorCategoria(categoria);
+  
+  return {
+    ...query,
+    data: query.data || {}
+  };
 };

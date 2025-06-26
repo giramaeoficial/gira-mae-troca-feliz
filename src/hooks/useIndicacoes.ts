@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { useToast } from '@/hooks/use-toast';
 
 type Indicacao = Tables<'indicacoes'> & {
   profiles?: {
@@ -26,6 +27,7 @@ type IndicadoInfo = Tables<'indicacoes'> & {
 
 export const useIndicacoes = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [indicacoes, setIndicacoes] = useState<Indicacao[]>([]);
   const [indicados, setIndicados] = useState<IndicadoInfo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -94,67 +96,31 @@ export const useIndicacoes = () => {
     }
   };
 
-  const registrarIndicacao = async (emailIndicado: string) => {
-    if (!user) return false;
-
-    try {
-      setLoading(true);
-      
-      // Buscar usuário pelo email
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', emailIndicado)
-        .single();
-
-      if (profileError || !profileData) {
-        setError('Usuário não encontrado com este email');
-        return false;
-      }
-
-      const { error } = await supabase
-        .from('indicacoes')
-        .insert({
-          indicador_id: user.id,
-          indicado_id: profileData.id
-        });
-
-      if (error) throw error;
-
-      // Recarregar indicações
-      await buscarMinhasIndicacoes();
-      
-      return true;
-    } catch (err) {
-      console.error('Erro ao registrar indicação:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao registrar indicação');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const compartilharIndicacao = async () => {
     if (!user) return;
 
     try {
-      const linkIndicacao = `${window.location.origin}/?indicador=${user.id}`;
+      const linkIndicacao = `${window.location.origin}/?ref=${user.id}`;
       
       if (navigator.share) {
         await navigator.share({
           title: 'Venha para o GiraMãe!',
-          text: 'Olá! Te convido para participar do GiraMãe, uma plataforma incrível onde mães trocam itens infantis. Use meu link e ganhe bônus!',
+          text: 'Olá! Te convido para participar do GiraMãe, uma plataforma incrível onde mães trocam itens infantis. Use meu link e vamos ganhar Girinhas juntas!',
           url: linkIndicacao,
         });
       } else {
         // Fallback para navegadores que não suportam Web Share API
         await navigator.clipboard.writeText(linkIndicacao);
-        // Aqui você pode adicionar um toast de sucesso
-        console.log('Link copiado para a área de transferência!');
+        toast({
+          title: "Link copiado!",
+          description: "Link de indicação copiado para a área de transferência",
+        });
       }
     } catch (err) {
       console.error('Erro ao compartilhar:', err);
-      setError('Erro ao compartilhar indicação');
+      if (err instanceof Error && err.name !== 'AbortError') {
+        setError('Erro ao compartilhar indicação');
+      }
     }
   };
 
@@ -189,10 +155,11 @@ export const useIndicacoes = () => {
         bonusPrimeiraCompra: items.filter(item => 
           item.profiles && item.bonus_primeira_compra_pago
         ).length,
+        // Calcular total baseado nas configurações de bônus reais
         totalBonusRecebido: items.reduce((total, item) => {
           let bonus = 0;
-          if (item.bonus_cadastro_pago) bonus += 2;
-          if (item.bonus_primeiro_item_pago) bonus += 3;
+          if (item.bonus_cadastro_pago) bonus += 5; // Valor padrão, será substituído pela configuração
+          if (item.bonus_primeiro_item_pago) bonus += 5;
           if (item.bonus_primeira_compra_pago) bonus += 5;
           return total + bonus;
         }, 0)
@@ -200,6 +167,39 @@ export const useIndicacoes = () => {
     } catch (err) {
       console.error('Erro ao obter estatísticas:', err);
       return null;
+    }
+  };
+
+  // Função para processar indicação via URL
+  const processarIndicacaoViaUrl = async (indicadorId: string) => {
+    if (!user || user.id === indicadorId) return;
+
+    try {
+      // Verificar se já existe uma indicação
+      const { data: indicacaoExistente } = await supabase
+        .from('indicacoes')
+        .select('id')
+        .eq('indicado_id', user.id)
+        .single();
+
+      if (indicacaoExistente) return; // Já foi indicado
+
+      // Criar indicação
+      const { error } = await supabase
+        .from('indicacoes')
+        .insert({
+          indicador_id: indicadorId,
+          indicado_id: user.id
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Indicação registrada!",
+        description: "Você foi indicado por uma amiga. Completem seu perfil para que ela ganhe Girinhas!",
+      });
+    } catch (err) {
+      console.error('Erro ao processar indicação via URL:', err);
     }
   };
 
@@ -217,8 +217,8 @@ export const useIndicacoes = () => {
     error,
     buscarMinhasIndicacoes,
     buscarQuemMeIndicou,
-    registrarIndicacao,
     compartilharIndicacao,
-    obterEstatisticas
+    obterEstatisticas,
+    processarIndicacaoViaUrl
   };
 };

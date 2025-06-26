@@ -1,21 +1,27 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useIndicacoes } from '@/hooks/useIndicacoes';
+import { useConfiguracoesBonus } from '@/hooks/useConfiguracoesBonus';
 import { Users, Gift, Share2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const WidgetIndicacao = () => {
   const { indicacoes, compartilharIndicacao } = useIndicacoes();
+  const { obterValorBonus } = useConfiguracoesBonus();
 
   const totalGanho = indicacoes.reduce((total, indicacao) => {
     let bonus = 0;
-    if (indicacao.bonus_cadastro_pago) bonus += 5;
-    if (indicacao.bonus_primeiro_item_pago) bonus += 5;
-    if (indicacao.bonus_primeira_compra_pago) bonus += 5;
+    if (indicacao.bonus_cadastro_pago) bonus += obterValorBonus('indicacao_cadastro');
+    if (indicacao.bonus_primeiro_item_pago) bonus += obterValorBonus('indicacao_primeiro_item');
+    if (indicacao.bonus_primeira_compra_pago) bonus += obterValorBonus('indicacao_primeira_compra');
     return total + bonus;
   }, 0);
+
+  const bonusCadastro = obterValorBonus('indicacao_cadastro');
+  const bonusPrimeiroItem = obterValorBonus('indicacao_primeiro_item');
+  const bonusPrimeiraCompra = obterValorBonus('indicacao_primeira_compra');
+  const totalPossivel = bonusCadastro + bonusPrimeiroItem + bonusPrimeiraCompra;
 
   return (
     <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
@@ -55,19 +61,19 @@ const WidgetIndicacao = () => {
         </div>
 
         <div className="bg-white p-3 rounded-lg border border-purple-100">
-          <div className="text-xs text-purple-700 font-medium mb-2">Ganhe até 15 Girinhas:</div>
+          <div className="text-xs text-purple-700 font-medium mb-2">Ganhe até {totalPossivel} Girinhas:</div>
           <div className="space-y-1 text-xs">
             <div className="flex items-center gap-2">
               <Gift className="h-3 w-3 text-green-500" />
-              <span>+5 no cadastro</span>
+              <span>+{bonusCadastro} no cadastro</span>
             </div>
             <div className="flex items-center gap-2">
               <Gift className="h-3 w-3 text-blue-500" />
-              <span>+5 no 1º item</span>
+              <span>+{bonusPrimeiroItem} no 1º item</span>
             </div>
             <div className="flex items-center gap-2">
               <Gift className="h-3 w-3 text-purple-500" />
-              <span>+5 na 1ª compra</span>
+              <span>+{bonusPrimeiraCompra} na 1ª reserva</span>
             </div>
           </div>
         </div>
