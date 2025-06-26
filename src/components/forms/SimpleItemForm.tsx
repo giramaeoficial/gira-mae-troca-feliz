@@ -30,7 +30,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   const faixaPrecos = getFaixaValores(formData.categoria_id);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <ItemBasicInfo
         formData={{
           titulo: formData.titulo,
@@ -43,18 +43,24 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
         faixaPrecos={faixaPrecos}
       />
       
-      <ItemCategorization
-        formData={{
-          categoria_id: formData.categoria_id,
-          subcategoria: formData.subcategoria,
-          genero: formData.genero,
-          tamanho_categoria: formData.tamanho_categoria,
-          tamanho_valor: formData.tamanho_valor,
-          estado_conservacao: formData.estado_conservacao
-        }}
-        onFieldChange={onFieldChange}
-        errors={errors}
-      />
+      <div className="bg-gradient-to-br from-purple-25 to-pink-25 p-5 rounded-xl border border-purple-100">
+        <h3 className="text-sm font-medium text-gray-700 mb-4 flex items-center gap-2">
+          <span className="text-base">🔧</span>
+          Categorização do Item
+        </h3>
+        <ItemCategorization
+          formData={{
+            categoria_id: formData.categoria_id,
+            subcategoria: formData.subcategoria,
+            genero: formData.genero,
+            tamanho_categoria: formData.tamanho_categoria,
+            tamanho_valor: formData.tamanho_valor,
+            estado_conservacao: formData.estado_conservacao
+          }}
+          onFieldChange={onFieldChange}
+          errors={errors}
+        />
+      </div>
     </div>
   );
 };
