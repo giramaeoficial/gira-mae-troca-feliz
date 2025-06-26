@@ -19,6 +19,8 @@ interface ItensInteligentesFiltros {
   ordem?: 'recentes' | 'populares' | 'preco_baixo' | 'preco_alto';
   limite?: number;
   excludeUserId?: string;
+  precoMin?: number;
+  precoMax?: number;
 }
 
 export const useItensInteligentes = (filtros: ItensInteligentesFiltros = {}) => {
@@ -50,6 +52,15 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros = {}) => 
 
       if (filtros.genero) {
         query = query.eq('genero', filtros.genero);
+      }
+
+      // Filtros de preço
+      if (filtros.precoMin !== undefined) {
+        query = query.gte('valor_girinhas', filtros.precoMin);
+      }
+
+      if (filtros.precoMax !== undefined) {
+        query = query.lte('valor_girinhas', filtros.precoMax);
       }
 
       if (filtros.excludeUserId) {

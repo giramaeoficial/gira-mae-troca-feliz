@@ -10,7 +10,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { useCategorias } from '@/hooks/useCategorias';
+import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 
 interface AdvancedFiltersProps {
@@ -18,7 +19,7 @@ interface AdvancedFiltersProps {
     busca?: string;
     categoria?: string;
     subcategoria?: string;
-    tamanho?: { valor: string; label_display: string } | null;
+    tamanho?: string;
     estado_conservacao?: string;
     preco_minimo?: number;
     preco_maximo?: number;
@@ -30,8 +31,9 @@ interface AdvancedFiltersProps {
 }
 
 const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => {
+  const { configuracoes: categorias = [] } = useConfigCategorias();
+  const { subcategorias = [] } = useSubcategorias();
   const { data: tiposTamanho } = useTiposTamanho(filtros.categoria);
-  const { data: categorias } = useCategorias();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -43,18 +45,17 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
   };
 
   const handleTamanhoChange = (value: string) => {
-    const tamanhoSelecionado = tiposTamanho[filtros.categoria || 'roupas']?.find(t => t.valor === value) || null;
-    onFiltrosChange({ ...filtros, tamanho: tamanhoSelecionado });
+    onFiltrosChange({ ...filtros, tamanho: value });
   };
 
   const handleSliderChange = (value: number[]) => {
     onFiltrosChange({ ...filtros, preco_minimo: value[0], preco_maximo: value[1] });
   };
 
-  const subcategorias = React.useMemo(() => {
-    if (!filtros.categoria || !categorias) return [];
-    return categorias.find(cat => cat.nome === filtros.categoria)?.subcategorias || [];
-  }, [filtros.categoria, categorias]);
+  const subcategoriasFiltradas = React.useMemo(() => {
+    if (!filtros.categoria || !subcategorias) return [];
+    return subcategorias.filter(sub => sub.categoria_pai === filtros.categoria);
+  }, [filtros.categoria, subcategorias]);
 
   return (
     <Accordion type="single" collapsible className="w-full">
@@ -84,7 +85,7 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
                   </SelectTrigger>
                   <SelectContent>
                     {categorias?.map((categoria) => (
-                      <SelectItem key={categoria.nome} value={categoria.nome}>{categoria.nome}</SelectItem>
+                      <SelectItem key={categoria.codigo} value={categoria.codigo}>{categoria.nome}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -97,8 +98,8 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
                     <SelectValue placeholder="Selecione a Subcategoria" defaultValue={filtros.subcategoria} />
                   </SelectTrigger>
                   <SelectContent>
-                    {subcategorias.map((subcategoria) => (
-                      <SelectItem key={subcategoria} value={subcategoria}>{subcategoria}</SelectItem>
+                    {subcategoriasFiltradas.map((subcategoria) => (
+                      <SelectItem key={subcategoria.id} value={subcategoria.nome}>{subcategoria.nome}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -126,12 +127,14 @@ const AdvancedFilters = ({ filtros, onFiltrosChange }: AdvancedFiltersProps) => 
                 <Label htmlFor="tamanho">Tamanho</Label>
                 <Select onValueChange={handleTamanhoChange}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o Tamanho" defaultValue={filtros.tamanho?.valor} />
+                    <SelectValue placeholder="Selecione o Tamanho" defaultValue={filtros.tamanho} />
                   </SelectTrigger>
                   <SelectContent>
-                    {tiposTamanho[filtros.categoria]?.map((tamanho) => (
-                      <SelectItem key={tamanho.valor} value={tamanho.valor}>{tamanho.label_display}</SelectItem>
-                    ))}
+                    {Object.values(tiposTamanho)
+                      .flat()
+                      .map((tamanho) => (
+                        <SelectItem key={tamanho.valor} value={tamanho.valor}>{tamanho.label_display}</SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

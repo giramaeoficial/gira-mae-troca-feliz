@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -66,7 +65,7 @@ const Feed = () => {
         updateFilters(novosFiltros);
     };
 
-    // Apply filters to items
+    // Apply filters to items - convert tamanho string to object for compatibility
     const filteredItens = itens.filter(item => {
         const matchBusca = !filters.busca || 
             item.titulo.toLowerCase().includes(filters.busca.toLowerCase()) ||
@@ -132,9 +131,17 @@ const Feed = () => {
                         </div>
                     )}
 
-                    {/* Filtros Avançados */}
+                    {/* Filtros Avançados - Convert filters to compatible format */}
                     <AdvancedFilters 
-                        filtros={filters} 
+                        filtros={{
+                            busca: filters.busca,
+                            categoria: filters.categoria,
+                            subcategoria: filters.subcategoria,
+                            tamanho: filters.tamanho,
+                            genero: filters.genero,
+                            preco_minimo: filters.precoMin,
+                            preco_maximo: filters.precoMax
+                        }} 
                         onFiltrosChange={handleFiltrosChange} 
                     />
 
