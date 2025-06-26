@@ -34,22 +34,22 @@ const NavLink: React.FC<{ to: string; icon: React.ElementType; children: React.R
 
 const DesktopNav: React.FC = () => {
   return (
-    <nav className="flex justify-center items-center text-sm font-medium w-full">
-      <div className="flex gap-12 items-center">
+    <nav className="flex items-center text-sm font-medium">
+      <div className="flex gap-8 items-center">
         {/* Bloco de Ações Principais */}
         <NavLink to="/feed" icon={Home}>Feed</NavLink>
         <NavLink to="/publicar" icon={Plus}>Publicar</NavLink>
         <NavLink to="/minhas-reservas" icon={Package}>Reservas</NavLink>
         
         {/* Separador Vertical */}
-        <div className="border-l h-6 border-gray-300 mx-4"></div>
+        <div className="border-l h-6 border-gray-300 mx-3"></div>
         
         {/* Bloco de Funcionalidades */}
         <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
         <NavLink to="/mensagens" icon={MessageCircle}>Mensagens</NavLink>
         
         {/* Separador Vertical */}
-        <div className="border-l h-6 border-gray-300 mx-4"></div>
+        <div className="border-l h-6 border-gray-300 mx-3"></div>
         
         {/* Bloco de Gamificação */}
         <NavLink to="/missoes" icon={Trophy}>Missões</NavLink>
@@ -133,7 +133,7 @@ const Header: React.FC = () => {
             </Link>
 
             {/* Desktop Navigation - Hidden on mobile */}
-            <div className="hidden md:flex flex-1 justify-center">
+            <div className="hidden md:flex items-center ml-16">
               <DesktopNav />
             </div>
 
