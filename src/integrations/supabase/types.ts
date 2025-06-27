@@ -2281,6 +2281,10 @@ export type Database = {
         Args: { uf_param: string }
         Returns: string[]
       }
+      get_step_data: {
+        Args: { p_step: string }
+        Returns: Json
+      }
       get_user_form_data: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -2510,6 +2514,10 @@ export type Database = {
         Args: { p_step: string; p_form_data: Json }
         Returns: undefined
       }
+      save_step_data: {
+        Args: { p_step: string; p_data: Json }
+        Returns: boolean
+      }
       save_user_phone: {
         Args: { p_telefone: string }
         Returns: boolean
@@ -2563,7 +2571,7 @@ export type Database = {
         Returns: boolean
       }
       verify_phone_code: {
-        Args: { p_code: string }
+        Args: { p_code: string } | { p_code: string }
         Returns: boolean
       }
     }

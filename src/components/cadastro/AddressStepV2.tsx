@@ -1,40 +1,106 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useStepData } from '@/hooks/useStepData';
 
 interface AddressStepV2Props {
   onComplete: () => void;
 }
 
+interface AddressFormData {
+  aceita_entrega_domicilio: boolean;
+  raio_entrega_km: number;
+  ponto_retirada_preferido: string;
+}
+
 const AddressStepV2: React.FC<AddressStepV2Props> = ({ onComplete }) => {
-  const [formData, setFormData] = useState({
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { saveStepData, getStepData } = useStepData();
+  
+  const [formData, setFormData] = useState<AddressFormData>({
     aceita_entrega_domicilio: false,
     raio_entrega_km: 5,
     ponto_retirada_preferido: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+
+  // Carregar dados salvos do step
+  useEffect(() => {
+    const loadData = async () => {
+      const savedData = await getStepData('address');
+      if (savedData && Object.keys(savedData).length > 0) {
+        console.log('📋 Carregando dados salvos do step address:', savedData);
+        setFormData(prev => ({ ...prev, ...savedData }));
+      }
+    };
+    loadData();
+  }, [getStepData]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const newData = { ...formData, [field]: value };
+    setFormData(newData);
+    
+    // Salvar dados automaticamente
+    saveStepData('address', newData);
   };
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Usuário não encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
-    // Simular salvamento dos dados (implementar lógica real aqui)
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      console.log('💾 Salvando dados de endereço:', formData);
+
+      // Salvar dados no perfil permanente
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          aceita_entrega_domicilio: formData.aceita_entrega_domicilio,
+          raio_entrega_km: formData.raio_entrega_km,
+          ponto_retirada_preferido: formData.ponto_retirada_preferido,
+          cadastro_status: 'completo',
+          cadastro_step: 'complete'
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('❌ Erro ao salvar endereço:', error);
+        throw error;
+      }
+
+      console.log('✅ Dados de endereço salvos com sucesso');
+      
       toast({
         title: "Endereço salvo!",
         description: "Configurações de entrega registradas com sucesso.",
       });
+      
       onComplete();
-    }, 2000);
+    } catch (error: any) {
+      console.error('❌ Erro no salvamento:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Não foi possível salvar os dados. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
