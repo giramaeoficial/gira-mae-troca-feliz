@@ -35,8 +35,11 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
   const formatPhoneDisplay = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length >= 11) {
-      // Formato: (XX) XXXXX-XXXX
+      // Formato: (XX) XXXXX-XXXX (celular 9 dígitos)
       return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
+    } else if (cleaned.length >= 10) {
+      // Formato: (XX) XXXX-XXXX (fixo 8 dígitos)
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
     } else if (cleaned.length >= 6) {
       // Formato parcial: (XX) XXXXX
       return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2)}`;
@@ -65,11 +68,11 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
 
     const cleanPhone = cleanPhoneNumber(phone);
     
-    // Validação: deve ter 13 dígitos (55 + 11 dígitos do Brasil)
-    if (cleanPhone.length !== 13) {
+    // Validação: deve ter pelo menos 10 dígitos (55 + DDD + número)
+    if (cleanPhone.length < 12 || cleanPhone.length > 13) {
       toast({
         title: "Telefone inválido",
-        description: "Por favor, insira um número com DDD + 9 dígitos (ex: 31999999999).",
+        description: "Por favor, insira um número válido com DDD.",
         variant: "destructive",
       });
       return;
@@ -142,7 +145,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
           </div>
           <Input
             type="tel"
-            placeholder="(31) 99999-9999"
+            placeholder="(31) 9999-9999 ou (31) 99999-9999"
             value={phone}
             onChange={(e) => handlePhoneChange(e.target.value)}
             className="pl-12"
@@ -170,7 +173,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         
         {/* Info adicional */}
         <p className="text-xs text-gray-500 mt-3 text-center">
-          💡 Digite apenas DDD + número (ex: 31999999999)
+          💡 Digite seu número com DDD (aceita 8 ou 9 dígitos)
         </p>
       </div>
     </div>
