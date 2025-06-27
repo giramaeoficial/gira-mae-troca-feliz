@@ -83,17 +83,57 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     try {
       console.log('📱 Enviando código via WhatsApp para:', cleanPhone);
       
-      // Chamar a Edge Function para enviar WhatsApp
+      // Gerar código de 4 dígitos
+      const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+      console.log('🔢 Código gerado:', verificationCode);
+      
+      console.log('📤 Chamando Edge Function com:', { 
+        telefone: cleanPhone, 
+        codigo: verificationCode 
+      });
+      
+      // Chamar a Edge Function com os parâmetros corretos
       const { data, error } = await supabase.functions.invoke('send-whatsapp', {
         body: { 
-          phone: cleanPhone,
-          method: 'whatsapp' // Sempre WhatsApp
+          telefone: cleanPhone,
+          codigo: verificationCode,
+          nome: 'usuário'
         }
       });
 
+      console.log('📥 Resposta da Edge Function:', { data, error });
+
       if (error) {
-        console.error('❌ Erro ao enviar WhatsApp:', error);
+        console.error('❌ Erro da Edge Function:', error);
         throw error;
+      }
+
+      if (!data || !data.success) {
+        console.error('❌ Resposta inválida da função:', data);
+        throw new Error(data?.error || 'Falha no envio do WhatsApp');
+      }
+
+      // Salvar código no banco após sucesso do envio
+      try {
+        const { error: saveError } = await supabase
+          .from('profiles')
+          .update({
+            telefone: cleanPhone,
+            verification_code: verificationCode,
+            verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutos
+            cadastro_step: 'code'
+          })
+          .eq('id', (await supabase.auth.getUser()).data.user?.id);
+
+        if (saveError) {
+          console.error('⚠️ Erro ao salvar código no banco:', saveError);
+          // Não falha aqui, pois o WhatsApp já foi enviado
+        } else {
+          console.log('✅ Código salvo no banco');
+        }
+      } catch (saveErr) {
+        console.error('⚠️ Erro ao salvar no banco:', saveErr);
+        // Não falha aqui
       }
 
       console.log('✅ WhatsApp enviado com sucesso:', data);
