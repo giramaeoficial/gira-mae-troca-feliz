@@ -36,7 +36,7 @@ export const useCadastroProgress = () => {
 
       setProgress({
         step: data.cadastro_step || 'google',
-        status: data.cadastro_status || 'incompleto'
+        status: (data.cadastro_status as 'incompleto' | 'completo') || 'incompleto'
       });
     } catch (error) {
       console.error('Erro ao buscar progresso:', error);

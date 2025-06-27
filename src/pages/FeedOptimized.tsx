@@ -20,11 +20,13 @@ import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
+import { useToast } from '@/hooks/use-toast';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
+  const { toast } = useToast();
   
   // Estados dos filtros - versão simplificada
   const [busca, setBusca] = useState('');
