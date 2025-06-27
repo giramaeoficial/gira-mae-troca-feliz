@@ -1,256 +1,197 @@
-
-import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { Sparkles, Heart } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Sparkles, Heart, CheckCircle } from 'lucide-react';
 import Header from '@/components/shared/Header';
 import { useAuth } from '@/hooks/useAuth';
-import GoogleStep from '@/components/cadastro/GoogleStep';
-import PhoneStep from '@/components/cadastro/PhoneStep';
-import CodeStep from '@/components/cadastro/CodeStep';
-import PersonalDataStep from '@/components/cadastro/PersonalDataStep';
-import AddressStep from '@/components/cadastro/AddressStep';
-import StepIndicator from '@/components/cadastro/StepIndicator';
+import { useCadastroProgress } from '@/hooks/useCadastroProgress';
+import GoogleStepV2 from '@/components/cadastro/GoogleStepV2';
+import PhoneStepV2 from '@/components/cadastro/PhoneStepV2';
+import CodeStepV2 from '@/components/cadastro/CodeStepV2';
+import PersonalStepV2 from '@/components/cadastro/PersonalStepV2';
+import AddressStepV2 from '@/components/cadastro/AddressStepV2';
+import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 
 interface Step {
   key: string;
   title: string;
-  subtitle?: string;
-  state: 'pending' | 'active' | 'done';
+  completed: boolean;
+  active: boolean;
 }
 
-interface FormData {
-  google: boolean;
-  phone: string;
-  code: string;
-  nome: string;
-  bio: string;
-  profissao: string;
-  instagram: string;
-  telefone: string;
-  data_nascimento: string;
-  interesses: string[];
-  categorias_favoritas: string[];
-  aceita_entrega_domicilio: boolean;
-  raio_entrega_km: number;
-  ponto_retirada_preferido: string;
-}
-
-const SignUp = () => {
-  const { user, signInWithGoogleForRegistration } = useAuth();
-  const [searchParams] = useSearchParams();
+const CadastroV2 = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  
-  const [steps, setSteps] = useState<Step[]>([
-    { key: 'google', title: 'Entrar com Google', state: 'active' },
-    { key: 'phone', title: 'Adicione seu celular', state: 'pending' },
-    { key: 'code', title: 'Insira o código', state: 'pending' },
-    { key: 'personal', title: 'Dados pessoais', state: 'pending' },
-    { key: 'address', title: 'Endereço', state: 'pending' }
-  ]);
+  const { progress, loading, completeStep, updateProgress } = useCadastroProgress();
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [autoAdvanceProcessed, setAutoAdvanceProcessed] = useState(false);
 
-  const [formData, setFormData] = useState<FormData>({
-    google: false,
-    phone: '',
-    code: '',
-    nome: '',
-    bio: '',
-    profissao: '',
-    instagram: '',
-    telefone: '',
-    data_nascimento: '',
-    interesses: [],
-    categorias_favoritas: [],
-    aceita_entrega_domicilio: false,
-    raio_entrega_km: 5,
-    ponto_retirada_preferido: ''
-  });
-
-  const [codeInputs, setCodeInputs] = useState(['', '', '', '']);
-
-  // Verificar se o usuário já está logado e foi redirecionado do Google
+  // Definir steps baseado no progresso
   useEffect(() => {
-    const stepParam = searchParams.get('step');
-    if (user && stepParam === 'phone') {
-      // Usuário voltou do Google OAuth, avançar para step do telefone
-      completeStep(0);
-      setFormData(prev => ({ ...prev, google: true }));
-    } else if (user && !stepParam) {
-      // Usuário já logado acessando cadastro diretamente - permitir completar cadastro
-      completeStep(0);
-      setFormData(prev => ({ ...prev, google: true }));
-    }
-  }, [user, searchParams]);
+    const stepOrder = ['google', 'phone', 'code', 'personal', 'address'];
+    const currentStepIndex = stepOrder.indexOf(progress.step);
+    
+    const newSteps = stepOrder.map((stepKey, index) => ({
+      key: stepKey,
+      title: getStepTitle(stepKey),
+      completed: index < currentStepIndex || progress.status === 'completo',
+      active: index === currentStepIndex && progress.status !== 'completo'
+    }));
 
-  const completeStep = (index: number) => {
-    const newSteps = [...steps];
-    newSteps[index].state = 'done';
-    if (newSteps[index + 1]) {
-      newSteps[index + 1].state = 'active';
-    }
-    for (let i = index + 2; i < newSteps.length; i++) {
-      newSteps[i].state = 'pending';
-    }
     setSteps(newSteps);
-  };
+  }, [progress]);
 
-  const editStep = (index: number) => {
-    const newSteps = steps.map((step, idx) => {
-      if (idx === index) return { ...step, state: 'active' as const };
-      if (idx < index) return { ...step, state: 'done' as const };
-      return { ...step, state: 'pending' as const };
-    });
-    setSteps(newSteps);
-  };
-
-  const handleInputChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleCodeInput = (index: number, value: string) => {
-    const newInputs = [...codeInputs];
-    newInputs[index] = value;
-    setCodeInputs(newInputs);
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setIsGoogleLoading(true);
-      const result = await signInWithGoogleForRegistration();
+  // FASE 2: Lógica de auto-avanço melhorada para usuários já autenticados
+  useEffect(() => {
+    if (!loading && user && progress.step === 'google' && progress.status === 'incompleto' && !autoAdvanceProcessed) {
+      console.log('✅ Usuário logado detectado, auto-avançando do step Google para Phone...');
+      console.log('User ID:', user.id);
+      console.log('Progress:', progress);
       
-      if (result.success) {
-        setFormData(prev => ({ ...prev, google: true }));
-        toast({
-          title: "Login realizado!",
-          description: "Agora vamos completar seu cadastro.",
+      setAutoAdvanceProcessed(true);
+      
+      // Pequeno delay para garantir que o estado foi atualizado
+      setTimeout(() => {
+        completeStep('google').then(success => {
+          if (success) {
+            console.log('✅ Auto-avanço concluído com sucesso');
+            toast({
+              title: "Bem-vindo!",
+              description: "Vamos completar seu cadastro.",
+            });
+          } else {
+            console.error('❌ Erro no auto-avanço');
+            toast({
+              title: "Erro",
+              description: "Houve um problema. Tente recarregar a página.",
+              variant: "destructive",
+            });
+          }
         });
-        return Promise.resolve();
-      } else {
-        throw new Error(result.error?.message || 'Erro no login');
-      }
-    } catch (error) {
-      console.error('Erro no login com Google:', error);
-      toast({
-        title: "Erro no login",
-        description: "Tente novamente.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsGoogleLoading(false);
+      }, 100);
     }
+  }, [loading, user, progress.step, progress.status, completeStep, autoAdvanceProcessed, toast]);
+
+  const getStepTitle = (stepKey: string) => {
+    const titles = {
+      google: 'Entrar com Google',
+      phone: 'Adicione seu celular',
+      code: 'Insira o código',
+      personal: 'Dados pessoais',
+      address: 'Endereço'
+    };
+    return titles[stepKey as keyof typeof titles] || stepKey;
   };
 
-  const handleInteresseToggle = (interesse: string) => {
-    const newInteresses = formData.interesses.includes(interesse)
-      ? formData.interesses.filter(i => i !== interesse)
-      : [...formData.interesses, interesse];
-    handleInputChange('interesses', newInteresses);
-  };
-
-  const handleCategoriaToggle = (categoria: string) => {
-    const newCategorias = formData.categorias_favoritas.includes(categoria)
-      ? formData.categorias_favoritas.filter(c => c !== categoria)
-      : [...formData.categorias_favoritas, categoria];
-    handleInputChange('categorias_favoritas', newCategorias);
-  };
-
-  const renderStepContent = (step: Step, index: number) => {
-    if (step.state !== 'active') return null;
-
-    switch (step.key) {
-      case 'google':
-        return (
-          <GoogleStep
-            onComplete={() => completeStep(0)}
-            onGoogleLogin={handleGoogleLogin}
-            isLoading={isGoogleLoading}
-          />
-        );
-
-      case 'phone':
-        return (
-          <PhoneStep
-            phone={formData.phone}
-            onPhoneChange={(phone) => handleInputChange('phone', phone)}
-            onComplete={() => completeStep(1)}
-          />
-        );
-
-      case 'code':
-        return (
-          <CodeStep
-            phone={formData.phone}
-            codeInputs={codeInputs}
-            onCodeChange={handleCodeInput}
-            onComplete={() => {
-              const code = codeInputs.join('');
-              setFormData(prev => ({ ...prev, code }));
-              completeStep(2);
-            }}
-          />
-        );
-
-      case 'personal':
-        return (
-          <PersonalDataStep
-            formData={{
-              nome: formData.nome,
-              bio: formData.bio,
-              profissao: formData.profissao,
-              instagram: formData.instagram,
-              telefone: formData.telefone,
-              data_nascimento: formData.data_nascimento,
-              interesses: formData.interesses,
-              categorias_favoritas: formData.categorias_favoritas
-            }}
-            onInputChange={handleInputChange}
-            onInteresseToggle={handleInteresseToggle}
-            onCategoriaToggle={handleCategoriaToggle}
-            onComplete={() => completeStep(3)}
-          />
-        );
-
-      case 'address':
-        return (
-          <AddressStep
-            formData={{
-              aceita_entrega_domicilio: formData.aceita_entrega_domicilio,
-              raio_entrega_km: formData.raio_entrega_km,
-              ponto_retirada_preferido: formData.ponto_retirada_preferido
-            }}
-            onInputChange={handleInputChange}
-            onComplete={() => {
-              completeStep(4);
-              console.log('Cadastro completo:', formData);
-            }}
-          />
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const isAllStepsCompleted = steps.every(step => step.state === 'done');
-
-  const handleEnterPlatform = () => {
-    if (user) {
+  const handleStepComplete = async () => {
+    const success = await completeStep(progress.step);
+    if (success && progress.step === 'address') {
+      // Cadastro completo
       toast({
         title: "Bem-vinda à GiraMãe!",
         description: "Seu cadastro foi finalizado com sucesso.",
       });
       navigate('/feed');
-    } else {
+    }
+  };
+
+  const handleEditStep = async (stepKey: string) => {
+    // Permitir voltar para steps já completados
+    const step = steps.find(s => s.key === stepKey);
+    const stepOrder = ['google', 'phone', 'code', 'personal', 'address'];
+    const targetStepIndex = stepOrder.indexOf(stepKey);
+    const currentStepIndex = stepOrder.indexOf(progress.step);
+    
+    // Só permite voltar (não pular para frente)
+    if (step?.completed && targetStepIndex < currentStepIndex) {
+      console.log('🔙 Voltando para step anterior:', stepKey);
+      
+      try {
+        // Usar updateProgress diretamente do hook
+        const success = await updateProgress(stepKey);
+        if (success) {
+          toast({
+            title: "Voltando...",
+            description: `Retornando para: ${getStepTitle(stepKey)}`,
+          });
+        }
+      } catch (error) {
+        console.error('❌ Erro ao voltar step:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível voltar para este step.",
+          variant: "destructive",
+        });
+      }
+    } else if (targetStepIndex >= currentStepIndex) {
+      // Não permite pular steps futuros
+      console.log('⚠️ Não é possível pular para steps futuros');
       toast({
-        title: "Erro",
-        description: "Você precisa estar logada para continuar.",
+        title: "Não é possível pular steps",
+        description: "Complete o step atual primeiro.",
         variant: "destructive",
       });
     }
   };
+
+  const renderStepContent = () => {
+    if (progress.status === 'completo') {
+      return (
+        <div className="bg-white border-t border-gray-100 p-6 text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-white" />
+          </div>
+          <h3 className="text-lg font-bold text-green-800 mb-2">
+            Cadastro realizado com sucesso!
+          </h3>
+          <p className="text-sm text-green-600 mb-4">
+            Sua conta foi criada e você já está logado.
+          </p>
+          
+          <button 
+            onClick={() => navigate('/feed')}
+            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white font-medium py-3 px-4 rounded-lg shadow-lg transition-all duration-200"
+          >
+            Entrar na Plataforma
+          </button>
+        </div>
+      );
+    }
+
+    switch (progress.step) {
+      case 'google':
+        return <GoogleStepV2 onComplete={handleStepComplete} />;
+      case 'phone':
+        return <PhoneStepV2 onComplete={handleStepComplete} />;
+      case 'code':
+        return <CodeStepV2 onComplete={handleStepComplete} />;
+      case 'personal':
+        return <PersonalStepV2 onComplete={handleStepComplete} />;
+      case 'address':
+        return <AddressStepV2 onComplete={handleStepComplete} />;
+      default:
+        return (
+          <div className="p-6 text-center">
+            <p className="text-gray-600">Carregando...</p>
+          </div>
+        );
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <LoadingSpinner />
+            <p className="mt-4 text-gray-600">Carregando progresso...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
@@ -274,19 +215,35 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Steps */}
-            <StepIndicator
-              steps={steps}
-              onEditStep={editStep}
-              isAllStepsCompleted={isAllStepsCompleted}
-            />
-
-            {/* Step Content */}
-            {steps.map((step, index) => (
-              <div key={step.key}>
-                {renderStepContent(step, index)}
+            {/* FASE 1: Steps Indicator - Removido o título duplicado */}
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                {steps.map((step, index) => (
+                  <div key={step.key} className="flex items-center">
+                    <div 
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold cursor-pointer transition-colors ${
+                        step.completed 
+                          ? 'bg-green-500 text-white hover:bg-green-600' 
+                          : step.active 
+                            ? 'bg-primary text-white' 
+                            : 'bg-gray-200 text-gray-600'
+                      }`}
+                      onClick={() => handleEditStep(step.key)}
+                    >
+                      {step.completed ? <CheckCircle className="w-4 h-4" /> : index + 1}
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div className={`w-6 h-0.5 mx-2 ${step.completed ? 'bg-green-500' : 'bg-gray-200'}`} />
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* FASE 3: Step Content - Melhor espaçamento */}
+            <div className="min-h-[300px]">
+              {renderStepContent()}
+            </div>
 
             {/* Bônus sempre visível */}
             <div className="bg-gradient-to-r from-primary/10 via-pink-500/10 to-purple-100 p-4 rounded-xl m-4">
@@ -300,58 +257,26 @@ const SignUp = () => {
               </p>
             </div>
 
-            {/* Botão de entrar quando tudo estiver completo */}
-            {isAllStepsCompleted && (
-              <div className="bg-white border-t border-gray-100 p-6 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-green-800 mb-2">
-                  Cadastro realizado com sucesso!
-                </h3>
-                <p className="text-sm text-green-600 mb-4">
-                  Sua conta foi criada e você já está logado.
-                </p>
-                
-                <button 
-                  onClick={handleEnterPlatform}
-                  className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white font-medium py-3 px-4 rounded-lg shadow-lg transition-all duration-200"
-                >
-                  Entrar na Plataforma
-                </button>
-
-                <div className="text-center text-sm mt-4">
-                  Já tem uma conta?{" "}
-                  <Link to="/auth" className="underline text-primary font-medium">
-                    Faça login aqui
-                  </Link>
-                </div>
-              </div>
-            )}
+            {/* Link para login */}
+            <div className="text-center text-sm p-4">
+              Já tem uma conta?{" "}
+              <Link to="/auth" className="underline text-primary font-medium">
+                Faça login aqui
+              </Link>
+            </div>
           </div>
 
           {/* Help section */}
           <p className="text-xs text-center text-gray-600 mt-4">
-            Precisa de ajuda?{' '}
-            <Link to="#" className="text-primary underline hover:text-primary/80">
-              Fale conosco.
+            Precisa de ajuda?{" "}
+            <Link to="/support" className="underline">
+              Fale conosco
             </Link>
           </p>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-white/50 backdrop-blur-sm py-6 border-t border-pink-100">
-        <div className="container mx-auto px-4 text-center text-gray-600">
-          <div className="text-xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent flex items-center justify-center mb-2">
-            <Sparkles className="h-5 w-5 mr-2 text-primary" />
-            GiraMãe
-          </div>
-          <p className="text-sm">&copy; {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
-        </div>
-      </footer>
     </div>
   );
 };
 
-export default SignUp;
+export default CadastroV2;
