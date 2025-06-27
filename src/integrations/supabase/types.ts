@@ -1357,6 +1357,8 @@ export type Database = {
           avatar_url: string | null
           bairro: string | null
           bio: string | null
+          cadastro_status: string | null
+          cadastro_step: string | null
           categorias_favoritas: string[] | null
           cep: string | null
           cidade: string | null
@@ -1389,6 +1391,8 @@ export type Database = {
           avatar_url?: string | null
           bairro?: string | null
           bio?: string | null
+          cadastro_status?: string | null
+          cadastro_step?: string | null
           categorias_favoritas?: string[] | null
           cep?: string | null
           cidade?: string | null
@@ -1421,6 +1425,8 @@ export type Database = {
           avatar_url?: string | null
           bairro?: string | null
           bio?: string | null
+          cadastro_status?: string | null
+          cadastro_step?: string | null
           categorias_favoritas?: string[] | null
           cep?: string | null
           cidade?: string | null

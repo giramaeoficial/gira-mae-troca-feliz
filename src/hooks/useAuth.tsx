@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/feed`
+        redirectTo: `${window.location.origin}/auth-callback`
       }
     });
 
@@ -56,11 +56,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogleForRegistration = async () => {
     try {
-      // Para o cadastro, usamos o fluxo normal mas redirecionamos para o wizard
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/cadastro?step=phone`
+          redirectTo: `${window.location.origin}/cadastro`
         }
       });
 

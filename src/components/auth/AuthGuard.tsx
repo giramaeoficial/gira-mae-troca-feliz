@@ -1,38 +1,69 @@
 
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Sparkles } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-const AuthGuard = ({ children }: AuthGuardProps) => {
-  const { user, loading } = useAuth();
+const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    console.log('AuthGuard - loading:', loading, 'user:', user);
-    if (!loading && !user) {
-      console.log('Redirecting to auth page');
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+    const checkUserStatus = async () => {
+      if (authLoading) return;
 
-  if (loading) {
+      // Se não está logado, redirecionar para auth
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      // Se está na página de cadastro, permitir acesso
+      if (location.pathname === '/cadastro') {
+        setChecking(false);
+        return;
+      }
+
+      try {
+        // Verificar status do cadastro
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('cadastro_status, cadastro_step')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        // Se cadastro não está completo, redirecionar para cadastro
+        if (data.cadastro_status === 'incompleto') {
+          navigate('/cadastro');
+          return;
+        }
+
+        // Cadastro completo, permitir acesso
+        setChecking(false);
+      } catch (error) {
+        console.error('Erro ao verificar status do usuário:', error);
+        navigate('/auth');
+      }
+    };
+
+    checkUserStatus();
+  }, [user, authLoading, navigate, location.pathname]);
+
+  if (authLoading || checking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <Sparkles className="h-8 w-8 text-primary animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Carregando...</p>
-        </div>
+        <LoadingSpinner />
       </div>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   return <>{children}</>;
