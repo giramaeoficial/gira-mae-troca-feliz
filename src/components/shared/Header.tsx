@@ -98,10 +98,8 @@ const Header: React.FC = () => {
     checkCadastroStatus();
   }, [user]);
 
-  // ✅ NOVA CONDIÇÃO ADICIONADA - Se usuário logado tem cadastro incompleto E está na página de cadastro, não mostrar header
-  if (user && cadastroIncompleto && location.pathname === '/cadastro') {
-    return null;
-  }
+  // ✅ VERIFICAR SE DEVE OCULTAR MENUS (não o header todo)
+  const shouldHideMenus = user && cadastroIncompleto && location.pathname === '/cadastro';
 
   const handleSignOut = async () => {
     try {
@@ -169,15 +167,17 @@ const Header: React.FC = () => {
               <span className="text-2xl font-bold text-primary">GiraMãe</span>
             </Link>
 
-            {/* Desktop Navigation - Hidden on mobile */}
-            <div className="hidden md:flex items-center ml-16">
-              <DesktopNav />
-            </div>
+            {/* Desktop Navigation - Hidden on mobile and during signup */}
+            {!shouldHideMenus && (
+              <div className="hidden md:flex items-center ml-16">
+                <DesktopNav />
+              </div>
+            )}
 
             {/* Right side - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Notification Bell */}
-              <NotificationBell />
+              {/* Notification Bell - Hide during signup */}
+              {!shouldHideMenus && <NotificationBell />}
               
               {/* User Menu */}
               <DropdownMenu>
@@ -196,15 +196,19 @@ const Header: React.FC = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => navigate('/perfil')}>
-                    Meu Perfil
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/perfil/editar')}>
-                    Editar Perfil
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
-                    Configurações
-                  </DropdownMenuItem>
+                  {!shouldHideMenus && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/perfil')}>
+                        Meu Perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/perfil/editar')}>
+                        Editar Perfil
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
+                        Configurações
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem onClick={handleSignOut}>
                     Sair
                   </DropdownMenuItem>
@@ -214,22 +218,33 @@ const Header: React.FC = () => {
 
             {/* Mobile menu button and notification */}
             <div className="md:hidden flex items-center space-x-2">
-              <NotificationBell />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
+              {!shouldHideMenus && <NotificationBell />}
+              {!shouldHideMenus ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2"
+                >
+                  {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="p-2 text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
+      {/* Mobile Menu Overlay - Hide during signup */}
+      {mobileMenuOpen && !shouldHideMenus && (
         <div className="md:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setMobileMenuOpen(false)}>
           <div className="fixed right-0 top-0 h-full w-64 bg-white shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b">
