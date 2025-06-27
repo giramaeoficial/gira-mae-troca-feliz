@@ -1,631 +1,521 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from "@/components/shared/Header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Link } from "react-router-dom";
-import { Heart, Sparkles, Baby, Check, Edit2, Loader2 } from "lucide-react";
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Check, Edit2, Sparkles, Heart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
-const Cadastro = () => {
-    const navigate = useNavigate();
-    const { user, signInWithGoogle } = useAuth();
-    const [currentStep, setCurrentStep] = useState(0);
-    const [completedSteps, setCompletedSteps] = useState([]);
-    const [isSigningIn, setIsSigningIn] = useState(false);
-    const [loading, setLoading] = useState(false);
-    
-    const [formData, setFormData] = useState({
-        // Dados básicos (do Google)
-        nome: '',
-        email: '',
-        avatar_url: '',
-        
-        // Telefone e verificação
-        telefone: '',
-        telefone_verificado: false,
-        codigo_sms: '',
-        
-        // Dados pessoais
-        profissao: '',
-        instagram: '',
-        
-        // Endereço
-        cep: '',
-        endereco: '',
-        numero: '',
-        bairro: '',
-        cidade: '',
-        estado: '',
-        complemento: '',
-        ponto_referencia: '',
-        
-        // Filhos (do formulário original)
-        sobre_filhos: '',
-        num_criancas: '',
-        idade_criancas: ''
+interface Step {
+  key: string;
+  title: string;
+  subtitle?: string;
+  state: 'pending' | 'active' | 'done';
+}
+
+interface FormData {
+  google: boolean;
+  phone: string;
+  code: string;
+  name: string;
+  bio: string;
+  profession: string;
+  instagram: string;
+  cep: string;
+  state: string;
+  city: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  reference: string;
+}
+
+const SignUp = () => {
+  const [steps, setSteps] = useState<Step[]>([
+    { key: 'google', title: 'Entrar com Google', state: 'active' },
+    { key: 'phone', title: 'Adicione seu celular', state: 'pending' },
+    { key: 'code', title: 'Insira o código', state: 'pending' },
+    { key: 'personal', title: 'Dados pessoais', state: 'pending' },
+    { key: 'address', title: 'Endereço', state: 'pending' }
+  ]);
+
+  const [formData, setFormData] = useState<FormData>({
+    google: false,
+    phone: '',
+    code: '',
+    name: '',
+    bio: '',
+    profession: '',
+    instagram: '',
+    cep: '',
+    state: '',
+    city: '',
+    street: '',
+    number: '',
+    neighborhood: '',
+    reference: ''
+  });
+
+  const [codeInputs, setCodeInputs] = useState(['', '', '', '']);
+
+  const completeStep = (index: number) => {
+    const newSteps = [...steps];
+    newSteps[index].state = 'done';
+    if (newSteps[index + 1]) {
+      newSteps[index + 1].state = 'active';
+    }
+    for (let i = index + 2; i < newSteps.length; i++) {
+      newSteps[i].state = 'pending';
+    }
+    setSteps(newSteps);
+  };
+
+  const editStep = (index: number) => {
+    const newSteps = steps.map((step, idx) => {
+      if (idx === index) return { ...step, state: 'active' as const };
+      if (idx < index) return { ...step, state: 'done' as const };
+      return { ...step, state: 'pending' as const };
     });
+    setSteps(newSteps);
+  };
 
-    const steps = [
-        {
-            key: 'google',
-            title: 'Entrar com Google',
-            description: 'Login seguro com sua conta Google',
-            icon: '🔐'
-        },
-        {
-            key: 'telefone',
-            title: 'Verificar telefone',
-            description: 'Adicione seu número para segurança',
-            icon: '📱'
-        },
-        {
-            key: 'codigo',
-            title: 'Confirmar código',
-            description: 'Digite o código SMS enviado',
-            icon: '🔢'
-        },
-        {
-            key: 'pessoais',
-            title: 'Dados pessoais',
-            description: 'Complete seu perfil',
-            icon: '👤'
-        },
-        {
-            key: 'endereco',
-            title: 'Endereço',
-            description: 'Para facilitar as trocas',
-            icon: '📍'
-        }
-    ];
+  const handleInputChange = (field: keyof FormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-    // Verificar se usuário está logado e avançar para próximo step
-    useEffect(() => {
-        if (user) {
-            setFormData(prev => ({
-                ...prev,
-                nome: user.user_metadata?.full_name || '',
-                email: user.email || '',
-                avatar_url: user.user_metadata?.avatar_url || ''
-            }));
-            
-            // Se já temos login do Google, pular para telefone
-            if (currentStep === 0) {
-                completeStep(0);
-            }
-        }
-    }, [user]);
+  const handleCodeInput = (index: number, value: string) => {
+    if (value.length <= 1) {
+      const newInputs = [...codeInputs];
+      newInputs[index] = value;
+      setCodeInputs(newInputs);
+      
+      // Auto-focus next input
+      if (value && index < 3) {
+        const nextInput = document.getElementById(`code-${index + 1}`);
+        nextInput?.focus();
+      }
+    }
+  };
 
-    const completeStep = (stepIndex) => {
-        const newCompleted = [...completedSteps];
-        if (!newCompleted.includes(stepIndex)) {
-            newCompleted.push(stepIndex);
-            setCompletedSteps(newCompleted);
-        }
-        
-        if (stepIndex < steps.length - 1) {
-            setCurrentStep(stepIndex + 1);
-        }
-    };
+  const handleGoogleLogin = () => {
+    // Simular login com Google - aqui seria integrado com a autenticação real
+    setFormData(prev => ({ ...prev, google: true }));
+    completeStep(0);
+  };
 
-    const editStep = (stepIndex) => {
-        setCurrentStep(stepIndex);
-    };
+  const handlePhoneSubmit = () => {
+    if (formData.phone.trim()) {
+      completeStep(1);
+    }
+  };
 
-    const isStepCompleted = (stepIndex) => completedSteps.includes(stepIndex);
+  const handleCodeSubmit = () => {
+    const code = codeInputs.join('');
+    if (code.length === 4) {
+      setFormData(prev => ({ ...prev, code }));
+      completeStep(2);
+    }
+  };
 
-    const handleGoogleLogin = async () => {
-        try {
-            setIsSigningIn(true);
-            await signInWithGoogle();
-        } catch (error) {
-            console.error('Erro no login:', error);
-            toast.error('Erro ao fazer login com Google. Tente novamente.');
-        } finally {
-            setIsSigningIn(false);
-        }
-    };
+  const handlePersonalSubmit = () => {
+    if (formData.name.trim()) {
+      completeStep(3);
+    }
+  };
 
-    const handleSendSMS = async () => {
-        if (!formData.telefone) {
-            toast.error('Digite seu telefone');
-            return;
-        }
-        
-        try {
-            setLoading(true);
-            // Simular envio de SMS - aqui você implementaria a integração real
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            toast.success('Código enviado por SMS!');
-            completeStep(1);
-        } catch (error) {
-            toast.error('Erro ao enviar SMS');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleAddressSubmit = () => {
+    if (formData.cep.trim() && formData.street.trim()) {
+      completeStep(4);
+      // Aqui seria feita a integração com o banco de dados
+      console.log('Cadastro completo:', formData);
+    }
+  };
 
-    const handleVerifySMS = async () => {
-        if (!formData.codigo_sms || formData.codigo_sms.length !== 4) {
-            toast.error('Digite o código de 4 dígitos');
-            return;
-        }
-        
-        try {
-            setLoading(true);
-            // Simular verificação - aqui você implementaria a validação real
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            setFormData(prev => ({ ...prev, telefone_verificado: true }));
-            toast.success('Telefone verificado!');
-            completeStep(2);
-        } catch (error) {
-            toast.error('Código inválido');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSavePessoais = async () => {
-        if (!formData.nome) {
-            toast.error('Nome é obrigatório');
-            return;
-        }
-        
-        completeStep(3);
-    };
-
-    const handleFinalizarCadastro = async () => {
-        if (!formData.cep || !formData.cidade || !formData.estado) {
-            toast.error('Complete pelo menos CEP, cidade e estado');
-            return;
-        }
-        
-        try {
-            setLoading(true);
-            
-            // Criar/atualizar perfil
-            const { error } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: user.id,
-                    email: formData.email,
-                    nome: formData.nome,
-                    avatar_url: formData.avatar_url,
-                    telefone: formData.telefone,
-                    bio: formData.sobre_filhos,
-                    profissao: formData.profissao,
-                    instagram: formData.instagram,
-                    cep: formData.cep,
-                    endereco: formData.endereco,
-                    numero: formData.numero,
-                    bairro: formData.bairro,
-                    cidade: formData.cidade,
-                    estado: formData.estado,
-                    complemento: formData.complemento,
-                    ponto_referencia: formData.ponto_referencia,
-                    updated_at: new Date().toISOString()
-                });
-
-            if (error) throw error;
-
-            // Dar bônus de boas-vindas
-            await supabase
-                .from('transacoes')
-                .insert({
-                    user_id: user.id,
-                    tipo: 'bonus',
-                    valor: 50,
-                    descricao: 'Bônus de boas-vindas'
-                });
-
-            toast.success('Conta criada com sucesso! Bem-vinda ao GiraMãe! 🎉');
-            navigate('/feed');
-            
-        } catch (error) {
-            console.error('Erro ao criar conta:', error);
-            toast.error('Erro ao criar conta. Tente novamente.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const renderStepIcon = (step, index) => {
-        if (isStepCompleted(index)) {
-            return (
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center shadow-sm">
-                    <Check className="w-6 h-6 text-white" />
-                </div>
-            );
-        }
-        
-        return (
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all duration-200
-                ${index === currentStep ? 'bg-gradient-to-r from-primary to-pink-500 text-white shadow-md' : 'bg-pink-50 border border-pink-100'}`}>
-                {step.icon}
-            </div>
-        );
-    };
-
-    const renderCurrentStepContent = () => {
-        const step = steps[currentStep];
-        
-        switch (step.key) {
-            case 'google':
-                return (
-                    <>
-                        <p className="text-gray-600 mb-6 text-center">
-                            Clique para fazer login seguro com sua conta Google. Isso facilitará seu acesso e manterá seus dados protegidos.
-                        </p>
-                        <Button 
-                            onClick={handleGoogleLogin}
-                            disabled={isSigningIn}
-                            className="w-full bg-white border-2 border-pink-200 text-gray-700 hover:bg-pink-50 hover:border-pink-300 flex items-center justify-center gap-3 transition-all duration-200 shadow-sm"
-                        >
-                            <svg className="w-6 h-6" viewBox="0 0 24 24">
-                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                            </svg>
-                            {isSigningIn ? 'Entrando...' : 'Entrar com Google'}
-                        </Button>
-                    </>
-                );
-
-            case 'telefone':
-                return (
-                    <>
-                        <p className="text-gray-600 mb-6">
-                            Vamos enviar um código por SMS para validar seu número. Isso garante a segurança da plataforma para todas as mães.
-                        </p>
-                        <div className="space-y-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="telefone">Telefone/WhatsApp</Label>
-                                <Input 
-                                    id="telefone"
-                                    type="tel" 
-                                    placeholder="(11) 99999-9999"
-                                    value={formData.telefone}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
-                                />
-                            </div>
-                            <Button 
-                                onClick={handleSendSMS}
-                                disabled={loading}
-                                className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
-                                size="lg"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Enviando...
-                                    </>
-                                ) : (
-                                    'Continuar'
-                                )}
-                            </Button>
-                        </div>
-                    </>
-                );
-
-            case 'codigo':
-                return (
-                    <>
-                        <p className="text-gray-600 mb-6">
-                            Enviamos para <strong>{formData.telefone}</strong>. Se precisar, você pode alterar seu número.
-                        </p>
-                        <div className="space-y-6">
-                            <div className="flex gap-2 justify-center mb-4">
-                                {[...Array(4)].map((_, i) => (
-                                    <Input 
-                                        key={i}
-                                        maxLength={1}
-                                        className="w-12 h-12 text-center text-xl font-bold"
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            const newCode = formData.codigo_sms.split('');
-                                            newCode[i] = value;
-                                            setFormData(prev => ({ ...prev, codigo_sms: newCode.join('') }));
-                                            
-                                            if (value && i < 3) {
-                                                const nextInput = e.target.parentNode.children[i + 1];
-                                                if (nextInput) nextInput.focus();
-                                            }
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                            <div className="flex justify-center gap-4 text-sm mb-6">
-                                <button 
-                                    onClick={handleSendSMS}
-                                    className="text-primary hover:text-pink-500 hover:underline transition-colors duration-200"
-                                >
-                                    Reenviar código por SMS
-                                </button>
-                                <button className="text-primary hover:text-pink-500 hover:underline transition-colors duration-200">
-                                    Reenviar código por ligação
-                                </button>
-                            </div>
-                            <Button 
-                                onClick={handleVerifySMS}
-                                disabled={loading}
-                                className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
-                                size="lg"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Verificando...
-                                    </>
-                                ) : (
-                                    'Confirmar código'
-                                )}
-                            </Button>
-                        </div>
-                    </>
-                );
-
-            case 'pessoais':
-                return (
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="nome">Nome completo</Label>
-                                <Input 
-                                    id="nome" 
-                                    placeholder="Seu nome completo" 
-                                    value={formData.nome}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input 
-                                    id="email" 
-                                    type="email" 
-                                    placeholder="seu@email.com" 
-                                    value={formData.email}
-                                    disabled
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="telefone_display">Telefone/WhatsApp</Label>
-                                <Input 
-                                    id="telefone_display" 
-                                    placeholder="(11) 99999-9999"
-                                    value={formData.telefone}
-                                    disabled
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="profissao">Profissão (opcional)</Label>
-                                <Input 
-                                    id="profissao" 
-                                    placeholder="Ex: Designer, Professora"
-                                    value={formData.profissao}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, profissao: e.target.value }))}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="criancas">Sobre seus filhos</Label>
-                            <Textarea 
-                                id="criancas" 
-                                placeholder="Ex: Tenho 1 filho de 2 anos, Lorenzo, que adora brincar no parque..."
-                                value={formData.sobre_filhos}
-                                onChange={(e) => setFormData(prev => ({ ...prev, sobre_filhos: e.target.value }))}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="numCriancas">Número de filhos</Label>
-                                <Select 
-                                    value={formData.num_criancas}
-                                    onValueChange={(value) => setFormData(prev => ({ ...prev, num_criancas: value }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="1">1 filho(a)</SelectItem>
-                                        <SelectItem value="2">2 filhos</SelectItem>
-                                        <SelectItem value="3">3 filhos</SelectItem>
-                                        <SelectItem value="4+">4 ou mais</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="idadeCriancas">Faixa etária dos filhos</Label>
-                                <Select
-                                    value={formData.idade_criancas}
-                                    onValueChange={(value) => setFormData(prev => ({ ...prev, idade_criancas: value }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="0-1">0-1 ano</SelectItem>
-                                        <SelectItem value="1-3">1-3 anos</SelectItem>
-                                        <SelectItem value="3-6">3-6 anos</SelectItem>
-                                        <SelectItem value="6-10">6-10 anos</SelectItem>
-                                        <SelectItem value="variada">Idades variadas</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <Button 
-                            onClick={handleSavePessoais}
-                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
-                            size="lg"
-                        >
-                            Salvar e Continuar
-                        </Button>
-                    </div>
-                );
-
-            case 'endereco':
-                return (
-                    <div className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="endereco">Endereço</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <Input 
-                                    placeholder="Bairro" 
-                                    value={formData.bairro}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, bairro: e.target.value }))}
-                                />
-                                <Input 
-                                    placeholder="Cidade" 
-                                    value={formData.cidade}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
-                                />
-                                <Select
-                                    value={formData.estado}
-                                    onValueChange={(value) => setFormData(prev => ({ ...prev, estado: value }))}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Estado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="sp">São Paulo</SelectItem>
-                                        <SelectItem value="rj">Rio de Janeiro</SelectItem>
-                                        <SelectItem value="mg">Minas Gerais</SelectItem>
-                                        <SelectItem value="pr">Paraná</SelectItem>
-                                        <SelectItem value="rs">Rio Grande do Sul</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-r from-primary/10 to-purple-100 p-4 rounded-xl">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Sparkles className="w-5 h-5 text-primary" />
-                                <span className="font-semibold text-gray-800">Bônus de Boas-vindas</span>
-                            </div>
-                            <p className="text-sm text-gray-700">
-                                Você começará com <span className="font-bold text-primary">50 Girinhas</span> de presente 
-                                para fazer suas primeiras trocas na comunidade!
-                            </p>
-                        </div>
-
-                        <Button 
-                            onClick={handleFinalizarCadastro}
-                            disabled={loading}
-                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
-                            size="lg"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Criando conta...
-                                </>
-                            ) : (
-                                'Criar Minha Conta'
-                            )}
-                        </Button>
-                    </div>
-                );
-
-            default:
-                return null;
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24 md:pb-8">
-            <Header />
-            <main className="flex-grow flex items-center justify-center py-12 px-4">
-                <Card className="w-full max-w-2xl mx-auto shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-                    <CardHeader className="text-center">
-                        <div className="flex justify-center mb-4">
-                            <div className="w-16 h-16 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center">
-                                <Baby className="w-8 h-8 text-white" />
-                            </div>
-                        </div>
-                        <CardTitle className="text-2xl">Junte-se à Comunidade GiraMãe</CardTitle>
-                        <CardDescription>
-                            Crie sua conta e comece a trocar itens infantis de forma segura e solidária.
-                        </CardDescription>
-                    </CardHeader>
-
-                    {/* Steps Progress - Lista compacta no topo */}
-                    <div className="px-6 mb-6">
-                        <div className="space-y-3">
-                            {steps.map((step, index) => (
-                                <div key={step.key} className="flex items-center gap-4 p-3 rounded-lg transition-all duration-200">
-                                    {renderStepIcon(step, index)}
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-gray-900">{step.title}</h4>
-                                                <p className="text-xs text-gray-500">{step.description}</p>
-                                            </div>
-                                            {isStepCompleted(index) && index < steps.length - 1 && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => editStep(index)}
-                                                    className="p-1 h-6 w-6 hover:bg-pink-50 text-pink-600 hover:text-pink-700"
-                                                    title="Editar etapa"
-                                                >
-                                                    <Edit2 className="h-3 w-3" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Current Step Content */}
-                    <CardContent className="space-y-6">
-                        {renderCurrentStepContent()}
-                    </CardContent>
-
-                    {/* Footer Links */}
-                    <CardContent className="pt-0">
-                        <div className="text-center text-sm">
-                            Já tem uma conta?{" "}
-                            <Link to="/login" className="underline text-primary font-medium">
-                                Faça login aqui
-                            </Link>
-                        </div>
-
-                        <div className="text-xs text-gray-500 text-center mt-4">
-                            Ao se cadastrar, você concorda com nossos{" "}
-                            <Link to="#" className="underline">Termos de Uso</Link> e{" "}
-                            <Link to="#" className="underline">Política de Privacidade</Link>.
-                        </div>
-                    </CardContent>
-                </Card>
-            </main>
-            
-            <footer className="bg-muted py-8">
-                <div className="container mx-auto px-4 text-center text-muted-foreground">
-                    <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
-                        <Link to="/" className="flex items-center text-primary">
-                            <Sparkles className="h-6 w-6 mr-2" />
-                            GiraMãe
-                        </Link>
-                    </div>
-                    <p>&copy; {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
-                </div>
-            </footer>
+  const getStepIcon = (step: Step, index: number) => {
+    if (step.state === 'done') {
+      return (
+        <div className="w-9 h-9 rounded-full bg-green-500 text-white flex items-center justify-center flex-shrink-0">
+          <Check className="w-5 h-5" />
         </div>
-    );
+      );
+    }
+
+    const iconMap = {
+      google: (
+        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <img 
+            src="https://www.svgrepo.com/show/475656/google-color.svg" 
+            alt="Google" 
+            className="w-7 h-7"
+          />
+        </div>
+      ),
+      phone: (
+        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+        </div>
+      ),
+      code: (
+        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <rect x="2" y="6" width="20" height="12" rx="2" />
+            <path d="M6 10h.01M18 10h.01M12 13h.01" />
+          </svg>
+        </div>
+      ),
+      personal: (
+        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </div>
+      ),
+      address: (
+        <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+      )
+    };
+
+    return iconMap[step.key as keyof typeof iconMap] || iconMap.personal;
+  };
+
+  const renderStepContent = (step: Step, index: number) => {
+    if (step.state !== 'active') return null;
+
+    switch (step.key) {
+      case 'google':
+        return (
+          <div className="px-6 pb-5 pt-1">
+            <p className="text-sm text-gray-600 mb-3">
+              Clique para fazer login seguro com sua conta Google.
+            </p>
+            <Button 
+              onClick={handleGoogleLogin}
+              className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 shadow-sm"
+            >
+              <img 
+                src="https://www.svgrepo.com/show/475656/google-color.svg" 
+                alt="Google" 
+                className="w-6 h-6 mr-2"
+              />
+              Entrar com Google
+            </Button>
+          </div>
+        );
+
+      case 'phone':
+        return (
+          <div className="px-6 pb-5 pt-1">
+            <p className="text-sm text-gray-600 mb-2">
+              Vamos te enviar um código por SMS para validar seu número.
+            </p>
+            <Input
+              type="tel"
+              placeholder="+55 31999999999"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              className="mb-3"
+            />
+            <Button onClick={handlePhoneSubmit} className="w-full bg-blue-600 hover:bg-blue-700">
+              Continuar
+            </Button>
+          </div>
+        );
+
+      case 'code':
+        return (
+          <div className="px-6 pb-5 pt-1">
+            <p className="text-sm text-gray-600 mb-2">
+              Enviamos para <strong>{formData.phone || '+55 31 98335-6459'}</strong>. 
+              Se precisar, você pode alterar seu número.
+            </p>
+            <div className="flex gap-2 justify-center mb-3">
+              {codeInputs.map((value, idx) => (
+                <Input
+                  key={idx}
+                  id={`code-${idx}`}
+                  maxLength={1}
+                  value={value}
+                  onChange={(e) => handleCodeInput(idx, e.target.value)}
+                  className="w-12 h-12 text-center text-xl"
+                />
+              ))}
+            </div>
+            <div className="flex justify-center mb-3 space-x-4">
+              <button className="text-blue-600 text-sm hover:underline">
+                Reenviar código por SMS
+              </button>
+              <button className="text-blue-600 text-sm hover:underline">
+                Reenviar código por ligação
+              </button>
+            </div>
+            <Button onClick={handleCodeSubmit} className="w-full bg-blue-600 hover:bg-blue-700">
+              Confirmar código
+            </Button>
+          </div>
+        );
+
+      case 'personal':
+        return (
+          <div className="px-6 pb-5 pt-1">
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="name">Nome completo</Label>
+                <Input
+                  id="name"
+                  placeholder="Nome completo"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="bio">Bio</Label>
+                <Input
+                  id="bio"
+                  placeholder="ex: mãe de gêmeos"
+                  value={formData.bio}
+                  onChange={(e) => handleInputChange('bio', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="profession">Profissão</Label>
+                <Input
+                  id="profession"
+                  placeholder="Profissão"
+                  value={formData.profession}
+                  onChange={(e) => handleInputChange('profession', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="instagram">Instagram</Label>
+                <Input
+                  id="instagram"
+                  placeholder="@seuperfil"
+                  value={formData.instagram}
+                  onChange={(e) => handleInputChange('instagram', e.target.value)}
+                />
+              </div>
+              <Button onClick={handlePersonalSubmit} className="w-full bg-blue-600 hover:bg-blue-700 mt-4">
+                Salvar e Continuar
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 'address':
+        return (
+          <div className="px-6 pb-5 pt-1">
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="cep">CEP</Label>
+                <Input
+                  id="cep"
+                  placeholder="CEP"
+                  value={formData.cep}
+                  onChange={(e) => handleInputChange('cep', e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label htmlFor="state">Estado</Label>
+                  <Input
+                    id="state"
+                    placeholder="Estado"
+                    value={formData.state}
+                    onChange={(e) => handleInputChange('state', e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    placeholder="Cidade"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange('city', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="street">Rua / Endereço</Label>
+                <Input
+                  id="street"
+                  placeholder="Rua / Endereço"
+                  value={formData.street}
+                  onChange={(e) => handleInputChange('street', e.target.value)}
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label htmlFor="number">Número</Label>
+                  <Input
+                    id="number"
+                    placeholder="Número"
+                    value={formData.number}
+                    onChange={(e) => handleInputChange('number', e.target.value)}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    placeholder="Bairro"
+                    value={formData.neighborhood}
+                    onChange={(e) => handleInputChange('neighborhood', e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="reference">Ponto de Referência</Label>
+                <Textarea
+                  id="reference"
+                  placeholder="Ponto de Referência"
+                  value={formData.reference}
+                  onChange={(e) => handleInputChange('reference', e.target.value)}
+                />
+              </div>
+              <Button onClick={handleAddressSubmit} className="w-full bg-blue-600 hover:bg-blue-700 mt-4">
+                Salvar Endereço
+              </Button>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const isLastStepCompleted = steps[steps.length - 1].state === 'done';
+  const isAllStepsCompleted = steps.every(step => step.state === 'done');
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white border-2 border-gray-200 rounded-xl mb-4 overflow-hidden shadow-xl">
+            {/* Header */}
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between mb-2">
+                <Link to="/" className="p-2 hover:bg-gray-100 rounded-lg">
+                  <ArrowLeft className="w-5 h-5" />
+                </Link>
+                <h1 className="text-lg font-bold text-gray-800">Criar conta</h1>
+                <div className="w-9" /> {/* Spacer */}
+              </div>
+              <h2 className="text-lg font-bold text-center text-gray-800">
+                Preencha os dados para criar sua conta
+              </h2>
+            </div>
+
+            {/* Steps */}
+            {steps.map((step, index) => (
+              <div key={step.key} className="bg-white border-b border-gray-200 last:border-b-0">
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    {getStepIcon(step, index)}
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{step.title}</p>
+                      {step.subtitle && (
+                        <p className="text-xs text-gray-500">{step.subtitle}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Edit button for completed steps */}
+                  {step.state === 'done' && !isAllStepsCompleted && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => editStep(index)}
+                      className="p-2 hover:bg-gray-100"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Step content */}
+                {renderStepContent(step, index)}
+              </div>
+            ))}
+
+            {/* Bônus sempre visível */}
+            <div className="bg-gradient-to-r from-primary/10 to-purple-100 p-4 rounded-xl mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="font-semibold text-gray-800">Bônus de Boas-vindas</span>
+              </div>
+              <p className="text-sm text-gray-700">
+                Você começará com <span className="font-bold text-primary">50 Girinhas</span> de presente 
+                para fazer suas primeiras trocas na comunidade!
+              </p>
+            </div>
+
+            {/* Botão de entrar quando tudo estiver completo */}
+            {isAllStepsCompleted && (
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-6 mb-4 text-center">
+                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-green-800 mb-2">
+                  Cadastro realizado com sucesso!
+                </h3>
+                <p className="text-sm text-green-600 mb-4">
+                  Sua conta foi criada e você já está logado.
+                </p>
+                
+                <Link to="/" className="block">
+                  <Button className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" size="lg">
+                    Entrar na Plataforma
+                  </Button>
+                </Link>
+
+                <div className="text-center text-sm mt-4">
+                  Já tem uma conta?{" "}
+                  <Link to="/login" className="underline text-primary font-medium">
+                    Faça login aqui
+                  </Link>
+                </div>
+
+                <div className="text-xs text-gray-500 text-center mt-2">
+                  Ao se cadastrar, você concorda com nossos{" "}
+                  <Link to="#" className="underline">Termos de Uso</Link> e{" "}
+                  <Link to="#" className="underline">Política de Privacidade</Link>.
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Help section */}
+          <p className="text-xs text-center text-gray-500 mt-6">
+            Precisa de ajuda?{' '}
+            <Link to="/help" className="text-blue-600 underline">
+              Fale conosco.
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-muted py-8">
+        <div className="container mx-auto px-4 text-center text-muted-foreground">
+          <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
+            <Link to="/" className="flex items-center text-primary">
+              <Sparkles className="h-6 w-6 mr-2" />
+              GiraMãe
+            </Link>
+          </div>
+          <p>&copy; {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
+        </div>
+      </footer>
+    </div>
+  );
 };
 
-export default Cadastro;
+export default SignUp;
