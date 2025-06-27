@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -14,13 +14,18 @@ const GoogleStepV2: React.FC<GoogleStepV2Props> = ({ onComplete }) => {
   const { signInWithGoogleForRegistration } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
+      setError(null);
+      
+      console.log('Iniciando login com Google...');
       const result = await signInWithGoogleForRegistration();
       
       if (result.success) {
+        console.log('Login Google bem-sucedido, completando step...');
         toast({
           title: "Login realizado!",
           description: "Agora vamos completar seu cadastro.",
@@ -29,11 +34,22 @@ const GoogleStepV2: React.FC<GoogleStepV2Props> = ({ onComplete }) => {
       } else {
         throw new Error(result.error?.message || 'Erro no login');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no login com Google:', error);
+      
+      let errorMessage = 'Erro ao fazer login com Google. Tente novamente.';
+      
+      // Personalizar mensagens de erro específicas
+      if (error.message?.includes('popup_closed_by_user')) {
+        errorMessage = 'Login cancelado. Tente novamente quando estiver pronto.';
+      } else if (error.message?.includes('Database error')) {
+        errorMessage = 'Erro temporário no sistema. Aguarde alguns segundos e tente novamente.';
+      }
+      
+      setError(errorMessage);
       toast({
         title: "Erro no login",
-        description: "Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -55,6 +71,14 @@ const GoogleStepV2: React.FC<GoogleStepV2Props> = ({ onComplete }) => {
           Seus dados estarão protegidos e você terá acesso imediato à plataforma.
         </p>
       </div>
+      
+      {/* FASE 3: Mostrar erros de forma amigável */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
       
       <Button 
         onClick={handleGoogleLogin}

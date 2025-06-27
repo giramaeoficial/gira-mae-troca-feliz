@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, Heart, CheckCircle } from 'lucide-react';
@@ -43,14 +42,36 @@ const CadastroV2 = () => {
     setSteps(newSteps);
   }, [progress]);
 
-  // FASE 2: Lógica de auto-avanço para usuários já autenticados
+  // FASE 2: Lógica de auto-avanço melhorada para usuários já autenticados
   useEffect(() => {
     if (!loading && user && progress.step === 'google' && progress.status === 'incompleto' && !autoAdvanceProcessed) {
-      console.log('Auto-avançando do step Google para Phone...');
+      console.log('✅ Usuário logado detectado, auto-avançando do step Google para Phone...');
+      console.log('User ID:', user.id);
+      console.log('Progress:', progress);
+      
       setAutoAdvanceProcessed(true);
-      completeStep('google');
+      
+      // Pequeno delay para garantir que o estado foi atualizado
+      setTimeout(() => {
+        completeStep('google').then(success => {
+          if (success) {
+            console.log('✅ Auto-avanço concluído com sucesso');
+            toast({
+              title: "Bem-vindo!",
+              description: "Vamos completar seu cadastro.",
+            });
+          } else {
+            console.error('❌ Erro no auto-avanço');
+            toast({
+              title: "Erro",
+              description: "Houve um problema. Tente recarregar a página.",
+              variant: "destructive",
+            });
+          }
+        });
+      }, 100);
     }
-  }, [loading, user, progress.step, progress.status, completeStep, autoAdvanceProcessed]);
+  }, [loading, user, progress.step, progress.status, completeStep, autoAdvanceProcessed, toast]);
 
   const getStepTitle = (stepKey: string) => {
     const titles = {
@@ -120,7 +141,11 @@ const CadastroV2 = () => {
       case 'address':
         return <AddressStepV2 onComplete={handleStepComplete} />;
       default:
-        return null;
+        return (
+          <div className="p-6 text-center">
+            <p className="text-gray-600">Carregando...</p>
+          </div>
+        );
     }
   };
 
@@ -129,7 +154,10 @@ const CadastroV2 = () => {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
         <Header />
         <div className="flex items-center justify-center min-h-screen">
-          <LoadingSpinner />
+          <div className="text-center">
+            <LoadingSpinner />
+            <p className="mt-4 text-gray-600">Carregando progresso...</p>
+          </div>
         </div>
       </div>
     );
