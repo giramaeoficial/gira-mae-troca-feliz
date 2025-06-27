@@ -1,10 +1,12 @@
-// src/components/cadastro/PhoneStepV2.tsx
+// Arquivo: src/components/cadastro/PhoneStepV2.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { MessageCircle, Phone } from 'lucide-react';
 
 interface PhoneStepV2Props {
   onComplete: () => void;
@@ -14,6 +16,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [useWhatsApp, setUseWhatsApp] = useState(true); // Default WhatsApp
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -28,7 +31,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         // Verificar se já está salvo no perfil
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('telefone')
+          .select('telefone, nome')
           .eq('id', user.id)
           .single();
 
@@ -49,10 +52,8 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
   }, [user]);
 
   const formatPhone = (value: string) => {
-    // Remove tudo que não é número
     const numbers = value.replace(/\D/g, '');
     
-    // Aplica máscara: (XX) XXXXX-XXXX
     if (numbers.length <= 11) {
       if (numbers.length <= 2) {
         return numbers;
@@ -71,47 +72,47 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
   };
 
   const validatePhone = (phoneNumber: string) => {
-    // Remove formatação para validação
     const numbers = phoneNumber.replace(/\D/g, '');
     
-    // Deve ter pelo menos 10 dígitos (DDD + número)
     if (numbers.length < 10) {
       return false;
     }
     
-    // Validação básica de DDD (códigos válidos do Brasil)
     const ddd = numbers.slice(0, 2);
     const validDDDs = [
-      '11', '12', '13', '14', '15', '16', '17', '18', '19', // SP
-      '21', '22', '24', // RJ/ES
-      '27', '28', // ES
-      '31', '32', '33', '34', '35', '37', '38', // MG
-      '41', '42', '43', '44', '45', '46', // PR
-      '47', '48', '49', // SC
-      '51', '53', '54', '55', // RS
-      '61', // DF
-      '62', '64', // GO/TO
-      '63', // TO
-      '65', '66', // MT
-      '67', // MS
-      '68', // AC
-      '69', // RO
-      '71', '73', '74', '75', '77', // BA
-      '79', // SE
-      '81', '87', // PE
-      '82', // AL
-      '83', // PB
-      '84', // RN
-      '85', '88', // CE
-      '86', '89', // PI
-      '91', '93', '94', // PA
-      '92', '97', // AM
-      '95', // RR
-      '96', // AP
-      '98', '99' // MA
+      '11', '12', '13', '14', '15', '16', '17', '18', '19',
+      '21', '22', '24', '27', '28',
+      '31', '32', '33', '34', '35', '37', '38',
+      '41', '42', '43', '44', '45', '46',
+      '47', '48', '49',
+      '51', '53', '54', '55',
+      '61', '62', '63', '64', '65', '66', '67',
+      '68', '69',
+      '71', '73', '74', '75', '77', '79',
+      '81', '82', '83', '84', '85', '86', '87', '88', '89',
+      '91', '92', '93', '94', '95', '96', '97', '98', '99'
     ];
     
     return validDDDs.includes(ddd);
+  };
+
+  const generateVerificationCode = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
+
+  const sendWhatsAppCode = async (telefone: string, codigo: string, nome: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: { telefone, codigo, nome }
+      });
+
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error('Erro ao enviar WhatsApp:', error);
+      throw error;
+    }
   };
 
   const handleSubmit = async () => {
@@ -145,15 +146,54 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     setIsLoading(true);
     
     try {
-      // Salvar telefone no perfil do usuário
+      // Gerar código de verificação
+      const codigo = generateVerificationCode();
+      
+      // Formatar telefone
       const phoneNumbers = phone.replace(/\D/g, '');
       const formattedPhone = `+55${phoneNumbers}`;
       
+      // Buscar nome do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nome')
+        .eq('id', user.id)
+        .single();
+      
+      const nomeUsuario = profile?.nome || 'usuário';
+
+      if (useWhatsApp) {
+        // Enviar via WhatsApp
+        console.log('📱 Enviando código via WhatsApp...');
+        const result = await sendWhatsAppCode(formattedPhone, codigo, nomeUsuario);
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Erro ao enviar WhatsApp');
+        }
+
+        toast({
+          title: "WhatsApp enviado!",
+          description: "Verifique sua conversa no WhatsApp.",
+          duration: 5000,
+        });
+      } else {
+        // TODO: Implementar SMS como fallback
+        toast({
+          title: "SMS não implementado",
+          description: "Use WhatsApp por enquanto.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Salvar telefone e código no perfil
       const { error } = await supabase
         .from('profiles')
         .update({ 
           telefone: formattedPhone,
-          cadastro_step: 'code' // Avançar para próximo step
+          verification_code: codigo, // Novo campo para armazenar código
+          verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutos
+          cadastro_step: 'code'
         })
         .eq('id', user.id);
 
@@ -161,21 +201,25 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         throw error;
       }
 
-      // Simular envio de SMS (implementar lógica real aqui)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      toast({
-        title: "SMS enviado!",
-        description: "Verifique sua caixa de mensagens.",
-      });
-      
       onComplete();
       
     } catch (error: any) {
-      console.error('❌ Erro ao salvar telefone:', error);
+      console.error('❌ Erro ao enviar código:', error);
+      
+      let errorMessage = "Não foi possível enviar o código. Tente novamente.";
+      
+      if (error.message?.includes('WhatsApp não está habilitado')) {
+        errorMessage = "Este número não pode receber mensagens do WhatsApp. Tente SMS.";
+        setUseWhatsApp(false);
+      } else if (error.message?.includes('inválido')) {
+        errorMessage = "Número de telefone inválido. Verifique e tente novamente.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Erro ao salvar",
-        description: error.message || "Não foi possível salvar o telefone. Tente novamente.",
+        title: "Erro ao enviar código",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -201,8 +245,32 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
           Adicione seu celular
         </h3>
         <p className="text-sm text-gray-600 mb-4">
-          Vamos te enviar um código por SMS para validar seu número.
+          Vamos te enviar um código de verificação via {useWhatsApp ? 'WhatsApp' : 'SMS'}.
         </p>
+        
+        {/* Seletor WhatsApp/SMS */}
+        <div className="flex gap-2 mb-4">
+          <Button
+            type="button"
+            variant={useWhatsApp ? "default" : "outline"}
+            size="sm"
+            onClick={() => setUseWhatsApp(true)}
+            className="flex items-center gap-2"
+          >
+            <MessageCircle className="w-4 h-4" />
+            WhatsApp
+          </Button>
+          <Button
+            type="button"
+            variant={!useWhatsApp ? "default" : "outline"}
+            size="sm"
+            onClick={() => setUseWhatsApp(false)}
+            className="flex items-center gap-2"
+          >
+            <Phone className="w-4 h-4" />
+            SMS
+          </Button>
+        </div>
         
         <div className="relative">
           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
@@ -227,16 +295,16 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
           {isLoading ? (
             <div className="flex items-center">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Enviando SMS...
+              Enviando via {useWhatsApp ? 'WhatsApp' : 'SMS'}...
             </div>
           ) : (
-            'Continuar'
+            `Enviar código via ${useWhatsApp ? 'WhatsApp' : 'SMS'}`
           )}
         </Button>
         
         {phone && (
           <p className="text-xs text-gray-500 mt-2 text-center">
-            Telefone será salvo como: +55{phone.replace(/\D/g, '')}
+            Código será enviado para: +55{phone.replace(/\D/g, '')}
           </p>
         )}
       </div>
