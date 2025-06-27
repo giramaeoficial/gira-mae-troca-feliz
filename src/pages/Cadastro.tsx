@@ -78,7 +78,7 @@ const Cadastro = () => {
         }
     ];
 
-    // Se usuário logar, avança automaticamente
+    // Auto-avança se Google logado
     useEffect(() => {
         if (user) {
             setFormData(prev => ({
@@ -104,7 +104,7 @@ const Cadastro = () => {
 
     const isStepCompleted = (stepIndex) => completedSteps.includes(stepIndex);
 
-    // --- Handlers ---
+    // --- Handlers
     const handleGoogleLogin = async () => {
         try {
             setIsSigningIn(true);
@@ -206,7 +206,7 @@ const Cadastro = () => {
         }
     };
 
-    // --- Renderização dos Steps (barra) ---
+    // Renderiza icone do step
     const renderStepIcon = (step, index) => {
         if (isStepCompleted(index)) {
             return (
@@ -223,20 +223,17 @@ const Cadastro = () => {
         );
     };
 
-    // --- Render do conteúdo da etapa ativa ---
+    // Conteúdo de cada passo
     const renderCurrentStepContent = () => {
         const step = steps[currentStep];
         switch (step.key) {
             case 'google':
                 return (
-                    <CardContent className="space-y-6">
-                        <p className="text-gray-600 mb-2">
-                            Clique para fazer login seguro com sua conta Google. Isso facilitará seu acesso e manterá seus dados protegidos.
-                        </p>
+                    <CardContent className="flex flex-col items-center space-y-6 py-8">
                         <Button
                             onClick={handleGoogleLogin}
                             disabled={isSigningIn}
-                            className="w-full bg-white border-2 border-pink-200 text-gray-700 hover:bg-pink-50 hover:border-pink-300 flex items-center justify-center gap-3 transition-all duration-200 shadow-sm"
+                            className="w-full max-w-xs bg-white border-2 border-pink-200 text-gray-700 hover:bg-pink-50 hover:border-pink-300 flex items-center justify-center gap-3 transition-all duration-200 shadow-sm"
                         >
                             <svg className="w-6 h-6" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -251,33 +248,28 @@ const Cadastro = () => {
             case 'telefone':
                 return (
                     <CardContent className="space-y-4">
-                        <p className="text-gray-600 mb-2">
-                            Vamos enviar um código por SMS para validar seu número. Isso garante a segurança da plataforma para todas as mães.
-                        </p>
-                        <div className="space-y-3">
-                            <Label htmlFor="telefone">Celular</Label>
-                            <Input
-                                id="telefone"
-                                type="tel"
-                                placeholder="(11) 99999-9999"
-                                value={formData.telefone}
-                                onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
-                            />
-                            <Button
-                                onClick={handleSendSMS}
-                                disabled={loading}
-                                className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white transition-all duration-200"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Enviando...
-                                    </>
-                                ) : (
-                                    'Enviar código SMS'
-                                )}
-                            </Button>
-                        </div>
+                        <Label htmlFor="telefone">Celular</Label>
+                        <Input
+                            id="telefone"
+                            type="tel"
+                            placeholder="(11) 99999-9999"
+                            value={formData.telefone}
+                            onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
+                        />
+                        <Button
+                            onClick={handleSendSMS}
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white transition-all duration-200"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Enviando...
+                                </>
+                            ) : (
+                                'Enviar código SMS'
+                            )}
+                        </Button>
                     </CardContent>
                 );
             case 'codigo':
@@ -286,49 +278,47 @@ const Cadastro = () => {
                         <p className="text-gray-600 mb-2">
                             Enviamos um código para <strong>{formData.telefone}</strong>. Se precisar, você pode alterar seu número.
                         </p>
-                        <div className="space-y-4">
-                            <div className="flex gap-2 justify-center">
-                                {[...Array(4)].map((_, i) => (
-                                    <Input
-                                        key={i}
-                                        maxLength={1}
-                                        className="w-12 h-12 text-center text-xl font-bold"
-                                        onChange={(e) => {
-                                            const value = e.target.value;
-                                            const newCode = formData.codigo_sms.split('');
-                                            newCode[i] = value;
-                                            setFormData(prev => ({ ...prev, codigo_sms: newCode.join('') }));
-                                            if (value && i < 3) {
-                                                const nextInput = e.target.parentNode.children[i + 1];
-                                                if (nextInput) nextInput.focus();
-                                            }
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                            <div className="flex justify-center gap-4 text-sm">
-                                <button
-                                    onClick={handleSendSMS}
-                                    className="text-primary hover:text-pink-500 hover:underline transition-colors duration-200"
-                                >
-                                    Reenviar por SMS
-                                </button>
-                            </div>
-                            <Button
-                                onClick={handleVerifySMS}
-                                disabled={loading}
-                                className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white transition-all duration-200"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Verificando...
-                                    </>
-                                ) : (
-                                    'Confirmar código'
-                                )}
-                            </Button>
+                        <div className="flex gap-2 justify-center">
+                            {[...Array(4)].map((_, i) => (
+                                <Input
+                                    key={i}
+                                    maxLength={1}
+                                    className="w-12 h-12 text-center text-xl font-bold"
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        const newCode = formData.codigo_sms.split('');
+                                        newCode[i] = value;
+                                        setFormData(prev => ({ ...prev, codigo_sms: newCode.join('') }));
+                                        if (value && i < 3) {
+                                            const nextInput = e.target.parentNode.children[i + 1];
+                                            if (nextInput) nextInput.focus();
+                                        }
+                                    }}
+                                />
+                            ))}
                         </div>
+                        <div className="flex justify-center gap-4 text-sm">
+                            <button
+                                onClick={handleSendSMS}
+                                className="text-primary hover:text-pink-500 hover:underline transition-colors duration-200"
+                            >
+                                Reenviar por SMS
+                            </button>
+                        </div>
+                        <Button
+                            onClick={handleVerifySMS}
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white transition-all duration-200"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Verificando...
+                                </>
+                            ) : (
+                                'Confirmar código'
+                            )}
+                        </Button>
                     </CardContent>
                 );
             case 'pessoais':
