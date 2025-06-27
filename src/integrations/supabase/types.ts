@@ -1434,6 +1434,7 @@ export type Database = {
           raio_entrega_km: number | null
           reputacao: number | null
           saldo_girinhas: number | null
+          sobrenome: string | null
           telefone: string | null
           telefone_verificado: boolean | null
           ultima_atividade: string | null
@@ -1471,6 +1472,7 @@ export type Database = {
           raio_entrega_km?: number | null
           reputacao?: number | null
           saldo_girinhas?: number | null
+          sobrenome?: string | null
           telefone?: string | null
           telefone_verificado?: boolean | null
           ultima_atividade?: string | null
@@ -1508,6 +1510,7 @@ export type Database = {
           raio_entrega_km?: number | null
           reputacao?: number | null
           saldo_girinhas?: number | null
+          sobrenome?: string | null
           telefone?: string | null
           telefone_verificado?: boolean | null
           ultima_atividade?: string | null
@@ -2516,7 +2519,7 @@ export type Database = {
       }
       save_step_data: {
         Args: { p_step: string; p_data: Json }
-        Returns: boolean
+        Returns: undefined
       }
       save_user_phone: {
         Args: { p_telefone: string }

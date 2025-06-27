@@ -35,9 +35,12 @@ const AddressStepV2: React.FC<AddressStepV2Props> = ({ onComplete }) => {
   useEffect(() => {
     const loadData = async () => {
       const savedData = await getStepData('address');
-      if (savedData && Object.keys(savedData).length > 0) {
+      if (savedData && typeof savedData === 'object' && Object.keys(savedData).length > 0) {
         console.log('📋 Carregando dados salvos do step address:', savedData);
-        setFormData(prev => ({ ...prev, ...savedData }));
+        setFormData(prev => ({ 
+          ...prev, 
+          ...(savedData as Partial<AddressFormData>)
+        }));
       }
     };
     loadData();

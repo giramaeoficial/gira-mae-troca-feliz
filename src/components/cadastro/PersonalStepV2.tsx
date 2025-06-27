@@ -51,9 +51,12 @@ const PersonalStepV2: React.FC<PersonalStepV2Props> = ({ onComplete }) => {
         } else {
           // Se não há dados no perfil, tentar carregar dados temporários
           const savedData = await getStepData('personal');
-          if (savedData && Object.keys(savedData).length > 0) {
+          if (savedData && typeof savedData === 'object' && Object.keys(savedData).length > 0) {
             console.log('📋 Carregando dados salvos do step personal:', savedData);
-            setFormData(prev => ({ ...prev, ...savedData }));
+            setFormData(prev => ({ 
+              ...prev, 
+              ...(savedData as Partial<PersonalFormData>)
+            }));
           }
         }
       } catch (error) {
