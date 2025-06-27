@@ -1,55 +1,67 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { MessageCircle, Phone } from 'lucide-react';
 
-interface PersonalStepV2Props {
+interface PhoneStepV2Props {
   onComplete: () => void;
 }
 
-const PersonalStepV2: React.FC<PersonalStepV2Props> = ({ onComplete }) => {
-  const [formData, setFormData] = useState({
-    nome: '',
-    bio: '',
-    profissao: '',
-    instagram: '',
-    telefone: '',
-    data_nascimento: '',
-    interesses: [] as string[],
-    categorias_favoritas: [] as string[]
-  });
+const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const interessesDisponiveis = [
-    'Sustentabilidade', 'Economia Circular', 'Maternidade', 'Educação',
-    'Brinquedos Educativos', 'Roupas Infantis', 'Livros', 'Esportes'
-  ];
-
-  const categoriasDisponiveis = [
-    'Roupas', 'Calçados', 'Brinquedos', 'Livros', 'Acessórios', 'Móveis'
-  ];
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const cleanPhoneNumber = (phoneNumber: string) => {
+    // Remove tudo que não é número
+    let cleaned = phoneNumber.replace(/\D/g, '');
+    
+    // Se começar com 0, remove
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    
+    // Se não começar com 55, adiciona
+    if (!cleaned.startsWith('55')) {
+      cleaned = '55' + cleaned;
+    }
+    
+    return cleaned;
   };
 
-  const toggleItem = (item: string, field: 'interesses' | 'categorias_favoritas') => {
-    const currentItems = formData[field];
-    const newItems = currentItems.includes(item)
-      ? currentItems.filter(i => i !== item)
-      : [...currentItems, item];
-    handleInputChange(field, newItems);
+  const formatPhoneDisplay = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length >= 11) {
+      return `+${cleaned.substring(0, 2)} (${cleaned.substring(2, 4)}) ${cleaned.substring(4, 9)}-${cleaned.substring(9)}`;
+    }
+    return phone;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Permitir apenas números, espaços, parênteses, hífen e +
+    const formatted = value.replace(/[^\d\s()\-+]/g, '');
+    setPhone(formatted);
   };
 
   const handleSubmit = async () => {
-    if (!formData.nome.trim()) {
+    if (!phone.trim()) {
       toast({
         title: "Campo obrigatório",
-        description: "Por favor, insira seu nome.",
+        description: "Por favor, insira seu número de telefone.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const cleanPhone = cleanPhoneNumber(phone);
+    
+    // Validação: deve ter pelo menos 13 dígitos (55 + 11 dígitos)
+    if (cleanPhone.length < 13) {
+      toast({
+        title: "Telefone inválido",
+        description: "Por favor, insira um número de telefone brasileiro válido com DDD.",
         variant: "destructive",
       });
       return;
@@ -57,108 +69,107 @@ const PersonalStepV2: React.FC<PersonalStepV2Props> = ({ onComplete }) => {
 
     setIsLoading(true);
     
-    // Simular salvamento dos dados (implementar lógica real aqui)
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Dados salvos!",
-        description: "Informações pessoais registradas com sucesso.",
+    try {
+      console.log('📱 Enviando código via WhatsApp para:', cleanPhone);
+      
+      // Chamar a Edge Function para enviar WhatsApp
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: { 
+          phone: cleanPhone,
+          method: 'whatsapp' // Sempre WhatsApp
+        }
       });
+
+      if (error) {
+        console.error('❌ Erro ao enviar WhatsApp:', error);
+        throw error;
+      }
+
+      console.log('✅ WhatsApp enviado com sucesso:', data);
+      
+      toast({
+        title: "WhatsApp enviado!",
+        description: `Código enviado para ${formatPhoneDisplay(cleanPhone)} via WhatsApp.`,
+      });
+      
       onComplete();
-    }, 2000);
+    } catch (error: any) {
+      console.error('❌ Erro no envio:', error);
+      
+      let errorMessage = "Erro ao enviar código. Tente novamente.";
+      
+      if (error.message?.includes('63015')) {
+        errorMessage = "Número não autorizado no WhatsApp Sandbox. Verifique se seguiu as instruções de configuração.";
+      } else if (error.message?.includes('network')) {
+        errorMessage = "Erro de conexão. Verifique sua internet e tente novamente.";
+      }
+      
+      toast({
+        title: "Erro ao enviar WhatsApp",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="px-6 pb-5 pt-1">
-      <div className="max-h-96 overflow-y-auto">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Dados pessoais
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          Adicione seu celular
         </h3>
         
-        <div className="space-y-4">
-          <Input
-            placeholder="Nome completo *"
-            value={formData.nome}
-            onChange={(e) => handleInputChange('nome', e.target.value)}
-            disabled={isLoading}
-          />
-          
-          <Textarea
-            placeholder="Conte um pouco sobre você..."
-            value={formData.bio}
-            onChange={(e) => handleInputChange('bio', e.target.value)}
-            disabled={isLoading}
-          />
-          
-          <Input
-            placeholder="Profissão"
-            value={formData.profissao}
-            onChange={(e) => handleInputChange('profissao', e.target.value)}
-            disabled={isLoading}
-          />
-          
-          <Input
-            placeholder="Instagram (@usuario)"
-            value={formData.instagram}
-            onChange={(e) => handleInputChange('instagram', e.target.value)}
-            disabled={isLoading}
-          />
-          
-          <Input
-            type="date"
-            placeholder="Data de nascimento"
-            value={formData.data_nascimento}
-            onChange={(e) => handleInputChange('data_nascimento', e.target.value)}
-            disabled={isLoading}
-          />
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Seus interesses
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {interessesDisponiveis.map((interesse) => (
-                <Badge
-                  key={interesse}
-                  variant={formData.interesses.includes(interesse) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleItem(interesse, 'interesses')}
-                >
-                  {interesse}
-                </Badge>
-              ))}
-            </div>
+        {/* WhatsApp Info */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageCircle className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-800">Verificação via WhatsApp</span>
           </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
-              Categorias favoritas
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {categoriasDisponiveis.map((categoria) => (
-                <Badge
-                  key={categoria}
-                  variant={formData.categorias_favoritas.includes(categoria) ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => toggleItem(categoria, 'categorias_favoritas')}
-                >
-                  {categoria}
-                </Badge>
-              ))}
-            </div>
-          </div>
+          <p className="text-xs text-green-700">
+            Enviaremos um código de 4 dígitos diretamente no seu WhatsApp. 
+            É mais rápido e seguro!
+          </p>
         </div>
+        
+        <label className="text-sm font-medium text-gray-700 mb-2 block">
+          Número do WhatsApp
+        </label>
+        <Input
+          type="tel"
+          placeholder="+55 (31) 99999-9999"
+          value={phone}
+          onChange={(e) => handlePhoneChange(e.target.value)}
+          className="mb-4"
+          disabled={isLoading}
+        />
+        
+        <Button 
+          onClick={handleSubmit} 
+          disabled={isLoading || !phone.trim()}
+          className="w-full bg-green-600 hover:bg-green-700 text-white"
+        >
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Enviando WhatsApp...
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              Enviar código via WhatsApp
+            </div>
+          )}
+        </Button>
+        
+        {/* Info adicional */}
+        <p className="text-xs text-gray-500 mt-3 text-center">
+          💡 Certifique-se de que o WhatsApp está instalado e funcionando no número informado
+        </p>
       </div>
-      
-      <Button 
-        onClick={handleSubmit} 
-        disabled={isLoading}
-        className="w-full bg-primary hover:bg-primary/90 mt-4"
-      >
-        {isLoading ? 'Salvando...' : 'Salvar Dados'}
-      </Button>
     </div>
   );
 };
 
-export default PersonalStepV2;
+export default PhoneStepV2;
