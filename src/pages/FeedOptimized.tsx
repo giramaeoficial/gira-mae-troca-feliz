@@ -20,11 +20,13 @@ import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
+import { useToast } from '@/hooks/use-toast';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
+  const { toast } = useToast();
   
   // Estados dos filtros - versão simplificada
   const [busca, setBusca] = useState('');
@@ -56,8 +58,33 @@ const FeedOptimized = () => {
     tiposTamanho: Object.keys(tiposTamanho || {}).length,
     loadingCategorias,
     loadingSubcategorias,
-    loadingTamanhos
+    loadingTamanhos,
+    user: !!user,
+    authLoading
   });
+
+  // Verificar se o usuário está logado
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-screen">
+          <LoadingSpinner />
+        </div>
+        <QuickNav />
+      </div>
+    );
+  }
+
+  if (!user) {
+    toast({
+      title: "Acesso negado",
+      description: "Você precisa estar logada para acessar o feed.",
+      variant: "destructive",
+    });
+    navigate('/auth');
+    return null;
+  }
 
   // Filtrar subcategorias baseado na categoria selecionada
   const subcategoriasFiltradas = React.useMemo(() => {
@@ -179,18 +206,6 @@ const FeedOptimized = () => {
   const handleTamanhoChange = (valor: string) => {
     setTamanho(valor);
   };
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-        <Header />
-        <div className="flex items-center justify-center min-h-screen">
-          <LoadingSpinner />
-        </div>
-        <QuickNav />
-      </div>
-    );
-  }
 
   const getLocationText = () => {
     if (locationForSearch) {

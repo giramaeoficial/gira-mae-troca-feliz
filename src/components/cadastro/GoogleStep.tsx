@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -11,18 +11,13 @@ interface GoogleStepProps {
 }
 
 const GoogleStep: React.FC<GoogleStepProps> = ({ onComplete, onGoogleLogin, isLoading }) => {
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-
   const handleGoogleLogin = async () => {
     try {
-      setIsGoogleLoading(true);
       await onGoogleLogin();
       // Após o login bem-sucedido, avançar para o próximo step
       onComplete({ googleAuth: true });
     } catch (error) {
       console.error('Erro no login com Google:', error);
-    } finally {
-      setIsGoogleLoading(false);
     }
   };
 
@@ -43,7 +38,7 @@ const GoogleStep: React.FC<GoogleStepProps> = ({ onComplete, onGoogleLogin, isLo
       
       <Button 
         onClick={handleGoogleLogin}
-        disabled={isGoogleLoading || isLoading}
+        disabled={isLoading}
         className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white font-medium py-3 h-auto shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
       >
         <img 
@@ -51,7 +46,7 @@ const GoogleStep: React.FC<GoogleStepProps> = ({ onComplete, onGoogleLogin, isLo
           alt="Google" 
           className="w-6 h-6 mr-3"
         />
-        {isGoogleLoading ? 'Conectando...' : 'Continuar com Google'}
+        {isLoading ? 'Conectando...' : 'Continuar com Google'}
       </Button>
       
       <div className="mt-4 text-center">

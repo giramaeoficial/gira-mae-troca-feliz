@@ -78,12 +78,9 @@ const SignUp = () => {
       completeStep(0);
       setFormData(prev => ({ ...prev, google: true }));
     } else if (user && !stepParam) {
-      // Usuário já logado acessando cadastro diretamente
-      toast({
-        title: "Você já está logado",
-        description: "Redirecionando para o feed...",
-      });
-      navigate('/feed');
+      // Usuário já logado acessando cadastro diretamente - permitir completar cadastro
+      completeStep(0);
+      setFormData(prev => ({ ...prev, google: true }));
     }
   }, [user, searchParams]);
 
@@ -121,19 +118,18 @@ const SignUp = () => {
   const handleGoogleLogin = async () => {
     try {
       setIsGoogleLoading(true);
+      const result = await signInWithGoogleForRegistration();
       
-      // Simular login local para o wizard (em produção, implementar fluxo completo)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setFormData(prev => ({ ...prev, google: true }));
-      
-      toast({
-        title: "Login realizado!",
-        description: "Agora vamos completar seu cadastro.",
-      });
-      
-      return Promise.resolve();
-      
+      if (result.success) {
+        setFormData(prev => ({ ...prev, google: true }));
+        toast({
+          title: "Login realizado!",
+          description: "Agora vamos completar seu cadastro.",
+        });
+        return Promise.resolve();
+      } else {
+        throw new Error(result.error?.message || 'Erro no login');
+      }
     } catch (error) {
       console.error('Erro no login com Google:', error);
       toast({
@@ -240,6 +236,22 @@ const SignUp = () => {
 
   const isAllStepsCompleted = steps.every(step => step.state === 'done');
 
+  const handleEnterPlatform = () => {
+    if (user) {
+      toast({
+        title: "Bem-vinda à GiraMãe!",
+        description: "Seu cadastro foi finalizado com sucesso.",
+      });
+      navigate('/feed');
+    } else {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logada para continuar.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <Header />
@@ -301,11 +313,12 @@ const SignUp = () => {
                   Sua conta foi criada e você já está logado.
                 </p>
                 
-                <Link to="/feed" className="block">
-                  <button className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white font-medium py-3 px-4 rounded-lg shadow-lg transition-all duration-200">
-                    Entrar na Plataforma
-                  </button>
-                </Link>
+                <button 
+                  onClick={handleEnterPlatform}
+                  className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white font-medium py-3 px-4 rounded-lg shadow-lg transition-all duration-200"
+                >
+                  Entrar na Plataforma
+                </button>
 
                 <div className="text-center text-sm mt-4">
                   Já tem uma conta?{" "}
