@@ -241,6 +241,33 @@ export type Database = {
           },
         ]
       }
+      cadastro_temp_data: {
+        Row: {
+          created_at: string | null
+          form_data: Json
+          id: string
+          step: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          form_data?: Json
+          id?: string
+          step: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          form_data?: Json
+          id?: string
+          step?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       carteiras: {
         Row: {
           created_at: string
@@ -495,6 +522,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      debug_logs: {
+        Row: {
+          created_at: string | null
+          error_details: Json | null
+          id: string
+          message: string
+          operation: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_details?: Json | null
+          id?: string
+          message: string
+          operation: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_details?: Json | null
+          id?: string
+          message?: string
+          operation?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       error_log: {
         Row: {
@@ -1381,10 +1435,13 @@ export type Database = {
           reputacao: number | null
           saldo_girinhas: number | null
           telefone: string | null
+          telefone_verificado: boolean | null
           ultima_atividade: string | null
           ultimo_calculo_cotacao: string | null
           updated_at: string | null
           username: string
+          verification_code: string | null
+          verification_code_expires: string | null
         }
         Insert: {
           aceita_entrega_domicilio?: boolean | null
@@ -1415,10 +1472,13 @@ export type Database = {
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
+          telefone_verificado?: boolean | null
           ultima_atividade?: string | null
           ultimo_calculo_cotacao?: string | null
           updated_at?: string | null
           username: string
+          verification_code?: string | null
+          verification_code_expires?: string | null
         }
         Update: {
           aceita_entrega_domicilio?: boolean | null
@@ -1449,10 +1509,13 @@ export type Database = {
           reputacao?: number | null
           saldo_girinhas?: number | null
           telefone?: string | null
+          telefone_verificado?: boolean | null
           ultima_atividade?: string | null
           ultimo_calculo_cotacao?: string | null
           updated_at?: string | null
           username?: string
+          verification_code?: string | null
+          verification_code_expires?: string | null
         }
         Relationships: []
       }
@@ -2096,6 +2159,10 @@ export type Database = {
           avatar_url: string
         }[]
       }
+      bypass_rls_for_user_creation: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       calcular_custo_extensao: {
         Args: { p_valor_expirando: number }
         Returns: number
@@ -2116,6 +2183,19 @@ export type Database = {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
       }
+      check_database_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          table_name: string
+          rls_enabled: boolean
+          policy_count: number
+          insert_policy_exists: boolean
+        }[]
+      }
+      clear_cadastro_temp_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       coletar_recompensa_missao: {
         Args: { p_user_id: string; p_missao_id: string }
         Returns: Json
@@ -2129,6 +2209,20 @@ export type Database = {
           p_data?: Json
         }
         Returns: string
+      }
+      create_user_goals: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      create_user_profile: {
+        Args: {
+          p_user_id: string
+          p_email: string
+          p_nome: string
+          p_avatar_url: string
+          p_username: string
+        }
+        Returns: undefined
       }
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>
@@ -2179,9 +2273,17 @@ export type Database = {
         Args: { p_reserva_id: string; p_codigo_confirmacao: string }
         Returns: boolean
       }
+      get_cadastro_temp_data: {
+        Args: { p_step: string }
+        Returns: Json
+      }
       get_municipios_por_uf: {
         Args: { uf_param: string }
         Returns: string[]
+      }
+      get_user_form_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       inicializar_limites_missoes: {
         Args: { p_user_id: string }
@@ -2189,6 +2291,19 @@ export type Database = {
       }
       inicializar_metas_usuario: {
         Args: { p_user_id: string }
+        Returns: undefined
+      }
+      is_trigger_context: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      log_debug: {
+        Args: {
+          p_user_id: string
+          p_operation: string
+          p_message: string
+          p_error_details?: Json
+        }
         Returns: undefined
       }
       mostrar_config_admin: {
@@ -2334,6 +2449,10 @@ export type Database = {
         Args: { p_user_id: string; p_quantidade: number; p_motivo: string }
         Returns: boolean
       }
+      re_enable_rls: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       registrar_analytics_missao: {
         Args: {
           p_missao_id: string
@@ -2387,6 +2506,18 @@ export type Database = {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
       }
+      save_cadastro_temp_data: {
+        Args: { p_step: string; p_form_data: Json }
+        Returns: undefined
+      }
+      save_user_phone: {
+        Args: { p_telefone: string }
+        Returns: boolean
+      }
+      save_verification_code: {
+        Args: { p_telefone: string; p_code: string }
+        Returns: boolean
+      }
       send_admin_notification: {
         Args: {
           p_title: string
@@ -2429,6 +2560,10 @@ export type Database = {
       }
       verificar_username_disponivel: {
         Args: { p_username: string }
+        Returns: boolean
+      }
+      verify_phone_code: {
+        Args: { p_code: string }
         Returns: boolean
       }
     }

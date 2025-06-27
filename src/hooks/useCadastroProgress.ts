@@ -1,4 +1,3 @@
-// src/hooks/useCadastroProgress.ts - VERSÃO CORRIGIDA
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +10,8 @@ interface CadastroProgress {
   data?: any;
 }
 
+const STEP_ORDER = ['google', 'phone', 'code', 'personal', 'address'];
+
 export const useCadastroProgress = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -20,8 +21,42 @@ export const useCadastroProgress = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Função para determinar o step correto baseado nos dados
+  const determineCurrentStep = useCallback((profileData: any) => {
+    if (!profileData) return 'google';
+    
+    // Se cadastro está completo
+    if (profileData.cadastro_status === 'completo') {
+      return 'complete';
+    }
+
+    // Lógica de detecção de step baseada nos dados preenchidos
+    if (!profileData.telefone) {
+      return 'phone';
+    }
+    
+    if (profileData.telefone && !profileData.telefone_verificado) {
+      return 'code';
+    }
+    
+    if (profileData.telefone_verificado && !profileData.nome) {
+      return 'personal';
+    }
+    
+    if (profileData.nome && !profileData.endereco) {
+      return 'address';
+    }
+    
+    // Se chegou até aqui, cadastro deveria estar completo
+    return 'address';
+  }, []);
+
   const fetchProgress = useCallback(async () => {
     if (!user) {
+      setProgress({
+        step: 'google',
+        status: 'incompleto'
+      });
       setLoading(false);
       return;
     }
@@ -37,75 +72,67 @@ export const useCadastroProgress = () => {
 
       if (error) {
         console.error('❌ Erro ao buscar progresso:', error);
+        
+        if (error.code === 'PGRST116') {
+          // Perfil não encontrado - usuário novo
+          console.log('⚠️ Perfil não encontrado - usuário novo');
+          setProgress({
+            step: 'google',
+            status: 'incompleto'
+          });
+          setLoading(false);
+          return;
+        }
+        
         throw error;
       }
 
-      console.log('📊 Dados do perfil:', data);
+      console.log('📊 Dados do perfil encontrados:', data);
       
-      // 🎯 LÓGICA INTELIGENTE: Detectar step real baseado nos dados salvos
-      let realStep = data.cadastro_step || 'google';
+      // Determinar step atual baseado nos dados
+      const currentStep = determineCurrentStep(data);
       
-      // Se step no banco está desatualizado, detectar pelo que já foi preenchido
-      if (data.cadastro_status === 'completo') {
-        realStep = 'complete';
-      } else {
-        // Detectar step baseado nos dados preenchidos
-        if (!data.telefone) {
-          realStep = 'phone';
-        } else if (data.telefone && !data.telefone_verificado) {
-          realStep = 'code';
-        } else if (data.telefone_verificado && !data.nome) {
-          realStep = 'personal';
-        } else if (data.nome && !data.endereco) {
-          realStep = 'address';
-        } else if (data.endereco) {
-          realStep = 'complete';
-        }
-      }
-
-      console.log('✅ Step detectado:', {
+      console.log('✅ Step determinado:', {
         stepNoBanco: data.cadastro_step,
-        stepDetectado: realStep,
-        telefone: !!data.telefone,
-        telefoneVerificado: !!data.telefone_verificado,
-        nome: !!data.nome,
-        endereco: !!data.endereco
+        stepDetectado: currentStep,
+        dadosPreenchidos: {
+          telefone: !!data.telefone,
+          telefoneVerificado: !!data.telefone_verificado,
+          nome: !!data.nome,
+          endereco: !!data.endereco
+        }
       });
       
       setProgress({
-        step: realStep,
+        step: currentStep,
         status: (data.cadastro_status as 'incompleto' | 'completo') || 'incompleto'
       });
 
-      // 🔄 SINCRONIZAR: Se step detectado diferente do banco, atualizar
-      if (realStep !== data.cadastro_step && realStep !== 'complete') {
-        console.log('🔄 Sincronizando step no banco:', data.cadastro_step, '->', realStep);
-        await supabase
+      // Sincronizar step no banco se necessário
+      if (currentStep !== data.cadastro_step && currentStep !== 'complete') {
+        console.log('🔄 Sincronizando step no banco:', data.cadastro_step, '->', currentStep);
+        
+        const { error: updateError } = await supabase
           .from('profiles')
-          .update({ cadastro_step: realStep })
+          .update({ cadastro_step: currentStep })
           .eq('id', user.id);
+
+        if (updateError) {
+          console.error('⚠️ Erro ao sincronizar step:', updateError);
+        }
       }
 
     } catch (error: any) {
       console.error('❌ Erro ao buscar progresso:', error);
-      
-      if (error.code === 'PGRST116') {
-        console.log('⚠️ Perfil não encontrado - usuário novo?');
-        setProgress({
-          step: 'google',
-          status: 'incompleto'
-        });
-      } else {
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar o progresso do cadastro. Tente recarregar a página.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar o progresso. Tente recarregar.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, determineCurrentStep]);
 
   const updateProgress = useCallback(async (step: string, status?: 'incompleto' | 'completo') => {
     if (!user) {
@@ -145,20 +172,11 @@ export const useCadastroProgress = () => {
       return true;
     } catch (error: any) {
       console.error('❌ Erro ao atualizar progresso:', error);
-      
-      if (error.code === 'PGRST116') {
-        toast({
-          title: "Erro de sincronização",
-          description: "Tente novamente em alguns segundos.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Erro",
-          description: "Não foi possível salvar o progresso. Tente novamente.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar o progresso. Tente novamente.",
+        variant: "destructive",
+      });
       return false;
     }
   }, [user, progress.status, toast]);
@@ -166,9 +184,8 @@ export const useCadastroProgress = () => {
   const completeStep = useCallback(async (currentStep: string, nextStep?: string) => {
     console.log('🔄 Completando step:', currentStep, '-> próximo:', nextStep);
     
-    const stepOrder = ['google', 'phone', 'code', 'personal', 'address'];
-    const currentIndex = stepOrder.indexOf(currentStep);
-    const next = nextStep || (currentIndex < stepOrder.length - 1 ? stepOrder[currentIndex + 1] : 'complete');
+    const currentIndex = STEP_ORDER.indexOf(currentStep);
+    const next = nextStep || (currentIndex < STEP_ORDER.length - 1 ? STEP_ORDER[currentIndex + 1] : 'complete');
     
     if (next === 'complete') {
       console.log('✅ Cadastro completo!');
@@ -184,7 +201,7 @@ export const useCadastroProgress = () => {
     return await updateProgress('google', 'incompleto');
   }, [updateProgress]);
 
-  // 🚀 CARREGAR PROGRESSO NA INICIALIZAÇÃO
+  // Carregar progresso na inicialização
   useEffect(() => {
     fetchProgress();
   }, [fetchProgress]);

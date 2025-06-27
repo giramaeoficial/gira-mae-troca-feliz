@@ -1,4 +1,4 @@
-// src/components/auth/AuthGuard.tsx - SUBSTITUA COMPLETAMENTE
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,7 +14,6 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [checking, setChecking] = useState(true);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
     const checkUserStatus = async () => {
@@ -47,22 +46,28 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         // Verificar status do cadastro
         const { data, error } = await supabase
           .from('profiles')
-          .select('cadastro_status, cadastro_step, nome, telefone')
+          .select('cadastro_status')
           .eq('id', user.id)
           .single();
 
         if (error) {
           console.error('🔒 AuthGuard - Erro ao buscar perfil:', error);
+          
+          if (error.code === 'PGRST116') {
+            // Perfil não encontrado - usuário novo
+            console.log('🔒 AuthGuard - Perfil não encontrado, redirecionando para cadastro');
+            navigate('/cadastro', { replace: true });
+            return;
+          }
+          
           throw error;
         }
 
         console.log('🔒 AuthGuard - Status encontrado:', data);
-        setDebugInfo(data);
 
         // Se cadastro não está completo, redirecionar para cadastro
-        if (data.cadastro_status === 'incompleto') {
+        if (data.cadastro_status !== 'completo') {
           console.log('🔒 AuthGuard - Cadastro incompleto, redirecionando para /cadastro');
-          console.log('🔒 AuthGuard - Step atual:', data.cadastro_step);
           navigate('/cadastro', { replace: true });
           return;
         }
@@ -87,12 +92,6 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         <div className="text-center">
           <LoadingSpinner />
           <p className="mt-4 text-gray-600">Verificando permissões...</p>
-          {debugInfo && (
-            <div className="mt-4 p-4 bg-white rounded-lg shadow-sm text-sm text-left">
-              <h4 className="font-medium mb-2">Debug Info:</h4>
-              <pre className="text-xs">{JSON.stringify(debugInfo, null, 2)}</pre>
-            </div>
-          )}
         </div>
       </div>
     );

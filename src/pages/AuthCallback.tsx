@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,105 +8,95 @@ import { useToast } from '@/hooks/use-toast';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      console.log('🔄 AuthCallback: Iniciando processamento...');
-      
-      // Aguardar um pouco para garantir que o user foi carregado
-      if (!user) {
-        console.log('⏳ AuthCallback: Aguardando user...');
+      // Aguardar auth carregar
+      if (authLoading) {
+        console.log('⏳ AuthCallback: Aguardando auth carregar...');
         return;
       }
 
-      console.log('✅ AuthCallback: User encontrado:', user.id);
+      // Se não há usuário, redirecionar para auth
+      if (!user) {
+        console.log('❌ AuthCallback: Nenhum usuário encontrado, redirecionando para /auth');
+        navigate('/auth', { replace: true });
+        return;
+      }
+
+      // Evitar processamento duplo
+      if (processing) {
+        console.log('⏳ AuthCallback: Já processando...');
+        return;
+      }
+
+      setProcessing(true);
+      console.log('🔄 AuthCallback: Iniciando processamento para usuário:', user.id);
 
       try {
-        // Verificar status do cadastro do usuário
-        const { data, error } = await supabase
+        // Buscar dados do perfil
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('cadastro_status, cadastro_step, telefone, nome, endereco, telefone_verificado')
+          .select('cadastro_status, cadastro_step, telefone_verificado, nome, endereco')
           .eq('id', user.id)
           .single();
 
         if (error) {
-          console.error('❌ AuthCallback: Erro ao verificar perfil:', error);
+          console.error('❌ AuthCallback: Erro ao buscar perfil:', error);
           
           if (error.code === 'PGRST116') {
-            // Perfil não encontrado - usuário novo, vai para cadastro
-            console.log('👤 AuthCallback: Usuário novo, redirecionando para cadastro');
+            // Perfil não encontrado - usuário novo
+            console.log('👤 AuthCallback: Perfil não encontrado, usuário novo - indo para cadastro');
             toast({
               title: "Bem-vindo!",
               description: "Vamos completar seu cadastro.",
             });
-            navigate('/cadastro');
+            navigate('/cadastro', { replace: true });
             return;
           }
           
           throw error;
         }
 
-        console.log('📊 AuthCallback: Dados do perfil:', data);
+        console.log('📊 AuthCallback: Dados do perfil encontrados:', profile);
 
-        // 🎯 LÓGICA INTELIGENTE: Detectar onde o usuário deve ir
-        if (data.cadastro_status === 'completo') {
-          // Cadastro completo - vai para feed
+        // Determinar destino baseado no status do cadastro
+        if (profile.cadastro_status === 'completo') {
           console.log('✅ AuthCallback: Cadastro completo, indo para feed');
           toast({
             title: "Login realizado!",
-            description: "Bem-vinda de volta!",
+            description: "Bem-vinda de volta à GiraMãe!",
           });
-          navigate('/feed');
+          navigate('/feed', { replace: true });
         } else {
-          // Cadastro incompleto - detectar step correto
-          let targetStep = data.cadastro_step || 'google';
-          
-          // Detectar step baseado nos dados preenchidos (mesma lógica do hook)
-          if (!data.telefone) {
-            targetStep = 'phone';
-          } else if (data.telefone && !data.telefone_verificado) {
-            targetStep = 'code';
-          } else if (data.telefone_verificado && !data.nome) {
-            targetStep = 'personal';
-          } else if (data.nome && !data.endereco) {
-            targetStep = 'address';
-          }
-
-          console.log('🔄 AuthCallback: Cadastro incompleto, indo para cadastro no step:', targetStep);
-          
-          // Sincronizar step no banco se necessário
-          if (targetStep !== data.cadastro_step) {
-            console.log('🔄 AuthCallback: Sincronizando step no banco:', data.cadastro_step, '->', targetStep);
-            await supabase
-              .from('profiles')
-              .update({ cadastro_step: targetStep })
-              .eq('id', user.id);
-          }
-
+          console.log('🔄 AuthCallback: Cadastro incompleto, indo para cadastro');
           toast({
             title: "Continuando cadastro...",
             description: "Vamos finalizar seu cadastro.",
           });
-          navigate('/cadastro');
+          navigate('/cadastro', { replace: true });
         }
+
       } catch (error) {
-        console.error('❌ AuthCallback: Erro no callback de auth:', error);
+        console.error('❌ AuthCallback: Erro no processamento:', error);
         toast({
-          title: "Erro",
-          description: "Ocorreu um erro durante o login. Tente novamente.",
+          title: "Erro no login",
+          description: "Ocorreu um erro. Tente fazer login novamente.",
           variant: "destructive",
         });
-        navigate('/auth');
+        navigate('/auth', { replace: true });
+      } finally {
+        setProcessing(false);
       }
     };
 
-    // Delay maior para garantir que tudo foi carregado
-    const timer = setTimeout(handleAuthCallback, 1500);
-    
+    // Delay para garantir que o auth foi carregado
+    const timer = setTimeout(handleAuthCallback, 1000);
     return () => clearTimeout(timer);
-  }, [user, navigate, toast]);
+  }, [user, authLoading, navigate, toast, processing]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">

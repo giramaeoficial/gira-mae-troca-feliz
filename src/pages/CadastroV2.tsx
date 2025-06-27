@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, Heart, CheckCircle } from 'lucide-react';
+import { Sparkles, CheckCircle } from 'lucide-react';
 import Header from '@/components/shared/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { useCadastroProgress } from '@/hooks/useCadastroProgress';
@@ -20,12 +21,12 @@ interface Step {
 }
 
 const CadastroV2 = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { progress, loading, completeStep, updateProgress } = useCadastroProgress();
+  const { progress, loading: progressLoading, completeStep, updateProgress } = useCadastroProgress();
   const [steps, setSteps] = useState<Step[]>([]);
-  const [autoAdvanceProcessed, setAutoAdvanceProcessed] = useState(false);
+  const [initialProcessing, setInitialProcessing] = useState(true);
 
   // Definir steps baseado no progresso
   useEffect(() => {
@@ -42,36 +43,42 @@ const CadastroV2 = () => {
     setSteps(newSteps);
   }, [progress]);
 
-  // FASE 2: Lógica de auto-avanço melhorada para usuários já autenticados
+  // Lógica de auto-avanço simplificada
   useEffect(() => {
-    if (!loading && user && progress.step === 'google' && progress.status === 'incompleto' && !autoAdvanceProcessed) {
-      console.log('✅ Usuário logado detectado, auto-avançando do step Google para Phone...');
-      console.log('User ID:', user.id);
-      console.log('Progress:', progress);
-      
-      setAutoAdvanceProcessed(true);
-      
-      // Pequeno delay para garantir que o estado foi atualizado
-      setTimeout(() => {
-        completeStep('google').then(success => {
+    const handleAutoAdvance = async () => {
+      // Aguardar carregamento completo
+      if (authLoading || progressLoading) {
+        return;
+      }
+
+      // Se não há usuário, não fazer nada (AuthGuard vai tratar)
+      if (!user) {
+        setInitialProcessing(false);
+        return;
+      }
+
+      // Se está no step Google mas usuário já está logado, avançar
+      if (progress.step === 'google' && progress.status === 'incompleto') {
+        console.log('✅ Usuário logado detectado, auto-avançando do step Google...');
+        
+        try {
+          const success = await completeStep('google');
           if (success) {
-            console.log('✅ Auto-avanço concluído com sucesso');
             toast({
               title: "Bem-vindo!",
               description: "Vamos completar seu cadastro.",
             });
-          } else {
-            console.error('❌ Erro no auto-avanço');
-            toast({
-              title: "Erro",
-              description: "Houve um problema. Tente recarregar a página.",
-              variant: "destructive",
-            });
           }
-        });
-      }, 100);
-    }
-  }, [loading, user, progress.step, progress.status, completeStep, autoAdvanceProcessed, toast]);
+        } catch (error) {
+          console.error('❌ Erro no auto-avanço:', error);
+        }
+      }
+
+      setInitialProcessing(false);
+    };
+
+    handleAutoAdvance();
+  }, [authLoading, progressLoading, user, progress.step, progress.status, completeStep, toast]);
 
   const getStepTitle = (stepKey: string) => {
     const titles = {
@@ -85,48 +92,40 @@ const CadastroV2 = () => {
   };
 
   const handleStepComplete = async () => {
+    console.log('📋 Completando step atual:', progress.step);
+    
     const success = await completeStep(progress.step);
+    
     if (success && progress.step === 'address') {
       // Cadastro completo
       toast({
         title: "Bem-vinda à GiraMãe!",
         description: "Seu cadastro foi finalizado com sucesso.",
       });
-      navigate('/feed');
+      setTimeout(() => {
+        navigate('/feed');
+      }, 1500);
     }
   };
 
   const handleEditStep = async (stepKey: string) => {
-    // Permitir voltar para steps já completados
     const step = steps.find(s => s.key === stepKey);
     const stepOrder = ['google', 'phone', 'code', 'personal', 'address'];
     const targetStepIndex = stepOrder.indexOf(stepKey);
     const currentStepIndex = stepOrder.indexOf(progress.step);
     
-    // Só permite voltar (não pular para frente)
+    // Só permite voltar para steps já completados
     if (step?.completed && targetStepIndex < currentStepIndex) {
       console.log('🔙 Voltando para step anterior:', stepKey);
       
-      try {
-        // Usar updateProgress diretamente do hook
-        const success = await updateProgress(stepKey);
-        if (success) {
-          toast({
-            title: "Voltando...",
-            description: `Retornando para: ${getStepTitle(stepKey)}`,
-          });
-        }
-      } catch (error) {
-        console.error('❌ Erro ao voltar step:', error);
+      const success = await updateProgress(stepKey);
+      if (success) {
         toast({
-          title: "Erro",
-          description: "Não foi possível voltar para este step.",
-          variant: "destructive",
+          title: "Voltando...",
+          description: `Retornando para: ${getStepTitle(stepKey)}`,
         });
       }
     } else if (targetStepIndex >= currentStepIndex) {
-      // Não permite pular steps futuros
-      console.log('⚠️ Não é possível pular para steps futuros');
       toast({
         title: "Não é possível pular steps",
         description: "Complete o step atual primeiro.",
@@ -173,20 +172,22 @@ const CadastroV2 = () => {
       default:
         return (
           <div className="p-6 text-center">
-            <p className="text-gray-600">Carregando...</p>
+            <LoadingSpinner />
+            <p className="mt-2 text-gray-600">Carregando step...</p>
           </div>
         );
     }
   };
 
-  if (loading) {
+  // Loading inicial
+  if (authLoading || progressLoading || initialProcessing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
         <Header />
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <LoadingSpinner />
-            <p className="mt-4 text-gray-600">Carregando progresso...</p>
+            <p className="mt-4 text-gray-600">Carregando cadastro...</p>
           </div>
         </div>
       </div>
@@ -215,7 +216,7 @@ const CadastroV2 = () => {
               </div>
             </div>
 
-            {/* FASE 1: Steps Indicator - Removido o título duplicado */}
+            {/* Steps Indicator */}
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 {steps.map((step, index) => (
@@ -240,7 +241,7 @@ const CadastroV2 = () => {
               </div>
             </div>
 
-            {/* FASE 3: Step Content - Melhor espaçamento */}
+            {/* Step Content */}
             <div className="min-h-[300px]">
               {renderStepContent()}
             </div>
