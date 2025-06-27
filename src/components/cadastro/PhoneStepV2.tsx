@@ -23,26 +23,34 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
       cleaned = cleaned.substring(1);
     }
     
-    // Se não começar com 55, adiciona
-    if (!cleaned.startsWith('55')) {
-      cleaned = '55' + cleaned;
+    // Se começar com 55, remove (usuário não precisa digitar)
+    if (cleaned.startsWith('55')) {
+      cleaned = cleaned.substring(2);
     }
     
-    return cleaned;
+    // Adiciona o 55 automaticamente
+    return '55' + cleaned;
   };
 
   const formatPhoneDisplay = (phone: string) => {
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length >= 11) {
-      return `+${cleaned.substring(0, 2)} (${cleaned.substring(2, 4)}) ${cleaned.substring(4, 9)}-${cleaned.substring(9)}`;
+      // Formato: (XX) XXXXX-XXXX
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
+    } else if (cleaned.length >= 6) {
+      // Formato parcial: (XX) XXXXX
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2)}`;
+    } else if (cleaned.length >= 2) {
+      // Formato parcial: (XX)
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2)}`;
     }
     return phone;
   };
 
   const handlePhoneChange = (value: string) => {
-    // Permitir apenas números, espaços, parênteses, hífen e +
-    const formatted = value.replace(/[^\d\s()\-+]/g, '');
-    setPhone(formatted);
+    // Permitir apenas números, espaços, parênteses e hífen
+    const formatted = value.replace(/[^\d\s()\-]/g, '');
+    setPhone(formatPhoneDisplay(formatted));
   };
 
   const handleSubmit = async () => {
@@ -57,11 +65,11 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
 
     const cleanPhone = cleanPhoneNumber(phone);
     
-    // Validação: deve ter pelo menos 13 dígitos (55 + 11 dígitos)
-    if (cleanPhone.length < 13) {
+    // Validação: deve ter 13 dígitos (55 + 11 dígitos do Brasil)
+    if (cleanPhone.length !== 13) {
       toast({
         title: "Telefone inválido",
-        description: "Por favor, insira um número de telefone brasileiro válido com DDD.",
+        description: "Por favor, insira um número com DDD + 9 dígitos (ex: 31999999999).",
         variant: "destructive",
       });
       return;
@@ -89,7 +97,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
       
       toast({
         title: "WhatsApp enviado!",
-        description: `Código enviado para ${formatPhoneDisplay(cleanPhone)} via WhatsApp.`,
+        description: `Código enviado para +55 ${formatPhoneDisplay(phone)} via WhatsApp.`,
       });
       
       onComplete();
@@ -128,14 +136,19 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         <label className="text-sm font-medium text-gray-700 mb-2 block">
           Número do WhatsApp
         </label>
-        <Input
-          type="tel"
-          placeholder="+55 (31) 99999-9999"
-          value={phone}
-          onChange={(e) => handlePhoneChange(e.target.value)}
-          className="mb-4"
-          disabled={isLoading}
-        />
+        <div className="relative mb-4">
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+            +55
+          </div>
+          <Input
+            type="tel"
+            placeholder="(31) 99999-9999"
+            value={phone}
+            onChange={(e) => handlePhoneChange(e.target.value)}
+            className="pl-12"
+            disabled={isLoading}
+          />
+        </div>
         
         <Button 
           onClick={handleSubmit} 
@@ -157,7 +170,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         
         {/* Info adicional */}
         <p className="text-xs text-gray-500 mt-3 text-center">
-          💡 Certifique-se de que o WhatsApp está instalado e funcionando no número informado
+          💡 Digite apenas DDD + número (ex: 31999999999)
         </p>
       </div>
     </div>
