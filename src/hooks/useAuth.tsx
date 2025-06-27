@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔄 useAuth: Sessão inicial carregada:', session?.user?.id || 'nenhuma');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -33,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🔄 useAuth: Mudança de auth detectada:', _event, session?.user?.id || 'logout');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -42,38 +43,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithGoogle = async () => {
+    console.log('🚀 useAuth: Iniciando login direto com Google...');
+    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth-callback`
+        redirectTo: `${window.location.origin}/auth-callback` // ✅ Login direto vai para auth-callback
       }
     });
 
     if (error) {
+      console.error('❌ useAuth: Erro no login Google:', error);
       throw error;
     }
+    
+    console.log('✅ useAuth: Redirecionamento para Google OAuth iniciado');
   };
 
   const signInWithGoogleForRegistration = async () => {
+    console.log('🚀 useAuth: Iniciando login para cadastro com Google...');
+    
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/cadastro`
+          redirectTo: `${window.location.origin}/auth-callback` // ✅ Cadastro também vai para auth-callback
         }
       });
 
       if (error) {
+        console.error('❌ useAuth: Erro no login para cadastro:', error);
         return { success: false, error };
       }
 
+      console.log('✅ useAuth: Redirecionamento para Google OAuth (cadastro) iniciado');
       return { success: true, error: null };
     } catch (error) {
+      console.error('❌ useAuth: Erro inesperado no login para cadastro:', error);
       return { success: false, error };
     }
   };
 
   const signOut = async () => {
+    console.log('🚪 useAuth: Iniciando logout...');
+    
     try {
       // Limpar estado local imediatamente
       setSession(null);
@@ -83,20 +96,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signOut();
       
       if (error && error.message !== 'Auth session missing!') {
-        console.error('Erro ao fazer logout:', error.message);
+        console.error('❌ useAuth: Erro ao fazer logout no Supabase:', error.message);
         toast({
           title: "Erro no logout",
           description: "Houve um problema ao fazer logout, mas você foi desconectado localmente.",
           variant: "destructive",
         });
       } else {
+        console.log('✅ useAuth: Logout realizado com sucesso');
         toast({
           title: "Logout realizado",
           description: "Você foi desconectado com sucesso.",
         });
       }
     } catch (error) {
-      console.error('Erro no logout:', error);
+      console.error('❌ useAuth: Erro inesperado no logout:', error);
       toast({
         title: "Erro no logout", 
         description: "Você foi desconectado localmente.",
