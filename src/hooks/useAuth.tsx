@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInWithGoogleForRegistration: () => Promise<{ user: User | null; error: any }>;
+  signInWithGoogleForRegistration: () => Promise<{ success: boolean; error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,19 +56,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogleForRegistration = async () => {
     try {
-      // Em vez de usar OAuth redirect, vamos usar uma abordagem diferente
-      // para manter o usuário no wizard de cadastro
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      // Para o cadastro, usamos o fluxo normal mas redirecionamos para o wizard
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/cadastro?step=phone`,
-          skipBrowserRedirect: true // Evita redirecionamento automático
+          redirectTo: `${window.location.origin}/cadastro?step=phone`
         }
       });
 
-      return { user: data?.user || null, error };
+      if (error) {
+        return { success: false, error };
+      }
+
+      return { success: true, error: null };
     } catch (error) {
-      return { user: null, error };
+      return { success: false, error };
     }
   };
 
