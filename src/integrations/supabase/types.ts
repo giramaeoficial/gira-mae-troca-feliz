@@ -827,7 +827,6 @@ export type Database = {
       indicacoes: {
         Row: {
           bonus_cadastro_pago: boolean | null
-          bonus_pago: boolean | null
           bonus_primeira_compra_pago: boolean | null
           bonus_primeiro_item_pago: boolean | null
           created_at: string
@@ -840,7 +839,6 @@ export type Database = {
         }
         Insert: {
           bonus_cadastro_pago?: boolean | null
-          bonus_pago?: boolean | null
           bonus_primeira_compra_pago?: boolean | null
           bonus_primeiro_item_pago?: boolean | null
           created_at?: string
@@ -853,7 +851,6 @@ export type Database = {
         }
         Update: {
           bonus_cadastro_pago?: boolean | null
-          bonus_pago?: boolean | null
           bonus_primeira_compra_pago?: boolean | null
           bonus_primeiro_item_pago?: boolean | null
           created_at?: string

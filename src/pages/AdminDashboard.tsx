@@ -15,6 +15,7 @@ import PainelSaudeGirinha from '@/components/admin/PainelSaudeGirinha';
 import SystemConfig from '@/components/admin/SystemConfig';
 import MissoesAdmin from '@/components/admin/MissoesAdmin';
 import ConfigBonusDiario from '@/components/admin/ConfigBonusDiario';
+import ConfigIndicacoes from '@/components/admin/ConfigIndicacoes';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -38,7 +39,7 @@ const AdminDashboard = () => {
 
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-9">
+            <TabsList className="grid w-full grid-cols-10">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="users">Usuários</TabsTrigger>
               <TabsTrigger value="categories">Categorias</TabsTrigger>
@@ -48,6 +49,7 @@ const AdminDashboard = () => {
               <TabsTrigger value="system">Sistema</TabsTrigger>
               <TabsTrigger value="bonus">Bônus</TabsTrigger>
               <TabsTrigger value="missoes">Missões</TabsTrigger>
+              <TabsTrigger value="indicacoes">Indicações</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -87,6 +89,10 @@ const AdminDashboard = () => {
 
             <TabsContent value="missoes">
               <MissoesAdmin />
+            </TabsContent>
+
+            <TabsContent value="indicacoes">
+              <ConfigIndicacoes />
             </TabsContent>
           </Tabs>
         </div>

@@ -1,219 +1,244 @@
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Users, 
+  Gift, 
+  Share2, 
+  TrendingUp, 
+  Calendar,
+  Trophy,
+  Copy,
+  CheckCircle
+} from 'lucide-react';
 import { useIndicacoes } from '@/hooks/useIndicacoes';
-import { Users, Gift, Share2, Trophy, Mail, Check, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const PaginaIndicacoes = () => {
   const { 
     indicacoes, 
     indicados, 
     loading, 
-    registrarIndicacao, 
-    compartilharIndicacao 
+    error, 
+    compartilharIndicacao,
+    obterEstatisticas 
   } = useIndicacoes();
-  
-  const [emailIndicacao, setEmailIndicacao] = useState('');
-  const [enviandoIndicacao, setEnviandoIndicacao] = useState(false);
 
-  const handleIndicar = async () => {
-    if (!emailIndicacao.trim()) return;
-    
-    setEnviandoIndicacao(true);
-    const sucesso = await registrarIndicacao(emailIndicacao);
-    if (sucesso) {
-      setEmailIndicacao('');
+  const [estatisticas, setEstatisticas] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const carregarEstatisticas = async () => {
+      const stats = await obterEstatisticas();
+      setEstatisticas(stats);
+    };
+    carregarEstatisticas();
+  }, [obterEstatisticas]);
+
+  const handleCompartilhar = async () => {
+    try {
+      await compartilharIndicacao();
+      toast.success('Link de indicação copiado!', {
+        description: 'Compartilhe com suas amigas para ganharem bônus juntas!'
+      });
+    } catch (error) {
+      toast.error('Erro ao compartilhar link');
     }
-    setEnviandoIndicacao(false);
-  };
-
-  const calcularBonusTotal = (indicacao: any) => {
-    let total = 0;
-    if (indicacao.bonus_cadastro_pago) total += 5;
-    if (indicacao.bonus_primeiro_item_pago) total += 5;
-    if (indicacao.bonus_primeira_compra_pago) total += 5;
-    return total;
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Carregando indicações...</div>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando indicações...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <p className="text-red-600 text-center">{error}</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-gray-900">💫 Sistema de Indicações</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-          Convide suas amigas para o GiraMãe e ganhe Girinhas toda vez que elas se engajarem!
+    <div className="container mx-auto px-4 py-6 space-y-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <Users className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema de Indicações</h1>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          Indique amigas para o GiraMãe e ganhe bônus quando elas se cadastrarem, 
+          publicarem o primeiro item ou fizerem a primeira compra!
         </p>
       </div>
 
-      {/* Card de Compartilhamento */}
+      {/* Estatísticas */}
+      {estatisticas && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <Users className="w-8 h-8 text-purple-500" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold">{estatisticas.totalIndicacoes}</p>
+                  <p className="text-gray-600 text-sm">Indicações Feitas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <Gift className="w-8 h-8 text-green-500" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold">{estatisticas.totalBonusRecebido}</p>
+                  <p className="text-gray-600 text-sm">Girinhas Ganhas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <CheckCircle className="w-8 h-8 text-blue-500" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold">{estatisticas.bonusCadastro}</p>
+                  <p className="text-gray-600 text-sm">Cadastros</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center">
+                <Trophy className="w-8 h-8 text-yellow-500" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold">{estatisticas.bonusPrimeiraCompra}</p>
+                  <p className="text-gray-600 text-sm">Primeiras Compras</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Compartilhar Link */}
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5 text-purple-600" />
-            Compartilhar Indicação
-          </CardTitle>
-          <CardDescription>
-            Compartilhe o GiraMãe e ganhe até 15 Girinhas por amiga indicada!
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="bg-white p-4 rounded-lg border">
-            <h3 className="font-semibold mb-3">🎁 Como funciona:</h3>
-            <div className="grid gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <Gift className="h-4 w-4 text-green-500" />
-                <span><strong>+5 Girinhas</strong> quando sua amiga se cadastra</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Gift className="h-4 w-4 text-blue-500" />
-                <span><strong>+5 Girinhas</strong> quando ela publica o primeiro item</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Gift className="h-4 w-4 text-purple-500" />
-                <span><strong>+5 Girinhas</strong> quando ela faz a primeira compra</span>
-              </div>
-            </div>
-          </div>
-          
-          <Button 
-            onClick={compartilharIndicacao}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            size="lg"
-          >
-            <Share2 className="h-4 w-4 mr-2" />
+            <Share2 className="w-5 h-5 text-purple-600" />
             Compartilhar Link de Indicação
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-700 mb-4">
+            Compartilhe seu link de indicação e ganhe bônus quando suas amigas se juntarem ao GiraMãe!
+          </p>
+          <Button onClick={handleCompartilhar} className="w-full md:w-auto">
+            <Copy className="w-4 h-4 mr-2" />
+            Compartilhar Link
           </Button>
         </CardContent>
       </Card>
 
-      {/* Card de Indicação Manual */}
+      {/* Minhas Indicações */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-600" />
-            Indicar por Email
+            <TrendingUp className="w-5 h-5 text-green-600" />
+            Minhas Indicações ({indicacoes.length})
           </CardTitle>
-          <CardDescription>
-            Se sua amiga já tem conta, indique ela diretamente pelo email
-          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email da amiga</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="email@exemplo.com"
-              value={emailIndicacao}
-              onChange={(e) => setEmailIndicacao(e.target.value)}
-            />
-          </div>
-          <Button 
-            onClick={handleIndicar}
-            disabled={!emailIndicacao.trim() || enviandoIndicacao}
-            className="w-full"
-          >
-            {enviandoIndicacao ? 'Registrando...' : 'Registrar Indicação'}
-          </Button>
+        <CardContent>
+          {indicacoes.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg font-medium mb-2">Nenhuma indicação ainda</p>
+              <p>Compartilhe seu link para começar a indicar amigas!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {indicacoes.map((indicacao) => (
+                <div key={indicacao.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarImage src={indicacao.profiles?.avatar_url || ''} />
+                      <AvatarFallback>
+                        {indicacao.profiles?.nome?.charAt(0) || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{indicacao.profiles?.nome || 'Usuário'}</p>
+                      <p className="text-sm text-gray-600">
+                        Indicado em {format(new Date(indicacao.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    {indicacao.bonus_cadastro_pago && (
+                      <Badge variant="default">Cadastro ✓</Badge>
+                    )}
+                    {indicacao.bonus_primeiro_item_pago && (
+                      <Badge variant="secondary">1º Item ✓</Badge>
+                    )}
+                    {indicacao.bonus_primeira_compra_pago && (
+                      <Badge variant="outline">1ª Compra ✓</Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Minhas Indicações */}
+      {/* Quem me indicou */}
+      {indicados.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-green-600" />
-              Minhas Indicações ({indicacoes.length})
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Quem me indicou
             </CardTitle>
-            <CardDescription>
-              Amigas que você indicou para o GiraMãe
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {indicacoes.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">
-                Você ainda não fez nenhuma indicação
-              </p>
-            ) : (
-              indicacoes.map((indicacao) => (
-                <div key={indicacao.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{indicacao.profiles?.nome || 'Nome não disponível'}</p>
-                      <p className="text-sm text-gray-500">{indicacao.profiles?.email}</p>
-                    </div>
-                    <Badge variant="outline" className="bg-green-50 text-green-700">
-                      +{calcularBonusTotal(indicacao)} Girinhas
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className={`flex items-center gap-1 ${indicacao.bonus_cadastro_pago ? 'text-green-600' : 'text-gray-400'}`}>
-                      {indicacao.bonus_cadastro_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                      Cadastro
-                    </div>
-                    <div className={`flex items-center gap-1 ${indicacao.bonus_primeiro_item_pago ? 'text-green-600' : 'text-gray-400'}`}>
-                      {indicacao.bonus_primeiro_item_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                      1º Item
-                    </div>
-                    <div className={`flex items-center gap-1 ${indicacao.bonus_primeira_compra_pago ? 'text-green-600' : 'text-gray-400'}`}>
-                      {indicacao.bonus_primeira_compra_pago ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                      1ª Compra
-                    </div>
+          <CardContent>
+            <div className="space-y-4">
+              {indicados.map((indicacao) => (
+                <div key={indicacao.id} className="flex items-center gap-3 p-4 border rounded-lg">
+                  <Avatar>
+                    <AvatarImage src={indicacao.profiles?.avatar_url || ''} />
+                    <AvatarFallback>
+                      {indicacao.profiles?.nome?.charAt(0) || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium">{indicacao.profiles?.nome || 'Usuário'}</p>
+                    <p className="text-sm text-gray-600">
+                      Te indicou em {format(new Date(indicacao.created_at), 'dd/MM/yyyy', { locale: ptBR })}
+                    </p>
                   </div>
                 </div>
-              ))
-            )}
+              ))}
+            </div>
           </CardContent>
         </Card>
-
-        {/* Quem me indicou */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-gold-600" />
-              Quem me indicou ({indicados.length})
-            </CardTitle>
-            <CardDescription>
-              Mães que te trouxeram para o GiraMãe
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {indicados.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">
-                Você chegou aqui por conta própria! 🌟
-              </p>
-            ) : (
-              indicados.map((indicacao) => (
-                <div key={indicacao.id} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{indicacao.profiles?.nome || 'Nome não disponível'}</p>
-                      <p className="text-sm text-gray-500">Te indicou em {new Date(indicacao.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <Badge variant="secondary">
-                      Indicadora
-                    </Badge>
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      )}
     </div>
   );
 };

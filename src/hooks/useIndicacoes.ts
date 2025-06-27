@@ -94,46 +94,6 @@ export const useIndicacoes = () => {
     }
   };
 
-  const registrarIndicacao = async (emailIndicado: string) => {
-    if (!user) return false;
-
-    try {
-      setLoading(true);
-      
-      // Buscar usuário pelo email
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', emailIndicado)
-        .single();
-
-      if (profileError || !profileData) {
-        setError('Usuário não encontrado com este email');
-        return false;
-      }
-
-      const { error } = await supabase
-        .from('indicacoes')
-        .insert({
-          indicador_id: user.id,
-          indicado_id: profileData.id
-        });
-
-      if (error) throw error;
-
-      // Recarregar indicações
-      await buscarMinhasIndicacoes();
-      
-      return true;
-    } catch (err) {
-      console.error('Erro ao registrar indicação:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao registrar indicação');
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const compartilharIndicacao = async () => {
     if (!user) return;
 
@@ -149,7 +109,6 @@ export const useIndicacoes = () => {
       } else {
         // Fallback para navegadores que não suportam Web Share API
         await navigator.clipboard.writeText(linkIndicacao);
-        // Aqui você pode adicionar um toast de sucesso
         console.log('Link copiado para a área de transferência!');
       }
     } catch (err) {
@@ -217,7 +176,6 @@ export const useIndicacoes = () => {
     error,
     buscarMinhasIndicacoes,
     buscarQuemMeIndicou,
-    registrarIndicacao,
     compartilharIndicacao,
     obterEstatisticas
   };
