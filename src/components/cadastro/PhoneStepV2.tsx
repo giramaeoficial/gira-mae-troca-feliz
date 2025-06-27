@@ -1,18 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PhoneStepV2Props {
   onComplete: () => void;
 }
 
 const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
+  const { user } = useAuth();
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const { toast } = useToast();
+
+  // Carregar dados do perfil ao inicializar
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('telefone, telefone_verificado')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Erro ao carregar dados do perfil:', error);
+          return;
+        }
+
+        if (data) {
+          if (data.telefone) {
+            setPhone(formatPhoneDisplay(data.telefone.replace('55', '')));
+          }
+          
+          if (data.telefone_verificado) {
+            setIsPhoneVerified(true);
+            console.log('✅ Telefone já verificado, avançando automaticamente...');
+            // Se telefone já foi verificado, avançar imediatamente
+            setTimeout(() => {
+              onComplete();
+            }, 500);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadProfileData();
+  }, [user, onComplete]);
 
   const cleanPhoneNumber = (phoneNumber: string) => {
     // Remove tudo que não é número
@@ -51,12 +96,27 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
   };
 
   const handlePhoneChange = (value: string) => {
-    // Permitir apenas números, espaços, parênteses e hífen
+    // Se telefone já foi verificado, não permitir alteração
+    if (isPhoneVerified) {
+      toast({
+        title: "Telefone já verificado",
+        description: "Seu número já foi confirmado e não pode ser alterado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formatted = value.replace(/[^\d\s()\-]/g, '');
     setPhone(formatPhoneDisplay(formatted));
   };
 
   const handleSubmit = async () => {
+    // Se já foi verificado, apenas avançar
+    if (isPhoneVerified) {
+      onComplete();
+      return;
+    }
+
     if (!phone.trim()) {
       toast({
         title: "Campo obrigatório",
@@ -81,89 +141,109 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     setIsLoading(true);
     
     try {
-      console.log('📱 Enviando código via WhatsApp para:', cleanPhone);
+      console.log('📱 Salvando telefone e gerando código:', cleanPhone);
       
-      // Gerar código de 4 dígitos
-      const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-      console.log('🔢 Código gerado:', verificationCode);
-      
-      console.log('📤 Chamando Edge Function com:', { 
-        telefone: cleanPhone, 
-        codigo: verificationCode 
+      // Usar nova função que salva telefone e gera código
+      const { data, error } = await supabase.rpc('save_user_phone_with_code', {
+        p_telefone: cleanPhone
       });
+
+      if (error) {
+        console.error('❌ Erro ao salvar telefone:', error);
+        toast({
+          title: "Erro ao salvar telefone",
+          description: error.message || "Não foi possível salvar o telefone.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data?.success) {
+        toast({
+          title: "Erro",
+          description: data?.error || "Erro desconhecido.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('✅ Telefone salvo, código gerado:', data.verification_code);
       
-      // Chamar a Edge Function com os parâmetros corretos
-      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      // Enviar WhatsApp com o código gerado
+      const { data: whatsappData, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
         body: { 
           telefone: cleanPhone,
-          codigo: verificationCode,
+          codigo: data.verification_code,
           nome: 'usuário'
         }
       });
 
-      console.log('📥 Resposta da Edge Function:', { data, error });
-
-      if (error) {
-        console.error('❌ Erro da Edge Function:', error);
-        throw error;
+      if (whatsappError || !whatsappData?.success) {
+        console.error('❌ Erro no WhatsApp:', whatsappError);
+        toast({
+          title: "Erro ao enviar WhatsApp",
+          description: whatsappData?.error || "Falha no envio do código.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      if (!data || !data.success) {
-        console.error('❌ Resposta inválida da função:', data);
-        throw new Error(data?.error || 'Falha no envio do WhatsApp');
-      }
-
-      // Salvar código no banco após sucesso do envio
-      try {
-        const { error: saveError } = await supabase
-          .from('profiles')
-          .update({
-            telefone: cleanPhone,
-            verification_code: verificationCode,
-            verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutos
-            cadastro_step: 'code'
-          })
-          .eq('id', (await supabase.auth.getUser()).data.user?.id);
-
-        if (saveError) {
-          console.error('⚠️ Erro ao salvar código no banco:', saveError);
-          // Não falha aqui, pois o WhatsApp já foi enviado
-        } else {
-          console.log('✅ Código salvo no banco');
-        }
-      } catch (saveErr) {
-        console.error('⚠️ Erro ao salvar no banco:', saveErr);
-        // Não falha aqui
-      }
-
-      console.log('✅ WhatsApp enviado com sucesso:', data);
+      console.log('✅ WhatsApp enviado com sucesso');
       
       toast({
-        title: "WhatsApp enviado!",
+        title: "Código enviado!",
         description: `Código enviado para +55 ${formatPhoneDisplay(phone)} via WhatsApp.`,
       });
       
       onComplete();
     } catch (error: any) {
-      console.error('❌ Erro no envio:', error);
-      
-      let errorMessage = "Erro ao enviar código. Tente novamente.";
-      
-      if (error.message?.includes('63015')) {
-        errorMessage = "Número não autorizado no WhatsApp Sandbox. Verifique se seguiu as instruções de configuração.";
-      } else if (error.message?.includes('network')) {
-        errorMessage = "Erro de conexão. Verifique sua internet e tente novamente.";
-      }
-      
+      console.error('❌ Erro no processo:', error);
       toast({
-        title: "Erro ao enviar WhatsApp",
-        description: errorMessage,
+        title: "Erro",
+        description: "Erro interno. Tente novamente.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Loading inicial
+  if (initialLoading) {
+    return (
+      <div className="px-6 pb-5 pt-1">
+        <div className="flex items-center justify-center py-8">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="ml-2 text-gray-600">Carregando...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Se telefone já foi verificado, mostrar status
+  if (isPhoneVerified) {
+    return (
+      <div className="px-6 pb-5 pt-1">
+        <div className="text-center py-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Telefone já verificado!
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Seu número {phone} já foi confirmado anteriormente.
+          </p>
+          <Button 
+            onClick={onComplete}
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+          >
+            Continuar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 pb-5 pt-1">
@@ -189,7 +269,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
             value={phone}
             onChange={(e) => handlePhoneChange(e.target.value)}
             className="pl-12"
-            disabled={isLoading}
+            disabled={isLoading || isPhoneVerified}
           />
         </div>
         

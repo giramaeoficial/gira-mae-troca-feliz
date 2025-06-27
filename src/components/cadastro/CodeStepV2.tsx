@@ -1,28 +1,82 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageCircle, Timer, RefreshCw } from 'lucide-react';
+import { MessageCircle, Timer, RefreshCw, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CodeStepV2Props {
   onComplete: () => void;
 }
 
 const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
+  const { user } = useAuth();
   const [codeInputs, setCodeInputs] = useState(['', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutos
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutos
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [initialLoading, setInitialLoading] = useState(true);
   const { toast } = useToast();
 
-  // Timer countdown
+  // Carregar dados do perfil e verificar status
   useEffect(() => {
-    if (timeLeft > 0) {
+    const loadProfileData = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('telefone, telefone_verificado, verification_code_expires')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Erro ao carregar dados do perfil:', error);
+          return;
+        }
+
+        if (data) {
+          setPhoneNumber(data.telefone || '');
+          
+          if (data.telefone_verificado) {
+            setIsPhoneVerified(true);
+            console.log('✅ Telefone já verificado, avançando automaticamente...');
+            // Se telefone já foi verificado, avançar imediatamente
+            setTimeout(() => {
+              onComplete();
+            }, 500);
+            return;
+          }
+
+          // Calcular tempo restante se há expiração
+          if (data.verification_code_expires) {
+            const expiresAt = new Date(data.verification_code_expires);
+            const now = new Date();
+            const secondsLeft = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+            setTimeLeft(secondsLeft);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadProfileData();
+  }, [user, onComplete]);
+
+  // Timer countdown - não avança automaticamente quando expira
+  useEffect(() => {
+    if (timeLeft > 0 && !isPhoneVerified) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     }
-  }, [timeLeft]);
+  }, [timeLeft, isPhoneVerified]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -30,8 +84,19 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatPhoneDisplay = (phone: string) => {
+    if (!phone) return '';
+    const cleaned = phone.replace(/\D/g, '').replace(/^55/, '');
+    if (cleaned.length >= 11) {
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
+    } else if (cleaned.length >= 10) {
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
+    }
+    return phone;
+  };
+
   const handleCodeInput = (index: number, value: string) => {
-    if (value.length > 1) return; // Apenas um dígito
+    if (value.length > 1) return;
     
     const newInputs = [...codeInputs];
     newInputs[index] = value;
@@ -51,7 +116,6 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    // Backspace - voltar para o input anterior
     if (e.key === 'Backspace' && !codeInputs[index] && index > 0) {
       const prevInput = document.getElementById(`code-${index - 1}`);
       prevInput?.focus();
@@ -59,6 +123,12 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
   };
 
   const handleSubmit = async (code?: string) => {
+    // Se já foi verificado, apenas avançar
+    if (isPhoneVerified) {
+      onComplete();
+      return;
+    }
+
     const finalCode = code || codeInputs.join('');
     
     if (finalCode.length !== 4) {
@@ -75,49 +145,47 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
     try {
       console.log('🔍 Verificando código:', finalCode);
       
-      // Chamar a função para verificar o código
       const { data, error } = await supabase.rpc('verify_phone_code', {
         p_code: finalCode
       });
 
       if (error) {
         console.error('❌ Erro ao verificar código:', error);
-        throw error;
+        toast({
+          title: "Erro na verificação",
+          description: error.message || "Erro ao verificar código.",
+          variant: "destructive",
+        });
+        setCodeInputs(['', '', '', '']);
+        const firstInput = document.getElementById('code-0');
+        firstInput?.focus();
+        return;
       }
 
-      if (data === true) {
+      if (data?.success) {
         console.log('✅ Código verificado com sucesso');
         toast({
           title: "Código verificado!",
           description: "Seu telefone foi confirmado com sucesso.",
         });
+        setIsPhoneVerified(true);
         onComplete();
       } else {
-        console.log('❌ Código inválido ou expirado');
+        console.log('❌ Código inválido:', data?.error);
         toast({
-          title: "Código inválido",
-          description: "Verifique o código e tente novamente.",
+          title: "Código incorreto",
+          description: data?.error || "Verifique o código e tente novamente.",
           variant: "destructive",
         });
-        // Limpar inputs para nova tentativa
         setCodeInputs(['', '', '', '']);
         const firstInput = document.getElementById('code-0');
         firstInput?.focus();
       }
     } catch (error: any) {
       console.error('❌ Erro na verificação:', error);
-      
-      let errorMessage = "Erro ao verificar código. Tente novamente.";
-      
-      if (error.message?.includes('expired') || error.message?.includes('expirado')) {
-        errorMessage = "Código expirado. Solicite um novo código.";
-      } else if (error.message?.includes('invalid') || error.message?.includes('incorreto')) {
-        errorMessage = "Código incorreto. Verifique e tente novamente.";
-      }
-      
       toast({
         title: "Erro na verificação",
-        description: errorMessage,
+        description: "Erro interno. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -126,39 +194,68 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
   };
 
   const handleResendCode = async () => {
+    if (isPhoneVerified) {
+      toast({
+        title: "Telefone já verificado",
+        description: "Seu número já foi confirmado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsResending(true);
     
     try {
-      console.log('🔄 Reenviando código via WhatsApp...');
+      console.log('🔄 Reenviando código...');
       
-      // Buscar o telefone do usuário no banco
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('telefone')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
+      // Usar função para reenviar código
+      const { data, error } = await supabase.rpc('resend_verification_code');
 
-      if (profileError || !profile?.telefone) {
-        throw new Error('Telefone não encontrado');
+      if (error) {
+        console.error('❌ Erro ao reenviar:', error);
+        toast({
+          title: "Erro ao reenviar",
+          description: error.message || "Não foi possível reenviar o código.",
+          variant: "destructive",
+        });
+        return;
       }
 
-      // Reenviar código
-      const { error } = await supabase.functions.invoke('send-whatsapp', {
+      if (!data?.success) {
+        toast({
+          title: "Erro",
+          description: data?.error || "Não foi possível reenviar.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Enviar novo código via WhatsApp
+      const { data: whatsappData, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
         body: { 
-          phone: profile.telefone,
-          method: 'whatsapp'
+          telefone: phoneNumber,
+          codigo: data.verification_code,
+          nome: 'usuário'
         }
       });
 
-      if (error) throw error;
+      if (whatsappError || !whatsappData?.success) {
+        console.error('❌ Erro no WhatsApp:', whatsappError);
+        toast({
+          title: "Erro ao enviar WhatsApp",
+          description: "Falha no envio do novo código.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Código reenviado!",
         description: "Um novo código foi enviado para seu WhatsApp.",
       });
       
-      // Reset timer
-      setTimeLeft(300);
+      // Reset timer para 10 minutos
+      setTimeLeft(600);
       
       // Limpar inputs
       setCodeInputs(['', '', '', '']);
@@ -169,13 +266,50 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
       console.error('❌ Erro ao reenviar:', error);
       toast({
         title: "Erro ao reenviar",
-        description: "Não foi possível reenviar o código. Tente novamente.",
+        description: "Erro interno. Tente novamente.",
         variant: "destructive",
       });
     } finally {
       setIsResending(false);
     }
   };
+
+  // Loading inicial
+  if (initialLoading) {
+    return (
+      <div className="px-6 pb-5 pt-1">
+        <div className="flex items-center justify-center py-8">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="ml-2 text-gray-600">Carregando...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Se telefone já foi verificado, mostrar status
+  if (isPhoneVerified) {
+    return (
+      <div className="px-6 pb-5 pt-1">
+        <div className="text-center py-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="w-8 h-8 text-green-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Telefone já verificado!
+          </h3>
+          <p className="text-sm text-gray-600 mb-4">
+            Seu número foi confirmado com sucesso.
+          </p>
+          <Button 
+            onClick={onComplete}
+            className="w-full bg-green-600 hover:bg-green-700 text-white"
+          >
+            Continuar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-6 pb-5 pt-1">
@@ -191,17 +325,25 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
             <span className="text-sm font-medium text-green-800">Código enviado via WhatsApp</span>
           </div>
           <p className="text-xs text-green-700">
-            Verifique as mensagens no seu WhatsApp e digite o código de 4 dígitos.
+            Enviado para: {formatPhoneDisplay(phoneNumber)}
           </p>
         </div>
 
         {/* Timer */}
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Timer className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600">
-            Código expira em: <span className="font-mono font-semibold text-orange-600">{formatTime(timeLeft)}</span>
-          </span>
-        </div>
+        {timeLeft > 0 ? (
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Timer className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-600">
+              Código expira em: <span className="font-mono font-semibold text-orange-600">{formatTime(timeLeft)}</span>
+            </span>
+          </div>
+        ) : (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-orange-800 text-center">
+              ⏰ Código expirado. Solicite um novo código para continuar.
+            </p>
+          </div>
+        )}
         
         {/* Code Inputs */}
         <div className="flex gap-3 justify-center mb-4">
@@ -216,7 +358,7 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
               onChange={(e) => handleCodeInput(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               className="w-12 h-12 text-center text-lg font-semibold border-2 focus:border-green-500"
-              disabled={isLoading}
+              disabled={isLoading || timeLeft === 0}
               autoComplete="off"
             />
           ))}
@@ -225,7 +367,7 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
         {/* Submit Button */}
         <Button 
           onClick={() => handleSubmit()}
-          disabled={isLoading || codeInputs.join('').length !== 4}
+          disabled={isLoading || codeInputs.join('').length !== 4 || timeLeft === 0}
           className="w-full bg-green-600 hover:bg-green-700 text-white mb-4"
         >
           {isLoading ? (
@@ -240,36 +382,29 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
         
         {/* Resend Button */}
         <div className="text-center">
-          {timeLeft > 0 ? (
-            <p className="text-sm text-gray-500">
-              Não recebeu o código? Aguarde {formatTime(timeLeft)} para reenviar.
-            </p>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleResendCode}
-              disabled={isResending}
-              className="text-green-600 border-green-600 hover:bg-green-50"
-            >
-              {isResending ? (
-                <div className="flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Reenviando...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  Reenviar código via WhatsApp
-                </div>
-              )}
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleResendCode}
+            disabled={isResending || timeLeft > 0}
+            className="text-green-600 border-green-600 hover:bg-green-50"
+          >
+            {isResending ? (
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                Reenviando...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" />
+                {timeLeft > 0 ? `Reenviar em ${formatTime(timeLeft)}` : 'Reenviar código via WhatsApp'}
+              </div>
+            )}
+          </Button>
         </div>
         
-        {/* Help */}
         <p className="text-xs text-gray-500 mt-4 text-center">
-          💡 Se não recebeu no WhatsApp, verifique se o número está correto e se tem internet
+          💡 Se não recebeu no WhatsApp, verifique se o número está correto
         </p>
       </div>
     </div>

@@ -43,21 +43,19 @@ const CadastroV2 = () => {
     setSteps(newSteps);
   }, [progress]);
 
-  // Lógica de auto-avanço simplificada
+  // Auto-avanço apenas do step Google
   useEffect(() => {
     const handleAutoAdvance = async () => {
-      // Aguardar carregamento completo
       if (authLoading || progressLoading) {
         return;
       }
 
-      // Se não há usuário, não fazer nada (AuthGuard vai tratar)
       if (!user) {
         setInitialProcessing(false);
         return;
       }
 
-      // Se está no step Google mas usuário já está logado, avançar
+      // Apenas auto-avançar do step Google se usuário está logado
       if (progress.step === 'google' && progress.status === 'incompleto') {
         console.log('✅ Usuário logado detectado, auto-avançando do step Google...');
         
@@ -94,6 +92,12 @@ const CadastroV2 = () => {
   const handleStepComplete = async () => {
     console.log('📋 Completando step atual:', progress.step);
     
+    // Não auto-avançar steps que precisam de verificação manual
+    if (progress.step === 'phone' || progress.step === 'code') {
+      console.log('⚠️ Step requer verificação manual:', progress.step);
+      return;
+    }
+    
     const success = await completeStep(progress.step);
     
     if (success && progress.step === 'address') {
@@ -114,8 +118,18 @@ const CadastroV2 = () => {
     const targetStepIndex = stepOrder.indexOf(stepKey);
     const currentStepIndex = stepOrder.indexOf(progress.step);
     
-    // Só permite voltar para steps já completados
+    // Só permite voltar para steps já completados (exceto phone/code se telefone já foi verificado)
     if (step?.completed && targetStepIndex < currentStepIndex) {
+      // Verificar se pode voltar para phone/code steps
+      if (stepKey === 'phone' || stepKey === 'code') {
+        toast({
+          title: "Step não editável",
+          description: "Telefone já foi verificado e não pode ser alterado.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       console.log('🔙 Voltando para step anterior:', stepKey);
       
       const success = await updateProgress(stepKey);
@@ -162,9 +176,9 @@ const CadastroV2 = () => {
       case 'google':
         return <GoogleStepV2 onComplete={handleStepComplete} />;
       case 'phone':
-        return <PhoneStepV2 onComplete={handleStepComplete} />;
+        return <PhoneStepV2 onComplete={() => completeStep('phone')} />;
       case 'code':
-        return <CodeStepV2 onComplete={handleStepComplete} />;
+        return <CodeStepV2 onComplete={() => completeStep('code')} />;
       case 'personal':
         return <PersonalStepV2 onComplete={handleStepComplete} />;
       case 'address':
