@@ -20,18 +20,23 @@ const Cadastro = () => {
     const [completedSteps, setCompletedSteps] = useState([]);
     const [isSigningIn, setIsSigningIn] = useState(false);
     const [loading, setLoading] = useState(false);
-
+    
     const [formData, setFormData] = useState({
+        // Dados básicos (do Google)
         nome: '',
         email: '',
         avatar_url: '',
+        
+        // Telefone e verificação
         telefone: '',
         telefone_verificado: false,
         codigo_sms: '',
-        bio: '',
+        
+        // Dados pessoais
         profissao: '',
         instagram: '',
-        data_nascimento: '',
+        
+        // Endereço
         cep: '',
         endereco: '',
         numero: '',
@@ -40,6 +45,8 @@ const Cadastro = () => {
         estado: '',
         complemento: '',
         ponto_referencia: '',
+        
+        // Filhos (do formulário original)
         sobre_filhos: '',
         num_criancas: '',
         idade_criancas: ''
@@ -78,7 +85,7 @@ const Cadastro = () => {
         }
     ];
 
-    // Auto-avança se Google logado
+    // Verificar se usuário está logado e avançar para próximo step
     useEffect(() => {
         if (user) {
             setFormData(prev => ({
@@ -87,15 +94,24 @@ const Cadastro = () => {
                 email: user.email || '',
                 avatar_url: user.user_metadata?.avatar_url || ''
             }));
-            if (currentStep === 0) completeStep(0);
+            
+            // Se já temos login do Google, pular para telefone
+            if (currentStep === 0) {
+                completeStep(0);
+            }
         }
     }, [user]);
 
     const completeStep = (stepIndex) => {
         const newCompleted = [...completedSteps];
-        if (!newCompleted.includes(stepIndex)) newCompleted.push(stepIndex);
-        setCompletedSteps(newCompleted);
-        if (stepIndex < steps.length - 1) setCurrentStep(stepIndex + 1);
+        if (!newCompleted.includes(stepIndex)) {
+            newCompleted.push(stepIndex);
+            setCompletedSteps(newCompleted);
+        }
+        
+        if (stepIndex < steps.length - 1) {
+            setCurrentStep(stepIndex + 1);
+        }
     };
 
     const editStep = (stepIndex) => {
@@ -104,12 +120,12 @@ const Cadastro = () => {
 
     const isStepCompleted = (stepIndex) => completedSteps.includes(stepIndex);
 
-    // --- Handlers
     const handleGoogleLogin = async () => {
         try {
             setIsSigningIn(true);
             await signInWithGoogle();
         } catch (error) {
+            console.error('Erro no login:', error);
             toast.error('Erro ao fazer login com Google. Tente novamente.');
         } finally {
             setIsSigningIn(false);
@@ -121,12 +137,14 @@ const Cadastro = () => {
             toast.error('Digite seu telefone');
             return;
         }
+        
         try {
             setLoading(true);
+            // Simular envio de SMS - aqui você implementaria a integração real
             await new Promise(resolve => setTimeout(resolve, 1000));
             toast.success('Código enviado por SMS!');
             completeStep(1);
-        } catch {
+        } catch (error) {
             toast.error('Erro ao enviar SMS');
         } finally {
             setLoading(false);
@@ -138,13 +156,15 @@ const Cadastro = () => {
             toast.error('Digite o código de 4 dígitos');
             return;
         }
+        
         try {
             setLoading(true);
+            // Simular verificação - aqui você implementaria a validação real
             await new Promise(resolve => setTimeout(resolve, 1000));
             setFormData(prev => ({ ...prev, telefone_verificado: true }));
             toast.success('Telefone verificado!');
             completeStep(2);
-        } catch {
+        } catch (error) {
             toast.error('Código inválido');
         } finally {
             setLoading(false);
@@ -156,6 +176,7 @@ const Cadastro = () => {
             toast.error('Nome é obrigatório');
             return;
         }
+        
         completeStep(3);
     };
 
@@ -164,8 +185,11 @@ const Cadastro = () => {
             toast.error('Complete pelo menos CEP, cidade e estado');
             return;
         }
+        
         try {
             setLoading(true);
+            
+            // Criar/atualizar perfil
             const { error } = await supabase
                 .from('profiles')
                 .upsert({
@@ -174,10 +198,9 @@ const Cadastro = () => {
                     nome: formData.nome,
                     avatar_url: formData.avatar_url,
                     telefone: formData.telefone,
-                    bio: formData.bio,
+                    bio: formData.sobre_filhos,
                     profissao: formData.profissao,
                     instagram: formData.instagram,
-                    data_nascimento: formData.data_nascimento || null,
                     cep: formData.cep,
                     endereco: formData.endereco,
                     numero: formData.numero,
@@ -188,7 +211,10 @@ const Cadastro = () => {
                     ponto_referencia: formData.ponto_referencia,
                     updated_at: new Date().toISOString()
                 });
+
             if (error) throw error;
+
+            // Dar bônus de boas-vindas
             await supabase
                 .from('transacoes')
                 .insert({
@@ -197,16 +223,18 @@ const Cadastro = () => {
                     valor: 50,
                     descricao: 'Bônus de boas-vindas'
                 });
+
             toast.success('Conta criada com sucesso! Bem-vinda ao GiraMãe! 🎉');
             navigate('/feed');
+            
         } catch (error) {
+            console.error('Erro ao criar conta:', error);
             toast.error('Erro ao criar conta. Tente novamente.');
         } finally {
             setLoading(false);
         }
     };
 
-    // Renderiza icone do step
     const renderStepIcon = (step, index) => {
         if (isStepCompleted(index)) {
             return (
@@ -215,6 +243,7 @@ const Cadastro = () => {
                 </div>
             );
         }
+        
         return (
             <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-all duration-200
                 ${index === currentStep ? 'bg-gradient-to-r from-primary to-pink-500 text-white shadow-md' : 'bg-pink-50 border border-pink-100'}`}>
@@ -223,17 +252,20 @@ const Cadastro = () => {
         );
     };
 
-    // Conteúdo de cada passo
     const renderCurrentStepContent = () => {
         const step = steps[currentStep];
+        
         switch (step.key) {
             case 'google':
                 return (
-                    <CardContent className="flex flex-col items-center space-y-6 py-8">
-                        <Button
+                    <>
+                        <p className="text-gray-600 mb-6 text-center">
+                            Clique para fazer login seguro com sua conta Google. Isso facilitará seu acesso e manterá seus dados protegidos.
+                        </p>
+                        <Button 
                             onClick={handleGoogleLogin}
                             disabled={isSigningIn}
-                            className="w-full max-w-xs bg-white border-2 border-pink-200 text-gray-700 hover:bg-pink-50 hover:border-pink-300 flex items-center justify-center gap-3 transition-all duration-200 shadow-sm"
+                            className="w-full bg-white border-2 border-pink-200 text-gray-700 hover:bg-pink-50 hover:border-pink-300 flex items-center justify-center gap-3 transition-all duration-200 shadow-sm"
                         >
                             <svg className="w-6 h-6" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -243,140 +275,162 @@ const Cadastro = () => {
                             </svg>
                             {isSigningIn ? 'Entrando...' : 'Entrar com Google'}
                         </Button>
-                    </CardContent>
+                    </>
                 );
+
             case 'telefone':
                 return (
-                    <CardContent className="space-y-4">
-                        <Label htmlFor="telefone">Celular</Label>
-                        <Input
-                            id="telefone"
-                            type="tel"
-                            placeholder="(11) 99999-9999"
-                            value={formData.telefone}
-                            onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
-                        />
-                        <Button
-                            onClick={handleSendSMS}
-                            disabled={loading}
-                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white transition-all duration-200"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Enviando...
-                                </>
-                            ) : (
-                                'Enviar código SMS'
-                            )}
-                        </Button>
-                    </CardContent>
+                    <>
+                        <p className="text-gray-600 mb-6">
+                            Vamos enviar um código por SMS para validar seu número. Isso garante a segurança da plataforma para todas as mães.
+                        </p>
+                        <div className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="telefone">Telefone/WhatsApp</Label>
+                                <Input 
+                                    id="telefone"
+                                    type="tel" 
+                                    placeholder="(11) 99999-9999"
+                                    value={formData.telefone}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, telefone: e.target.value }))}
+                                />
+                            </div>
+                            <Button 
+                                onClick={handleSendSMS}
+                                disabled={loading}
+                                className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
+                                size="lg"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Enviando...
+                                    </>
+                                ) : (
+                                    'Continuar'
+                                )}
+                            </Button>
+                        </div>
+                    </>
                 );
+
             case 'codigo':
                 return (
-                    <CardContent className="space-y-4">
-                        <p className="text-gray-600 mb-2">
-                            Enviamos um código para <strong>{formData.telefone}</strong>. Se precisar, você pode alterar seu número.
+                    <>
+                        <p className="text-gray-600 mb-6">
+                            Enviamos para <strong>{formData.telefone}</strong>. Se precisar, você pode alterar seu número.
                         </p>
-                        <div className="flex gap-2 justify-center">
-                            {[...Array(4)].map((_, i) => (
-                                <Input
-                                    key={i}
-                                    maxLength={1}
-                                    className="w-12 h-12 text-center text-xl font-bold"
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        const newCode = formData.codigo_sms.split('');
-                                        newCode[i] = value;
-                                        setFormData(prev => ({ ...prev, codigo_sms: newCode.join('') }));
-                                        if (value && i < 3) {
-                                            const nextInput = e.target.parentNode.children[i + 1];
-                                            if (nextInput) nextInput.focus();
-                                        }
-                                    }}
-                                />
-                            ))}
-                        </div>
-                        <div className="flex justify-center gap-4 text-sm">
-                            <button
-                                onClick={handleSendSMS}
-                                className="text-primary hover:text-pink-500 hover:underline transition-colors duration-200"
+                        <div className="space-y-6">
+                            <div className="flex gap-2 justify-center mb-4">
+                                {[...Array(4)].map((_, i) => (
+                                    <Input 
+                                        key={i}
+                                        maxLength={1}
+                                        className="w-12 h-12 text-center text-xl font-bold"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            const newCode = formData.codigo_sms.split('');
+                                            newCode[i] = value;
+                                            setFormData(prev => ({ ...prev, codigo_sms: newCode.join('') }));
+                                            
+                                            if (value && i < 3) {
+                                                const nextInput = e.target.parentNode.children[i + 1];
+                                                if (nextInput) nextInput.focus();
+                                            }
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                            <div className="flex justify-center gap-4 text-sm mb-6">
+                                <button 
+                                    onClick={handleSendSMS}
+                                    className="text-primary hover:text-pink-500 hover:underline transition-colors duration-200"
+                                >
+                                    Reenviar código por SMS
+                                </button>
+                                <button className="text-primary hover:text-pink-500 hover:underline transition-colors duration-200">
+                                    Reenviar código por ligação
+                                </button>
+                            </div>
+                            <Button 
+                                onClick={handleVerifySMS}
+                                disabled={loading}
+                                className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
+                                size="lg"
                             >
-                                Reenviar por SMS
-                            </button>
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Verificando...
+                                    </>
+                                ) : (
+                                    'Confirmar código'
+                                )}
+                            </Button>
                         </div>
-                        <Button
-                            onClick={handleVerifySMS}
-                            disabled={loading}
-                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white transition-all duration-200"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Verificando...
-                                </>
-                            ) : (
-                                'Confirmar código'
-                            )}
-                        </Button>
-                    </CardContent>
+                    </>
                 );
+
             case 'pessoais':
                 return (
-                    <CardContent className="space-y-6">
+                    <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="nome">Nome completo</Label>
-                                <Input
-                                    id="nome"
-                                    placeholder="Seu nome completo"
+                                <Input 
+                                    id="nome" 
+                                    placeholder="Seu nome completo" 
                                     value={formData.nome}
                                     onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
                                 />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="seu@email.com"
+                                <Input 
+                                    id="email" 
+                                    type="email" 
+                                    placeholder="seu@email.com" 
                                     value={formData.email}
                                     disabled
                                 />
                             </div>
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="telefone_display">Celular</Label>
-                                <Input
-                                    id="telefone_display"
+                                <Label htmlFor="telefone_display">Telefone/WhatsApp</Label>
+                                <Input 
+                                    id="telefone_display" 
+                                    placeholder="(11) 99999-9999"
                                     value={formData.telefone}
                                     disabled
                                 />
                             </div>
                             <div className="grid gap-2">
                                 <Label htmlFor="profissao">Profissão (opcional)</Label>
-                                <Input
-                                    id="profissao"
+                                <Input 
+                                    id="profissao" 
                                     placeholder="Ex: Designer, Professora"
                                     value={formData.profissao}
                                     onChange={(e) => setFormData(prev => ({ ...prev, profissao: e.target.value }))}
                                 />
                             </div>
                         </div>
+
                         <div className="grid gap-2">
                             <Label htmlFor="criancas">Sobre seus filhos</Label>
-                            <Textarea
-                                id="criancas"
+                            <Textarea 
+                                id="criancas" 
                                 placeholder="Ex: Tenho 1 filho de 2 anos, Lorenzo, que adora brincar no parque..."
                                 value={formData.sobre_filhos}
                                 onChange={(e) => setFormData(prev => ({ ...prev, sobre_filhos: e.target.value }))}
                             />
                         </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="numCriancas">Número de filhos</Label>
-                                <Select
+                                <Select 
                                     value={formData.num_criancas}
                                     onValueChange={(value) => setFormData(prev => ({ ...prev, num_criancas: value }))}
                                 >
@@ -410,27 +464,30 @@ const Cadastro = () => {
                                 </Select>
                             </div>
                         </div>
-                        <Button
+
+                        <Button 
                             onClick={handleSavePessoais}
-                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
+                            size="lg"
                         >
-                            Salvar e continuar
+                            Salvar e Continuar
                         </Button>
-                    </CardContent>
+                    </div>
                 );
+
             case 'endereco':
                 return (
-                    <CardContent className="space-y-6">
+                    <div className="space-y-6">
                         <div className="grid gap-2">
                             <Label htmlFor="endereco">Endereço</Label>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <Input
-                                    placeholder="Bairro"
+                                <Input 
+                                    placeholder="Bairro" 
                                     value={formData.bairro}
                                     onChange={(e) => setFormData(prev => ({ ...prev, bairro: e.target.value }))}
                                 />
-                                <Input
-                                    placeholder="Cidade"
+                                <Input 
+                                    placeholder="Cidade" 
                                     value={formData.cidade}
                                     onChange={(e) => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
                                 />
@@ -451,48 +508,23 @@ const Cadastro = () => {
                                 </Select>
                             </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="cep">CEP</Label>
-                                <Input
-                                    id="cep"
-                                    placeholder="00000-000"
-                                    value={formData.cep}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, cep: e.target.value }))}
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="numero">Número</Label>
-                                <Input
-                                    id="numero"
-                                    placeholder="123"
-                                    value={formData.numero}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, numero: e.target.value }))}
-                                />
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="endereco_rua">Rua/Endereço</Label>
-                            <Input
-                                id="endereco_rua"
-                                placeholder="Nome da rua"
-                                value={formData.endereco}
-                                onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
-                            />
-                        </div>
+
                         <div className="bg-gradient-to-r from-primary/10 to-purple-100 p-4 rounded-xl">
                             <div className="flex items-center gap-2 mb-2">
                                 <Sparkles className="w-5 h-5 text-primary" />
                                 <span className="font-semibold text-gray-800">Bônus de Boas-vindas</span>
                             </div>
                             <p className="text-sm text-gray-700">
-                                Você começará com <span className="font-bold text-primary">50 Girinhas</span> de presente para fazer suas primeiras trocas na comunidade!
+                                Você começará com <span className="font-bold text-primary">50 Girinhas</span> de presente 
+                                para fazer suas primeiras trocas na comunidade!
                             </p>
                         </div>
-                        <Button
+
+                        <Button 
                             onClick={handleFinalizarCadastro}
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+                            className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90" 
+                            size="lg"
                         >
                             {loading ? (
                                 <>
@@ -503,14 +535,14 @@ const Cadastro = () => {
                                 'Criar Minha Conta'
                             )}
                         </Button>
-                    </CardContent>
+                    </div>
                 );
+
             default:
                 return null;
         }
     };
 
-    // --- FINAL: renderização geral ---
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24 md:pb-8">
             <Header />
@@ -528,56 +560,50 @@ const Cadastro = () => {
                         </CardDescription>
                     </CardHeader>
 
-                    {/* Steps Progress */}
+                    {/* Steps Progress - Lista compacta no topo */}
                     <div className="px-6 mb-6">
                         <div className="space-y-3">
-                            {steps.map((step, index) => {
-                                const active = currentStep === index;
-                                const completed = isStepCompleted(index);
-                                return (
-                                    <div
-                                        key={step.key}
-                                        className={`flex items-center gap-4 p-3 rounded-lg transition-all duration-200
-                                            ${active ? 'bg-white shadow border border-pink-100' : completed ? 'bg-pink-50/70' : 'opacity-50'}
-                                            ${completed && index < steps.length - 1 ? 'group cursor-pointer hover:bg-pink-100' : ''}
-                                        `}
-                                    >
-                                        {renderStepIcon(step, index)}
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <h4 className="font-semibold text-gray-800">{step.title}</h4>
-                                                    <p className="text-sm text-gray-600">{step.description}</p>
-                                                </div>
-                                                {completed && index < steps.length - 1 && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => editStep(index)}
-                                                        className="p-2 h-8 w-8 hover:bg-pink-50 text-pink-600 hover:text-pink-700"
-                                                    >
-                                                        <Edit2 className="h-4 w-4" />
-                                                    </Button>
-                                                )}
+                            {steps.map((step, index) => (
+                                <div key={step.key} className="flex items-center gap-4 p-3 rounded-lg transition-all duration-200">
+                                    {renderStepIcon(step, index)}
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-gray-900">{step.title}</h4>
+                                                <p className="text-xs text-gray-500">{step.description}</p>
                                             </div>
+                                            {isStepCompleted(index) && index < steps.length - 1 && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => editStep(index)}
+                                                    className="p-1 h-6 w-6 hover:bg-pink-50 text-pink-600 hover:text-pink-700"
+                                                    title="Editar etapa"
+                                                >
+                                                    <Edit2 className="h-3 w-3" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Apenas etapa atual */}
-                    {renderCurrentStepContent()}
+                    {/* Current Step Content */}
+                    <CardContent className="space-y-6">
+                        {renderCurrentStepContent()}
+                    </CardContent>
 
                     {/* Footer Links */}
                     <CardContent className="pt-0">
                         <div className="text-center text-sm">
                             Já tem uma conta?{" "}
-                            <Link to="/auth" className="underline text-primary font-medium">
+                            <Link to="/login" className="underline text-primary font-medium">
                                 Faça login aqui
                             </Link>
                         </div>
+
                         <div className="text-xs text-gray-500 text-center mt-4">
                             Ao se cadastrar, você concorda com nossos{" "}
                             <Link to="#" className="underline">Termos de Uso</Link> e{" "}
@@ -586,6 +612,7 @@ const Cadastro = () => {
                     </CardContent>
                 </Card>
             </main>
+            
             <footer className="bg-muted py-8">
                 <div className="container mx-auto px-4 text-center text-muted-foreground">
                     <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
