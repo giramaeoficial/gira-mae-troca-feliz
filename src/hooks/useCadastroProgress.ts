@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,7 +26,7 @@ export const useCadastroProgress = () => {
     
     // Se cadastro está completo
     if (profileData.cadastro_status === 'completo') {
-      return 'cadastro_completo';
+      return 'address'; // Retorna o último step quando completo
     }
 
     // Lógica rigorosa baseada em dados verificados
@@ -54,7 +53,7 @@ export const useCadastroProgress = () => {
     }
     
     // Se chegou até aqui, cadastro deveria estar completo
-    return 'cadastro_completo';
+    return 'address'; // Retorna o último step
   }, []);
 
   const fetchProgress = useCallback(async () => {
@@ -104,10 +103,12 @@ export const useCadastroProgress = () => {
       
       // Determinar step atual baseado nos dados REAIS
       const currentStep = determineCurrentStep(data);
+      const isComplete = data.cadastro_status === 'completo';
       
       console.log('✅ Step determinado:', {
         stepNoBanco: data.cadastro_step,
         stepDetectado: currentStep,
+        isComplete: isComplete,
         dadosVerificados: {
           telefone: !!data.telefone,
           telefoneVerificado: !!data.telefone_verificado,
@@ -118,18 +119,18 @@ export const useCadastroProgress = () => {
       
       setProgress({
         step: currentStep,
-        status: currentStep === 'cadastro_completo' ? 'completo' : 'incompleto'
+        status: isComplete ? 'completo' : 'incompleto'
       });
 
       // Sincronizar step no banco se necessário (mas não forçar se dados estão inconsistentes)
-      if (currentStep !== data.cadastro_step && currentStep !== 'cadastro_completo') {
+      if (currentStep !== data.cadastro_step && !isComplete) {
         console.log('🔄 Sincronizando step no banco:', data.cadastro_step, '->', currentStep);
         
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
             cadastro_step: currentStep,
-            cadastro_status: currentStep === 'cadastro_completo' ? 'completo' : 'incompleto'
+            cadastro_status: isComplete ? 'completo' : 'incompleto'
           })
           .eq('id', user.id);
 
@@ -240,9 +241,9 @@ export const useCadastroProgress = () => {
     }
     
     const currentIndex = STEP_ORDER.indexOf(currentStep);
-    const next = nextStep || (currentIndex < STEP_ORDER.length - 1 ? STEP_ORDER[currentIndex + 1] : 'cadastro_completo');
+    const next = nextStep || (currentIndex < STEP_ORDER.length - 1 ? STEP_ORDER[currentIndex + 1] : 'address');
     
-    if (next === 'cadastro_completo') {
+    if (currentIndex === STEP_ORDER.length - 1 || next === currentStep) {
       console.log('✅ Cadastro completo!');
       return await updateProgress('address', 'completo');
     } else {
