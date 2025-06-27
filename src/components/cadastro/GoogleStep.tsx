@@ -5,7 +5,7 @@ import { Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface GoogleStepProps {
-  onComplete: () => void;
+  onComplete: (userData?: any) => void;
   onGoogleLogin: () => Promise<void>;
   isLoading: boolean;
 }
@@ -17,7 +17,8 @@ const GoogleStep: React.FC<GoogleStepProps> = ({ onComplete, onGoogleLogin, isLo
     try {
       setIsGoogleLoading(true);
       await onGoogleLogin();
-      onComplete();
+      // Após o login bem-sucedido, avançar para o próximo step
+      onComplete({ googleAuth: true });
     } catch (error) {
       console.error('Erro no login com Google:', error);
     } finally {
@@ -29,11 +30,7 @@ const GoogleStep: React.FC<GoogleStepProps> = ({ onComplete, onGoogleLogin, isLo
     <div className="px-6 pb-6 pt-2">
       <div className="text-center mb-6">
         <div className="w-16 h-16 bg-gradient-to-r from-primary/10 to-pink-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <img 
-            src="https://www.svgrepo.com/show/475656/google-color.svg" 
-            alt="Google" 
-            className="w-10 h-10"
-          />
+          <Sparkles className="w-10 h-10 text-primary" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
           Entre com sua conta Google

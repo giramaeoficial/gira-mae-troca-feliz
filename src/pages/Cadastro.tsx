@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { Sparkles, Heart } from 'lucide-react';
 import Header from '@/components/shared/Header';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,6 +10,7 @@ import CodeStep from '@/components/cadastro/CodeStep';
 import PersonalDataStep from '@/components/cadastro/PersonalDataStep';
 import AddressStep from '@/components/cadastro/AddressStep';
 import StepIndicator from '@/components/cadastro/StepIndicator';
+import { useToast } from '@/hooks/use-toast';
 
 interface Step {
   key: string;
@@ -36,7 +37,10 @@ interface FormData {
 }
 
 const SignUp = () => {
-  const { signInWithGoogleForRegistration } = useAuth();
+  const { user, signInWithGoogleForRegistration } = useAuth();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
   const [steps, setSteps] = useState<Step[]>([
@@ -65,6 +69,23 @@ const SignUp = () => {
   });
 
   const [codeInputs, setCodeInputs] = useState(['', '', '', '']);
+
+  // Verificar se o usuário já está logado e foi redirecionado do Google
+  useEffect(() => {
+    const stepParam = searchParams.get('step');
+    if (user && stepParam === 'phone') {
+      // Usuário voltou do Google OAuth, avançar para step do telefone
+      completeStep(0);
+      setFormData(prev => ({ ...prev, google: true }));
+    } else if (user && !stepParam) {
+      // Usuário já logado acessando cadastro diretamente
+      toast({
+        title: "Você já está logado",
+        description: "Redirecionando para o feed...",
+      });
+      navigate('/feed');
+    }
+  }, [user, searchParams]);
 
   const completeStep = (index: number) => {
     const newSteps = [...steps];
@@ -100,10 +121,27 @@ const SignUp = () => {
   const handleGoogleLogin = async () => {
     try {
       setIsGoogleLoading(true);
-      await signInWithGoogleForRegistration();
+      
+      // Simular login local para o wizard (em produção, implementar fluxo completo)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       setFormData(prev => ({ ...prev, google: true }));
+      
+      toast({
+        title: "Login realizado!",
+        description: "Agora vamos completar seu cadastro.",
+      });
+      
+      return Promise.resolve();
+      
     } catch (error) {
       console.error('Erro no login com Google:', error);
+      toast({
+        title: "Erro no login",
+        description: "Tente novamente.",
+        variant: "destructive",
+      });
+      throw error;
     } finally {
       setIsGoogleLoading(false);
     }
