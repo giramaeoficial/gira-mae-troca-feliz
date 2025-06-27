@@ -26,6 +26,7 @@ const CadastroV2 = () => {
   const { toast } = useToast();
   const { progress, loading, completeStep } = useCadastroProgress();
   const [steps, setSteps] = useState<Step[]>([]);
+  const [autoAdvanceProcessed, setAutoAdvanceProcessed] = useState(false);
 
   // Definir steps baseado no progresso
   useEffect(() => {
@@ -41,6 +42,15 @@ const CadastroV2 = () => {
 
     setSteps(newSteps);
   }, [progress]);
+
+  // FASE 2: Lógica de auto-avanço para usuários já autenticados
+  useEffect(() => {
+    if (!loading && user && progress.step === 'google' && progress.status === 'incompleto' && !autoAdvanceProcessed) {
+      console.log('Auto-avançando do step Google para Phone...');
+      setAutoAdvanceProcessed(true);
+      completeStep('google');
+    }
+  }, [loading, user, progress.step, progress.status, completeStep, autoAdvanceProcessed]);
 
   const getStepTitle = (stepKey: string) => {
     const titles = {
@@ -147,7 +157,7 @@ const CadastroV2 = () => {
               </div>
             </div>
 
-            {/* Steps Indicator */}
+            {/* FASE 1: Steps Indicator - Removido o título duplicado */}
             <div className="px-6 py-4 bg-gray-50 border-b border-gray-100">
               <div className="flex items-center justify-between">
                 {steps.map((step, index) => (
@@ -170,15 +180,12 @@ const CadastroV2 = () => {
                   </div>
                 ))}
               </div>
-              <div className="mt-2 text-center">
-                <p className="text-xs text-gray-600">
-                  {steps.find(s => s.active)?.title || 'Carregando...'}
-                </p>
-              </div>
             </div>
 
-            {/* Step Content */}
-            {renderStepContent()}
+            {/* FASE 3: Step Content - Melhor espaçamento */}
+            <div className="min-h-[300px]">
+              {renderStepContent()}
+            </div>
 
             {/* Bônus sempre visível */}
             <div className="bg-gradient-to-r from-primary/10 via-pink-500/10 to-purple-100 p-4 rounded-xl m-4">
