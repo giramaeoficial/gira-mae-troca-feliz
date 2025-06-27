@@ -1,4 +1,4 @@
-
+// src/App.tsx - SUBSTITUA COMPLETAMENTE
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,8 +7,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
-import Login from '@/pages/Login';
-import Cadastro from '@/pages/Cadastro';
+import CadastroV2 from '@/pages/CadastroV2'; // Usar CadastroV2
+import AuthGuard from '@/components/auth/AuthGuard';
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
@@ -35,26 +35,111 @@ function App() {
       <SonnerToaster />
       <BrowserRouter>
         <Routes>
+          {/* ROTAS PÚBLICAS (sem proteção) */}
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/feed" element={<FeedOptimized />} />
-          <Route path="/buscar-itens" element={<BuscarItens />} />
-          <Route path="/publicar" element={<PublicarItem />} />
-          <Route path="/missoes" element={<Missoes />} />
-          <Route path="/mensagens" element={<Mensagens />} />
-          <Route path="/mensagens/:conversaId" element={<Mensagens />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="/perfil/editar" element={<EditarPerfil />} />
-          <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
-          <Route path="/carteira" element={<Carteira />} />
-          <Route path="/comprar-girinhas" element={<ComprarGirinhas />} />
-          <Route path="/indicacoes" element={<Indicacoes />} />
-          <Route path="/item/:id" element={<DetalhesItem />} />
-          <Route path="/minhas-reservas" element={<MinhasReservas />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          
+          {/* ROTA DE CADASTRO (parcialmente protegida) */}
+          <Route path="/cadastro" element={<CadastroV2 />} />
+          
+          {/* TODAS AS OUTRAS ROTAS PROTEGIDAS */}
+          <Route path="/feed" element={
+            <AuthGuard>
+              <FeedOptimized />
+            </AuthGuard>
+          } />
+          
+          <Route path="/buscar-itens" element={
+            <AuthGuard>
+              <BuscarItens />
+            </AuthGuard>
+          } />
+          
+          <Route path="/publicar" element={
+            <AuthGuard>
+              <PublicarItem />
+            </AuthGuard>
+          } />
+          
+          <Route path="/missoes" element={
+            <AuthGuard>
+              <Missoes />
+            </AuthGuard>
+          } />
+          
+          <Route path="/mensagens" element={
+            <AuthGuard>
+              <Mensagens />
+            </AuthGuard>
+          } />
+          
+          <Route path="/mensagens/:conversaId" element={
+            <AuthGuard>
+              <Mensagens />
+            </AuthGuard>
+          } />
+          
+          <Route path="/perfil" element={
+            <AuthGuard>
+              <Perfil />
+            </AuthGuard>
+          } />
+          
+          <Route path="/perfil/editar" element={
+            <AuthGuard>
+              <EditarPerfil />
+            </AuthGuard>
+          } />
+          
+          <Route path="/perfil/:username" element={
+            <AuthGuard>
+              <PerfilPublicoMae />
+            </AuthGuard>
+          } />
+          
+          <Route path="/carteira" element={
+            <AuthGuard>
+              <Carteira />
+            </AuthGuard>
+          } />
+          
+          <Route path="/comprar-girinhas" element={
+            <AuthGuard>
+              <ComprarGirinhas />
+            </AuthGuard>
+          } />
+          
+          <Route path="/indicacoes" element={
+            <AuthGuard>
+              <Indicacoes />
+            </AuthGuard>
+          } />
+          
+          <Route path="/item/:id" element={
+            <AuthGuard>
+              <DetalhesItem />
+            </AuthGuard>
+          } />
+          
+          <Route path="/minhas-reservas" element={
+            <AuthGuard>
+              <MinhasReservas />
+            </AuthGuard>
+          } />
+          
+          <Route path="/configuracoes" element={
+            <AuthGuard>
+              <Configuracoes />
+            </AuthGuard>
+          } />
+          
+          <Route path="/admin" element={
+            <AuthGuard>
+              <AdminDashboard />
+            </AuthGuard>
+          } />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
