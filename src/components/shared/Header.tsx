@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,42 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cadastroIncompleto, setCadastroIncompleto] = useState(false);
+  const [loadingCadastroStatus, setLoadingCadastroStatus] = useState(true);
+
+  // ✅ NOVA VERIFICAÇÃO ADICIONADA - Verificar se o usuário tem cadastro incompleto
+  useEffect(() => {
+    const checkCadastroStatus = async () => {
+      if (!user) {
+        setLoadingCadastroStatus(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('cadastro_status')
+          .eq('id', user.id)
+          .single();
+
+        if (!error && data) {
+          setCadastroIncompleto(data.cadastro_status === 'incompleto');
+        }
+      } catch (error) {
+        console.error('Erro ao verificar status do cadastro:', error);
+        setCadastroIncompleto(true); // Por segurança, assumir incompleto
+      } finally {
+        setLoadingCadastroStatus(false);
+      }
+    };
+
+    checkCadastroStatus();
+  }, [user]);
+
+  // ✅ NOVA CONDIÇÃO ADICIONADA - Se usuário logado tem cadastro incompleto E está na página de cadastro, não mostrar header
+  if (user && cadastroIncompleto && location.pathname === '/cadastro') {
+    return null;
+  }
 
   const handleSignOut = async () => {
     try {
