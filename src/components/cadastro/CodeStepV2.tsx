@@ -145,24 +145,73 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
     try {
       console.log('🔍 Verificando código:', finalCode);
       
-      const { data, error } = await supabase.rpc('verify_phone_code', {
-        p_code: finalCode
-      });
+      // Verificar código diretamente no banco
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('verification_code, verification_code_expires, telefone_verificado')
+        .eq('id', user?.id)
+        .single();
 
-      if (error) {
-        console.error('❌ Erro ao verificar código:', error);
+      if (profileError) {
+        console.error('❌ Erro ao buscar perfil:', profileError);
         toast({
           title: "Erro na verificação",
-          description: error.message || "Erro ao verificar código.",
+          description: "Erro ao verificar código.",
           variant: "destructive",
         });
         setCodeInputs(['', '', '', '']);
-        const firstInput = document.getElementById('code-0');
-        firstInput?.focus();
         return;
       }
 
-      if (data?.success) {
+      if (profile?.telefone_verificado) {
+        console.log('✅ Telefone já verificado');
+        setIsPhoneVerified(true);
+        onComplete();
+        return;
+      }
+
+      if (!profile?.verification_code) {
+        toast({
+          title: "Código não encontrado",
+          description: "Solicite um novo código.",
+          variant: "destructive",
+        });
+        setCodeInputs(['', '', '', '']);
+        return;
+      }
+
+      if (profile.verification_code_expires && new Date(profile.verification_code_expires) < new Date()) {
+        toast({
+          title: "Código expirado",
+          description: "Solicite um novo código.",
+          variant: "destructive",
+        });
+        setCodeInputs(['', '', '', '']);
+        return;
+      }
+
+      if (profile.verification_code === finalCode) {
+        // Marcar como verificado
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            telefone_verificado: true,
+            verification_code: null,
+            verification_code_expires: null,
+            cadastro_step: 'personal'
+          })
+          .eq('id', user?.id);
+
+        if (updateError) {
+          console.error('❌ Erro ao atualizar perfil:', updateError);
+          toast({
+            title: "Erro na verificação",
+            description: "Erro ao confirmar código.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         console.log('✅ Código verificado com sucesso');
         toast({
           title: "Código verificado!",
@@ -171,10 +220,10 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
         setIsPhoneVerified(true);
         onComplete();
       } else {
-        console.log('❌ Código inválido:', data?.error);
+        console.log('❌ Código inválido');
         toast({
           title: "Código incorreto",
-          description: data?.error || "Verifique o código e tente novamente.",
+          description: "Verifique o código e tente novamente.",
           variant: "destructive",
         });
         setCodeInputs(['', '', '', '']);
@@ -208,23 +257,23 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
     try {
       console.log('🔄 Reenviando código...');
       
-      // Usar função para reenviar código
-      const { data, error } = await supabase.rpc('resend_verification_code');
+      // Gerar novo código
+      const newCode = Math.floor(1000 + Math.random() * 9000).toString();
+      const newExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          verification_code: newCode,
+          verification_code_expires: newExpiry
+        })
+        .eq('id', user?.id);
 
-      if (error) {
-        console.error('❌ Erro ao reenviar:', error);
+      if (updateError) {
+        console.error('❌ Erro ao atualizar código:', updateError);
         toast({
           title: "Erro ao reenviar",
-          description: error.message || "Não foi possível reenviar o código.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!data?.success) {
-        toast({
-          title: "Erro",
-          description: data?.error || "Não foi possível reenviar.",
+          description: "Não foi possível gerar um novo código.",
           variant: "destructive",
         });
         return;
@@ -234,7 +283,7 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
       const { data: whatsappData, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
         body: { 
           telefone: phoneNumber,
-          codigo: data.verification_code,
+          codigo: newCode,
           nome: 'usuário'
         }
       });

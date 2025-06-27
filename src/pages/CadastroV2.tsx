@@ -149,7 +149,7 @@ const CadastroV2 = () => {
   };
 
   const renderStepContent = () => {
-    if (progress.status === 'completo') {
+    if (progress.status === 'completo' || progress.step === 'cadastro_completo') {
       return (
         <div className="bg-white border-t border-gray-100 p-6 text-center">
           <div className="w-16 h-16 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">

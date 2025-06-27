@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,10 +144,18 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     try {
       console.log('📱 Salvando telefone e gerando código:', cleanPhone);
       
-      // Usar nova função que salva telefone e gera código
-      const { data, error } = await supabase.rpc('save_user_phone_with_code', {
-        p_telefone: cleanPhone
-      });
+      // Chamar função diretamente via SQL
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          telefone: cleanPhone,
+          verification_code: Math.floor(1000 + Math.random() * 9000).toString(),
+          verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          cadastro_step: 'code'
+        })
+        .eq('id', user?.id)
+        .select('verification_code')
+        .single();
 
       if (error) {
         console.error('❌ Erro ao salvar telefone:', error);
@@ -158,22 +167,24 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         return;
       }
 
-      if (!data?.success) {
+      const verificationCode = data?.verification_code;
+      
+      if (!verificationCode) {
         toast({
           title: "Erro",
-          description: data?.error || "Erro desconhecido.",
+          description: "Não foi possível gerar o código de verificação.",
           variant: "destructive",
         });
         return;
       }
 
-      console.log('✅ Telefone salvo, código gerado:', data.verification_code);
+      console.log('✅ Telefone salvo, código gerado:', verificationCode);
       
       // Enviar WhatsApp com o código gerado
       const { data: whatsappData, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
         body: { 
           telefone: cleanPhone,
-          codigo: data.verification_code,
+          codigo: verificationCode,
           nome: 'usuário'
         }
       });

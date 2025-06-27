@@ -27,7 +27,7 @@ export const useCadastroProgress = () => {
     
     // Se cadastro está completo
     if (profileData.cadastro_status === 'completo') {
-      return 'complete';
+      return 'cadastro_completo';
     }
 
     // Lógica rigorosa baseada em dados verificados
@@ -54,7 +54,7 @@ export const useCadastroProgress = () => {
     }
     
     // Se chegou até aqui, cadastro deveria estar completo
-    return 'complete';
+    return 'cadastro_completo';
   }, []);
 
   const fetchProgress = useCallback(async () => {
@@ -118,18 +118,18 @@ export const useCadastroProgress = () => {
       
       setProgress({
         step: currentStep,
-        status: currentStep === 'complete' ? 'completo' : 'incompleto'
+        status: currentStep === 'cadastro_completo' ? 'completo' : 'incompleto'
       });
 
       // Sincronizar step no banco se necessário (mas não forçar se dados estão inconsistentes)
-      if (currentStep !== data.cadastro_step && currentStep !== 'complete') {
+      if (currentStep !== data.cadastro_step && currentStep !== 'cadastro_completo') {
         console.log('🔄 Sincronizando step no banco:', data.cadastro_step, '->', currentStep);
         
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ 
             cadastro_step: currentStep,
-            cadastro_status: currentStep === 'complete' ? 'completo' : 'incompleto'
+            cadastro_status: currentStep === 'cadastro_completo' ? 'completo' : 'incompleto'
           })
           .eq('id', user.id);
 
@@ -240,11 +240,11 @@ export const useCadastroProgress = () => {
     }
     
     const currentIndex = STEP_ORDER.indexOf(currentStep);
-    const next = nextStep || (currentIndex < STEP_ORDER.length - 1 ? STEP_ORDER[currentIndex + 1] : 'complete');
+    const next = nextStep || (currentIndex < STEP_ORDER.length - 1 ? STEP_ORDER[currentIndex + 1] : 'cadastro_completo');
     
-    if (next === 'complete') {
+    if (next === 'cadastro_completo') {
       console.log('✅ Cadastro completo!');
-      return await updateProgress('complete', 'completo');
+      return await updateProgress('address', 'completo');
     } else {
       console.log('➡️ Avançando para:', next);
       return await updateProgress(next);
