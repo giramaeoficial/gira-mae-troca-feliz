@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -631,37 +630,23 @@ const FeedOptimized = () => {
                 const valorTotal = calcularValorTotal(item.valor_girinhas);
                 
                 return (
-                  <div key={item.id} className="relative group">
-                    <ItemCard
-                      item={{
-                        ...item,
-                        valor_girinhas: valorTotal.total
-                      }}
-                      onItemClick={handleItemClick}
-                      showActions={true}
-                      isFavorito={verificarSeFavorito(item.id)}
-                      onToggleFavorito={() => handleToggleFavorito(item.id)}
-                      onReservar={() => handleReservarItem(item.id)}
-                      onEntrarFila={() => handleEntrarFila(item.id)}
-                      actionState={actionStates[item.id]}
-                      filaInfo={filaInfo}
-                      reservas={reservas}
-                      currentUserId={user?.id}
-                    />
-                    
-                    {/* Tooltip com breakdown do preço */}
-                    {taxaTransacao > 0 && (
-                      <div className="absolute -bottom-8 left-2 right-2 bg-gray-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <div className="text-center">
-                          <div>Item: {valorTotal.valorItem} Girinhas</div>
-                          <div>Taxa ({taxaTransacao}%): {valorTotal.taxa} Girinhas</div>
-                          <div className="font-bold border-t border-gray-600 pt-1 mt-1">
-                            Total: {valorTotal.total} Girinhas
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <ItemCard
+                    key={item.id}
+                    item={{
+                      ...item,
+                      valor_girinhas: valorTotal.total
+                    }}
+                    onItemClick={handleItemClick}
+                    showActions={true}
+                    isFavorito={verificarSeFavorito(item.id)}
+                    onToggleFavorito={() => handleToggleFavorito(item.id)}
+                    onReservar={() => handleReservarItem(item.id)}
+                    onEntrarFila={() => handleEntrarFila(item.id)}
+                    actionState={actionStates[item.id]}
+                    filaInfo={filaInfo}
+                    reservas={reservas}
+                    currentUserId={user?.id}
+                  />
                 );
               })}
             </div>
