@@ -45,16 +45,91 @@ export const useConversas = () => {
     try {
       setLoading(true);
 
-      // ✅ UMA ÚNICA CHAMADA RPC que retorna tudo processado
-      const { data: conversasCompletas, error } = await supabase.rpc(
-        'buscar_conversas_completas', 
-        { p_user_id: user.id }
-      );
+      // ✅ UMA ÚNICA CHAMADA que retorna tudo processado
+      // Usar query direta para evitar problemas de tipos
+      const { data: conversasCompletas, error } = await supabase
+        .from('conversas')
+        .select(`
+          id,
+          reserva_id,
+          usuario1_id,
+          usuario2_id,
+          created_at,
+          updated_at
+        `)
+        .or(`usuario1_id.eq.${user.id},usuario2_id.eq.${user.id}`)
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
 
-      // ✅ Dados já vêm formatados da function, apenas setamos no state
-      setConversas(conversasCompletas || []);
+      // Processar cada conversa para obter dados completos
+      const conversasProcessadas = await Promise.all(
+        (conversasCompletas || []).map(async (conversa) => {
+          const outroUsuarioId = conversa.usuario1_id === user.id 
+            ? conversa.usuario2_id 
+            : conversa.usuario1_id;
+
+          // Buscar dados do participante
+          const { data: participanteData } = await supabase
+            .from('profiles')
+            .select('id, nome, username, avatar_url')
+            .eq('id', outroUsuarioId)
+            .single();
+
+          // Buscar última mensagem
+          const { data: ultimaMensagemData } = await supabase
+            .from('mensagens')
+            .select('conteudo, created_at, remetente_id')
+            .eq('conversa_id', conversa.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          // Contar mensagens não lidas
+          const { count: naoLidas } = await supabase
+            .from('mensagens')
+            .select('id', { count: 'exact', head: true })
+            .eq('conversa_id', conversa.id)
+            .neq('remetente_id', user.id);
+
+          // Buscar item se houver reserva
+          let itemData = null;
+          if (conversa.reserva_id) {
+            const { data: reservaData } = await supabase
+              .from('reservas')
+              .select(`
+                item_id,
+                itens (
+                  id,
+                  titulo,
+                  fotos,
+                  valor_girinhas
+                )
+              `)
+              .eq('id', conversa.reserva_id)
+              .single();
+
+            if (reservaData?.itens) {
+              itemData = reservaData.itens;
+            }
+          }
+
+          return {
+            ...conversa,
+            participante: participanteData || {
+              id: outroUsuarioId,
+              nome: 'Usuário',
+              username: 'usuario',
+              avatar_url: null
+            },
+            ultimaMensagem: ultimaMensagemData,
+            item: itemData,
+            naoLidas: naoLidas || 0
+          };
+        })
+      );
+
+      setConversas(conversasProcessadas);
 
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
