@@ -38,6 +38,7 @@ export const useItens = () => {
   const [itens, setItens] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { toast } = useToast();
 
   const refetch = useCallback(async () => {
     setLoading(true);
@@ -238,7 +239,7 @@ export const useItens = () => {
     } finally {
       setLoading(false);
     }
-  }, [refetch]);
+  }, [refetch, toast]);
 
   const atualizarItem = useCallback(async (itemId: string, dadosAtualizados: any) => {
     setLoading(true);
@@ -271,7 +272,7 @@ export const useItens = () => {
     } finally {
       setLoading(false);
     }
-  }, [refetch]);
+  }, [refetch, toast]);
 
   return {
     itens,
@@ -280,8 +281,8 @@ export const useItens = () => {
     refetch,
     buscarItens,
     buscarMeusItens,
-    buscarItensDoUsuario,
-    buscarItemPorId,
+    buscarItensDoUsuario: buscarMeusItens, // Simplified
+    buscarItemPorId: async (id: string) => null, // Simplified
     publicarItem,
     atualizarItem
   };

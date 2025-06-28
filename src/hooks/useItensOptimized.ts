@@ -1,4 +1,5 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -8,13 +9,15 @@ interface Location {
   bairro?: string;
 }
 
-interface Item {
+export interface Item {
   id: string;
   titulo: string;
   descricao: string;
   categoria: string;
+  subcategoria?: string;
   estado_conservacao: string;
   tamanho?: string;
+  tamanho_categoria?: string;
   tamanho_valor?: string;
   genero?: string;
   valor_girinhas: number;
@@ -36,7 +39,6 @@ interface Item {
 }
 
 interface UseItensInteligentesProps {
-  termo?: string;
   categoria?: string;
   subcategoria?: string;
   genero?: string;
@@ -52,7 +54,6 @@ interface UseItensInteligentesProps {
 }
 
 export const useItensInteligentes = ({
-  termo,
   categoria,
   subcategoria,
   genero,
@@ -79,10 +80,6 @@ export const useItensInteligentes = ({
       .gte('valor_girinhas', precoMin)
       .lte('valor_girinhas', precoMax)
       .range(pageParam * 10, (pageParam + 1) * 10 - 1);
-
-    if (termo) {
-      query = query.ilike('titulo', `%${termo}%`);
-    }
 
     if (categoria) {
       query = query.eq('categoria', categoria);
@@ -120,39 +117,19 @@ export const useItensInteligentes = ({
         title: 'Erro ao carregar itens',
         description: error.message,
       });
+      throw error;
     }
 
-    return data;
+    return { data: data || [], nextPage: data && data.length === 10 ? pageParam + 1 : undefined };
   };
 
-  const {
-    data,
-    isLoading,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    refetch
-  } = useInfiniteQuery(
-    ['itensInteligentes', termo, categoria, subcategoria, genero, tamanho, estadoConservacao, precoMin, precoMax, ordenacao],
-    fetchItens,
-    {
-      getNextPageParam: (lastPage, allPages) => {
-        return lastPage && lastPage.length === 10 ? allPages.length : undefined;
-      },
-      enabled: enabled,
-    }
-  );
-
-  return {
-    data,
-    isLoading,
-    error,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    refetch
-  };
+  return useInfiniteQuery({
+    queryKey: ['itensInteligentes', categoria, subcategoria, genero, tamanho, estadoConservacao, precoMin, precoMax, ordenacao],
+    queryFn: fetchItens,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    enabled: enabled,
+    initialPageParam: 0,
+  });
 };
 
 interface UseMeusItensProps {
@@ -163,7 +140,7 @@ export const useMeusItens = (userId: string) => {
   const { toast } = useToast();
 
   const fetchMeusItens = async () => {
-    if (!userId) return null;
+    if (!userId) return [];
 
     const { data, error } = await supabase
       .from('itens')
@@ -177,23 +154,82 @@ export const useMeusItens = (userId: string) => {
         title: 'Erro ao carregar seus itens',
         description: error.message,
       });
+      throw error;
     }
 
     return data || [];
   };
 
-  const { data, isLoading, error, refetch } = useQuery(
-    ['meusItens', userId],
-    fetchMeusItens,
-    {
-      enabled: !!userId,
-    }
-  );
+  return useQuery({
+    queryKey: ['meusItens', userId],
+    queryFn: fetchMeusItens,
+    enabled: !!userId,
+  });
+};
 
-  return {
-    data,
-    isLoading,
-    error,
-    refetch
-  };
+export const useAtualizarItem = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ itemId, dadosAtualizados }: { itemId: string; dadosAtualizados: any }) => {
+      const { error } = await supabase
+        .from('itens')
+        .update(dadosAtualizados)
+        .eq('id', itemId);
+
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itensInteligentes'] });
+      queryClient.invalidateQueries({ queryKey: ['meusItens'] });
+      toast({
+        title: "Sucesso!",
+        description: "Item atualizado com sucesso"
+      });
+    },
+    onError: (error: any) => {
+      console.error('Erro ao atualizar item:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar item",
+        variant: "destructive"
+      });
+    }
+  });
+};
+
+export const usePublicarItem = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ itemData, fotos }: { itemData: any; fotos: File[] }) => {
+      const { error } = await supabase
+        .from('itens')
+        .insert({
+          ...itemData,
+          fotos: fotos.map(f => URL.createObjectURL(f)) // Simplified for now
+        });
+
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['itensInteligentes'] });
+      toast({
+        title: "Sucesso!",
+        description: "Item publicado com sucesso"
+      });
+    },
+    onError: (error: any) => {
+      console.error('Erro ao publicar item:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao publicar item",
+        variant: "destructive"
+      });
+    }
+  });
 };

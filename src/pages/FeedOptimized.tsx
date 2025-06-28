@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -13,7 +14,7 @@ import { ItemCard } from '@/components/shared/ItemCard';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { useItensInteligentes } from '@/hooks/useItensInteligentes';
+import { useItensInteligentes } from '@/hooks/useItensOptimized';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
@@ -37,18 +38,16 @@ const FeedOptimized = () => {
     precoMin: 0,
     precoMax: 1000,
     localizacao: '',
-    raio: 10,
-    termo: ''
+    raio: 10
   });
 
   const [showFiltros, setShowFiltros] = useState(false);
   const [ordenacao, setOrdenacao] = useState('recentes');
   
-  const termoBusca = useDebounce(filtros.termo, 500);
-  const { coordenadas } = useSimpleGeolocation();
-  const { categorias } = useConfigCategorias();
+  const { location } = useSimpleGeolocation();
+  const { configuracoes } = useConfigCategorias();
   const { subcategorias } = useSubcategorias(filtros.categoria);
-  const { tipos: tiposTamanho } = useTiposTamanho(filtros.categoria);
+  const { tiposTamanho } = useTiposTamanho(filtros.categoria);
 
   // Hook principal para buscar itens
   const { 
@@ -60,8 +59,7 @@ const FeedOptimized = () => {
     fetchNextPage
   } = useItensInteligentes({
     ...filtros,
-    termo: termoBusca,
-    coordenadas,
+    coordenadas: location ? { latitude: location.latitude, longitude: location.longitude } : null,
     ordenacao,
     enabled: !!user
   });
@@ -87,33 +85,10 @@ const FeedOptimized = () => {
       precoMin: 0,
       precoMax: 1000,
       localizacao: '',
-      raio: 10,
-      termo: ''
+      raio: 10
     });
     setOrdenacao('recentes');
   }, []);
-
-  // Debug logs para verificar os dados
-  console.log('🔍 Debug FeedOptimized:', {
-    categoria: filtros.categoria,
-    subcategoria: filtros.subcategoria,
-    tamanho: filtros.tamanho,
-    genero: filtros.genero,
-    estadoConservacao: filtros.estadoConservacao,
-    precoMin: filtros.precoMin,
-    precoMax: filtros.precoMax,
-    localizacao: filtros.localizacao,
-    raio: filtros.raio,
-    termo: filtros.termo,
-    categorias: categorias.length,
-    subcategorias: subcategorias.length,
-    tiposTamanho: Object.keys(tiposTamanho || {}).length,
-    loadingCategorias: false,
-    loadingSubcategorias: false,
-    loadingTamanhos: false,
-    user: !!user,
-    authLoading
-  });
 
   // Verificar se o usuário está logado
   if (authLoading) {
@@ -174,19 +149,6 @@ const FeedOptimized = () => {
             </div>
           </div>
 
-          {/* Barra de busca rápida */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Buscar itens (roupas, brinquedos, etc.)"
-                value={filtros.termo}
-                onChange={(e) => handleFiltroChange('termo', e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
           {/* Painel de Filtros Expandido */}
           {showFiltros && (
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-lg mb-6">
@@ -200,7 +162,7 @@ const FeedOptimized = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Todas as categorias</SelectItem>
-                    {categorias.map((cat) => (
+                    {configuracoes.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.nome}
                       </SelectItem>

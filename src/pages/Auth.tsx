@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ const Auth = () => {
   const { user, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const toast = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     console.log('Auth page - user:', user, 'loading:', loading);

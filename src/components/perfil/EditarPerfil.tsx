@@ -14,7 +14,7 @@ import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import FriendlyError from '@/components/error/FriendlyError';
 
 const EditarPerfil = () => {
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const { profile, loading, error, refetch } = useProfile();
   const [nome, setNome] = useState('');
   const [cidade, setCidade] = useState('');
@@ -54,14 +54,14 @@ const EditarPerfil = () => {
 
       if (newAvatar) {
         const fileName = `avatars/${user?.id}/${newAvatar.name}`;
-        const { error: uploadError } = await uploadImage({
+        const uploadResult = await uploadImage({
           bucket: 'avatars',
           path: fileName,
           file: newAvatar
         });
 
-        if (uploadError) {
-          throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
+        if (uploadResult.error) {
+          throw new Error(`Erro ao fazer upload da imagem: ${uploadResult.error.message}`);
         }
 
         const { data: { publicUrl } } = supabase.storage
@@ -78,22 +78,25 @@ const EditarPerfil = () => {
         avatar_url
       };
 
-      const success = await updateProfile(updatedData);
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updatedData)
+        .eq('id', user?.id);
 
-      if (success) {
-        setSaveSuccess(true);
-        toast({
-          title: "Perfil atualizado!",
-          description: "Suas informações foram salvas com sucesso.",
-        });
-        refetch(); // Atualiza o profile no cache
-        setTimeout(() => {
-          setSaveSuccess(false);
-          navigate('/perfil');
-        }, 1500);
-      } else {
-        throw new Error('Falha ao atualizar o perfil.');
+      if (updateError) {
+        throw updateError;
       }
+
+      setSaveSuccess(true);
+      toast({
+        title: "Perfil atualizado!",
+        description: "Suas informações foram salvas com sucesso.",
+      });
+      refetch(); // Atualiza o profile no cache
+      setTimeout(() => {
+        setSaveSuccess(false);
+        navigate('/perfil');
+      }, 1500);
     } catch (err: any) {
       console.error("Erro ao atualizar perfil:", err);
       toast({
