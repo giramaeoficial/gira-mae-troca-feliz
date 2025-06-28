@@ -20,13 +20,12 @@ import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
-  const { toast } = useToast();
   
   // Estados dos filtros - versão simplificada
   const [filtros, setFiltros] = useState({
@@ -42,12 +41,18 @@ const FeedOptimized = () => {
   });
 
   const [showFiltros, setShowFiltros] = useState(false);
-  const [ordenacao, setOrdenacao] = useState('recentes');
+  const [ordenacao, setOrdenacao] = useState<'recentes' | 'preco_menor' | 'preco_maior' | 'distancia'>('recentes');
   
   const { location } = useSimpleGeolocation();
   const { configuracoes } = useConfigCategorias();
   const { subcategorias } = useSubcategorias(filtros.categoria);
-  const { tiposTamanho } = useTiposTamanho(filtros.categoria);
+  const { tiposTamanho } = useTiposTamanho();
+
+  // Coordenadas simuladas baseadas na localização
+  const coordenadas = location ? { 
+    latitude: -23.5505, 
+    longitude: -46.6333 
+  } : null;
 
   // Hook principal para buscar itens
   const { 
@@ -59,7 +64,7 @@ const FeedOptimized = () => {
     fetchNextPage
   } = useItensInteligentes({
     ...filtros,
-    coordenadas: location ? { latitude: location.latitude, longitude: location.longitude } : null,
+    coordenadas,
     ordenacao,
     enabled: !!user
   });
@@ -163,7 +168,7 @@ const FeedOptimized = () => {
                   <SelectContent>
                     <SelectItem value="">Todas as categorias</SelectItem>
                     {configuracoes.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
+                      <SelectItem key={cat.codigo} value={cat.codigo}>
                         {cat.nome}
                       </SelectItem>
                     ))}
@@ -180,8 +185,8 @@ const FeedOptimized = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Todas as subcategorias</SelectItem>
-                      {subcategorias.map((sub) => (
-                        <SelectItem key={sub} value={sub}>
+                      {subcategorias.map((sub, index) => (
+                        <SelectItem key={index} value={sub}>
                           {sub}
                         </SelectItem>
                       ))}
@@ -343,3 +348,4 @@ const FeedOptimized = () => {
 };
 
 export default FeedOptimized;
+

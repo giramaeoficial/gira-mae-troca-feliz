@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { uploadImage } from '@/utils/supabaseStorage';
 import { CheckCircle } from 'lucide-react';
@@ -24,7 +25,6 @@ const EditarPerfil = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (profile) {
@@ -54,21 +54,21 @@ const EditarPerfil = () => {
 
       if (newAvatar) {
         const fileName = `avatars/${user?.id}/${newAvatar.name}`;
-        const uploadResult = await uploadImage({
-          bucket: 'avatars',
-          path: fileName,
-          file: newAvatar
-        });
+        try {
+          const uploadResult = await uploadImage({
+            bucket: 'avatars',
+            path: fileName,
+            file: newAvatar
+          });
 
-        if (uploadResult.error) {
-          throw new Error(`Erro ao fazer upload da imagem: ${uploadResult.error.message}`);
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+          
+          avatar_url = publicUrl;
+        } catch (uploadError: any) {
+          throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
-        
-        avatar_url = publicUrl;
       }
 
       const updatedData = {
@@ -237,3 +237,4 @@ const EditarPerfil = () => {
 };
 
 export default EditarPerfil;
+
