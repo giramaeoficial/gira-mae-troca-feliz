@@ -30,7 +30,7 @@ export const BotaoWhatsApp: React.FC<BotaoWhatsAppProps> = ({
     try {
       // 1. Registrar que conversa foi iniciada (usando insert direto)
       const { error } = await supabase
-        .from('conversas_whatsapp_log')
+        .from('conversas_whatsapp_log' as any)
         .insert({
           reserva_id: reservaId,
           usuario_recebeu: usuarioRecebeuId,
