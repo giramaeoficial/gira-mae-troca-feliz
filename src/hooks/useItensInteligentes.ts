@@ -56,7 +56,7 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
             publicado_por_profile:profiles!publicado_por(*)
           `)
           .in('id', favoritosIds)
-          .in('status', ['disponivel', 'reservado']);
+          .eq('status', 'disponivel');
 
         if (error) throw error;
 
@@ -156,7 +156,7 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
           *,
           publicado_por_profile:profiles!publicado_por(*)
         `)
-        .in('status', ['disponivel', 'reservado'])
+        .eq('status', 'disponivel')
         .neq('publicado_por', user.id);
 
       // Filtro por categoria
