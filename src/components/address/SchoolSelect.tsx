@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Check, ChevronsUpDown, School, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useEscolas, type EscolaEssencial } from '@/hooks/useEscolas';
 import { useFilhosPorEscola } from '@/hooks/useFilhosPorEscola';
@@ -114,33 +113,27 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0 z-50" align="start">
-          <Command>
-            {mostrarTodasEscolas && (
-              <CommandInput
-                placeholder="Buscar escola (mín. 3 caracteres)..."
-                value={searchTerm}
-                onValueChange={setSearchTerm}
-              />
-            )}
-            <CommandList className="max-h-[300px]">
-              {!mostrarTodasEscolas ? (
-                <>
-                  {/* Mostrar escolas dos filhos */}
-                  <CommandGroup heading="Escolas dos seus filhos">
-                    {escolasParaMostrar.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-muted-foreground">
-                        Nenhum filho com escola cadastrada
-                      </div>
-                    ) : (
-                      escolasParaMostrar.map((escola) => (
-                        <CommandItem
+          <div className="p-4">
+            {!mostrarTodasEscolas ? (
+              <div className="space-y-4">
+                {/* Mostrar escolas dos filhos */}
+                <div>
+                  <h4 className="font-medium text-sm text-gray-700 mb-2">Escolas dos seus filhos</h4>
+                  {escolasParaMostrar.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Nenhum filho com escola cadastrada
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {escolasParaMostrar.map((escola) => (
+                        <div
                           key={escola.codigo_inep}
-                          onSelect={() => handleSelect(escola)}
-                          className="cursor-pointer"
+                          onClick={() => handleSelect(escola)}
+                          className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg flex items-center gap-2"
                         >
                           <Check
                             className={cn(
-                              "mr-2 h-4 w-4",
+                              "h-4 w-4",
                               value?.codigo_inep === escola.codigo_inep ? "opacity-100" : "opacity-0"
                             )}
                           />
@@ -150,53 +143,71 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
                               {escola.municipio}/{escola.uf}
                             </span>
                           </div>
-                        </CommandItem>
-                      ))
-                    )}
-                  </CommandGroup>
-                  
-                  {/* Opção para buscar outras escolas */}
-                  <CommandGroup>
-                    <CommandItem
-                      onSelect={handleToggleTodasEscolas}
-                      className="cursor-pointer text-primary"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      <span>Buscar outra escola</span>
-                    </CommandItem>
-                  </CommandGroup>
-                </>
-              ) : (
-                <>
-                  {/* Voltar para escolas dos filhos */}
-                  <CommandGroup>
-                    <CommandItem
-                      onSelect={handleToggleTodasEscolas}
-                      className="cursor-pointer text-muted-foreground"
-                    >
-                      <School className="mr-2 h-4 w-4" />
-                      <span>← Voltar para escolas dos filhos</span>
-                    </CommandItem>
-                  </CommandGroup>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Opção para buscar outras escolas */}
+                <div
+                  onClick={handleToggleTodasEscolas}
+                  className="cursor-pointer p-2 text-primary hover:bg-primary/10 rounded-lg flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Buscar outra escola</span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Voltar para escolas dos filhos */}
+                <div
+                  onClick={handleToggleTodasEscolas}
+                  className="cursor-pointer p-2 text-muted-foreground hover:bg-gray-100 rounded-lg flex items-center gap-2"
+                >
+                  <School className="h-4 w-4" />
+                  <span>← Voltar para escolas dos filhos</span>
+                </div>
 
-                  {/* Resultado da busca geral */}
-                  {searchTerm.length < 3 ? (
-                    <CommandEmpty>Digite pelo menos 3 caracteres para buscar</CommandEmpty>
-                  ) : isLoading ? (
-                    <CommandEmpty>Carregando escolas...</CommandEmpty>
-                  ) : escolasParaMostrar.length === 0 ? (
-                    <CommandEmpty>Nenhuma escola encontrada</CommandEmpty>
-                  ) : (
-                    <CommandGroup heading={`${escolasParaMostrar.length} escola(s) encontrada(s)`}>
+                {/* Campo de busca */}
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Buscar escola (mín. 3 caracteres)..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+
+                {/* Resultado da busca geral */}
+                {searchTerm.length < 3 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Digite pelo menos 3 caracteres para buscar
+                  </div>
+                ) : isLoading ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Carregando escolas...
+                  </div>
+                ) : escolasParaMostrar.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Nenhuma escola encontrada
+                  </div>
+                ) : (
+                  <div>
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">
+                      {escolasParaMostrar.length} escola(s) encontrada(s)
+                    </h4>
+                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
                       {escolasParaMostrar.map((escola) => (
-                        <CommandItem
+                        <div
                           key={escola.codigo_inep}
-                          onSelect={() => handleSelect(escola)}
-                          className="cursor-pointer"
+                          onClick={() => handleSelect(escola)}
+                          className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg flex items-center gap-2"
                         >
                           <Check
                             className={cn(
-                              "mr-2 h-4 w-4",
+                              "h-4 w-4",
                               value?.codigo_inep === escola.codigo_inep ? "opacity-100" : "opacity-0"
                             )}
                           />
@@ -206,14 +217,14 @@ const SchoolSelect: React.FC<SchoolSelectProps> = ({
                               {escola.municipio}/{escola.uf}
                             </span>
                           </div>
-                        </CommandItem>
+                        </div>
                       ))}
-                    </CommandGroup>
-                  )}
-                </>
-              )}
-            </CommandList>
-          </Command>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </PopoverContent>
       </Popover>
     </div>

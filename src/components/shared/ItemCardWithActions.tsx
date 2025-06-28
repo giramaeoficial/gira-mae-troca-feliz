@@ -1,219 +1,158 @@
-
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreVertical, Edit, Eye, EyeOff, Trash2, Sparkles, Play } from 'lucide-react';
-import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
-import { toast } from '@/components/ui/use-toast';
-import LazyImage from '@/components/ui/lazy-image';
-import EditarItem from '@/components/perfil/EditarItem';
+import React from 'react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Edit, Trash2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
+import { Item } from '@/hooks/useItens';
 
 interface ItemCardWithActionsProps {
   item: Item;
 }
 
 const ItemCardWithActions: React.FC<ItemCardWithActionsProps> = ({ item }) => {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const { mutate: atualizarItem, isPending } = useAtualizarItem();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleToggleStatus = () => {
-    const novoStatus = item.status === 'disponivel' ? 'inativo' : 'disponivel';
-    
-    atualizarItem({
-      itemId: item.id,
-      dadosAtualizados: { status: novoStatus }
-    }, {
-      onSuccess: () => {
-        toast({
-          title: "Sucesso!",
-          description: `Item ${novoStatus === 'inativo' ? 'desativado' : 'ativado'} com sucesso.`
-        });
-      }
-    });
+  const handleEditarClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/publicar?edit=${item.id}`);
   };
 
-  const handleExcluir = () => {
-    atualizarItem({
-      itemId: item.id,
-      dadosAtualizados: { status: 'excluido' }
-    }, {
-      onSuccess: () => {
+  const handleRemoverClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!window.confirm("Tem certeza que deseja remover este item?")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('itens')
+        .update({ status: 'inativo' })
+        .eq('id', item.id);
+
+      if (error) {
+        console.error("Erro ao remover item:", error);
         toast({
-          title: "Item excluído",
-          description: "O item foi excluído com sucesso."
+          title: "Erro",
+          description: "Não foi possível remover o item. Tente novamente.",
+          variant: "destructive",
         });
-        setShowDeleteDialog(false);
+        return;
       }
-    });
+
+      toast({
+        title: "Sucesso",
+        description: "Item removido com sucesso!",
+      });
+      
+      // Recarregar a página para atualizar a lista de itens
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Erro ao remover item:", error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao remover item. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = () => {
     switch (item.status) {
       case 'disponivel':
-        return <Badge className="bg-green-500 text-white">Ativo</Badge>;
+        return <Badge variant="secondary">Disponível</Badge>;
       case 'reservado':
-        return <Badge className="bg-orange-500 text-white">Reservado</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">Reservado</Badge>;
       case 'inativo':
-        return <Badge className="bg-gray-500 text-white">Inativo</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-300">Inativo</Badge>;
       case 'cancelado':
-        return <Badge className="bg-red-500 text-white">Cancelado</Badge>;
-      case 'entregue':
-        return <Badge className="bg-blue-500 text-white">Vendido</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-300">Cancelado</Badge>;
       default:
-        return <Badge variant="secondary">{item.status}</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">Desconhecido</Badge>;
     }
   };
 
-  const canToggleStatus = () => {
-    return ['disponivel', 'inativo'].includes(item.status);
-  };
-
-  const canEdit = () => {
-    return ['disponivel', 'inativo'].includes(item.status);
-  };
-
-  const canDelete = () => {
-    return ['disponivel', 'inativo', 'cancelado'].includes(item.status);
+  const getStatusIcon = () => {
+    switch (item.status) {
+      case 'disponivel':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'reservado':
+        return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+      case 'inativo':
+        return <XCircle className="w-4 h-4 text-gray-500" />;
+      case 'cancelado':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <>
-      <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white/90 backdrop-blur-sm border-0 relative">
-        {/* Menu de ações */}
-        <div className="absolute top-2 right-2 z-10">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 bg-white/80 hover:bg-white"
-                disabled={isPending}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {canEdit() && (
-                <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar item
-                </DropdownMenuItem>
-              )}
-              
-              {canToggleStatus() && (
-                <DropdownMenuItem onClick={handleToggleStatus}>
-                  {item.status === 'disponivel' ? (
-                    <>
-                      <EyeOff className="mr-2 h-4 w-4" />
-                      Desativar item
-                    </>
-                  ) : (
-                    <>
-                      <Play className="mr-2 h-4 w-4" />
-                      Ativar item
-                    </>
-                  )}
-                </DropdownMenuItem>
-              )}
-              
-              {canDelete() && (
-                <DropdownMenuItem 
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir item
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="aspect-square bg-gray-100 overflow-hidden relative">
-          {item.fotos && item.fotos.length > 0 ? (
-            <LazyImage
-              src={item.fotos[0]}
-              alt={item.titulo}
-              bucket="itens"
-              size="medium"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              placeholder="📷"
-              onError={() => console.error('Erro ao carregar item do perfil:', item.id)}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <span className="text-4xl">📷</span>
-            </div>
-          )}
-          
-          <div className="absolute top-2 left-2">
-            {getStatusBadge()}
-          </div>
-        </div>
-
-        <CardContent className="p-4">
-          <h3 className="font-semibold mb-2 line-clamp-2">
-            {item.titulo}
-          </h3>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="font-bold text-primary">
-                {item.valor_girinhas}
-              </span>
-            </div>
-            <Button size="sm" variant="outline" asChild>
-              <Link to={`/item/${item.id}`}>
-                Ver Detalhes
-              </Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Dialog de confirmação para exclusão */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir item</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleExcluir}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isPending}
-            >
-              {isPending ? 'Excluindo...' : 'Excluir'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog de edição */}
-      {showEditDialog && (
-        <EditarItem
-          item={item}
-          isOpen={showEditDialog}
-          onClose={() => setShowEditDialog(false)}
-          onSuccess={() => {
-            setShowEditDialog(false);
-            toast({
-              title: "Sucesso!",
-              description: "Item atualizado com sucesso."
-            });
-          }}
+    <Card className="bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-shadow duration-200">
+      {item.fotos && item.fotos.length > 0 ? (
+        <img
+          src={item.fotos[0]}
+          alt={item.titulo}
+          className="w-full h-48 object-cover rounded-t-md"
         />
+      ) : (
+        <div className="w-full h-48 bg-gray-100 rounded-t-md flex items-center justify-center">
+          <span className="text-gray-400">Sem foto</span>
+        </div>
       )}
-    </>
+      
+      <CardHeader>
+        <CardTitle>{item.titulo}</CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <p className="text-sm text-gray-500">
+          {item.descricao.substring(0, 80)}...
+        </p>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-lg font-semibold text-primary">
+            {item.valor_girinhas} Girinhas
+          </span>
+          {getStatusBadge()}
+        </div>
+      </CardContent>
+      
+      <CardFooter className="flex items-center justify-between">
+        <div className="text-xs text-gray-400">
+          {getStatusIcon()}
+          Atualizado há {formatDistanceToNow(new Date(item.updated_at), { addSuffix: true, locale: ptBR })}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleEditarClick}
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="destructive"
+            size="icon"
+            onClick={handleRemoverClick}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,12 +6,13 @@ import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/shared/Header";
 import { Heart, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const { user, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     console.log('Auth page - user:', user, 'loading:', loading);

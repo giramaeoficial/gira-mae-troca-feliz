@@ -14,7 +14,6 @@ import { Star, MapPin, Calendar, Plus, Edit3, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import ItemCardSkeleton from "@/components/loading/ItemCardSkeleton";
-import EmptyState from "@/components/loading/EmptyState";
 import LoadingSpinner from "@/components/loading/LoadingSpinner";
 import FriendlyError from "@/components/error/FriendlyError";
 import ItemCardWithActions from "@/components/shared/ItemCardWithActions";
@@ -175,12 +174,24 @@ const Perfil = () => {
                                         onRetry={() => window.location.reload()}
                                     />
                                 ) : !itensFiltrados || itensFiltrados.length === 0 ? (
-                                    <EmptyState 
-                                        type="items"
-                                        title="Nenhum item publicado"
-                                        description="Você ainda não publicou nenhum item. Comece agora!"
-                                        onAction={() => window.location.href = '/publicar'}
-                                    />
+                                    <div className="text-center py-12">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Plus className="w-8 h-8 text-gray-400" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                                            Nenhum item publicado
+                                        </h3>
+                                        <p className="text-gray-600 mb-4">
+                                            Você ainda não publicou nenhum item. Comece agora!
+                                        </p>
+                                        <Button 
+                                            onClick={() => window.location.href = '/publicar'}
+                                            className="bg-gradient-to-r from-primary to-pink-500"
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Publicar Item
+                                        </Button>
+                                    </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                         {itensFiltrados.map((item) => (

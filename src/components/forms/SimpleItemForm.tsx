@@ -5,7 +5,6 @@ import { ItemBasicInfo } from './ItemBasicInfo';
 import { ItemCategorization } from './ItemCategorization';
 import { ItemPricing } from './ItemPricing';
 import ImageUpload from '@/components/ui/image-upload';
-import ImageUploadEditor from '@/components/ui/image-upload-editor';
 
 interface SimpleItemFormProps {
   formData: {
@@ -46,20 +45,37 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
           <span className="text-red-400 ml-1">*</span>
         </label>
         
-        {isEditing ? (
-          <ImageUploadEditor
-            imagensExistentes={formData.imagensExistentes || []}
-            novasImagens={formData.imagens}
-            onRemoverExistente={onRemoverImagemExistente || (() => {})}
-            onAdicionarNovas={(files) => onFieldChange('imagens', files)}
-            maxFiles={6}
-          />
-        ) : (
-          <ImageUpload
-            value={formData.imagens}
-            onChange={(files) => onFieldChange('imagens', files)}
-            maxFiles={6}
-          />
+        <ImageUpload
+          value={formData.imagens}
+          onChange={(files) => onFieldChange('imagens', files)}
+          maxFiles={6}
+        />
+        
+        {/* Mostrar imagens existentes se estiver editando */}
+        {isEditing && formData.imagensExistentes && formData.imagensExistentes.length > 0 && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600 mb-2">Imagens atuais:</p>
+            <div className="grid grid-cols-3 gap-2">
+              {formData.imagensExistentes.map((url, index) => (
+                <div key={index} className="relative">
+                  <img 
+                    src={url} 
+                    alt={`Imagem ${index + 1}`}
+                    className="w-full h-20 object-cover rounded"
+                  />
+                  {onRemoverImagemExistente && (
+                    <button
+                      type="button"
+                      onClick={() => onRemoverImagemExistente(url)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         )}
         
         <p className="text-xs text-gray-500 mt-2">Adicione até 6 fotos. A primeira foto será a capa do anúncio.</p>

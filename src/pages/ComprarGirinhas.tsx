@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Sparkles, Heart, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
-import CompraLivre from "@/components/girinhas/CompraLivre";
 import { useMercadoPago } from "@/hooks/useMercadoPago";
 
 const ComprarGirinhas = () => {
@@ -23,7 +22,40 @@ const ComprarGirinhas = () => {
       
       <main className="flex-grow container mx-auto px-4 py-6">
         <div className="max-w-2xl mx-auto">
-          <CompraLivre />
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold text-primary flex items-center justify-center gap-2">
+                <Sparkles className="w-6 h-6" />
+                Comprar Girinhas
+              </CardTitle>
+              <CardDescription>
+                Adquira Girinhas para trocar na comunidade GiraMãe
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="text-center p-6 bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4">Como funciona?</h3>
+                <div className="space-y-3 text-sm text-gray-600">
+                  <p>✨ 1 Girinha = R$ 1,00</p>
+                  <p>🛒 Compre Girinhas para reservar itens</p>
+                  <p>💰 Receba Girinhas quando vender seus itens</p>
+                  <p>🎁 Ganhe bônus por completar trocas</p>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <Button asChild className="bg-gradient-to-r from-primary to-pink-500">
+                  <Link to="/carteira">
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Ir para Carteira
+                  </Link>
+                </Button>
+                <p className="text-sm text-gray-500 mt-2">
+                  Gerencie suas Girinhas na sua carteira
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
 
