@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,17 +13,14 @@ export const useFavoritos = () => {
   const [favoritos, setFavoritos] = useState<Favorito[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ CORREÇÃO: Memorizar a função buscarFavoritos com useCallback
   const buscarFavoritos = useCallback(async () => {
-    if (!user) {
-      console.log('Usuário não logado, limpando favoritos');
+    if (!user?.id) {
       setFavoritos([]);
       return;
     }
 
     try {
       setLoading(true);
-      console.log('Buscando favoritos para usuário:', user.id);
       
       const { data, error } = await supabase
         .from('favoritos')
@@ -34,7 +32,6 @@ export const useFavoritos = () => {
         throw error;
       }
       
-      console.log('Favoritos encontrados:', data);
       setFavoritos(data || []);
     } catch (error) {
       console.error('Erro ao buscar favoritos:', error);
@@ -47,16 +44,14 @@ export const useFavoritos = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]); // ✅ Dependências explícitas
+  }, [user?.id, toast]);
 
   const verificarSeFavorito = useCallback((itemId: string): boolean => {
-    const ehFavorito = favoritos.some(fav => fav.item_id === itemId);
-    console.log(`Item ${itemId} é favorito:`, ehFavorito);
-    return ehFavorito;
-  }, [favoritos]); // ✅ Memorizar também esta função
+    return favoritos.some(fav => fav.item_id === itemId);
+  }, [favoritos]);
 
   const adicionarFavorito = useCallback(async (itemId: string): Promise<boolean> => {
-    if (!user) {
+    if (!user?.id) {
       toast({
         title: "Erro",
         description: "Você precisa estar logado para adicionar favoritos.",
@@ -66,12 +61,10 @@ export const useFavoritos = () => {
     }
 
     if (verificarSeFavorito(itemId)) {
-      console.log('Item já é favorito, não adicionando novamente');
       return true;
     }
 
     try {
-      console.log('Adicionando favorito:', itemId);
       const { error } = await supabase
         .from('favoritos')
         .insert({
@@ -107,13 +100,12 @@ export const useFavoritos = () => {
       });
       return false;
     }
-  }, [user, toast, verificarSeFavorito]); // ✅ Dependências explícitas
+  }, [user?.id, toast, verificarSeFavorito]);
 
   const removerFavorito = useCallback(async (itemId: string): Promise<boolean> => {
-    if (!user) return false;
+    if (!user?.id) return false;
 
     try {
-      console.log('Removendo favorito:', itemId);
       const { error } = await supabase
         .from('favoritos')
         .delete()
@@ -143,24 +135,28 @@ export const useFavoritos = () => {
       });
       return false;
     }
-  }, [user, toast]); // ✅ Dependências explícitas
+  }, [user?.id, toast]);
 
   const toggleFavorito = useCallback(async (itemId: string): Promise<boolean> => {
     const ehFavorito = verificarSeFavorito(itemId);
-    console.log(`Toggle favorito para item ${itemId}, é favorito: ${ehFavorito}`);
     
     if (ehFavorito) {
       return await removerFavorito(itemId);
     } else {
       return await adicionarFavorito(itemId);
     }
-  }, [verificarSeFavorito, removerFavorito, adicionarFavorito]); // ✅ Dependências explícitas
+  }, [verificarSeFavorito, removerFavorito, adicionarFavorito]);
 
-  // ✅ CORREÇÃO: useEffect agora só executa quando user.id muda
+  // ✅ CORREÇÃO: useEffect mais estável
   useEffect(() => {
-    console.log('useEffect useFavoritos - user:', user?.id);
-    buscarFavoritos();
-  }, [user?.id, buscarFavoritos]); // ✅ buscarFavoritos agora é estável
+    // Só busca favoritos se tem usuário logado
+    if (user?.id) {
+      buscarFavoritos();
+    } else {
+      // Se não tem usuário, limpa os favoritos imediatamente
+      setFavoritos([]);
+    }
+  }, [user?.id, buscarFavoritos]);
 
   return {
     favoritos,

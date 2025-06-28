@@ -32,22 +32,18 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
   return useQuery({
     queryKey: ['itens-inteligentes', filtros, user?.id, favoritos.length],
     queryFn: async () => {
-      console.log('🔍 Buscando itens inteligentes com filtros:', filtros);
-
-      if (!user) {
-        console.log('❌ Usuário não logado');
+      // ✅ CORREÇÃO: Retornar array vazio se não tem usuário
+      if (!user?.id) {
         return [];
       }
 
       // Se é apenas favoritos, buscar apenas os IDs dos favoritos
       if (filtros.apenasFavoritos) {
         if (favoritos.length === 0) {
-          console.log('❤️ Nenhum favorito encontrado');
           return [];
         }
 
         const favoritosIds = favoritos.map(fav => fav.item_id);
-        console.log('❤️ Buscando itens favoritos:', favoritosIds);
 
         const { data, error } = await supabase
           .from('itens')
@@ -100,7 +96,6 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
 
       // Se é apenas das seguidas
       if (filtros.apenasSeguidoras) {
-        console.log('👥 Buscando itens das seguidas');
         const itensSeguidas = await buscarItensDasMinhasSeguidas();
         
         // Aplicar filtros adicionais aos itens das seguidas
@@ -255,11 +250,11 @@ export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
         );
       }
 
-      console.log('✅ Itens encontrados:', itensFiltrados.length);
       return itensFiltrados;
     },
-    enabled: !!user,
-    staleTime: 30000, // 30 segundos
+    // ✅ CORREÇÃO: enabled só quando tem usuário
+    enabled: !!user?.id,
+    staleTime: 30000,
     refetchOnWindowFocus: false,
   });
 };
