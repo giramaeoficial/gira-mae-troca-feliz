@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { useCommonSchool } from '@/hooks/useCommonSchool';
 import { cn } from '@/lib/utils';
@@ -48,8 +48,16 @@ interface ItemCardProps {
   filaInfo?: {
     posicao?: number;
     total?: number;
+    posicao_usuario?: number; // ✅ ADICIONADO: Para verificar se usuário está na fila
   };
   isReservado?: boolean; // ✅ MODIFICADO: Agora calculado do status
+  // ✅ ADICIONADO: Props para verificação de estado
+  reservas?: Array<{
+    item_id: string;
+    status: string;
+    usuario_reservou?: string;
+  }>;
+  currentUserId?: string;
   // Configurações de exibição
   showActions?: boolean;
   showLocation?: boolean;
@@ -67,6 +75,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   actionState = 'idle',
   filaInfo,
   isReservado, // ✅ MODIFICADO: Agora pode ser override
+  reservas = [], // ✅ ADICIONADO
+  currentUserId, // ✅ ADICIONADO
   showActions = true,
   showLocation = true,
   showAuthor = true,
@@ -77,6 +87,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   // ✅ ADICIONADO: Calcular status baseado no item ou prop
   const itemIsReservado = isReservado ?? item.status === 'reservado';
   const itemIsDisponivel = item.status === 'disponivel';
+
+  // ✅ ADICIONADO: Verificar se o usuário já está na fila ou tem reserva ativa
+  const isUserInQueue = filaInfo && filaInfo.posicao_usuario && filaInfo.posicao_usuario > 0;
+  const hasActiveReservation = reservas.some(r => 
+    r.item_id === item.id && 
+    ['pendente', 'confirmada'].includes(r.status) && 
+    r.usuario_reservou === currentUserId
+  );
+
+  // ✅ ADICIONADO: Determinar se deve mostrar o botão de ação
+  const shouldShowActionButton = showActions && 
+    (onEntrarFila || onReservar) && 
+    !isUserInQueue && 
+    !hasActiveReservation &&
+    item.publicado_por !== currentUserId; // Não pode reservar próprio item
 
   const handleClick = () => {
     if (onItemClick) {
@@ -106,7 +131,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     switch (genero) {
       case 'menino': return '👦';
       case 'menina': return '👧';
-      case 'unissex': return '👶';
+      case 'unissex': return '👦👧';
       default: return null;
     }
   };
@@ -279,16 +304,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* ✅ ADICIONADO: Informações da fila */}
-          {filaInfo && (
-            <div className="flex items-center gap-1 text-xs text-blue-600 mb-2">
-              <Users className="w-3 h-3" />
-              <span>Posição {filaInfo.posicao} de {filaInfo.total}</span>
-            </div>
-          )}
-
           {/* ✅ MODIFICADO: Botão de ação inteligente baseado no status */}
-          {showActions && (onEntrarFila || onReservar) && (
+          {shouldShowActionButton && (
             <Button 
               size="sm" 
               className={cn(
@@ -317,6 +334,23 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 </div>
               )}
             </Button>
+          )}
+
+          {/* ✅ ADICIONADO: Mostrar status quando já está na fila/reservado */}
+          {(isUserInQueue || hasActiveReservation) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+              {hasActiveReservation ? (
+                <div className="flex items-center justify-center gap-2 text-green-600">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Item Reservado</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 text-blue-600">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
+                </div>
+              )}
+            </div>
           )}
 
           {/* ✅ ADICIONADO: Feedback de ação */}
