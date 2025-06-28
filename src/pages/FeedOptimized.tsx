@@ -24,6 +24,7 @@ import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { useToast } from '@/hooks/use-toast';
 import { useFeedInfinito } from '@/hooks/useFeedInfinito';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
 import { supabase } from '@/integrations/supabase/client';
 
 const FeedOptimized = () => {
@@ -186,15 +187,18 @@ const FeedOptimized = () => {
         return false;
       }
 
-      if (data.tipo === 'reserva_direta') {
+      // Verificar se o resultado tem a estrutura esperada
+      const result = data as { tipo?: string; posicao?: number } | null;
+      
+      if (result?.tipo === 'reserva_direta') {
         toast({ 
           title: "Item reservado! 🎉", 
           description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega." 
         });
-      } else if (data.tipo === 'fila_espera') {
+      } else if (result?.tipo === 'fila_espera') {
         toast({ 
           title: "Entrou na fila! 📝", 
-          description: `Você está na posição ${data.posicao} da fila. As Girinhas NÃO foram bloqueadas ainda.` 
+          description: `Você está na posição ${result.posicao} da fila. As Girinhas NÃO foram bloqueadas ainda.` 
         });
       }
       
@@ -668,22 +672,14 @@ const FeedOptimized = () => {
         )}
 
         {/* ✅ NOVO: Scroll infinito e loading */}
-        <div ref={infiniteRef} className="flex justify-center p-8">
-          {isFetchingNextPage && (
-            <div className="flex items-center gap-2">
-              <LoadingSpinner />
-              <span className="text-gray-600">Carregando mais itens...</span>
-            </div>
-          )}
-          {!hasNextPage && itens.length > 0 && !loadingFeed && (
-            <div className="text-center">
-              <p className="text-gray-500 mb-2">🎉 Você viu todos os itens disponíveis!</p>
-              <Button onClick={() => navigate('/publicar')} variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Publicar um item
-              </Button>
-            </div>
-          )}
+        <div ref={infiniteRef}>
+          <InfiniteScrollIndicator
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={hasNextPage || false}
+            itemsCount={itens.length}
+            isInitialLoading={loadingFeed}
+            onCreateItem={() => navigate('/publicar')}
+          />
         </div>
       </main>
       

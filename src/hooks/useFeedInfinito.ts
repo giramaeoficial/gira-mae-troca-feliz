@@ -105,6 +105,7 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
       
       return result;
     },
+    initialPageParam: 0,
     enabled: !!userId,
     getNextPageParam: (lastPage, allPages) => {
       return lastPage?.has_more ? allPages.length : undefined;
