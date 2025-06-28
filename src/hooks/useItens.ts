@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
 
@@ -38,7 +38,6 @@ export const useItens = () => {
   const [itens, setItens] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { toast } = useToast();
 
   const refetch = useCallback(async () => {
     setLoading(true);
@@ -239,7 +238,7 @@ export const useItens = () => {
     } finally {
       setLoading(false);
     }
-  }, [refetch, toast]);
+  }, [refetch]);
 
   const atualizarItem = useCallback(async (itemId: string, dadosAtualizados: any) => {
     setLoading(true);
@@ -272,7 +271,7 @@ export const useItens = () => {
     } finally {
       setLoading(false);
     }
-  }, [refetch, toast]);
+  }, [refetch]);
 
   return {
     itens,
@@ -281,8 +280,8 @@ export const useItens = () => {
     refetch,
     buscarItens,
     buscarMeusItens,
-    buscarItensDoUsuario: buscarMeusItens, // Simplified
-    buscarItemPorId: async (id: string) => null, // Simplified
+    buscarItensDoUsuario,
+    buscarItemPorId,
     publicarItem,
     atualizarItem
   };

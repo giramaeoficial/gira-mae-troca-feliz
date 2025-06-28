@@ -1,5 +1,4 @@
-
-// src/App.tsx - REMOVER import do Login deletado
+// src/App.tsx - ADICIONAR a rota AuthCallback
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -9,8 +8,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
+import Login from '@/pages/Login';
 import Cadastro from '@/pages/Cadastro';
-import AuthCallback from '@/pages/AuthCallback';
+import AuthCallback from '@/pages/AuthCallback'; // ✅ ADICIONAR IMPORT
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
@@ -39,7 +39,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/auth-callback" element={<AuthCallback />} /> {/* ✅ ADICIONAR ROTA */}
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/feed" element={<FeedOptimized />} />

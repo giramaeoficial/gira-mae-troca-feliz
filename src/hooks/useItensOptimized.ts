@@ -1,29 +1,24 @@
 
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-
-interface Location {
-  cidade: string;
-  estado: string;
-  bairro?: string;
-}
+import { toast } from '@/components/ui/use-toast';
+import { Tables } from '@/integrations/supabase/types';
+import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
 
 export interface Item {
   id: string;
   titulo: string;
   descricao: string;
   categoria: string;
-  subcategoria?: string;
+  subcategoria: string;
+  genero: string;
+  tamanho_categoria: string;
+  tamanho_valor: string;
   estado_conservacao: string;
-  tamanho?: string;
-  tamanho_categoria?: string;
-  tamanho_valor?: string;
-  genero?: string;
   valor_girinhas: number;
   publicado_por: string;
   status: string;
-  fotos?: string[];
+  fotos: string[];
   created_at: string;
   updated_at: string;
   filho_id?: string;
@@ -38,196 +33,239 @@ export interface Item {
   mesma_escola?: boolean;
 }
 
-interface UseItensInteligentesProps {
-  categoria?: string;
-  subcategoria?: string;
-  genero?: string;
-  tamanho?: string;
-  estadoConservacao?: string;
-  precoMin?: number;
-  precoMax?: number;
-  localizacao?: string;
-  raio?: number;
-  coordenadas?: { latitude: number; longitude: number } | null;
-  ordenacao?: 'recentes' | 'preco_menor' | 'preco_maior' | 'distancia';
-  enabled?: boolean;
-}
-
-export const useItensInteligentes = ({
-  categoria,
-  subcategoria,
-  genero,
-  tamanho,
-  estadoConservacao,
-  precoMin = 0,
-  precoMax = 1000,
-  localizacao,
-  raio = 10,
-  coordenadas,
-  ordenacao = 'recentes',
-  enabled = true
-}: UseItensInteligentesProps) => {
-  const { toast } = useToast();
-
-  const fetchItens = async ({ pageParam = 0 }) => {
-    let query = supabase
-      .from('itens')
-      .select(`
-        *,
-        publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
-      `)
-      .eq('status', 'disponivel')
-      .gte('valor_girinhas', precoMin)
-      .lte('valor_girinhas', precoMax)
-      .range(pageParam * 10, (pageParam + 1) * 10 - 1);
-
-    if (categoria) {
-      query = query.eq('categoria', categoria);
-    }
-
-    if (subcategoria) {
-      query = query.eq('subcategoria', subcategoria);
-    }
-
-    if (genero) {
-      query = query.eq('genero', genero);
-    }
-
-    if (tamanho) {
-      query = query.eq('tamanho_valor', tamanho);
-    }
-
-    if (estadoConservacao) {
-      query = query.eq('estado_conservacao', estadoConservacao);
-    }
-
-    if (ordenacao === 'preco_menor') {
-      query = query.order('valor_girinhas', { ascending: true });
-    } else if (ordenacao === 'preco_maior') {
-      query = query.order('valor_girinhas', { ascending: false });
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Erro ao buscar itens:', error);
-      toast({
-        title: 'Erro ao carregar itens',
-        description: error.message,
-      });
-      throw error;
-    }
-
-    return { data: data || [], nextPage: data && data.length === 10 ? pageParam + 1 : undefined };
-  };
-
-  return useInfiniteQuery({
-    queryKey: ['itensInteligentes', categoria, subcategoria, genero, tamanho, estadoConservacao, precoMin, precoMax, ordenacao],
-    queryFn: fetchItens,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: enabled,
-    initialPageParam: 0,
-  });
-};
-
-interface UseMeusItensProps {
-  userId: string;
-}
-
-export const useMeusItens = (userId: string) => {
-  const { toast } = useToast();
-
-  const fetchMeusItens = async () => {
-    if (!userId) return [];
-
-    const { data, error } = await supabase
-      .from('itens')
-      .select('*')
-      .eq('publicado_por', userId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Erro ao buscar meus itens:', error);
-      toast({
-        title: 'Erro ao carregar seus itens',
-        description: error.message,
-      });
-      throw error;
-    }
-
-    return data || [];
-  };
-
+// Hook otimizado para buscar todos os itens
+export const useItensDisponiveis = () => {
   return useQuery({
-    queryKey: ['meusItens', userId],
-    queryFn: fetchMeusItens,
-    enabled: !!userId,
+    queryKey: ['itens', 'disponiveis'],
+    queryFn: async (): Promise<Item[]> => {
+      console.log('🔍 Buscando itens disponíveis...');
+      
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+        `)
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false })
+        .limit(50); // Limitar para melhor performance
+
+      if (error) {
+        console.error('Erro ao buscar itens:', error);
+        throw error;
+      }
+      
+      const itensFormatados = data?.map(item => ({
+        ...item,
+        publicado_por_profile: item.publicado_por_profile || undefined,
+        mesma_escola: false
+      })) || [];
+      
+      console.log(`✅ ${itensFormatados.length} itens carregados`);
+      return itensFormatados;
+    },
+    staleTime: 60000, // 1 minuto
+    gcTime: 300000, // 5 minutos
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 };
 
-export const useAtualizarItem = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async ({ itemId, dadosAtualizados }: { itemId: string; dadosAtualizados: any }) => {
-      const { error } = await supabase
+// Hook para buscar meus itens
+export const useMeusItens = (userId: string) => {
+  return useQuery({
+    queryKey: ['itens', 'meus', userId],
+    queryFn: async (): Promise<Item[]> => {
+      const { data, error } = await supabase
         .from('itens')
-        .update(dadosAtualizados)
-        .eq('id', itemId);
+        .select('*')
+        .eq('publicado_por', userId)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return { success: true };
+      
+      return data?.map(item => ({
+        ...item,
+        mesma_escola: false
+      })) || [];
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['itensInteligentes'] });
-      queryClient.invalidateQueries({ queryKey: ['meusItens'] });
-      toast({
-        title: "Sucesso!",
-        description: "Item atualizado com sucesso"
-      });
-    },
-    onError: (error: any) => {
-      console.error('Erro ao atualizar item:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar item",
-        variant: "destructive"
-      });
-    }
+    enabled: !!userId,
+    staleTime: 120000, // 2 minutos
+    gcTime: 300000
   });
 };
 
+// Hook para buscar itens de um usuário específico
+export const useItensUsuario = (userId: string) => {
+  return useQuery({
+    queryKey: ['itens', 'usuario', userId],
+    queryFn: async (): Promise<Item[]> => {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+        `)
+        .eq('publicado_por', userId)
+        .eq('status', 'disponivel')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      return data?.map(item => ({
+        ...item,
+        publicado_por_profile: item.publicado_por_profile || undefined,
+        mesma_escola: false
+      })) || [];
+    },
+    enabled: !!userId,
+    staleTime: 120000,
+    gcTime: 300000
+  });
+};
+
+// Hook para buscar um item específico
+export const useItem = (itemId: string) => {
+  return useQuery({
+    queryKey: ['item', itemId],
+    queryFn: async (): Promise<Item | null> => {
+      const { data, error } = await supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+        `)
+        .eq('id', itemId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') return null; // Not found
+        throw error;
+      }
+      
+      return {
+        ...data,
+        publicado_por_profile: data.publicado_por_profile || undefined,
+        mesma_escola: false
+      };
+    },
+    enabled: !!itemId,
+    staleTime: 180000, // 3 minutos
+    gcTime: 300000
+  });
+};
+
+// Mutation para publicar item
 export const usePublicarItem = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ itemData, fotos }: { itemData: any; fotos: File[] }) => {
-      const { error } = await supabase
+    mutationFn: async ({ itemData, fotos }: { itemData: any, fotos: File[] }) => {
+      console.log('📤 Iniciando publicação de item com', fotos.length, 'fotos...');
+      
+      if (!itemData.publicado_por) {
+        throw new Error('Usuário não identificado');
+      }
+
+      // Upload das fotos
+      const fotosUrls: string[] = [];
+      
+      for (let i = 0; i < fotos.length; i++) {
+        const foto = fotos[i];
+        console.log(`⬆️ Fazendo upload da foto ${i + 1}/${fotos.length}:`, foto.name);
+        
+        try {
+          const fileName = generateImagePath(itemData.publicado_por, foto.name);
+          
+          await uploadImage({
+            bucket: 'itens',
+            path: fileName,
+            file: foto
+          });
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('itens')
+            .getPublicUrl(fileName);
+          
+          fotosUrls.push(publicUrl);
+          console.log(`✅ Foto ${i + 1} uploaded:`, publicUrl);
+        } catch (uploadError: any) {
+          console.error(`❌ Erro no upload da foto ${i + 1}:`, uploadError);
+          throw new Error(`Erro no upload da imagem ${i + 1}: ${uploadError.message}`);
+        }
+      }
+
+      console.log('📝 Inserindo item no banco com', fotosUrls.length, 'fotos...');
+
+      // Inserir item no banco
+      const { data, error: insertError } = await supabase
         .from('itens')
         .insert({
           ...itemData,
-          fotos: fotos.map(f => URL.createObjectURL(f)) // Simplified for now
-        });
+          fotos: fotosUrls
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
-      return { success: true };
+      if (insertError) {
+        console.error('❌ Erro ao inserir item:', insertError);
+        throw new Error(`Erro ao salvar item: ${insertError.message}`);
+      }
+
+      console.log('✅ Item publicado com sucesso:', data);
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['itensInteligentes'] });
+      // Invalidar apenas queries específicas
+      queryClient.invalidateQueries({ queryKey: ['itens', 'disponiveis'] });
+      queryClient.invalidateQueries({ queryKey: ['itens', 'meus'] });
+      
       toast({
         title: "Sucesso!",
         description: "Item publicado com sucesso"
       });
     },
     onError: (error: any) => {
-      console.error('Erro ao publicar item:', error);
+      console.error('❌ Erro ao publicar item:', error);
       toast({
         title: "Erro",
-        description: "Erro ao publicar item",
+        description: error.message || "Erro ao publicar item",
+        variant: "destructive"
+      });
+    }
+  });
+};
+
+// Mutation para atualizar item
+export const useAtualizarItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemId, dadosAtualizados }: { itemId: string, dadosAtualizados: any }) => {
+      const { error } = await supabase
+        .from('itens')
+        .update(dadosAtualizados)
+        .eq('id', itemId);
+
+      if (error) throw error;
+      return true;
+    },
+    onSuccess: (_, { itemId }) => {
+      // Invalidar queries específicas
+      queryClient.invalidateQueries({ queryKey: ['item', itemId] });
+      queryClient.invalidateQueries({ queryKey: ['itens', 'disponiveis'] });
+      queryClient.invalidateQueries({ queryKey: ['itens', 'meus'] });
+      
+      toast({
+        title: "Sucesso!",
+        description: "Item atualizado com sucesso"
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Erro ao atualizar item:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar item",
         variant: "destructive"
       });
     }

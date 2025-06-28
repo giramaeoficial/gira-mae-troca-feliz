@@ -9,15 +9,13 @@ import { Heart, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 
-const Auth = () => {
+const Login = () => {
   const { user, loading, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
-    console.log('Auth page - user:', user, 'loading:', loading);
     if (user && !loading) {
-      console.log('User logged in, redirecting to feed');
       navigate('/feed');
     }
   }, [user, loading, navigate]);
@@ -82,6 +80,13 @@ const Auth = () => {
             </Button>
             
             <div className="text-center text-sm text-gray-500 mt-6">
+              Não tem uma conta?{" "}
+              <Link to="/auth" className="text-primary hover:underline">
+                Cadastre-se aqui
+              </Link>
+            </div>
+            
+            <div className="text-center text-sm text-gray-500 mt-6">
               Ao continuar, você concorda com nossos{" "}
               <a href="#" className="text-primary hover:underline">termos de uso</a>
               {" "}e{" "}
@@ -90,13 +95,12 @@ const Auth = () => {
           </CardContent>
         </Card>
       </main>
-      
-      <footer className="bg-muted/50 py-8">
+       <footer className="bg-muted/50 py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
-            <Link to="/" className="flex items-center text-primary">
-              <Sparkles className="h-6 w-6 mr-2" />
-              GiraMãe
+             <Link to="/" className="flex items-center text-primary">
+                <Sparkles className="h-6 w-6 mr-2" />
+                GiraMãe
             </Link>
           </div>
           <p>&copy; {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
@@ -106,4 +110,4 @@ const Auth = () => {
   );
 };
 
-export default Auth;
+export default Login;

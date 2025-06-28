@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -10,6 +9,7 @@ import { useCarteira } from "@/hooks/useCarteira";
 import { useGirinhasExpiracaoSegura } from "@/hooks/useGirinhasExpiracaoSegura";
 import CotacaoWidget from "@/modules/girinhas/components/CotacaoWidget";
 import TransferenciaP2P from "@/modules/girinhas/components/TransferenciaP2P";
+import CompraComImpacto from "@/modules/girinhas/components/CompraComImpacto";
 import ValidadeGirinhasSegura from "@/components/carteira/ValidadeGirinhasSegura";
 import BonusDiarioWidget from '@/components/carteira/BonusDiarioWidget';
 import { useConfigSistema } from "@/hooks/useConfigSistema";
@@ -160,7 +160,7 @@ const Carteira = () => {
 
           {/* Tabs principais */}
           <Tabs defaultValue="historico" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="historico" className="flex items-center gap-2">
                 <History className="w-4 h-4" />
                 Histórico
@@ -168,6 +168,10 @@ const Carteira = () => {
               <TabsTrigger value="validades" className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 Validades
+              </TabsTrigger>
+              <TabsTrigger value="comprar" className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                Comprar
               </TabsTrigger>
               <TabsTrigger value="transferir" className="flex items-center gap-2">
                 <Send className="w-4 h-4" />
@@ -235,6 +239,10 @@ const Carteira = () => {
 
             <TabsContent value="validades">
               <ValidadeGirinhasSegura />
+            </TabsContent>
+
+            <TabsContent value="comprar">
+              <CompraComImpacto />
             </TabsContent>
 
             <TabsContent value="transferir">

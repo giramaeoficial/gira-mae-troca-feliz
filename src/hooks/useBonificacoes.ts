@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 import { useConfiguracoesBonus } from '@/hooks/useConfiguracoesBonus';
 
 interface Bonificacao {
@@ -17,21 +17,10 @@ interface Bonificacao {
 export const useBonificacoes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { mostrarRecompensa } = useRecompensas();
   const { obterValorBonus } = useConfiguracoesBonus();
   const [bonificacoesPendentes, setBonificacoesPendentes] = useState<Bonificacao[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Função para mostrar recompensa simples com toast
-  const mostrarRecompensa = (recompensa: any) => {
-    toast({
-      title: `🎉 ${recompensa.tipo === 'troca' ? 'Troca concluída!' : 
-                 recompensa.tipo === 'avaliacao' ? 'Avaliação realizada!' :
-                 recompensa.tipo === 'indicacao' ? 'Indicação premiada!' :
-                 recompensa.tipo === 'meta' ? 'Meta conquistada!' :
-                 'Bônus recebido!'}`,
-      description: `${recompensa.descricao} Você ganhou ${recompensa.valor} Girinha${recompensa.valor > 1 ? 's' : ''}!`,
-    });
-  };
 
   // Função para processar bônus de troca concluída
   const processarBonusTrocaConcluida = async (reservaId: string) => {
@@ -79,6 +68,12 @@ export const useBonificacoes = () => {
                 tipo: 'troca',
                 valor: valorBonus,
                 descricao: 'Troca concluída com sucesso! Continue trocando para ganhar mais.'
+              });
+
+              // Toast de backup
+              toast({
+                title: "🎉 Troca concluída!",
+                description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} por completar uma troca!`,
               });
             }
           }
@@ -135,6 +130,12 @@ export const useBonificacoes = () => {
               valor: valorBonus,
               descricao: 'Obrigada por avaliar! Sua opinião ajuda nossa comunidade.'
             });
+
+            // Toast de backup
+            toast({
+              title: "⭐ Bônus de avaliação!",
+              description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} por avaliar uma troca!`,
+            });
           }
         }
       }
@@ -182,6 +183,12 @@ export const useBonificacoes = () => {
               tipo: 'indicacao',
               valor: valorBonus,
               descricao: `${perfilIndicado.nome} se juntou à comunidade graças a você!`
+            });
+
+            // Toast de backup
+            toast({
+              title: "👥 Bônus de indicação!",
+              description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} por indicar uma nova mãe!`,
             });
           }
         }
@@ -246,6 +253,12 @@ export const useBonificacoes = () => {
             descricao: `Parabéns! Você conquistou o distintivo ${meta.tipo_meta.toUpperCase()}!`,
             meta: meta.tipo_meta
           });
+
+          // Toast de celebração
+          toast({
+            title: `🏆 Meta ${meta.tipo_meta.toUpperCase()} conquistada!`,
+            description: `Incrível! Você ganhou ${meta.girinhas_bonus} Girinhas!`,
+          });
         }
       }
     } catch (error) {
@@ -284,6 +297,12 @@ export const useBonificacoes = () => {
             tipo: 'cadastro',
             valor: valorBonus,
             descricao: 'Bem-vinda à comunidade GiraMãe! Aqui você faz parte de algo especial.'
+          });
+
+          // Toast de boas-vindas
+          toast({
+            title: "🎁 Bem-vinda ao GiraMãe!",
+            description: `Você ganhou ${valorBonus} Girinha${valorBonus > 1 ? 's' : ''} de boas-vindas! Explore e comece a trocar.`,
           });
         }
       }
