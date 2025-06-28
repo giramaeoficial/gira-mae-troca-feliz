@@ -94,38 +94,12 @@ const FeedOptimized = () => {
   }
 
   // Filtrar subcategorias baseado na categoria selecionada
-  const subcategoriasFiltradas = React.useMemo(() => {
-    if (!todasSubcategorias || categoria === 'todas') return [];
-    
-    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
-    
-    // Remover duplicatas baseado no nome
-    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
-      if (!acc.some(item => item.nome === sub.nome)) {
-        acc.push(sub);
-      }
-      return acc;
-    }, [] as typeof filtradas);
-    
-    return subcategoriasUnicas;
-  }, [todasSubcategorias, categoria]);
+  const subcategoriasFiltradas = categoria !== 'todas' 
+    ? todasSubcategorias.filter(sub => sub.categoria_pai === categoria)
+    : [];
 
-  // Obter tamanhos do primeiro tipo disponível sem duplicação
-  const tamanhosDisponiveis = React.useMemo(() => {
-    const tipos = Object.keys(tiposTamanho || {});
-    const tipoUnico = tipos[0];
-    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
-    
-    // Remover duplicatas baseado no valor
-    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
-      if (!acc.some(item => item.valor === tamanho.valor)) {
-        acc.push(tamanho);
-      }
-      return acc;
-    }, [] as typeof tamanhos);
-    
-    return tamanhosUnicos;
-  }, [tiposTamanho]);
+  // Obter tamanhos do primeiro tipo disponível
+  const tamanhosDisponiveis = tiposTamanho ? Object.values(tiposTamanho)[0] || [] : [];
 
   // Debug para subcategorias
   console.log('🔍 Debug Subcategorias:', {
