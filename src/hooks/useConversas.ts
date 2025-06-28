@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// ✅ MANTENDO interfaces EXATAMENTE IGUAIS
 interface ConversaCompleta {
   id: string;
   reserva_id: string | null;
@@ -37,85 +38,24 @@ export const useConversas = () => {
   const [loading, setLoading] = useState(false);
   const [conversaAtiva, setConversaAtiva] = useState<ConversaCompleta | null>(null);
 
+  // ✅ NOVA IMPLEMENTAÇÃO OTIMIZADA: 1 request ao invés de 31
   const carregarConversas = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
 
-      // Buscar conversas do usuário
-      const { data: conversasData, error: conversasError } = await supabase
-        .from('conversas')
-        .select(`
-          *,
-          reservas:reserva_id (
-            id,
-            item_id,
-            itens:item_id (
-              id,
-              titulo,
-              fotos,
-              valor_girinhas
-            )
-          )
-        `)
-        .or(`usuario1_id.eq.${user.id},usuario2_id.eq.${user.id}`)
-        .order('updated_at', { ascending: false });
-
-      if (conversasError) throw conversasError;
-
-      // Para cada conversa, buscar dados do participante e última mensagem
-      const conversasCompletas = await Promise.all(
-        (conversasData || []).map(async (conversa) => {
-          // Determinar quem é o outro participante
-          const outroUsuarioId = conversa.usuario1_id === user.id 
-            ? conversa.usuario2_id 
-            : conversa.usuario1_id;
-
-          // Buscar dados do participante
-          const { data: participanteData } = await supabase
-            .from('profiles')
-            .select('id, nome, username, avatar_url')
-            .eq('id', outroUsuarioId)
-            .single();
-
-          // Buscar última mensagem
-          const { data: ultimaMensagemData } = await supabase
-            .from('mensagens')
-            .select('conteudo, created_at, remetente_id')
-            .eq('conversa_id', conversa.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          // Contar mensagens não lidas - simplified since we don't have 'lida' column
-          const { count: naoLidas } = await supabase
-            .from('mensagens')
-            .select('id', { count: 'exact' })
-            .eq('conversa_id', conversa.id)
-            .neq('remetente_id', user.id);
-
-          return {
-            id: conversa.id,
-            reserva_id: conversa.reserva_id,
-            usuario1_id: conversa.usuario1_id,
-            usuario2_id: conversa.usuario2_id,
-            created_at: conversa.created_at,
-            updated_at: conversa.updated_at,
-            participante: participanteData || {
-              id: outroUsuarioId,
-              nome: 'Usuário',
-              username: 'usuario',
-              avatar_url: null,
-            },
-            ultimaMensagem: ultimaMensagemData,
-            item: conversa.reservas?.itens || null,
-            naoLidas: naoLidas || 0,
-          };
-        })
+      // ✅ UMA ÚNICA CHAMADA RPC que retorna tudo processado
+      const { data: conversasCompletas, error } = await supabase.rpc(
+        'buscar_conversas_completas', 
+        { p_user_id: user.id }
       );
 
-      setConversas(conversasCompletas);
+      if (error) throw error;
+
+      // ✅ Dados já vêm formatados da function, apenas setamos no state
+      setConversas(conversasCompletas || []);
+
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
       toast.error("Erro ao carregar conversas");
@@ -124,6 +64,7 @@ export const useConversas = () => {
     }
   };
 
+  // ✅ MANTENDO criarConversa EXATAMENTE IGUAL
   const criarConversa = async (outroUsuarioId: string) => {
     if (!user) return null;
 
@@ -145,6 +86,7 @@ export const useConversas = () => {
     }
   };
 
+  // ✅ MANTENDO marcarComoLida EXATAMENTE IGUAL
   const marcarComoLida = async (conversaId: string) => {
     try {
       // Since 'lida' column doesn't exist, we'll just log this action
@@ -155,12 +97,14 @@ export const useConversas = () => {
     }
   };
 
+  // ✅ MANTENDO useEffect IGUAL
   useEffect(() => {
     if (user) {
       carregarConversas();
     }
   }, [user]);
 
+  // ✅ MANTENDO return EXATAMENTE IGUAL - todas as funcionalidades preservadas
   return {
     conversas,
     conversaAtiva,
