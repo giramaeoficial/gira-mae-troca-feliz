@@ -55,22 +55,6 @@ const FeedOptimized = () => {
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria !== 'todas' ? categoria : undefined);
 
-  // Debug logs para verificar os dados
-  console.log('🔍 Debug FeedOptimized:', {
-    categoria,
-    subcategoria,
-    tamanho,
-    genero,
-    categorias: categorias?.length || 0,
-    todasSubcategorias: todasSubcategorias?.length || 0,
-    tiposTamanho: Object.keys(tiposTamanho || {}).length,
-    loadingCategorias,
-    loadingSubcategorias,
-    loadingTamanhos,
-    user: !!user,
-    authLoading
-  });
-
   // Verificar se o usuário está logado
   if (authLoading) {
     return (
@@ -94,8 +78,8 @@ const FeedOptimized = () => {
     return null;
   }
 
-  // Filtrar subcategorias baseado na categoria selecionada - usando React.useMemo corretamente
-  const subcategoriasFiltradas = React.useMemo(() => {
+  // Filtrar subcategorias baseado na categoria selecionada - versão simples
+  const getSubcategoriasFiltradas = () => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
     const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
@@ -109,10 +93,10 @@ const FeedOptimized = () => {
     }, [] as typeof filtradas);
     
     return subcategoriasUnicas;
-  }, [todasSubcategorias, categoria]);
+  };
 
-  // Obter tamanhos do primeiro tipo disponível sem duplicação - usando React.useMemo corretamente
-  const tamanhosDisponiveis = React.useMemo(() => {
+  // Obter tamanhos do primeiro tipo disponível - versão simples
+  const getTamanhosDisponiveis = () => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
     const tipos = Object.keys(tiposTamanho);
@@ -128,21 +112,10 @@ const FeedOptimized = () => {
     }, [] as typeof tamanhos);
     
     return tamanhosUnicos;
-  }, [tiposTamanho]);
+  };
 
-  // Debug para subcategorias
-  console.log('🔍 Debug Subcategorias:', {
-    categoria,
-    subcategoriasFiltradas: subcategoriasFiltradas?.length || 0,
-    exemplos: subcategoriasFiltradas?.slice(0, 3).map(s => ({ nome: s.nome, categoria_pai: s.categoria_pai })) || []
-  });
-
-  // Debug para tamanhos
-  console.log('🔍 Debug Tamanhos:', {
-    categoria,
-    tamanhosDisponiveis: tamanhosDisponiveis?.length || 0,
-    exemplos: tamanhosDisponiveis?.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display })) || []
-  });
+  const subcategoriasFiltradas = getSubcategoriasFiltradas();
+  const tamanhosDisponiveis = getTamanhosDisponiveis();
 
   const debouncedBusca = useDebounce(busca, 500);
 
