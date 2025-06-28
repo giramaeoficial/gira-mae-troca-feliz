@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, Sparkles, Users } from 'lucide-react';
+import { Heart, Sparkles, Users, MapPin } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { ItemFeed } from '@/hooks/useFeedInfinito';
 
@@ -22,6 +22,8 @@ interface ItemCardProps {
   };
   reservas?: any[];
   currentUserId?: string;
+  valorOriginal?: number; // Valor sem taxa
+  valorTaxa?: number; // Valor da taxa
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
@@ -35,7 +37,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   actionState = 'idle',
   filaInfo,
   reservas = [],
-  currentUserId
+  currentUserId,
+  valorOriginal,
+  valorTaxa
 }) => {
   const getStatusBadge = () => {
     switch (item.status) {
@@ -48,6 +52,24 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       default:
         return null;
     }
+  };
+
+  const getGeneroIcon = () => {
+    switch (item.genero?.toLowerCase()) {
+      case 'menina':
+        return <span className="text-pink-500 text-sm">👧</span>;
+      case 'menino':
+        return <span className="text-blue-500 text-sm">👦</span>;
+      case 'unissex':
+        return <span className="text-purple-500 text-sm">👦👧</span>;
+      default:
+        return null;
+    }
+  };
+
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   const getActionButton = () => {
@@ -112,6 +134,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     return null;
   };
 
+  // Extrair informações do vendedor
+  const vendedorNome = item.publicado_por_profile?.nome || 'Vendedor';
+  const vendedorNomeTruncado = truncateText(vendedorNome, 15);
+
   return (
     <Card 
       className="group hover:shadow-lg transition-all duration-300 overflow-hidden bg-white/90 backdrop-blur-sm border-0 cursor-pointer"
@@ -154,28 +180,68 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         )}
       </div>
 
-      <CardContent className="p-3">
-        <h3 className="font-semibold mb-2 line-clamp-2 text-sm">
+      <CardContent className="p-3 space-y-2">
+        {/* Título */}
+        <h3 className="font-semibold line-clamp-2 text-sm leading-tight">
           {item.titulo}
         </h3>
         
-        {/* Localização - sem sobreposição */}
-        {item.endereco_cidade && (
-          <p className="text-xs text-gray-500 mb-2">
-            {item.endereco_cidade}{item.endereco_estado && `, ${item.endereco_estado}`}
-          </p>
+        {/* Categoria e Subcategoria */}
+        <div className="flex items-center gap-2 text-xs text-gray-600">
+          <span className="font-medium">{item.categoria}</span>
+          {item.subcategoria && (
+            <>
+              <span>•</span>
+              <span>{item.subcategoria}</span>
+            </>
+          )}
+        </div>
+
+        {/* Gênero e Tamanho */}
+        <div className="flex items-center gap-2 text-xs">
+          {getGeneroIcon()}
+          {item.tamanho_valor && (
+            <span className="bg-gray-100 px-2 py-1 rounded text-gray-700 font-medium">
+              {item.tamanho_valor}
+            </span>
+          )}
+        </div>
+
+        {/* Localização */}
+        {(item.endereco_cidade || item.endereco_bairro) && (
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <MapPin className="w-3 h-3" />
+            <span>
+              {item.endereco_bairro && `${item.endereco_bairro}, `}
+              {item.endereco_cidade}
+            </span>
+          </div>
         )}
 
-        <div className="space-y-2">
+        {/* Vendedor */}
+        <div className="text-xs text-gray-600">
+          <span className="font-medium">Por:</span> {vendedorNomeTruncado}
+        </div>
+
+        {/* Preço */}
+        <div className="space-y-1">
           <div className="flex items-center gap-1">
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="font-bold text-primary text-sm">
-              {item.valor_girinhas}
+              {item.valor_girinhas} {item.valor_girinhas === 1 ? 'Girinha' : 'Girinhas'}
             </span>
           </div>
           
-          {getActionButton()}
+          {/* Detalhamento do preço se disponível */}
+          {valorOriginal && valorTaxa && (
+            <div className="text-xs text-gray-500 space-y-0.5">
+              <div>Item: {valorOriginal} Girinhas</div>
+              <div>Taxa: {valorTaxa} Girinhas</div>
+            </div>
+          )}
         </div>
+        
+        {getActionButton()}
       </CardContent>
     </Card>
   );

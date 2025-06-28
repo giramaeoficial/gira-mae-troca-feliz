@@ -627,14 +627,14 @@ const FeedOptimized = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {itensFiltrados.map((item) => {
                 const filaInfo = getFilaInfo(item.id);
-                const valorTotal = calcularValorTotal(item.valor_girinhas);
+                const valorCalculado = calcularValorTotal(item.valor_girinhas);
                 
                 return (
                   <ItemCard
                     key={item.id}
                     item={{
                       ...item,
-                      valor_girinhas: valorTotal.total
+                      valor_girinhas: valorCalculado.total
                     }}
                     onItemClick={handleItemClick}
                     showActions={true}
@@ -646,6 +646,8 @@ const FeedOptimized = () => {
                     filaInfo={filaInfo}
                     reservas={reservas}
                     currentUserId={user?.id}
+                    valorOriginal={valorCalculado.valorItem}
+                    valorTaxa={valorCalculado.taxa}
                   />
                 );
               })}
