@@ -54,21 +54,7 @@ const FeedOptimized = () => {
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria !== 'todas' ? categoria : undefined);
 
-  // Debug logs para verificar os dados
-  console.log('🔍 Debug FeedOptimized:', {
-    categoria,
-    subcategoria,
-    tamanho,
-    genero,
-    categorias: categorias.length,
-    todasSubcategorias: todasSubcategorias.length,
-    tiposTamanho: Object.keys(tiposTamanho || {}).length,
-    loadingCategorias,
-    loadingSubcategorias,
-    loadingTamanhos,
-    user: !!user,
-    authLoading
-  });
+
 
   // Verificar se o usuário está logado
   if (authLoading) {
@@ -94,26 +80,16 @@ const FeedOptimized = () => {
   }
 
   // Filtrar subcategorias baseado na categoria selecionada
-  const subcategoriasFiltradas = categoria !== 'todas' 
+  const subcategoriasFiltradas = categoria !== 'todas' && todasSubcategorias
     ? todasSubcategorias.filter(sub => sub.categoria_pai === categoria)
     : [];
 
   // Obter tamanhos do primeiro tipo disponível
-  const tamanhosDisponiveis = tiposTamanho ? Object.values(tiposTamanho)[0] || [] : [];
+  const tamanhosDisponiveis = tiposTamanho && Object.keys(tiposTamanho).length > 0
+    ? Object.values(tiposTamanho)[0] || []
+    : [];
 
-  // Debug para subcategorias
-  console.log('🔍 Debug Subcategorias:', {
-    categoria,
-    subcategoriasFiltradas: subcategoriasFiltradas.length,
-    exemplos: subcategoriasFiltradas.slice(0, 3).map(s => ({ nome: s.nome, categoria_pai: s.categoria_pai }))
-  });
 
-  // Debug para tamanhos
-  console.log('🔍 Debug Tamanhos:', {
-    categoria,
-    tamanhosDisponiveis: tamanhosDisponiveis.length,
-    exemplos: tamanhosDisponiveis.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display }))
-  });
 
   const debouncedBusca = useDebounce(busca, 500);
 
@@ -145,15 +121,15 @@ const FeedOptimized = () => {
   });
 
   // ✅ ADICIONADO: Filtrar itens baseado na opção de mostrar reservados
-  const itensFiltrados = mostrarReservados 
+  const itensFiltrados = mostrarReservados && itens
     ? itens 
-    : itens.filter(item => item.status === 'disponivel');
+    : itens?.filter?.(item => item.status === 'disponivel') || [];
 
   // ✅ ADICIONADO: Estatísticas dos itens
   const estatisticas = {
-    total: itens.length,
-    disponiveis: itens.filter(item => item.status === 'disponivel').length,
-    reservados: itens.filter(item => item.status === 'reservado').length
+    total: itens?.length || 0,
+    disponiveis: itens?.filter?.(item => item.status === 'disponivel')?.length || 0,
+    reservados: itens?.filter?.(item => item.status === 'reservado')?.length || 0
   };
 
   const handleItemClick = useCallback((itemId: string) => {
