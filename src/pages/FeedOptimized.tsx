@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -31,7 +32,7 @@ const FeedOptimized = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // ✅ MANTER TODOS os estados de filtros exatamente iguais
+  // Estados de filtros
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
@@ -44,12 +45,11 @@ const FeedOptimized = () => {
   const [mostrarReservados, setMostrarReservados] = useState(true);
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ MANTER hooks essenciais
+  // Hooks essenciais
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
   const debouncedBusca = useDebounce(busca, 500);
   
-  // ✅ MANTER hooks de reservas e favoritos
   const { 
     reservas, 
     filasEspera, 
@@ -59,7 +59,6 @@ const FeedOptimized = () => {
   const { taxaTransacao } = useConfigSistema();
   const { toggleFavorito, verificarSeFavorito } = useFavoritos();
   
-  // ✅ Função para calcular location de forma segura
   const getLocationForSearch = () => {
     if (location) return location;
     
@@ -76,7 +75,7 @@ const FeedOptimized = () => {
 
   const locationForSearch = getLocationForSearch();
   
-  // ✅ NOVO: Objeto com todos os filtros consolidado
+  // Objeto com todos os filtros consolidado
   const filtrosCompletos = useMemo(() => ({
     busca: debouncedBusca,
     cidade: locationForSearch.cidade || cidadeManual,
@@ -89,7 +88,7 @@ const FeedOptimized = () => {
     mostrarReservados
   }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
   
-  // ✅ NOVO: Hook consolidado com TODOS os filtros
+  // Hook consolidado com TODOS os filtros
   const {
     data: paginasFeed,
     fetchNextPage,
@@ -99,7 +98,7 @@ const FeedOptimized = () => {
     refetch
   } = useFeedInfinito(user?.id || '', filtrosCompletos);
   
-  // ✅ Extrair dados das páginas
+  // Extrair dados das páginas
   const itens = useMemo(() => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
@@ -109,7 +108,7 @@ const FeedOptimized = () => {
   const todasSubcategorias = configuracoes?.subcategorias || [];
   const profile = paginasFeed?.pages?.[0]?.profile_essencial;
   
-  // ✅ MANTER toda a lógica de subcategorias filtradas
+  // Lógica de subcategorias filtradas
   const getSubcategoriasFiltradas = () => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
@@ -124,7 +123,7 @@ const FeedOptimized = () => {
     return subcategoriasUnicas;
   };
 
-  // ✅ MANTER lógica de tamanhos
+  // Lógica de tamanhos
   const getTamanhosDisponiveis = () => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
@@ -145,12 +144,12 @@ const FeedOptimized = () => {
   const subcategoriasFiltradas = getSubcategoriasFiltradas();
   const tamanhosDisponiveis = getTamanhosDisponiveis();
 
-  // ✅ Filtrar itens baseado na opção de mostrar reservados
+  // Filtrar itens baseado na opção de mostrar reservados
   const itensFiltrados = mostrarReservados 
     ? itens 
     : itens.filter(item => item.status === 'disponivel');
 
-  // ✅ NOVO: Scroll infinito
+  // Scroll infinito
   const { ref: infiniteRef } = useInfiniteScroll({
     loading: isFetchingNextPage,
     hasNextPage: hasNextPage || false,
@@ -163,7 +162,7 @@ const FeedOptimized = () => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
 
-  // ✅ FUNÇÃO CORRIGIDA: entrarNaFila com mensagens adequadas
+  // Função para entrar na fila com mensagens adequadas
   const entrarNaFila = async (itemId: string) => {
     if (!user) return;
     
@@ -186,7 +185,6 @@ const FeedOptimized = () => {
         return false;
       }
 
-      // Verificar se o resultado tem a estrutura esperada
       const result = data as { tipo?: string; posicao?: number } | null;
       
       if (result?.tipo === 'reserva_direta') {
@@ -223,7 +221,7 @@ const FeedOptimized = () => {
     }
   };
 
-  // ✅ FUNÇÃO NOVA: calcular filaInfo para cada item
+  // Função para calcular filaInfo para cada item
   const getFilaInfo = (itemId: string) => {
     const filaUsuario = filasEspera.find(f => f.item_id === itemId);
     const totalNaFila = filasEspera.filter(f => f.item_id === itemId).length;
@@ -234,7 +232,7 @@ const FeedOptimized = () => {
     };
   };
 
-  // ✅ FUNÇÃO NOVA: calcular valor total com taxa
+  // Função para calcular valor total com taxa
   const calcularValorTotal = (valorGirinhas: number) => {
     const taxa = valorGirinhas * (taxaTransacao / 100);
     const total = valorGirinhas + taxa;
@@ -333,7 +331,7 @@ const FeedOptimized = () => {
           </p>
         </div>
 
-        {/* ✅ ADICIONADO: Exibição da taxa de transação */}
+        {/* Exibição da taxa de transação */}
         {taxaTransacao > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
             <div className="flex items-center gap-2 text-blue-800">
@@ -651,7 +649,7 @@ const FeedOptimized = () => {
                       currentUserId={user?.id}
                     />
                     
-                    {/* ✅ ADICIONADO: Tooltip com breakdown do preço */}
+                    {/* Tooltip com breakdown do preço */}
                     {taxaTransacao > 0 && (
                       <div className="absolute -bottom-8 left-2 right-2 bg-gray-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <div className="text-center">
@@ -670,7 +668,7 @@ const FeedOptimized = () => {
           </>
         )}
 
-        {/* ✅ NOVO: Scroll infinito e loading */}
+        {/* Scroll infinito e loading */}
         <div ref={infiniteRef}>
           <InfiniteScrollIndicator
             isFetchingNextPage={isFetchingNextPage}

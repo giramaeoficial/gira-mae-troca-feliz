@@ -80,7 +80,6 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
     queryFn: async ({ pageParam = 0 }) => {
       console.log('🔄 Carregando página do feed:', pageParam, 'Filtros:', filtros);
       
-      // Use direct RPC call to work around TypeScript limitation
       const { data, error } = await supabase.rpc(
         'carregar_dados_feed_paginado' as any,
         {
@@ -114,7 +113,7 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
     getNextPageParam: (lastPage, allPages) => {
       return lastPage?.has_more ? allPages.length : undefined;
     },
-    staleTime: 60000, // 1 minuto
+    staleTime: 60000,
     refetchOnWindowFocus: false,
     retry: 3,
   });
