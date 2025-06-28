@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -47,15 +46,20 @@ const FeedOptimized = () => {
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
   
-  // Geolocalização
+  // Geolocalização - SEMPRE chamado, nunca condicional
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   
-  // Dados dos dropdowns
+  // Dados dos dropdowns - SEMPRE chamados, nunca condicionais
   const { configuracoes: categorias = [], isLoading: loadingCategorias } = useConfigCategorias();
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
-  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria !== 'todas' ? categoria : undefined);
+  
+  // ✅ CORREÇÃO: Sempre passa uma string, nunca undefined
+  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
 
-  // Verificar se o usuário está logado
+  // ✅ CORREÇÃO: Sempre chama useDebounce, nunca condicional
+  const debouncedBusca = useDebounce(busca, 500);
+
+  // Verificar se o usuário está logado - early return após todos os hooks
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
@@ -78,7 +82,49 @@ const FeedOptimized = () => {
     return null;
   }
 
-  // Filtrar subcategorias baseado na categoria selecionada - versão simples
+  // ✅ CORREÇÃO: Localização sempre retorna objeto válido, nunca null
+  const getLocationForSearch = () => {
+    if (location) return location;
+    
+    if (cidadeManual) {
+      return { 
+        cidade: cidadeManual, 
+        estado: '',
+        bairro: undefined 
+      };
+    }
+    
+    if (profile?.cidade && profile?.estado) {
+      return {
+        cidade: profile.cidade,
+        estado: profile.estado,
+        bairro: profile.bairro || undefined
+      };
+    }
+    
+    // Sempre retorna um objeto válido
+    return { cidade: '', estado: '', bairro: undefined };
+  };
+
+  const locationForSearch = getLocationForSearch();
+
+  // ✅ CORREÇÃO: useItensInteligentes sempre chamado com parâmetros válidos
+  const { 
+    data: itens = [], 
+    isLoading, 
+    error,
+    refetch 
+  } = useItensInteligentes({
+    location: locationForSearch.cidade ? locationForSearch : undefined,
+    categoria: categoria !== 'todas' ? categoria : undefined,
+    subcategoria: subcategoria !== 'todas' ? subcategoria : undefined,
+    busca: debouncedBusca,
+    precoMin: precoRange[0],
+    precoMax: precoRange[1],
+    ordem: 'recentes'
+  });
+
+  // Filtrar subcategorias baseado na categoria selecionada
   const getSubcategoriasFiltradas = () => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
@@ -95,7 +141,7 @@ const FeedOptimized = () => {
     return subcategoriasUnicas;
   };
 
-  // Obter tamanhos do primeiro tipo disponível - versão simples
+  // Obter tamanhos do primeiro tipo disponível
   const getTamanhosDisponiveis = () => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
@@ -116,35 +162,6 @@ const FeedOptimized = () => {
 
   const subcategoriasFiltradas = getSubcategoriasFiltradas();
   const tamanhosDisponiveis = getTamanhosDisponiveis();
-
-  const debouncedBusca = useDebounce(busca, 500);
-
-  // Localização para busca
-  const locationForSearch = location || (cidadeManual ? { 
-    cidade: cidadeManual, 
-    estado: '',
-    bairro: undefined 
-  } : (profile?.cidade && profile?.estado ? {
-    cidade: profile.cidade,
-    estado: profile.estado,
-    bairro: profile.bairro || undefined
-  } : null));
-
-  // Buscar itens inteligentes
-  const { 
-    data: itens = [], 
-    isLoading, 
-    error,
-    refetch 
-  } = useItensInteligentes({
-    location: locationForSearch,
-    categoria: categoria !== 'todas' ? categoria : undefined,
-    subcategoria: subcategoria !== 'todas' ? subcategoria : undefined,
-    busca: debouncedBusca,
-    precoMin: precoRange[0],
-    precoMax: precoRange[1],
-    ordem: 'recentes'
-  });
 
   // Filtrar itens baseado na opção de mostrar reservados
   const itensFiltrados = mostrarReservados 
@@ -224,7 +241,7 @@ const FeedOptimized = () => {
   };
 
   const getLocationText = () => {
-    if (locationForSearch) {
+    if (locationForSearch && locationForSearch.cidade) {
       return `em ${locationForSearch.cidade}`;
     }
     return 'próximos';
@@ -253,7 +270,7 @@ const FeedOptimized = () => {
                 <h2 className="text-lg font-semibold text-gray-800">
                   Buscar Itens
                 </h2>
-                {locationForSearch && (
+                {locationForSearch && locationForSearch.cidade && (
                   <div className="flex items-center text-sm text-gray-500 mt-1">
                     <MapPin className="w-3 h-3 mr-1" />
                     <span>
@@ -544,7 +561,7 @@ const FeedOptimized = () => {
               {/* Contador de resultados */}
               <div className="mb-4 text-sm text-gray-600">
                 {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
-                {locationForSearch && ` em ${locationForSearch.cidade}`}
+                {locationForSearch && locationForSearch.cidade && ` em ${locationForSearch.cidade}`}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

@@ -2247,13 +2247,7 @@ export type Database = {
         Returns: number
       }
       entrar_fila_espera: {
-        Args:
-          | { p_item_id: string; p_usuario_id: string }
-          | {
-              p_item_id: string
-              p_usuario_id: string
-              p_valor_girinhas: number
-            }
+        Args: { p_item_id: string; p_usuario_id: string }
         Returns: Json
       }
       estender_validade_girinhas: {
@@ -2435,6 +2429,19 @@ export type Database = {
       processar_proximo_fila: {
         Args: { p_item_id: string }
         Returns: undefined
+      }
+      processar_reserva: {
+        Args: {
+          p_item_id: string
+          p_usuario_reservou: string
+          p_valor: number
+          p_permitir_reservado?: boolean
+        }
+        Returns: string
+      }
+      processar_reserva_da_fila: {
+        Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }
+        Returns: string
       }
       processar_reserva_item_v2: {
         Args: { p_dados: Json }
