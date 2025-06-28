@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,28 +15,23 @@ import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 import { ItemCard } from '@/components/shared/ItemCard';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-import { useItensInteligentes } from '@/hooks/useItensInteligentes';
 import { useReservas } from '@/hooks/useReservas';
 import { useFavoritos } from '@/hooks/useFavoritos';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
-import { useConfigCategorias } from '@/hooks/useConfigCategorias';
-import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
-import { useConfigSistema } from '@/hooks/useConfigSistema'; // ✅ ADICIONADO
-import { useToast } from '@/hooks/use-toast'; // ✅ ADICIONADO
-import { supabase } from '@/integrations/supabase/client'; // ✅ ADICIONADO
+import { useConfigSistema } from '@/hooks/useConfigSistema';
+import { useToast } from '@/hooks/use-toast';
+import { useFeedInfinito } from '@/hooks/useFeedInfinito';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { supabase } from '@/integrations/supabase/client';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
-  
-  // ✅ SIMPLIFICADO: AuthGuard já garante que temos usuário
   const { user } = useAuth();
-  const { profile } = useProfile();
-  const { toast } = useToast(); // ✅ ADICIONADO
+  const { toast } = useToast();
   
-  // Estados básicos do feed
+  // ✅ MANTER TODOS os estados de filtros exatamente iguais
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
@@ -48,24 +44,21 @@ const FeedOptimized = () => {
   const [mostrarReservados, setMostrarReservados] = useState(true);
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // Hooks para dados
+  // ✅ MANTER hooks essenciais
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
-  const { configuracoes: categorias = [], isLoading: loadingCategorias } = useConfigCategorias();
-  const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
   const debouncedBusca = useDebounce(busca, 500);
   
-  // ✅ ADICIONADO: Hook de reservas e configurações do sistema
+  // ✅ MANTER hooks de reservas e favoritos
   const { 
     reservas, 
     filasEspera, 
     entrarNaFila: entrarNaFilaOriginal, 
     isItemReservado 
   } = useReservas();
-  const { taxaTransacao } = useConfigSistema(); // ✅ ADICIONADO
-  
+  const { taxaTransacao } = useConfigSistema();
   const { toggleFavorito, verificarSeFavorito } = useFavoritos();
-
+  
   // ✅ Função para calcular location de forma segura
   const getLocationForSearch = () => {
     if (location) return location;
@@ -78,34 +71,97 @@ const FeedOptimized = () => {
       };
     }
     
-    if (profile?.cidade && profile?.estado) {
-      return {
-        cidade: profile.cidade,
-        estado: profile.estado,
-        bairro: profile.bairro || undefined
-      };
-    }
-    
     return { cidade: '', estado: '', bairro: undefined };
   };
 
   const locationForSearch = getLocationForSearch();
-
-  // Buscar itens
-  const { 
-    data: itens = [], 
-    isLoading, 
-    error,
-    refetch 
-  } = useItensInteligentes({
-    location: locationForSearch.cidade ? locationForSearch : undefined,
-    categoria: categoria !== 'todas' ? categoria : undefined,
-    subcategoria: subcategoria !== 'todas' ? subcategoria : undefined,
+  
+  // ✅ NOVO: Objeto com todos os filtros consolidado
+  const filtrosCompletos = useMemo(() => ({
     busca: debouncedBusca,
+    cidade: locationForSearch.cidade || cidadeManual,
+    categoria: categoria === 'todas' ? undefined : categoria,
+    subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
+    genero: genero === 'todos' ? undefined : genero,
+    tamanho: tamanho === 'todos' ? undefined : tamanho,
     precoMin: precoRange[0],
     precoMax: precoRange[1],
-    ordem: 'recentes'
+    mostrarReservados
+  }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
+  
+  // ✅ NOVO: Hook consolidado com TODOS os filtros
+  const {
+    data: paginasFeed,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loadingFeed,
+    refetch
+  } = useFeedInfinito(user?.id || '', filtrosCompletos);
+  
+  // ✅ Extrair dados das páginas
+  const itens = useMemo(() => {
+    return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
+  }, [paginasFeed]);
+  
+  const configuracoes = paginasFeed?.pages?.[0]?.configuracoes;
+  const categorias = configuracoes?.categorias || [];
+  const todasSubcategorias = configuracoes?.subcategorias || [];
+  const profile = paginasFeed?.pages?.[0]?.profile_essencial;
+  
+  // ✅ MANTER toda a lógica de subcategorias filtradas
+  const getSubcategoriasFiltradas = () => {
+    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
+    
+    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    return subcategoriasUnicas;
+  };
+
+  // ✅ MANTER lógica de tamanhos
+  const getTamanhosDisponiveis = () => {
+    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
+    
+    const tipos = Object.keys(tiposTamanho);
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  };
+
+  const subcategoriasFiltradas = getSubcategoriasFiltradas();
+  const tamanhosDisponiveis = getTamanhosDisponiveis();
+
+  // ✅ Filtrar itens baseado na opção de mostrar reservados
+  const itensFiltrados = mostrarReservados 
+    ? itens 
+    : itens.filter(item => item.status === 'disponivel');
+
+  // ✅ NOVO: Scroll infinito
+  const { ref: infiniteRef } = useInfiniteScroll({
+    loading: isFetchingNextPage,
+    hasNextPage: hasNextPage || false,
+    onLoadMore: fetchNextPage,
+    disabled: !hasNextPage,
+    rootMargin: '100px',
   });
+
+  const handleItemClick = useCallback((itemId: string) => {
+    navigate(`/item/${itemId}`);
+  }, [navigate]);
 
   // ✅ FUNÇÃO CORRIGIDA: entrarNaFila com mensagens adequadas
   const entrarNaFila = async (itemId: string) => {
@@ -130,7 +186,6 @@ const FeedOptimized = () => {
         return false;
       }
 
-      // ✅ CORREÇÃO: Verificar o tipo de resposta e ajustar mensagem
       if (data.tipo === 'reserva_direta') {
         toast({ 
           title: "Item reservado! 🎉", 
@@ -148,7 +203,7 @@ const FeedOptimized = () => {
         setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
       }, 2000);
       
-      await refetch(); // ✅ ADICIONADO: Atualizar lista após ação
+      await refetch();
       return true;
     } catch (err) {
       console.error('Erro ao entrar na fila:', err);
@@ -182,56 +237,10 @@ const FeedOptimized = () => {
     const total = valorGirinhas + taxa;
     return {
       valorItem: valorGirinhas,
-      taxa: Math.round(taxa * 100) / 100, // Arredondar para 2 casas
-      total: Math.round(total * 100) / 100 // Arredondar para 2 casas
+      taxa: Math.round(taxa * 100) / 100,
+      total: Math.round(total * 100) / 100
     };
   };
-
-  // Filtrar subcategorias baseado na categoria selecionada
-  const getSubcategoriasFiltradas = () => {
-    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
-    
-    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
-    
-    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
-      if (!acc.some(item => item.nome === sub.nome)) {
-        acc.push(sub);
-      }
-      return acc;
-    }, [] as typeof filtradas);
-    
-    return subcategoriasUnicas;
-  };
-
-  // Obter tamanhos do primeiro tipo disponível
-  const getTamanhosDisponiveis = () => {
-    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
-    
-    const tipos = Object.keys(tiposTamanho);
-    const tipoUnico = tipos[0];
-    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
-    
-    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
-      if (!acc.some(item => item.valor === tamanho.valor)) {
-        acc.push(tamanho);
-      }
-      return acc;
-    }, [] as typeof tamanhos);
-    
-    return tamanhosUnicos;
-  };
-
-  const subcategoriasFiltradas = getSubcategoriasFiltradas();
-  const tamanhosDisponiveis = getTamanhosDisponiveis();
-
-  // Filtrar itens baseado na opção de mostrar reservados
-  const itensFiltrados = mostrarReservados 
-    ? itens 
-    : itens.filter(item => item.status === 'disponivel');
-
-  const handleItemClick = useCallback((itemId: string) => {
-    navigate(`/item/${itemId}`);
-  }, [navigate]);
 
   // Handlers para ações dos itens
   const handleReservarItem = async (itemId: string) => {
@@ -438,18 +447,14 @@ const FeedOptimized = () => {
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
                       <SelectItem value="todas">Todas</SelectItem>
-                      {loadingCategorias ? (
-                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                      ) : (
-                        categorias.map((cat) => (
-                          <SelectItem key={cat.codigo} value={cat.codigo}>
-                            <span className="flex items-center gap-2">
-                              <span className="text-sm">{cat.icone}</span>
-                              {cat.nome}
-                            </span>
-                          </SelectItem>
-                        ))
-                      )}
+                      {categorias.map((cat) => (
+                        <SelectItem key={cat.codigo} value={cat.codigo}>
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm">{cat.icone}</span>
+                            {cat.nome}
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -459,16 +464,14 @@ const FeedOptimized = () => {
                   <Select 
                     value={subcategoria} 
                     onValueChange={setSubcategoria}
-                    disabled={categoria === 'todas' || loadingSubcategorias}
+                    disabled={categoria === 'todas'}
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
                       <SelectItem value="todas">Todas</SelectItem>
-                      {loadingSubcategorias ? (
-                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                      ) : subcategoriasFiltradas.length === 0 ? (
+                      {subcategoriasFiltradas.length === 0 ? (
                         <SelectItem value="none" disabled>Nenhuma subcategoria encontrada</SelectItem>
                       ) : (
                         subcategoriasFiltradas.map((sub) => (
@@ -587,7 +590,7 @@ const FeedOptimized = () => {
         </div>
 
         {/* Loading state */}
-        {isLoading && (
+        {loadingFeed && itensFiltrados.length === 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <ItemCardSkeleton key={i} />
@@ -595,19 +598,8 @@ const FeedOptimized = () => {
           </div>
         )}
 
-        {/* Error state */}
-        {error && (
-          <EmptyState
-            type="generic"
-            title="Erro ao carregar itens"
-            description="Tente novamente em alguns instantes"
-            actionLabel="Tentar novamente"
-            onAction={() => refetch()}
-          />
-        )}
-
         {/* Empty state */}
-        {!isLoading && !error && itensFiltrados.length === 0 && (
+        {!loadingFeed && itensFiltrados.length === 0 && (
           <EmptyState
             type="search"
             title={locationForSearch?.cidade ? 
@@ -625,7 +617,7 @@ const FeedOptimized = () => {
         )}
 
         {/* Grid de itens */}
-        {!isLoading && !error && itensFiltrados.length > 0 && (
+        {itensFiltrados.length > 0 && (
           <>
             <div className="mb-4 text-sm text-gray-600">
               {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
@@ -638,11 +630,10 @@ const FeedOptimized = () => {
                 const valorTotal = calcularValorTotal(item.valor_girinhas);
                 
                 return (
-                  <div key={item.id} className="relative">
+                  <div key={item.id} className="relative group">
                     <ItemCard
                       item={{
                         ...item,
-                        // ✅ MODIFICADO: Mostrar valor total com taxa no título/preço
                         valor_girinhas: valorTotal.total
                       }}
                       onItemClick={handleItemClick}
@@ -653,8 +644,8 @@ const FeedOptimized = () => {
                       onEntrarFila={() => handleEntrarFila(item.id)}
                       actionState={actionStates[item.id]}
                       filaInfo={filaInfo}
-                      reservas={reservas} // ✅ ADICIONADO
-                      currentUserId={user?.id} // ✅ ADICIONADO
+                      reservas={reservas}
+                      currentUserId={user?.id}
                     />
                     
                     {/* ✅ ADICIONADO: Tooltip com breakdown do preço */}
@@ -675,6 +666,25 @@ const FeedOptimized = () => {
             </div>
           </>
         )}
+
+        {/* ✅ NOVO: Scroll infinito e loading */}
+        <div ref={infiniteRef} className="flex justify-center p-8">
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2">
+              <LoadingSpinner />
+              <span className="text-gray-600">Carregando mais itens...</span>
+            </div>
+          )}
+          {!hasNextPage && itens.length > 0 && !loadingFeed && (
+            <div className="text-center">
+              <p className="text-gray-500 mb-2">🎉 Você viu todos os itens disponíveis!</p>
+              <Button onClick={() => navigate('/publicar')} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Publicar um item
+              </Button>
+            </div>
+          )}
+        </div>
       </main>
       
       <QuickNav />
