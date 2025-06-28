@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch'; // ✅ ADICIONADO
+import { Label } from '@/components/ui/label'; // ✅ ADICIONADO
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
@@ -15,6 +17,8 @@ import AuthGuard from '@/components/auth/AuthGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useItensInteligentes } from '@/hooks/useItensInteligentes';
+import { useReservas } from '@/hooks/useReservas'; // ✅ ADICIONADO
+import { useFavoritos } from '@/hooks/useFavoritos'; // ✅ ADICIONADO
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
@@ -27,6 +31,8 @@ const FeedOptimized = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { entrarNaFila } = useReservas(); // ✅ ADICIONADO
+  const { toggleFavorito, verificarSeFavorito } = useFavoritos(); // ✅ ADICIONADO
   
   // Estados dos filtros - versão simplificada
   const [busca, setBusca] = useState('');
@@ -38,6 +44,7 @@ const FeedOptimized = () => {
   const [precoRange, setPrecoRange] = useState([0, 200]);
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true); // Sempre mostrar itens por padrão
+  const [mostrarReservados, setMostrarReservados] = useState(true); // ✅ ADICIONADO
   
   // Geolocalização
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
@@ -163,9 +170,52 @@ const FeedOptimized = () => {
     ordem: 'recentes'
   });
 
+  // ✅ ADICIONADO: Filtrar itens baseado na opção de mostrar reservados
+  const itensFiltrados = mostrarReservados 
+    ? itens 
+    : itens.filter(item => item.status === 'disponivel');
+
+  // ✅ ADICIONADO: Estatísticas dos itens
+  const estatisticas = {
+    total: itens.length,
+    disponiveis: itens.filter(item => item.status === 'disponivel').length,
+    reservados: itens.filter(item => item.status === 'reservado').length
+  };
+
   const handleItemClick = useCallback((itemId: string) => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
+
+  // ✅ ADICIONADO: Handlers para ações dos itens
+  const handleReservarItem = async (itemId: string) => {
+    try {
+      const sucesso = await entrarNaFila(itemId);
+      if (sucesso) {
+        refetch();
+      }
+    } catch (error) {
+      console.error('Erro ao reservar item:', error);
+    }
+  };
+
+  const handleEntrarFila = async (itemId: string) => {
+    try {
+      const sucesso = await entrarNaFila(itemId);
+      if (sucesso) {
+        refetch();
+      }
+    } catch (error) {
+      console.error('Erro ao entrar na fila:', error);
+    }
+  };
+
+  const handleToggleFavorito = async (itemId: string) => {
+    try {
+      await toggleFavorito(itemId);
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+    }
+  };
 
   const handleAplicarFiltros = () => {
     setFiltrosAplicados(true);
@@ -180,6 +230,7 @@ const FeedOptimized = () => {
     setGenero('todos');
     setTamanho('todos');
     setPrecoRange([0, 200]);
+    setMostrarReservados(true); // ✅ ADICIONADO
     limparLocalizacao();
     setMostrarFiltrosAvancados(false);
     refetch();
@@ -255,6 +306,25 @@ const FeedOptimized = () => {
                 <Plus className="w-4 h-4 mr-1" />
                 Publicar
               </Button>
+            </div>
+
+            {/* ✅ ADICIONADO: Toggle para mostrar/ocultar itens reservados */}
+            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-4">
+              <div className="flex items-center gap-3">
+                <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
+                  Mostrar itens reservados
+                </Label>
+                <Switch
+                  id="mostrar-reservados"
+                  checked={mostrarReservados}
+                  onCheckedChange={setMostrarReservados}
+                />
+              </div>
+              
+              {/* ✅ ADICIONADO: Estatísticas */}
+              <div className="text-xs text-gray-500">
+                {estatisticas.disponiveis} disponíveis • {estatisticas.reservados} reservados
+              </div>
             </div>
 
             {/* Campo de busca com ícone de filtro */}
@@ -486,34 +556,48 @@ const FeedOptimized = () => {
           )}
 
           {/* Empty state */}
-          {!isLoading && !error && itens.length === 0 && (
+          {!isLoading && !error && itensFiltrados.length === 0 && (
             <EmptyState
               type="search"
               title={locationForSearch?.cidade ? 
                 `Nenhum item encontrado em ${locationForSearch.cidade}` : 
                 "Nenhum item encontrado"
               }
-              description="Tente ajustar os filtros para ver mais opções"
+              description={
+                !mostrarReservados 
+                  ? "Tente incluir itens reservados ou ajustar os filtros"
+                  : "Tente ajustar os filtros para ver mais opções"
+              }
               actionLabel="Limpar filtros"
               onAction={handleLimparFiltros}
             />
           )}
 
           {/* Grid de itens */}
-          {!isLoading && !error && itens.length > 0 && (
+          {!isLoading && !error && itensFiltrados.length > 0 && (
             <>
-              {/* Contador de resultados */}
-              <div className="mb-4 text-sm text-gray-600">
-                {itens.length} {itens.length === 1 ? 'item encontrado' : 'itens encontrados'}
-                {locationForSearch && ` em ${locationForSearch.cidade}`}
+              {/* ✅ ADICIONADO: Contador de resultados com estatísticas */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm text-gray-600">
+                  {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
+                  {locationForSearch && ` em ${locationForSearch.cidade}`}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {itensFiltrados.filter(item => item.status === 'disponivel').length} disponíveis
+                </div>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {itens.map((item) => (
+                {itensFiltrados.map((item) => (
                   <ItemCard
                     key={item.id}
                     item={item}
                     onItemClick={handleItemClick}
+                    showActions={true} // ✅ ADICIONADO
+                    isFavorito={verificarSeFavorito(item.id)} // ✅ ADICIONADO
+                    onToggleFavorito={() => handleToggleFavorito(item.id)} // ✅ ADICIONADO
+                    onReservar={() => handleReservarItem(item.id)} // ✅ ADICIONADO
+                    onEntrarFila={() => handleEntrarFila(item.id)} // ✅ ADICIONADO
                   />
                 ))}
               </div>
