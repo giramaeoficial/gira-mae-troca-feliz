@@ -36,8 +36,6 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
 
   // Buscar itens do mesmo vendedor
   const { data: itensVendedor = [], isLoading: loadingVendedor } = useItensInteligentes({
-    // Usar um filtro customizado para buscar pelo vendedor
-    // Como não temos essa opção diretamente, vamos usar os itens similares e filtrar depois
     location: location,
     ordem: 'recentes'
   });
@@ -54,6 +52,10 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
       item.id !== itemAtual.id
     )
     .slice(0, 4);
+
+  const handleItemClick = (itemId: string) => {
+    window.location.href = `/item/${itemId}`;
+  };
 
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -86,13 +88,8 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
                   <ItemCard
                     key={item.id}
                     item={item}
-                    compact={true}
+                    onItemClick={handleItemClick}
                     showActions={false}
-                    showLocation={false}
-                    showAuthor={false}
-                    onItemClick={(itemId) => {
-                      window.location.href = `/item/${itemId}`;
-                    }}
                   />
                 ))}
               </div>
@@ -122,13 +119,8 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
                   <ItemCard
                     key={item.id}
                     item={item}
-                    compact={true}
+                    onItemClick={handleItemClick}
                     showActions={false}
-                    showLocation={false}
-                    showAuthor={false}
-                    onItemClick={(itemId) => {
-                      window.location.href = `/item/${itemId}`;
-                    }}
                   />
                 ))}
               </div>
