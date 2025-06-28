@@ -28,11 +28,14 @@ export const BotaoWhatsApp: React.FC<BotaoWhatsAppProps> = ({
 }) => {
   const abrirWhatsApp = async () => {
     try {
-      // 1. Registrar que conversa foi iniciada
-      const { error } = await supabase.rpc('registrar_conversa_whatsapp', {
-        p_reserva_id: reservaId,
-        p_usuario_recebeu: usuarioRecebeuId
-      });
+      // 1. Registrar que conversa foi iniciada (usando insert direto)
+      const { error } = await supabase
+        .from('conversas_whatsapp_log')
+        .insert({
+          reserva_id: reservaId,
+          usuario_recebeu: usuarioRecebeuId,
+          tipo_usuario: isVendedor ? 'vendedor' : 'comprador'
+        });
 
       if (error) {
         console.error('Erro ao registrar conversa:', error);

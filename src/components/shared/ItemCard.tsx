@@ -242,19 +242,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         <div className="space-y-2">
           {getActionButton()}
           
-          {/* Mostrar botão WhatsApp se tiver reserva ativa */}
-          {minhaReserva && item.publicado_por_profile?.numero_whatsapp && (
-            <BotaoWhatsApp
-              reservaId={minhaReserva.id}
-              numeroWhatsApp={item.publicado_por_profile.numero_whatsapp}
-              nomeContato={vendedorNome}
-              tituloItem={item.titulo}
-              usuarioRecebeuId={item.publicado_por}
-              isVendedor={false}
-              className="w-full"
-              size="sm"
-            />
-          )}
+          {/* Remover botão WhatsApp do ItemCard por enquanto - será usado apenas em ReservaCard */}
         </div>
       </CardContent>
     </Card>
