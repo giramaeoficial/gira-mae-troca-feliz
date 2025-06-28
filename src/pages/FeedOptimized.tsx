@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -24,6 +23,9 @@ import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
+import { useConfigSistema } from '@/hooks/useConfigSistema'; // ✅ ADICIONADO
+import { useToast } from '@/hooks/use-toast'; // ✅ ADICIONADO
+import { supabase } from '@/integrations/supabase/client'; // ✅ ADICIONADO
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ const FeedOptimized = () => {
   // ✅ SIMPLIFICADO: AuthGuard já garante que temos usuário
   const { user } = useAuth();
   const { profile } = useProfile();
+  const { toast } = useToast(); // ✅ ADICIONADO
   
   // Estados básicos do feed
   const [busca, setBusca] = useState('');
@@ -43,6 +46,7 @@ const FeedOptimized = () => {
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
+  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
   // Hooks para dados
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
@@ -50,7 +54,16 @@ const FeedOptimized = () => {
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
   const debouncedBusca = useDebounce(busca, 500);
-  const { entrarNaFila } = useReservas();
+  
+  // ✅ ADICIONADO: Hook de reservas e configurações do sistema
+  const { 
+    reservas, 
+    filasEspera, 
+    entrarNaFila: entrarNaFilaOriginal, 
+    isItemReservado 
+  } = useReservas();
+  const { taxaTransacao } = useConfigSistema(); // ✅ ADICIONADO
+  
   const { toggleFavorito, verificarSeFavorito } = useFavoritos();
 
   // ✅ Função para calcular location de forma segura
@@ -93,6 +106,86 @@ const FeedOptimized = () => {
     precoMax: precoRange[1],
     ordem: 'recentes'
   });
+
+  // ✅ FUNÇÃO CORRIGIDA: entrarNaFila com mensagens adequadas
+  const entrarNaFila = async (itemId: string) => {
+    if (!user) return;
+    
+    setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('entrar_fila_espera', { 
+          p_item_id: itemId, 
+          p_usuario_id: user.id 
+        });
+
+      if (error) {
+        toast({ 
+          title: "Erro ao reservar", 
+          description: error.message, 
+          variant: "destructive" 
+        });
+        setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+        return false;
+      }
+
+      // ✅ CORREÇÃO: Verificar o tipo de resposta e ajustar mensagem
+      if (data.tipo === 'reserva_direta') {
+        toast({ 
+          title: "Item reservado! 🎉", 
+          description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega." 
+        });
+      } else if (data.tipo === 'fila_espera') {
+        toast({ 
+          title: "Entrou na fila! 📝", 
+          description: `Você está na posição ${data.posicao} da fila. As Girinhas NÃO foram bloqueadas ainda.` 
+        });
+      }
+      
+      setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      
+      await refetch(); // ✅ ADICIONADO: Atualizar lista após ação
+      return true;
+    } catch (err) {
+      console.error('Erro ao entrar na fila:', err);
+      toast({ 
+        title: "Erro ao entrar na fila", 
+        description: err instanceof Error ? err.message : "Tente novamente.", 
+        variant: "destructive" 
+      });
+      setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      return false;
+    }
+  };
+
+  // ✅ FUNÇÃO NOVA: calcular filaInfo para cada item
+  const getFilaInfo = (itemId: string) => {
+    const filaUsuario = filasEspera.find(f => f.item_id === itemId);
+    const totalNaFila = filasEspera.filter(f => f.item_id === itemId).length;
+    
+    return {
+      posicao_usuario: filaUsuario?.posicao || 0,
+      total: totalNaFila
+    };
+  };
+
+  // ✅ FUNÇÃO NOVA: calcular valor total com taxa
+  const calcularValorTotal = (valorGirinhas: number) => {
+    const taxa = valorGirinhas * (taxaTransacao / 100);
+    const total = valorGirinhas + taxa;
+    return {
+      valorItem: valorGirinhas,
+      taxa: Math.round(taxa * 100) / 100, // Arredondar para 2 casas
+      total: Math.round(total * 100) / 100 // Arredondar para 2 casas
+    };
+  };
 
   // Filtrar subcategorias baseado na categoria selecionada
   const getSubcategoriasFiltradas = () => {
@@ -144,7 +237,6 @@ const FeedOptimized = () => {
   const handleReservarItem = async (itemId: string) => {
     try {
       await entrarNaFila(itemId);
-      refetch();
     } catch (error) {
       console.error('Erro ao reservar item:', error);
     }
@@ -153,7 +245,6 @@ const FeedOptimized = () => {
   const handleEntrarFila = async (itemId: string) => {
     try {
       await entrarNaFila(itemId);
-      refetch();
     } catch (error) {
       console.error('Erro ao entrar na fila:', error);
     }
@@ -229,6 +320,18 @@ const FeedOptimized = () => {
             Descubra itens incríveis na sua região
           </p>
         </div>
+
+        {/* ✅ ADICIONADO: Exibição da taxa de transação */}
+        {taxaTransacao > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+            <div className="flex items-center gap-2 text-blue-800">
+              <span className="text-sm">ℹ️</span>
+              <span className="text-sm font-medium">
+                Taxa de transação: {taxaTransacao}% - será adicionada ao valor do item na reserva
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Header com localização e publicar */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
@@ -530,19 +633,45 @@ const FeedOptimized = () => {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {itensFiltrados.map((item) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  onItemClick={handleItemClick}
-                  showActions={true}
-                  isFavorito={verificarSeFavorito(item.id)}
-                  onToggleFavorito={() => handleToggleFavorito(item.id)}
-                  onReservar={() => handleReservarItem(item.id)}
-                  onEntrarFila={() => handleEntrarFila(item.id)}
-                  currentUserId={user?.id}
-                />
-              ))}
+              {itensFiltrados.map((item) => {
+                const filaInfo = getFilaInfo(item.id);
+                const valorTotal = calcularValorTotal(item.valor_girinhas);
+                
+                return (
+                  <div key={item.id} className="relative">
+                    <ItemCard
+                      item={{
+                        ...item,
+                        // ✅ MODIFICADO: Mostrar valor total com taxa no título/preço
+                        valor_girinhas: valorTotal.total
+                      }}
+                      onItemClick={handleItemClick}
+                      showActions={true}
+                      isFavorito={verificarSeFavorito(item.id)}
+                      onToggleFavorito={() => handleToggleFavorito(item.id)}
+                      onReservar={() => handleReservarItem(item.id)}
+                      onEntrarFila={() => handleEntrarFila(item.id)}
+                      actionState={actionStates[item.id]}
+                      filaInfo={filaInfo}
+                      reservas={reservas} // ✅ ADICIONADO
+                      currentUserId={user?.id} // ✅ ADICIONADO
+                    />
+                    
+                    {/* ✅ ADICIONADO: Tooltip com breakdown do preço */}
+                    {taxaTransacao > 0 && (
+                      <div className="absolute -bottom-8 left-2 right-2 bg-gray-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div className="text-center">
+                          <div>Item: {valorTotal.valorItem} Girinhas</div>
+                          <div>Taxa ({taxaTransacao}%): {valorTotal.taxa} Girinhas</div>
+                          <div className="font-bold border-t border-gray-600 pt-1 mt-1">
+                            Total: {valorTotal.total} Girinhas
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
