@@ -45,7 +45,7 @@ const FeedOptimized = () => {
   
   const { location } = useSimpleGeolocation();
   const { configuracoes } = useConfigCategorias();
-  const { subcategorias } = useSubcategorias(filtros.categoria);
+  const { subcategorias } = useSubcategorias();
   const { tiposTamanho } = useTiposTamanho();
 
   // Coordenadas simuladas baseadas na localização
@@ -95,6 +95,40 @@ const FeedOptimized = () => {
     setOrdenacao('recentes');
   }, []);
 
+  // Filtrar subcategorias sem duplicação
+  const subcategoriasFiltradas = React.useMemo(() => {
+    if (!subcategorias || !filtros.categoria) return [];
+    
+    const filtradas = subcategorias.filter(sub => sub.categoria_pai === filtros.categoria);
+    
+    // Remover duplicatas baseado no nome
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    return subcategoriasUnicas;
+  }, [subcategorias, filtros.categoria]);
+
+  // Obter tamanhos do primeiro tipo disponível sem duplicação
+  const tamanhosDisponiveis = React.useMemo(() => {
+    const tipos = Object.keys(tiposTamanho || {});
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    // Remover duplicatas baseado no valor
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  }, [tiposTamanho]);
+
   // Verificar se o usuário está logado
   if (authLoading) {
     return (
@@ -135,7 +169,7 @@ const FeedOptimized = () => {
                 {profile?.cidade || 'Todas as localidades'}
                 {itens && (
                   <span className="text-sm">
-                    • {itens.pages?.flatMap(page => page.data).length || 0} item(ns)
+                    • {Array.isArray(itens) ? itens.length : 0} item(ns)
                   </span>
                 )}
               </p>
@@ -148,7 +182,7 @@ const FeedOptimized = () => {
                 onClick={() => setShowFiltros(!showFiltros)}
                 className="flex items-center gap-2"
               >
-                <Filter className="w-4 h-4" />
+                <Filter className="w-4 w-4" />
                 Filtros
               </Button>
             </div>
@@ -175,7 +209,7 @@ const FeedOptimized = () => {
                   </SelectContent>
                 </Select>
 
-                {filtros.categoria && subcategorias.length > 0 && (
+                {filtros.categoria && subcategoriasFiltradas.length > 0 && (
                   <Select
                     value={filtros.subcategoria}
                     onValueChange={(value) => handleFiltroChange('subcategoria', value)}
@@ -185,9 +219,9 @@ const FeedOptimized = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Todas as subcategorias</SelectItem>
-                      {subcategorias.map((sub, index) => (
-                        <SelectItem key={index} value={sub}>
-                          {sub}
+                      {subcategoriasFiltradas.map((sub) => (
+                        <SelectItem key={sub.id} value={sub.nome}>
+                          {sub.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -227,7 +261,7 @@ const FeedOptimized = () => {
 
                 <Select
                   value={ordenacao}
-                  onValueChange={setOrdenacao}
+                  onValueChange={(value: string) => setOrdenacao(value as 'recentes' | 'preco_menor' | 'preco_maior' | 'distancia')}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Ordenar por" />
@@ -286,7 +320,7 @@ const FeedOptimized = () => {
                   Tentar novamente
                 </Button>
               </div>
-            ) : !itens?.pages?.length || itens.pages.every(page => !page.data?.length) ? (
+            ) : !itens || (Array.isArray(itens) && itens.length === 0) ? (
               <div className="col-span-full text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
@@ -302,11 +336,9 @@ const FeedOptimized = () => {
                 </Button>
               </div>
             ) : (
-              itens.pages
-                .flatMap(page => page.data || [])
-                .map((item) => (
-                  <ItemCard key={item.id} item={item} />
-                ))
+              Array.isArray(itens) && itens.map((item) => (
+                <ItemCard key={item.id} item={item} />
+              ))
             )}
           </div>
 
@@ -348,4 +380,3 @@ const FeedOptimized = () => {
 };
 
 export default FeedOptimized;
-
