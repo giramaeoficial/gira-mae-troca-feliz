@@ -1,12 +1,13 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, MessageCircle, CheckCircle, X, Users, Star, Key } from "lucide-react";
-import ChatModal from "@/components/chat/ChatModal";
+import { Clock, CheckCircle, X, Users, Star, Key } from "lucide-react";
 import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
+import { BotaoWhatsApp } from "@/components/shared/BotaoWhatsApp";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useReservas } from "@/hooks/useReservas";
@@ -32,10 +33,12 @@ interface ReservaCardProps {
     profiles_reservador?: {
       nome: string;
       avatar_url: string | null;
+      numero_whatsapp?: string;
     } | null;
     profiles_vendedor?: {
       nome: string;
       avatar_url: string | null;
+      numero_whatsapp?: string;
     } | null;
   };
   onConfirmarEntrega: (reservaId: string, codigo: string) => Promise<boolean>;
@@ -47,7 +50,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
   const { user } = useAuth();
   const { toast } = useToast();
   const { confirmarEntrega, loading } = useReservas();
-  const [showChat, setShowChat] = useState(false);
   const [showAvaliacao, setShowAvaliacao] = useState(false);
   const [showCodigoModal, setShowCodigoModal] = useState(false);
   const [loadingConfirmacao, setLoadingConfirmacao] = useState(false);
@@ -87,7 +89,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
     return `${horas}h ${minutos}m`;
   };
 
-  // FUNÇÃO ATUALIZADA: Usar sistema V2 atômico
   const handleConfirmarEntrega = async (codigo: string): Promise<boolean> => {
     setLoadingConfirmacao(true);
     try {
@@ -220,35 +221,41 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         </CardContent>
 
         <CardFooter className="pt-3 bg-gray-50/50">
-          <div className="flex gap-2 w-full">
+          <div className="flex flex-col gap-2 w-full">
             {reserva.status === 'pendente' && (
               <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowChat(true)}
-                  className="flex-1"
-                >
-                  <MessageCircle className="w-4 h-4 mr-1" />
-                  Chat
-                </Button>
+                {/* Botão WhatsApp */}
+                {outraPessoa?.numero_whatsapp && reserva.itens && (
+                  <BotaoWhatsApp
+                    reservaId={reserva.id}
+                    numeroWhatsApp={outraPessoa.numero_whatsapp}
+                    nomeContato={outraPessoa.nome}
+                    tituloItem={reserva.itens.titulo}
+                    usuarioRecebeuId={isReservador ? reserva.usuario_item : reserva.usuario_reservou}
+                    isVendedor={isVendedor}
+                    className="w-full"
+                  />
+                )}
                 
-                <Button 
-                  size="sm" 
-                  onClick={() => setShowCodigoModal(true)}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  <Key className="w-4 h-4 mr-1" />
-                  {isVendedor ? 'Código' : 'Ver código'}
-                </Button>
+                {/* Outros botões */}
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowCodigoModal(true)}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  >
+                    <Key className="w-4 h-4 mr-1" />
+                    {isVendedor ? 'Código' : 'Ver código'}
+                  </Button>
 
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={() => onCancelarReserva(reserva.id)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => onCancelarReserva(reserva.id)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </>
             )}
 
@@ -288,22 +295,6 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
       </Card>
 
       {/* Modais */}
-      {showChat && outraPessoa && reserva.itens && (
-        <ChatModal
-          isOpen={showChat}
-          onClose={() => setShowChat(false)}
-          reservaId={reserva.id}
-          outraMae={{
-            nome: outraPessoa.nome,
-            avatar: outraPessoa.avatar_url || "https://images.unsplash.com/photo-1494790108755-2616b612b776?w=100"
-          }}
-          item={{
-            titulo: reserva.itens.titulo,
-            imagem: imagemItem
-          }}
-        />
-      )}
-
       <AvaliacaoModal
         isOpen={showAvaliacao}
         onClose={() => setShowAvaliacao(false)}
