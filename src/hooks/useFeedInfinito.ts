@@ -80,27 +80,31 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
     queryFn: async ({ pageParam = 0 }) => {
       console.log('🔄 Carregando página do feed:', pageParam, 'Filtros:', filtros);
       
-      const { data, error } = await supabase.rpc('carregar_dados_feed_paginado', {
-        p_user_id: userId,
-        p_page: pageParam,
-        p_limit: 20,
-        p_busca: filtros.busca || '',
-        p_cidade: filtros.cidade || '',
-        p_categoria: filtros.categoria || 'todas',
-        p_subcategoria: filtros.subcategoria || 'todas',
-        p_genero: filtros.genero || 'todos',
-        p_tamanho: filtros.tamanho || 'todos',
-        p_preco_min: filtros.precoMin || 0,
-        p_preco_max: filtros.precoMax || 200,
-        p_mostrar_reservados: filtros.mostrarReservados ?? true
-      });
+      // Use direct RPC call to work around TypeScript limitation
+      const { data, error } = await supabase.rpc(
+        'carregar_dados_feed_paginado' as any,
+        {
+          p_user_id: userId,
+          p_page: pageParam,
+          p_limit: 20,
+          p_busca: filtros.busca || '',
+          p_cidade: filtros.cidade || '',
+          p_categoria: filtros.categoria || 'todas',
+          p_subcategoria: filtros.subcategoria || 'todas',
+          p_genero: filtros.genero || 'todos',
+          p_tamanho: filtros.tamanho || 'todos',
+          p_preco_min: filtros.precoMin || 0,
+          p_preco_max: filtros.precoMax || 200,
+          p_mostrar_reservados: filtros.mostrarReservados ?? true
+        }
+      );
       
       if (error) {
         console.error('❌ Erro ao carregar feed:', error);
         throw error;
       }
       
-      const result = data as PaginaFeed;
+      const result = data as unknown as PaginaFeed;
       console.log('✅ Feed carregado:', result.itens.length, 'itens, has_more:', result.has_more);
       
       return result;

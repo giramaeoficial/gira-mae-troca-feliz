@@ -2186,6 +2186,23 @@ export type Database = {
         Args: { p_reserva_id: string; p_usuario_id: string }
         Returns: boolean
       }
+      carregar_dados_feed_paginado: {
+        Args: {
+          p_user_id: string
+          p_page?: number
+          p_limit?: number
+          p_busca?: string
+          p_cidade?: string
+          p_categoria?: string
+          p_subcategoria?: string
+          p_genero?: string
+          p_tamanho?: string
+          p_preco_min?: number
+          p_preco_max?: number
+          p_mostrar_reservados?: boolean
+        }
+        Returns: Json
+      }
       check_database_status: {
         Args: Record<PropertyKey, never>
         Returns: {
