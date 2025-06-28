@@ -46,7 +46,7 @@ export const useItensDisponiveis = () => {
           *,
           publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
         `)
-        .eq('status', 'disponivel')
+        .in('status', ['disponivel', 'reservado'])
         .order('created_at', { ascending: false })
         .limit(50); // Limitar para melhor performance
 
@@ -107,7 +107,7 @@ export const useItensUsuario = (userId: string) => {
           publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
         `)
         .eq('publicado_por', userId)
-        .eq('status', 'disponivel')
+        .in('status', ['disponivel', 'reservado'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
