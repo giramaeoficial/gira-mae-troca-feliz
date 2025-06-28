@@ -16,7 +16,6 @@ interface ItemCardProps {
     categoria: string;
     subcategoria?: string;
     estado_conservacao: string;
-    status: string; // ✅ ADICIONADO: Campo status
     fotos?: string[];
     // ✅ ADICIONADO: Campos novos para filtros
     genero?: string;
@@ -42,14 +41,13 @@ interface ItemCardProps {
   isFavorito?: boolean;
   onToggleFavorito?: () => void;
   onEntrarFila?: () => void;
-  onReservar?: () => void; // ✅ ADICIONADO: Handler para reservar
   onItemClick?: (itemId: string) => void;
   actionState?: 'loading' | 'success' | 'error' | 'idle';
   filaInfo?: {
     posicao?: number;
     total?: number;
   };
-  isReservado?: boolean; // ✅ MODIFICADO: Agora calculado do status
+  isReservado?: boolean;
   // Configurações de exibição
   showActions?: boolean;
   showLocation?: boolean;
@@ -62,21 +60,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   isFavorito = false,
   onToggleFavorito,
   onEntrarFila,
-  onReservar, // ✅ ADICIONADO
   onItemClick,
   actionState = 'idle',
   filaInfo,
-  isReservado, // ✅ MODIFICADO: Agora pode ser override
+  isReservado = false,
   showActions = true,
   showLocation = true,
   showAuthor = true,
   compact = false
 }) => {
   const { hasCommonSchool } = useCommonSchool(item.publicado_por);
-
-  // ✅ ADICIONADO: Calcular status baseado no item ou prop
-  const itemIsReservado = isReservado ?? item.status === 'reservado';
-  const itemIsDisponivel = item.status === 'disponivel';
 
   const handleClick = () => {
     if (onItemClick) {
@@ -91,13 +84,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
-  // ✅ MODIFICADO: Handler inteligente baseado no status
-  const handleActionClick = (e: React.MouseEvent) => {
+  const handleEntrarFilaClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (itemIsReservado && onEntrarFila) {
+    if (onEntrarFila) {
       onEntrarFila();
-    } else if (itemIsDisponivel && onReservar) {
-      onReservar();
     }
   };
 
@@ -136,7 +126,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     <Card className={cn(
       "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden",
       compact ? "max-w-[200px]" : "max-w-sm",
-      itemIsReservado && "opacity-75" // ✅ MODIFICADO: Usar variável calculada
+      isReservado && "opacity-60"
     )}>
       {/* ✅ MELHORADO: Badge de localização - só mostra se tem dados */}
       {showLocation && hasLocationData && (
@@ -173,10 +163,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </Button>
       )}
 
-      {/* ✅ MODIFICADO: Badge de status reservado com novo estilo */}
-      {itemIsReservado && (
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white rounded-full px-3 py-1 text-xs font-medium shadow-sm z-10 flex items-center gap-1">
-          <Users className="w-3 h-3" />
+      {/* ✅ ADICIONADO: Badge de status reservado */}
+      {isReservado && (
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-red-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
           Reservado
         </div>
       )}
@@ -190,10 +179,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           <LazyImage
             src={item.fotos?.[0] || '/placeholder-item.jpg'}
             alt={item.titulo}
-            className={cn(
-              "w-full h-full object-cover",
-              itemIsReservado && "filter grayscale-[20%]" // ✅ ADICIONADO: Filtro visual sutil
-            )}
+            className="w-full h-full object-cover"
           />
           
           {/* ✅ ADICIONADO: Badge de estado de conservação */}
@@ -287,34 +273,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* ✅ MODIFICADO: Botão de ação inteligente baseado no status */}
-          {showActions && (onEntrarFila || onReservar) && (
+          {/* ✅ ADICIONADO: Botão de ação */}
+          {showActions && onEntrarFila && !isReservado && (
             <Button 
               size="sm" 
-              className={cn(
-                "w-full",
-                itemIsReservado 
-                  ? "bg-orange-500 hover:bg-orange-600" 
-                  : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
-              )}
-              onClick={handleActionClick}
-              disabled={actionState === 'loading' || (!itemIsDisponivel && !itemIsReservado)}
+              className="w-full bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+              onClick={handleEntrarFilaClick}
+              disabled={actionState === 'loading'}
             >
               {actionState === 'loading' ? (
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 animate-spin" />
-                  {itemIsReservado ? 'Entrando...' : 'Reservando...'}
-                </div>
-              ) : itemIsReservado ? (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Entrar na Fila
+                  Entrando...
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  Reservar
-                </div>
+                'Entrar na Fila'
               )}
             </Button>
           )}
@@ -323,8 +296,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           {actionState !== 'idle' && actionState !== 'loading' && (
             <ActionFeedback
               state={actionState}
-              successMessage={itemIsReservado ? "Adicionado à fila!" : "Item reservado!"}
-              errorMessage={itemIsReservado ? "Erro ao entrar na fila" : "Erro ao reservar"}
+              successMessage="Adicionado à fila!"
+              errorMessage="Erro ao entrar na fila"
               className="mt-2"
             />
           )}
