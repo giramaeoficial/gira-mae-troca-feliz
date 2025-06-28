@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -5,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch'; // ✅ ADICIONADO
-import { Label } from '@/components/ui/label'; // ✅ ADICIONADO
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
@@ -17,8 +18,8 @@ import AuthGuard from '@/components/auth/AuthGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useItensInteligentes } from '@/hooks/useItensInteligentes';
-import { useReservas } from '@/hooks/useReservas'; // ✅ ADICIONADO
-import { useFavoritos } from '@/hooks/useFavoritos'; // ✅ ADICIONADO
+import { useReservas } from '@/hooks/useReservas';
+import { useFavoritos } from '@/hooks/useFavoritos';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
@@ -31,8 +32,8 @@ const FeedOptimized = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
-  const { entrarNaFila } = useReservas(); // ✅ ADICIONADO
-  const { toggleFavorito, verificarSeFavorito } = useFavoritos(); // ✅ ADICIONADO
+  const { entrarNaFila } = useReservas();
+  const { toggleFavorito, verificarSeFavorito } = useFavoritos();
   
   // Estados dos filtros - versão simplificada
   const [busca, setBusca] = useState('');
@@ -43,8 +44,8 @@ const FeedOptimized = () => {
   const [tamanho, setTamanho] = useState('todos');
   const [precoRange, setPrecoRange] = useState([0, 200]);
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
-  const [filtrosAplicados, setFiltrosAplicados] = useState(true); // Sempre mostrar itens por padrão
-  const [mostrarReservados, setMostrarReservados] = useState(true); // ✅ ADICIONADO
+  const [filtrosAplicados, setFiltrosAplicados] = useState(true);
+  const [mostrarReservados, setMostrarReservados] = useState(true);
   
   // Geolocalização
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
@@ -60,8 +61,8 @@ const FeedOptimized = () => {
     subcategoria,
     tamanho,
     genero,
-    categorias: categorias.length,
-    todasSubcategorias: todasSubcategorias.length,
+    categorias: categorias?.length || 0,
+    todasSubcategorias: todasSubcategorias?.length || 0,
     tiposTamanho: Object.keys(tiposTamanho || {}).length,
     loadingCategorias,
     loadingSubcategorias,
@@ -93,9 +94,9 @@ const FeedOptimized = () => {
     return null;
   }
 
-  // Filtrar subcategorias baseado na categoria selecionada
+  // Filtrar subcategorias baseado na categoria selecionada - usando React.useMemo corretamente
   const subcategoriasFiltradas = React.useMemo(() => {
-    if (!todasSubcategorias || categoria === 'todas') return [];
+    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
     const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
     
@@ -110,9 +111,11 @@ const FeedOptimized = () => {
     return subcategoriasUnicas;
   }, [todasSubcategorias, categoria]);
 
-  // Obter tamanhos do primeiro tipo disponível sem duplicação
+  // Obter tamanhos do primeiro tipo disponível sem duplicação - usando React.useMemo corretamente
   const tamanhosDisponiveis = React.useMemo(() => {
-    const tipos = Object.keys(tiposTamanho || {});
+    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
+    
+    const tipos = Object.keys(tiposTamanho);
     const tipoUnico = tipos[0];
     const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
     
@@ -130,15 +133,15 @@ const FeedOptimized = () => {
   // Debug para subcategorias
   console.log('🔍 Debug Subcategorias:', {
     categoria,
-    subcategoriasFiltradas: subcategoriasFiltradas.length,
-    exemplos: subcategoriasFiltradas.slice(0, 3).map(s => ({ nome: s.nome, categoria_pai: s.categoria_pai }))
+    subcategoriasFiltradas: subcategoriasFiltradas?.length || 0,
+    exemplos: subcategoriasFiltradas?.slice(0, 3).map(s => ({ nome: s.nome, categoria_pai: s.categoria_pai })) || []
   });
 
   // Debug para tamanhos
   console.log('🔍 Debug Tamanhos:', {
     categoria,
-    tamanhosDisponiveis: tamanhosDisponiveis.length,
-    exemplos: tamanhosDisponiveis.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display }))
+    tamanhosDisponiveis: tamanhosDisponiveis?.length || 0,
+    exemplos: tamanhosDisponiveis?.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display })) || []
   });
 
   const debouncedBusca = useDebounce(busca, 500);
@@ -170,7 +173,7 @@ const FeedOptimized = () => {
     ordem: 'recentes'
   });
 
-  // ✅ ADICIONADO: Filtrar itens baseado na opção de mostrar reservados
+  // Filtrar itens baseado na opção de mostrar reservados
   const itensFiltrados = mostrarReservados 
     ? itens 
     : itens.filter(item => item.status === 'disponivel');
@@ -179,7 +182,7 @@ const FeedOptimized = () => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
 
-  // ✅ ADICIONADO: Handlers para ações dos itens
+  // Handlers para ações dos itens
   const handleReservarItem = async (itemId: string) => {
     try {
       await entrarNaFila(itemId);
@@ -219,7 +222,7 @@ const FeedOptimized = () => {
     setGenero('todos');
     setTamanho('todos');
     setPrecoRange([0, 200]);
-    setMostrarReservados(true); // ✅ ADICIONADO
+    setMostrarReservados(true);
     limparLocalizacao();
     setMostrarFiltrosAvancados(false);
     refetch();
@@ -297,7 +300,7 @@ const FeedOptimized = () => {
               </Button>
             </div>
 
-            {/* ✅ ADICIONADO: Toggle para mostrar/ocultar itens reservados */}
+            {/* Toggle para mostrar/ocultar itens reservados */}
             <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-4">
               <div className="flex items-center gap-3">
                 <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
@@ -310,7 +313,7 @@ const FeedOptimized = () => {
                 />
               </div>
               
-              {/* ✅ ADICIONADO: Estatísticas simples */}
+              {/* Estatísticas simples */}
               <div className="text-xs text-gray-500">
                 {itensFiltrados.length} itens
               </div>
@@ -577,11 +580,11 @@ const FeedOptimized = () => {
                     key={item.id}
                     item={item}
                     onItemClick={handleItemClick}
-                    showActions={true} // ✅ ADICIONADO
-                    isFavorito={verificarSeFavorito(item.id)} // ✅ ADICIONADO
-                    onToggleFavorito={() => handleToggleFavorito(item.id)} // ✅ ADICIONADO
-                    onReservar={() => handleReservarItem(item.id)} // ✅ ADICIONADO
-                    onEntrarFila={() => handleEntrarFila(item.id)} // ✅ ADICIONADO
+                    showActions={true}
+                    isFavorito={verificarSeFavorito(item.id)}
+                    onToggleFavorito={() => handleToggleFavorito(item.id)}
+                    onReservar={() => handleReservarItem(item.id)}
+                    onEntrarFila={() => handleEntrarFila(item.id)}
                   />
                 ))}
               </div>
