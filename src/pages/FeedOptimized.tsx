@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -5,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
@@ -15,6 +18,8 @@ import AuthGuard from '@/components/auth/AuthGuard';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useItensInteligentes } from '@/hooks/useItensInteligentes';
+import { useReservas } from '@/hooks/useReservas';
+import { useFavoritos } from '@/hooks/useFavoritos';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
@@ -27,6 +32,8 @@ const FeedOptimized = () => {
   const { user, loading: authLoading } = useAuth();
   const { profile } = useProfile();
   const { toast } = useToast();
+  const { entrarNaFila } = useReservas();
+  const { toggleFavorito, verificarSeFavorito } = useFavoritos();
   
   // Estados dos filtros - versão simplificada
   const [busca, setBusca] = useState('');
@@ -37,7 +44,8 @@ const FeedOptimized = () => {
   const [tamanho, setTamanho] = useState('todos');
   const [precoRange, setPrecoRange] = useState([0, 200]);
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
-  const [filtrosAplicados, setFiltrosAplicados] = useState(true); // Sempre mostrar itens por padrão
+  const [filtrosAplicados, setFiltrosAplicados] = useState(true);
+  const [mostrarReservados, setMostrarReservados] = useState(true);
   
   // Geolocalização
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
@@ -46,22 +54,6 @@ const FeedOptimized = () => {
   const { configuracoes: categorias = [], isLoading: loadingCategorias } = useConfigCategorias();
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria !== 'todas' ? categoria : undefined);
-
-  // Debug logs para verificar os dados
-  console.log('🔍 Debug FeedOptimized:', {
-    categoria,
-    subcategoria,
-    tamanho,
-    genero,
-    categorias: categorias.length,
-    todasSubcategorias: todasSubcategorias.length,
-    tiposTamanho: Object.keys(tiposTamanho || {}).length,
-    loadingCategorias,
-    loadingSubcategorias,
-    loadingTamanhos,
-    user: !!user,
-    authLoading
-  });
 
   // Verificar se o usuário está logado
   if (authLoading) {
@@ -86,9 +78,9 @@ const FeedOptimized = () => {
     return null;
   }
 
-  // Filtrar subcategorias baseado na categoria selecionada
-  const subcategoriasFiltradas = React.useMemo(() => {
-    if (!todasSubcategorias || categoria === 'todas') return [];
+  // Filtrar subcategorias baseado na categoria selecionada - versão simples
+  const getSubcategoriasFiltradas = () => {
+    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
     const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
     
@@ -101,11 +93,13 @@ const FeedOptimized = () => {
     }, [] as typeof filtradas);
     
     return subcategoriasUnicas;
-  }, [todasSubcategorias, categoria]);
+  };
 
-  // Obter tamanhos do primeiro tipo disponível sem duplicação
-  const tamanhosDisponiveis = React.useMemo(() => {
-    const tipos = Object.keys(tiposTamanho || {});
+  // Obter tamanhos do primeiro tipo disponível - versão simples
+  const getTamanhosDisponiveis = () => {
+    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
+    
+    const tipos = Object.keys(tiposTamanho);
     const tipoUnico = tipos[0];
     const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
     
@@ -118,21 +112,10 @@ const FeedOptimized = () => {
     }, [] as typeof tamanhos);
     
     return tamanhosUnicos;
-  }, [tiposTamanho]);
+  };
 
-  // Debug para subcategorias
-  console.log('🔍 Debug Subcategorias:', {
-    categoria,
-    subcategoriasFiltradas: subcategoriasFiltradas.length,
-    exemplos: subcategoriasFiltradas.slice(0, 3).map(s => ({ nome: s.nome, categoria_pai: s.categoria_pai }))
-  });
-
-  // Debug para tamanhos
-  console.log('🔍 Debug Tamanhos:', {
-    categoria,
-    tamanhosDisponiveis: tamanhosDisponiveis.length,
-    exemplos: tamanhosDisponiveis.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display }))
-  });
+  const subcategoriasFiltradas = getSubcategoriasFiltradas();
+  const tamanhosDisponiveis = getTamanhosDisponiveis();
 
   const debouncedBusca = useDebounce(busca, 500);
 
@@ -163,9 +146,41 @@ const FeedOptimized = () => {
     ordem: 'recentes'
   });
 
+  // Filtrar itens baseado na opção de mostrar reservados
+  const itensFiltrados = mostrarReservados 
+    ? itens 
+    : itens.filter(item => item.status === 'disponivel');
+
   const handleItemClick = useCallback((itemId: string) => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
+
+  // Handlers para ações dos itens
+  const handleReservarItem = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+      refetch();
+    } catch (error) {
+      console.error('Erro ao reservar item:', error);
+    }
+  };
+
+  const handleEntrarFila = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+      refetch();
+    } catch (error) {
+      console.error('Erro ao entrar na fila:', error);
+    }
+  };
+
+  const handleToggleFavorito = async (itemId: string) => {
+    try {
+      await toggleFavorito(itemId);
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+    }
+  };
 
   const handleAplicarFiltros = () => {
     setFiltrosAplicados(true);
@@ -180,6 +195,7 @@ const FeedOptimized = () => {
     setGenero('todos');
     setTamanho('todos');
     setPrecoRange([0, 200]);
+    setMostrarReservados(true);
     limparLocalizacao();
     setMostrarFiltrosAvancados(false);
     refetch();
@@ -255,6 +271,25 @@ const FeedOptimized = () => {
                 <Plus className="w-4 h-4 mr-1" />
                 Publicar
               </Button>
+            </div>
+
+            {/* Toggle para mostrar/ocultar itens reservados */}
+            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-4">
+              <div className="flex items-center gap-3">
+                <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
+                  Mostrar itens reservados
+                </Label>
+                <Switch
+                  id="mostrar-reservados"
+                  checked={mostrarReservados}
+                  onCheckedChange={setMostrarReservados}
+                />
+              </div>
+              
+              {/* Estatísticas simples */}
+              <div className="text-xs text-gray-500">
+                {itensFiltrados.length} itens
+              </div>
             </div>
 
             {/* Campo de busca com ícone de filtro */}
@@ -486,34 +521,43 @@ const FeedOptimized = () => {
           )}
 
           {/* Empty state */}
-          {!isLoading && !error && itens.length === 0 && (
+          {!isLoading && !error && itensFiltrados.length === 0 && (
             <EmptyState
               type="search"
               title={locationForSearch?.cidade ? 
                 `Nenhum item encontrado em ${locationForSearch.cidade}` : 
                 "Nenhum item encontrado"
               }
-              description="Tente ajustar os filtros para ver mais opções"
+              description={
+                !mostrarReservados 
+                  ? "Tente incluir itens reservados ou ajustar os filtros"
+                  : "Tente ajustar os filtros para ver mais opções"
+              }
               actionLabel="Limpar filtros"
               onAction={handleLimparFiltros}
             />
           )}
 
           {/* Grid de itens */}
-          {!isLoading && !error && itens.length > 0 && (
+          {!isLoading && !error && itensFiltrados.length > 0 && (
             <>
               {/* Contador de resultados */}
               <div className="mb-4 text-sm text-gray-600">
-                {itens.length} {itens.length === 1 ? 'item encontrado' : 'itens encontrados'}
+                {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
                 {locationForSearch && ` em ${locationForSearch.cidade}`}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {itens.map((item) => (
+                {itensFiltrados.map((item) => (
                   <ItemCard
                     key={item.id}
                     item={item}
                     onItemClick={handleItemClick}
+                    showActions={true}
+                    isFavorito={verificarSeFavorito(item.id)}
+                    onToggleFavorito={() => handleToggleFavorito(item.id)}
+                    onReservar={() => handleReservarItem(item.id)}
+                    onEntrarFila={() => handleEntrarFila(item.id)}
                   />
                 ))}
               </div>
