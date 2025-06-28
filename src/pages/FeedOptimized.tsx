@@ -54,7 +54,21 @@ const FeedOptimized = () => {
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria !== 'todas' ? categoria : undefined);
 
-
+  // Debug logs para verificar os dados
+  console.log('🔍 Debug FeedOptimized:', {
+    categoria,
+    subcategoria,
+    tamanho,
+    genero,
+    categorias: categorias.length,
+    todasSubcategorias: todasSubcategorias.length,
+    tiposTamanho: Object.keys(tiposTamanho || {}).length,
+    loadingCategorias,
+    loadingSubcategorias,
+    loadingTamanhos,
+    user: !!user,
+    authLoading
+  });
 
   // Verificar se o usuário está logado
   if (authLoading) {
@@ -80,16 +94,52 @@ const FeedOptimized = () => {
   }
 
   // Filtrar subcategorias baseado na categoria selecionada
-  const subcategoriasFiltradas = categoria !== 'todas' && todasSubcategorias
-    ? todasSubcategorias.filter(sub => sub.categoria_pai === categoria)
-    : [];
+  const subcategoriasFiltradas = React.useMemo(() => {
+    if (!todasSubcategorias || categoria === 'todas') return [];
+    
+    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
+    
+    // Remover duplicatas baseado no nome
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    return subcategoriasUnicas;
+  }, [todasSubcategorias, categoria]);
 
-  // Obter tamanhos do primeiro tipo disponível
-  const tamanhosDisponiveis = tiposTamanho && Object.keys(tiposTamanho).length > 0
-    ? Object.values(tiposTamanho)[0] || []
-    : [];
+  // Obter tamanhos do primeiro tipo disponível sem duplicação
+  const tamanhosDisponiveis = React.useMemo(() => {
+    const tipos = Object.keys(tiposTamanho || {});
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    // Remover duplicatas baseado no valor
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  }, [tiposTamanho]);
 
+  // Debug para subcategorias
+  console.log('🔍 Debug Subcategorias:', {
+    categoria,
+    subcategoriasFiltradas: subcategoriasFiltradas.length,
+    exemplos: subcategoriasFiltradas.slice(0, 3).map(s => ({ nome: s.nome, categoria_pai: s.categoria_pai }))
+  });
 
+  // Debug para tamanhos
+  console.log('🔍 Debug Tamanhos:', {
+    categoria,
+    tamanhosDisponiveis: tamanhosDisponiveis.length,
+    exemplos: tamanhosDisponiveis.slice(0, 3).map(t => ({ valor: t.valor, label: t.label_display }))
+  });
 
   const debouncedBusca = useDebounce(busca, 500);
 
@@ -121,16 +171,9 @@ const FeedOptimized = () => {
   });
 
   // ✅ ADICIONADO: Filtrar itens baseado na opção de mostrar reservados
-  const itensFiltrados = mostrarReservados && itens
+  const itensFiltrados = mostrarReservados 
     ? itens 
-    : itens?.filter?.(item => item.status === 'disponivel') || [];
-
-  // ✅ ADICIONADO: Estatísticas dos itens
-  const estatisticas = {
-    total: itens?.length || 0,
-    disponiveis: itens?.filter?.(item => item.status === 'disponivel')?.length || 0,
-    reservados: itens?.filter?.(item => item.status === 'reservado')?.length || 0
-  };
+    : itens.filter(item => item.status === 'disponivel');
 
   const handleItemClick = useCallback((itemId: string) => {
     navigate(`/item/${itemId}`);
@@ -139,10 +182,8 @@ const FeedOptimized = () => {
   // ✅ ADICIONADO: Handlers para ações dos itens
   const handleReservarItem = async (itemId: string) => {
     try {
-      const sucesso = await entrarNaFila(itemId);
-      if (sucesso) {
-        refetch();
-      }
+      await entrarNaFila(itemId);
+      refetch();
     } catch (error) {
       console.error('Erro ao reservar item:', error);
     }
@@ -150,10 +191,8 @@ const FeedOptimized = () => {
 
   const handleEntrarFila = async (itemId: string) => {
     try {
-      const sucesso = await entrarNaFila(itemId);
-      if (sucesso) {
-        refetch();
-      }
+      await entrarNaFila(itemId);
+      refetch();
     } catch (error) {
       console.error('Erro ao entrar na fila:', error);
     }
@@ -271,9 +310,9 @@ const FeedOptimized = () => {
                 />
               </div>
               
-              {/* ✅ ADICIONADO: Estatísticas */}
+              {/* ✅ ADICIONADO: Estatísticas simples */}
               <div className="text-xs text-gray-500">
-                {estatisticas.disponiveis} disponíveis • {estatisticas.reservados} reservados
+                {itensFiltrados.length} itens
               </div>
             </div>
 
@@ -526,15 +565,10 @@ const FeedOptimized = () => {
           {/* Grid de itens */}
           {!isLoading && !error && itensFiltrados.length > 0 && (
             <>
-              {/* ✅ ADICIONADO: Contador de resultados com estatísticas */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-sm text-gray-600">
-                  {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
-                  {locationForSearch && ` em ${locationForSearch.cidade}`}
-                </div>
-                <div className="text-xs text-gray-500">
-                  {itensFiltrados.filter(item => item.status === 'disponivel').length} disponíveis
-                </div>
+              {/* Contador de resultados */}
+              <div className="mb-4 text-sm text-gray-600">
+                {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
+                {locationForSearch && ` em ${locationForSearch.cidade}`}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
