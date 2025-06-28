@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,10 +15,24 @@ import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 import { ItemCard } from '@/components/shared/ItemCard';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
+import { useItensInteligentes } from '@/hooks/useItensInteligentes';
+import { useReservas } from '@/hooks/useReservas';
+import { useFavoritos } from '@/hooks/useFavoritos';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
+import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { useSubcategorias } from '@/hooks/useSubcategorias';
+import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 
-// ✅ HOOK BÁSICO - sempre chamado
-const useBasicState = () => {
+const FeedOptimized = () => {
+  const navigate = useNavigate();
+  
+  // ✅ SIMPLIFICADO: AuthGuard já garante que temos usuário
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  
+  // Estados básicos do feed
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
@@ -29,92 +44,12 @@ const useBasicState = () => {
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
 
-  return {
-    busca, setBusca,
-    cidadeManual, setCidadeManual,
-    categoria, setCategoria,
-    subcategoria, setSubcategoria,
-    genero, setGenero,
-    tamanho, setTamanho,
-    precoRange, setPrecoRange,
-    mostrarFiltrosAvancados, setMostrarFiltrosAvancados,
-    filtrosAplicados, setFiltrosAplicados,
-    mostrarReservados, setMostrarReservados,
-  };
-};
-
-const FeedOptimized = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  // ✅ SEMPRE chamar hooks básicos primeiro
-  const { user, loading: authLoading } = useAuth();
-  const basicState = useBasicState();
-
-  // ✅ Loading state - retornar ANTES de chamar hooks dependentes
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-        <Header />
-        <div className="flex items-center justify-center min-h-screen">
-          <LoadingSpinner />
-        </div>
-        <QuickNav />
-      </div>
-    );
-  }
-
-  // ✅ CORREÇÃO: Redirecionar via useEffect para não causar erro
-  useEffect(() => {
-    if (!authLoading && !user) {
-      toast({
-        title: "Acesso negado",
-        description: "Você precisa estar logada para acessar o feed.",
-        variant: "destructive",
-      });
-      navigate('/auth', { replace: true });
-    }
-  }, [user, authLoading, navigate, toast]);
-
-  // ✅ Se não tem user, retornar loading enquanto redireciona
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-        <Header />
-        <div className="flex items-center justify-center min-h-screen">
-          <LoadingSpinner />
-        </div>
-        <QuickNav />
-      </div>
-    );
-  }
-
-  // ✅ AGORA SIM: componente autenticado com todos os hooks
-  return <AuthenticatedFeed {...basicState} />;
-};
-
-// ✅ COMPONENTE SEPARADO: só renderiza quando tem usuário
-const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicState) => {
-  const navigate = useNavigate();
-  const { user } = useAuth(); // Agora sabemos que user existe
-  
-  // ✅ Hooks que dependem do usuário - agora seguros
-  const { useProfile } = require('@/hooks/useProfile');
-  const { useItensInteligentes } = require('@/hooks/useItensInteligentes');
-  const { useReservas } = require('@/hooks/useReservas');
-  const { useFavoritos } = require('@/hooks/useFavoritos');
-  const { useDebounce } = require('@/hooks/useDebounce');
-  const { useSimpleGeolocation } = require('@/hooks/useSimpleGeolocation');
-  const { useConfigCategorias } = require('@/hooks/useConfigCategorias');
-  const { useSubcategorias } = require('@/hooks/useSubcategorias');
-  const { useTiposTamanho } = require('@/hooks/useTamanhosPorCategoria');
-
-  const { profile } = useProfile();
+  // Hooks para dados
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   const { configuracoes: categorias = [], isLoading: loadingCategorias } = useConfigCategorias();
   const { subcategorias: todasSubcategorias = [], isLoading: loadingSubcategorias } = useSubcategorias();
-  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(basicState.categoria === 'todas' ? '' : basicState.categoria);
-  const debouncedBusca = useDebounce(basicState.busca, 500);
+  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
+  const debouncedBusca = useDebounce(busca, 500);
   const { entrarNaFila } = useReservas();
   const { toggleFavorito, verificarSeFavorito } = useFavoritos();
 
@@ -122,9 +57,9 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
   const getLocationForSearch = () => {
     if (location) return location;
     
-    if (basicState.cidadeManual) {
+    if (cidadeManual) {
       return { 
-        cidade: basicState.cidadeManual, 
+        cidade: cidadeManual, 
         estado: '',
         bairro: undefined 
       };
@@ -143,7 +78,7 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
 
   const locationForSearch = getLocationForSearch();
 
-  // ✅ Buscar itens - agora seguro pois user existe
+  // Buscar itens
   const { 
     data: itens = [], 
     isLoading, 
@@ -151,19 +86,19 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
     refetch 
   } = useItensInteligentes({
     location: locationForSearch.cidade ? locationForSearch : undefined,
-    categoria: basicState.categoria !== 'todas' ? basicState.categoria : undefined,
-    subcategoria: basicState.subcategoria !== 'todas' ? basicState.subcategoria : undefined,
+    categoria: categoria !== 'todas' ? categoria : undefined,
+    subcategoria: subcategoria !== 'todas' ? subcategoria : undefined,
     busca: debouncedBusca,
-    precoMin: basicState.precoRange[0],
-    precoMax: basicState.precoRange[1],
+    precoMin: precoRange[0],
+    precoMax: precoRange[1],
     ordem: 'recentes'
   });
 
   // Filtrar subcategorias baseado na categoria selecionada
   const getSubcategoriasFiltradas = () => {
-    if (!Array.isArray(todasSubcategorias) || basicState.categoria === 'todas') return [];
+    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
-    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === basicState.categoria);
+    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
     
     const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
       if (!acc.some(item => item.nome === sub.nome)) {
@@ -197,7 +132,7 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
   const tamanhosDisponiveis = getTamanhosDisponiveis();
 
   // Filtrar itens baseado na opção de mostrar reservados
-  const itensFiltrados = basicState.mostrarReservados 
+  const itensFiltrados = mostrarReservados 
     ? itens 
     : itens.filter(item => item.status === 'disponivel');
 
@@ -233,21 +168,21 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
   };
 
   const handleAplicarFiltros = () => {
-    basicState.setFiltrosAplicados(true);
+    setFiltrosAplicados(true);
     refetch();
   };
 
   const handleLimparFiltros = () => {
-    basicState.setBusca('');
-    basicState.setCidadeManual('');
-    basicState.setCategoria('todas');
-    basicState.setSubcategoria('todas');
-    basicState.setGenero('todos');
-    basicState.setTamanho('todos');
-    basicState.setPrecoRange([0, 200]);
-    basicState.setMostrarReservados(true);
+    setBusca('');
+    setCidadeManual('');
+    setCategoria('todas');
+    setSubcategoria('todas');
+    setGenero('todos');
+    setTamanho('todos');
+    setPrecoRange([0, 200]);
+    setMostrarReservados(true);
     limparLocalizacao();
-    basicState.setMostrarFiltrosAvancados(false);
+    setMostrarFiltrosAvancados(false);
     refetch();
   };
 
@@ -260,17 +195,17 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
   };
 
   const toggleFiltrosAvancados = () => {
-    basicState.setMostrarFiltrosAvancados(!basicState.mostrarFiltrosAvancados);
+    setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
   };
 
   const handleCategoriaChange = (novaCategoria: string) => {
-    basicState.setCategoria(novaCategoria);
-    basicState.setSubcategoria('todas');
-    basicState.setTamanho('todos');
+    setCategoria(novaCategoria);
+    setSubcategoria('todas');
+    setTamanho('todos');
   };
 
   const handleTamanhoChange = (valor: string) => {
-    basicState.setTamanho(valor);
+    setTamanho(valor);
   };
 
   const getLocationText = () => {
@@ -330,8 +265,8 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
               </Label>
               <Switch
                 id="mostrar-reservados"
-                checked={basicState.mostrarReservados}
-                onCheckedChange={basicState.setMostrarReservados}
+                checked={mostrarReservados}
+                onCheckedChange={setMostrarReservados}
               />
             </div>
             
@@ -346,8 +281,8 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
             <Input
               type="text"
               placeholder="Busque por vestido, carrinho, lego..."
-              value={basicState.busca}
-              onChange={(e) => basicState.setBusca(e.target.value)}
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
               className="pl-10 pr-12 h-12 text-base"
             />
             <button
@@ -359,7 +294,7 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
           </div>
 
           {/* Filtros Avançados */}
-          {basicState.mostrarFiltrosAvancados && (
+          {mostrarFiltrosAvancados && (
             <div className="space-y-6 border-t pt-4">
               {/* Seção Localização */}
               <div>
@@ -368,8 +303,8 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
                 <Input
                   type="text"
                   placeholder="Digite sua cidade..."
-                  value={basicState.cidadeManual}
-                  onChange={(e) => basicState.setCidadeManual(e.target.value)}
+                  value={cidadeManual}
+                  onChange={(e) => setCidadeManual(e.target.value)}
                   className="w-full h-12 text-base mb-3"
                 />
                 
@@ -394,7 +329,7 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
-                  <Select value={basicState.categoria} onValueChange={handleCategoriaChange}>
+                  <Select value={categoria} onValueChange={handleCategoriaChange}>
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
@@ -419,9 +354,9 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
                 <div>
                   <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
                   <Select 
-                    value={basicState.subcategoria} 
-                    onValueChange={basicState.setSubcategoria}
-                    disabled={basicState.categoria === 'todas' || loadingSubcategorias}
+                    value={subcategoria} 
+                    onValueChange={setSubcategoria}
+                    disabled={categoria === 'todas' || loadingSubcategorias}
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue />
@@ -451,7 +386,7 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
-                  <Select value={basicState.genero} onValueChange={basicState.setGenero}>
+                  <Select value={genero} onValueChange={setGenero}>
                     <SelectTrigger className="h-12">
                       <SelectValue />
                     </SelectTrigger>
@@ -481,14 +416,14 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
 
                 <div>
                   <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                    {basicState.categoria === 'calcados' ? 'NÚMERO' : 
-                     basicState.categoria === 'brinquedos' ? 'IDADE' : 
-                     basicState.categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
+                    {categoria === 'calcados' ? 'NÚMERO' : 
+                     categoria === 'brinquedos' ? 'IDADE' : 
+                     categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
                   </h3>
                   <Select 
-                    value={basicState.tamanho} 
+                    value={tamanho} 
                     onValueChange={handleTamanhoChange}
-                    disabled={basicState.categoria === 'todas' || loadingTamanhos}
+                    disabled={categoria === 'todas' || loadingTamanhos}
                   >
                     <SelectTrigger className="h-12">
                       <SelectValue />
@@ -514,12 +449,12 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
               {/* Faixa de Preço */}
               <div>
                 <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                  PREÇO: {basicState.precoRange[0]} - {basicState.precoRange[1]} Girinhas
+                  PREÇO: {precoRange[0]} - {precoRange[1]} Girinhas
                 </h3>
                 <div className="px-2">
                   <Slider
-                    value={basicState.precoRange}
-                    onValueChange={basicState.setPrecoRange}
+                    value={precoRange}
+                    onValueChange={setPrecoRange}
                     max={200}
                     min={0}
                     step={5}
@@ -577,7 +512,7 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
               "Nenhum item encontrado"
             }
             description={
-              !basicState.mostrarReservados 
+              !mostrarReservados 
                 ? "Tente incluir itens reservados ou ajustar os filtros"
                 : "Tente ajustar os filtros para ver mais opções"
             }
@@ -605,6 +540,7 @@ const AuthenticatedFeed: React.FC<ReturnType<typeof useBasicState>> = (basicStat
                   onToggleFavorito={() => handleToggleFavorito(item.id)}
                   onReservar={() => handleReservarItem(item.id)}
                   onEntrarFila={() => handleEntrarFila(item.id)}
+                  currentUserId={user?.id}
                 />
               ))}
             </div>
