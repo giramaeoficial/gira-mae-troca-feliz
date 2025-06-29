@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Users, MapPin } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
+import BotaoWhatsApp from '@/components/shared/BotaoWhatsApp';
 import { ItemFeed } from '@/hooks/useFeedInfinito';
 
 interface ItemCardProps {
@@ -22,8 +23,8 @@ interface ItemCardProps {
   };
   reservas?: any[];
   currentUserId?: string;
-  valorOriginal?: number; // Valor sem taxa
-  valorTaxa?: number; // Valor da taxa
+  valorOriginal?: number;
+  valorTaxa?: number;
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
@@ -80,6 +81,25 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
     const minhaReserva = reservas.find(r => r.item_id === item.id && r.usuario_reservou === currentUserId);
     const isReservadoPorMim = !!minhaReserva;
+
+    // Se reservado por mim, mostrar botão WhatsApp para falar com vendedor
+    if (isReservadoPorMim && item.publicado_por_profile?.telefone) {
+      return (
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled className="text-xs flex-1">
+            Reservado por você
+          </Button>
+          <BotaoWhatsApp
+            telefone={item.publicado_por_profile.telefone}
+            nomeContato={item.publicado_por_profile.nome || 'Vendedor'}
+            tituloItem={item.titulo}
+            reservaId={minhaReserva.id}
+            isVendedor={false}
+            className="text-xs"
+          />
+        </div>
+      );
+    }
 
     if (isReservadoPorMim) {
       return (

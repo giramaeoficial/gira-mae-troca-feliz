@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Clock, CheckCircle, X, Users, Star, Key } from "lucide-react";
 import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
+import BotaoWhatsApp from "@/components/shared/BotaoWhatsApp";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useReservas } from "@/hooks/useReservas";
@@ -32,10 +33,12 @@ interface ReservaCardProps {
     profiles_reservador?: {
       nome: string;
       avatar_url: string | null;
+      telefone?: string;
     } | null;
     profiles_vendedor?: {
       nome: string;
       avatar_url: string | null;
+      telefone?: string;
     } | null;
   };
   onConfirmarEntrega: (reservaId: string, codigo: string) => Promise<boolean>;
@@ -230,6 +233,18 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
                   <Key className="w-4 h-4 mr-1" />
                   {isVendedor ? 'Código' : 'Ver código'}
                 </Button>
+
+                {/* Botão WhatsApp - aparecer apenas se a outra pessoa tem telefone */}
+                {outraPessoa?.telefone && (
+                  <BotaoWhatsApp
+                    telefone={outraPessoa.telefone}
+                    nomeContato={outraPessoa.nome || 'Usuário'}
+                    tituloItem={reserva.itens?.titulo || 'Item'}
+                    reservaId={reserva.id}
+                    isVendedor={isVendedor}
+                    className="text-xs"
+                  />
+                )}
 
                 <Button 
                   variant="destructive" 
