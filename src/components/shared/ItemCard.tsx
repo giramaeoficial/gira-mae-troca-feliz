@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -83,15 +82,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     const isReservadoPorMim = !!minhaReserva;
 
     // Se reservado por mim, mostrar botão WhatsApp para falar com vendedor
-    if (isReservadoPorMim && item.publicado_por_profile?.telefone) {
+    if (isReservadoPorMim && item.vendedor_telefone) {
       return (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" disabled className="text-xs flex-1">
             Reservado por você
           </Button>
           <BotaoWhatsApp
-            telefone={item.publicado_por_profile.telefone}
-            nomeContato={item.publicado_por_profile.nome || 'Vendedor'}
+            telefone={item.vendedor_telefone}
+            nomeContato={item.vendedor_nome || 'Vendedor'}
             tituloItem={item.titulo}
             reservaId={minhaReserva.id}
             isVendedor={false}
@@ -155,7 +154,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   // Extrair informações do vendedor
-  const vendedorNome = item.publicado_por_profile?.nome || 'Vendedor';
+  const vendedorNome = item.vendedor_nome || 'Vendedor';
   const vendedorNomeTruncado = truncateText(vendedorNome, 15);
 
   return (
@@ -228,12 +227,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </div>
 
         {/* Localização */}
-        {(item.endereco_cidade || item.endereco_bairro) && (
+        {(item.vendedor_cidade || item.vendedor_bairro) && (
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <MapPin className="w-3 h-3" />
             <span>
-              {item.endereco_bairro && `${item.endereco_bairro}, `}
-              {item.endereco_cidade}
+              {item.vendedor_bairro && `${item.vendedor_bairro}, `}
+              {item.vendedor_cidade}
             </span>
           </div>
         )}
