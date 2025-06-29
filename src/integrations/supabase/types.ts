@@ -474,49 +474,66 @@ export type Database = {
         }
         Relationships: []
       }
-      conversas: {
+      conversas_whatsapp_log: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
-          reserva_id: string | null
-          updated_at: string
-          usuario1_id: string
-          usuario2_id: string
+          item_id: string
+          reserva_id: string
+          tipo_usuario: string
+          usuario_iniciou: string
+          usuario_recebeu: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          reserva_id?: string | null
-          updated_at?: string
-          usuario1_id: string
-          usuario2_id: string
+          item_id: string
+          reserva_id: string
+          tipo_usuario: string
+          usuario_iniciou: string
+          usuario_recebeu: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          reserva_id?: string | null
-          updated_at?: string
-          usuario1_id?: string
-          usuario2_id?: string
+          item_id?: string
+          reserva_id?: string
+          tipo_usuario?: string
+          usuario_iniciou?: string
+          usuario_recebeu?: string
         }
         Relationships: [
           {
-            foreignKeyName: "conversas_reserva_id_fkey"
+            foreignKeyName: "conversas_whatsapp_log_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_whatsapp_log_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_whatsapp_log_reserva_id_fkey"
             columns: ["reserva_id"]
             isOneToOne: false
             referencedRelation: "reservas"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "conversas_usuario1_id_fkey"
-            columns: ["usuario1_id"]
+            foreignKeyName: "conversas_whatsapp_log_usuario_iniciou_fkey"
+            columns: ["usuario_iniciou"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "conversas_usuario2_id_fkey"
-            columns: ["usuario2_id"]
+            foreignKeyName: "conversas_whatsapp_log_usuario_recebeu_fkey"
+            columns: ["usuario_recebeu"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1048,84 +1065,6 @@ export type Database = {
         }
         Relationships: []
       }
-      mencoes_mensagens: {
-        Row: {
-          created_at: string
-          id: string
-          mensagem_id: string
-          usuario_mencionado_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          mensagem_id: string
-          usuario_mencionado_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          mensagem_id?: string
-          usuario_mencionado_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mencoes_mensagens_mensagem_id_fkey"
-            columns: ["mensagem_id"]
-            isOneToOne: false
-            referencedRelation: "mensagens"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mencoes_mensagens_usuario_mencionado_id_fkey"
-            columns: ["usuario_mencionado_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mensagens: {
-        Row: {
-          conteudo: string
-          conversa_id: string
-          created_at: string
-          id: string
-          remetente_id: string
-          tipo: string
-        }
-        Insert: {
-          conteudo: string
-          conversa_id: string
-          created_at?: string
-          id?: string
-          remetente_id: string
-          tipo?: string
-        }
-        Update: {
-          conteudo?: string
-          conversa_id?: string
-          created_at?: string
-          id?: string
-          remetente_id?: string
-          tipo?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mensagens_conversa_id_fkey"
-            columns: ["conversa_id"]
-            isOneToOne: false
-            referencedRelation: "conversas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mensagens_remetente_id_fkey"
-            columns: ["remetente_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       metas_usuarios: {
         Row: {
           conquistado: boolean | null
@@ -1428,6 +1367,7 @@ export type Database = {
           interesses: string[] | null
           nome: string | null
           numero: string | null
+          numero_whatsapp: string | null
           ponto_referencia: string | null
           ponto_retirada_preferido: string | null
           profissao: string | null
@@ -1466,6 +1406,7 @@ export type Database = {
           interesses?: string[] | null
           nome?: string | null
           numero?: string | null
+          numero_whatsapp?: string | null
           ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null
@@ -1504,6 +1445,7 @@ export type Database = {
           interesses?: string[] | null
           nome?: string | null
           numero?: string | null
+          numero_whatsapp?: string | null
           ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null
@@ -2372,14 +2314,6 @@ export type Database = {
           detalhes_expiracao: Json
         }[]
       }
-      obter_ou_criar_conversa: {
-        Args: { p_reserva_id: string }
-        Returns: string
-      }
-      obter_ou_criar_conversa_livre: {
-        Args: { p_usuario1_id: string; p_usuario2_id: string }
-        Returns: string
-      }
       obter_preco_manual: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -2492,6 +2426,10 @@ export type Database = {
           p_detalhes?: Json
         }
         Returns: string
+      }
+      registrar_conversa_whatsapp: {
+        Args: { p_reserva_id: string; p_usuario_recebeu: string }
+        Returns: undefined
       }
       registrar_indicacao: {
         Args: { p_indicador_id: string; p_indicado_id: string }

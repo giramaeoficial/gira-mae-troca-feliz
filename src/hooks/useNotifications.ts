@@ -20,11 +20,6 @@ export const useNotifications = () => {
     markAsRead(notification.id);
     
     switch(notification.type) {
-      case 'nova_mensagem':
-        if (notification.data.conversa_id) {
-          window.location.href = `/mensagens?conversa=${notification.data.conversa_id}`;
-        }
-        break;
       case 'item_reservado':
       case 'reserva_confirmada':
         window.location.href = '/minhas-reservas';
