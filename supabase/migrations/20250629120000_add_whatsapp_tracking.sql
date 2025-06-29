@@ -1,4 +1,5 @@
 
+
 -- Função para registrar tracking de conversas WhatsApp
 CREATE OR REPLACE FUNCTION registrar_conversa_whatsapp(
   p_reserva_id UUID,
@@ -45,3 +46,4 @@ BEGIN
   );
 END;
 $$;
+

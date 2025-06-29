@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -82,16 +81,20 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     const minhaReserva = reservas.find(r => r.item_id === item.id && r.usuario_reservou === currentUserId);
     const isReservadoPorMim = !!minhaReserva;
 
+    // Buscar telefone do vendedor nos profiles relacionados
+    const vendedorTelefone = item.publicado_por_profile?.telefone || 
+                            (item as any).profiles?.telefone;
+
     // Se reservado por mim, mostrar botão WhatsApp para falar com vendedor
-    if (isReservadoPorMim && item.publicado_por_profile?.telefone) {
+    if (isReservadoPorMim && vendedorTelefone) {
       return (
         <div className="flex gap-2">
           <Button size="sm" variant="outline" disabled className="text-xs flex-1">
             Reservado por você
           </Button>
           <BotaoWhatsApp
-            telefone={item.publicado_por_profile.telefone}
-            nomeContato={item.publicado_por_profile.nome || 'Vendedor'}
+            telefone={vendedorTelefone}
+            nomeContato={item.publicado_por_profile?.nome || 'Vendedor'}
             tituloItem={item.titulo}
             reservaId={minhaReserva.id}
             isVendedor={false}
