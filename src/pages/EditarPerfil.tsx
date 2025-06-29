@@ -72,7 +72,7 @@ const EditarPerfil = () => {
         profissao: profile.profissao || '',
         instagram: profile.instagram || '',
         telefone: profile.telefone || '',
-        numero_whatsapp: profile.numero_whatsapp || '', // Carregar WhatsApp
+        numero_whatsapp: (profile as any).numero_whatsapp || '', // Casting temporário
         data_nascimento: profile.data_nascimento || '',
         interesses: profile.interesses || [],
         categorias_favoritas: profile.categorias_favoritas || [],

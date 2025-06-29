@@ -37,13 +37,13 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         }
 
         if (data) {
-          // Usar numero_whatsapp ou telefone
-          const numeroParaUsar = data.numero_whatsapp || data.telefone;
+          // Usar numero_whatsapp ou telefone - verificar se existem nos dados
+          const numeroParaUsar = (data as any).numero_whatsapp || (data as any).telefone;
           if (numeroParaUsar) {
             setPhone(formatPhoneDisplay(numeroParaUsar.replace('55', '')));
           }
           
-          if (data.telefone_verificado) {
+          if ((data as any).telefone_verificado) {
             setIsPhoneVerified(true);
             console.log('✅ Telefone já verificado, avançando automaticamente...');
             // Se telefone já foi verificado, avançar imediatamente
