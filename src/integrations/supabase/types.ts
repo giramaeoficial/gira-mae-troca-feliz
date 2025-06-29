@@ -2129,20 +2129,35 @@ export type Database = {
         Returns: boolean
       }
       carregar_dados_feed_paginado: {
-        Args: {
-          p_user_id: string
-          p_page?: number
-          p_limit?: number
-          p_busca?: string
-          p_cidade?: string
-          p_categoria?: string
-          p_subcategoria?: string
-          p_genero?: string
-          p_tamanho?: string
-          p_preco_min?: number
-          p_preco_max?: number
-          p_mostrar_reservados?: boolean
-        }
+        Args:
+          | {
+              p_user_id: string
+              p_page?: number
+              p_limit?: number
+              p_busca?: string
+              p_cidade?: string
+              p_categoria?: string
+              p_subcategoria?: string
+              p_genero?: string
+              p_tamanho?: string
+              p_preco_min?: number
+              p_preco_max?: number
+              p_mostrar_reservados?: boolean
+            }
+          | {
+              p_user_id: string
+              p_page?: number
+              p_limit?: number
+              p_busca?: string
+              p_cidade?: string
+              p_categoria?: string
+              p_subcategoria?: string
+              p_genero?: string
+              p_tamanho?: string
+              p_preco_min?: number
+              p_preco_max?: number
+              p_mostrar_reservados?: boolean
+            }
         Returns: Json
       }
       check_database_status: {
@@ -2428,7 +2443,9 @@ export type Database = {
         Returns: string
       }
       registrar_conversa_whatsapp: {
-        Args: { p_reserva_id: string; p_usuario_recebeu: string }
+        Args:
+          | { p_reserva_id: string; p_tipo_usuario: string }
+          | { p_reserva_id: string; p_usuario_recebeu: string }
         Returns: undefined
       }
       registrar_indicacao: {

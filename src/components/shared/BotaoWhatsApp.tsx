@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface BotaoWhatsAppProps {
@@ -25,6 +26,14 @@ const BotaoWhatsApp: React.FC<BotaoWhatsAppProps> = ({
 
   const abrirWhatsApp = async () => {
     try {
+      // Registrar tracking da conversa se houver reservaId
+      if (reservaId) {
+        await supabase.rpc('registrar_conversa_whatsapp', {
+          p_reserva_id: reservaId,
+          p_tipo_usuario: isVendedor ? 'vendedor' : 'comprador'
+        });
+      }
+
       // Formatar telefone (remover caracteres especiais)
       const telefoneFormatado = telefone.replace(/\D/g, '');
       

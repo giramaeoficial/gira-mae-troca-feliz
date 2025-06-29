@@ -39,6 +39,7 @@ export interface ItemFeed {
     nome: string;
     avatar_url?: string;
     reputacao?: number;
+    telefone?: string; // ADICIONAR TELEFONE AQUI
   };
   escolas_inep?: {
     escola: string;

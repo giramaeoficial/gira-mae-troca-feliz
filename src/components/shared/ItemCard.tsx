@@ -81,7 +81,25 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     const minhaReserva = reservas.find(r => r.item_id === item.id && r.usuario_reservou === currentUserId);
     const isReservadoPorMim = !!minhaReserva;
 
-    // Por enquanto, remover a funcionalidade WhatsApp até ter o telefone disponível
+    // Se reservado por mim, mostrar botão WhatsApp para falar com vendedor (se tiver telefone)
+    if (isReservadoPorMim && item.publicado_por_profile?.telefone) {
+      return (
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled className="text-xs flex-1">
+            Reservado por você
+          </Button>
+          <BotaoWhatsApp
+            telefone={item.publicado_por_profile.telefone}
+            nomeContato={item.publicado_por_profile.nome || 'Vendedor'}
+            tituloItem={item.titulo}
+            reservaId={minhaReserva.id}
+            isVendedor={false}
+            className="text-xs"
+          />
+        </div>
+      );
+    }
+
     if (isReservadoPorMim) {
       return (
         <Button size="sm" variant="outline" disabled className="text-xs">
