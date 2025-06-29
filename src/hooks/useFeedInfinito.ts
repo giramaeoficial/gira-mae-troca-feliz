@@ -39,7 +39,7 @@ export interface ItemFeed {
     nome: string;
     avatar_url?: string;
     reputacao?: number;
-    telefone?: string; // ADICIONAR TELEFONE AQUI
+    telefone?: string;
   };
   escolas_inep?: {
     escola: string;
@@ -105,7 +105,7 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
       }
       
       const result = data as unknown as PaginaFeed;
-      console.log('✅ Feed carregado:', result.itens.length, 'itens, has_more:', result.has_more);
+      console.log('✅ Feed carregado:', result.itens?.length || 0, 'itens, has_more:', result.has_more);
       
       return result;
     },
