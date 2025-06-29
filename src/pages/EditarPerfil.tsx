@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, User, MapPin, Baby, Bell } from 'lucide-react';
@@ -9,7 +10,6 @@ import NotificationSettings from '@/components/location/NotificationSettings';
 import DadosPessoaisSection from '@/components/perfil/sections/DadosPessoaisSection';
 import EnderecoSection from '@/components/perfil/sections/EnderecoSection';
 import FilhosSection from '@/components/perfil/sections/FilhosSection';
-import { CampoWhatsApp } from '@/components/auth/CampoWhatsApp';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,6 @@ const EditarPerfil = () => {
     profissao: '',
     instagram: '',
     telefone: '',
-    numero_whatsapp: '', // Adicionar campo WhatsApp
     data_nascimento: '',
     interesses: [] as string[],
     categorias_favoritas: [] as string[],
@@ -72,7 +71,6 @@ const EditarPerfil = () => {
         profissao: profile.profissao || '',
         instagram: profile.instagram || '',
         telefone: profile.telefone || '',
-        numero_whatsapp: (profile as any).numero_whatsapp || '', // Casting temporário
         data_nascimento: profile.data_nascimento || '',
         interesses: profile.interesses || [],
         categorias_favoritas: profile.categorias_favoritas || [],
@@ -356,27 +354,15 @@ const EditarPerfil = () => {
           </TabsList>
 
           <TabsContent value="pessoais">
-            <div className="space-y-6">
-              <DadosPessoaisSection
-                formData={formData}
-                profile={profile}
-                avatarFiles={avatarFiles}
-                onInputChange={handleInputChange}
-                onInteresseToggle={handleInteresseToggle}
-                onCategoriaToggle={handleCategoriaToggle}
-                onAvatarChange={setAvatarFiles}
-              />
-              
-              {/* Adicionar campo WhatsApp separado */}
-              <div className="bg-white rounded-lg p-4 border">
-                <h3 className="text-lg font-semibold mb-4">Contato WhatsApp</h3>
-                <CampoWhatsApp
-                  value={formData.numero_whatsapp}
-                  onChange={(value) => handleInputChange('numero_whatsapp', value)}
-                  required={true}
-                />
-              </div>
-            </div>
+            <DadosPessoaisSection
+              formData={formData}
+              profile={profile}
+              avatarFiles={avatarFiles}
+              onInputChange={handleInputChange}
+              onInteresseToggle={handleInteresseToggle}
+              onCategoriaToggle={handleCategoriaToggle}
+              onAvatarChange={setAvatarFiles}
+            />
           </TabsContent>
 
           <TabsContent value="endereco">

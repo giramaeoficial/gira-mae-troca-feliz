@@ -1,6 +1,7 @@
 
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Package, CheckCircle } from "lucide-react";
 import { useReservas } from "@/hooks/useReservas";
@@ -124,7 +125,6 @@ const MinhasReservas = () => {
                     onConfirmarEntrega={confirmarEntrega}
                     onCancelarReserva={cancelarReserva}
                     onRefresh={refetch}
-                    isVendedor={false}
                   />
                 ))}
               </div>
@@ -167,7 +167,6 @@ const MinhasReservas = () => {
                     onConfirmarEntrega={confirmarEntrega}
                     onCancelarReserva={cancelarReserva}
                     onRefresh={refetch}
-                    isVendedor={true}
                   />
                 ))}
               </div>
@@ -190,7 +189,6 @@ const MinhasReservas = () => {
                     onConfirmarEntrega={confirmarEntrega}
                     onCancelarReserva={cancelarReserva}
                     onRefresh={refetch}
-                    isVendedor={reserva.usuario_item === user?.id}
                   />
                 ))}
               </div>

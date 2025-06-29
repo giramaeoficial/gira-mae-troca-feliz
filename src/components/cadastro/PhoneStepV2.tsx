@@ -27,7 +27,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('telefone, telefone_verificado, numero_whatsapp')
+          .select('telefone, telefone_verificado')
           .eq('id', user.id)
           .single();
 
@@ -37,13 +37,11 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         }
 
         if (data) {
-          // Usar numero_whatsapp ou telefone - verificar se existem nos dados
-          const numeroParaUsar = (data as any).numero_whatsapp || (data as any).telefone;
-          if (numeroParaUsar) {
-            setPhone(formatPhoneDisplay(numeroParaUsar.replace('55', '')));
+          if (data.telefone) {
+            setPhone(formatPhoneDisplay(data.telefone.replace('55', '')));
           }
           
-          if ((data as any).telefone_verificado) {
+          if (data.telefone_verificado) {
             setIsPhoneVerified(true);
             console.log('✅ Telefone já verificado, avançando automaticamente...');
             // Se telefone já foi verificado, avançar imediatamente
@@ -146,12 +144,11 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     try {
       console.log('📱 Salvando telefone e gerando código:', cleanPhone);
       
-      // Atualizar tanto telefone quanto numero_whatsapp
+      // Chamar função diretamente via SQL
       const { data, error } = await supabase
         .from('profiles')
         .update({
           telefone: cleanPhone,
-          numero_whatsapp: cleanPhone.replace('55', ''), // Salvar sem código do país
           verification_code: Math.floor(1000 + Math.random() * 9000).toString(),
           verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
           cadastro_step: 'code'

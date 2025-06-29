@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Users, MapPin } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
-import { BotaoWhatsApp } from '@/components/shared/BotaoWhatsApp';
 import { ItemFeed } from '@/hooks/useFeedInfinito';
 
 interface ItemCardProps {
@@ -23,8 +22,8 @@ interface ItemCardProps {
   };
   reservas?: any[];
   currentUserId?: string;
-  valorOriginal?: number;
-  valorTaxa?: number;
+  valorOriginal?: number; // Valor sem taxa
+  valorTaxa?: number; // Valor da taxa
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
@@ -73,19 +72,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     return text.substring(0, maxLength) + '...';
   };
 
-  // Verificar se existe reserva ativa para mostrar WhatsApp
-  const minhaReserva = reservas.find(r => 
-    r.item_id === item.id && 
-    r.usuario_reservou === currentUserId && 
-    r.status === 'pendente'
-  );
-
   const getActionButton = () => {
     if (!showActions || !currentUserId) return null;
 
     const isMyItem = item.publicado_por === currentUserId;
     if (isMyItem) return null;
 
+    const minhaReserva = reservas.find(r => r.item_id === item.id && r.usuario_reservou === currentUserId);
     const isReservadoPorMim = !!minhaReserva;
 
     if (isReservadoPorMim) {
@@ -166,10 +159,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </div>
         )}
         
+        {/* Status badge - posicionado no topo esquerdo */}
         <div className="absolute top-2 left-2">
           {getStatusBadge()}
         </div>
 
+        {/* Favorito - posicionado no topo direito */}
         {showActions && onToggleFavorito && (
           <button
             onClick={(e) => {
@@ -186,10 +181,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       </div>
 
       <CardContent className="p-3 space-y-2">
+        {/* Título */}
         <h3 className="font-semibold line-clamp-2 text-sm leading-tight">
           {item.titulo}
         </h3>
         
+        {/* Categoria e Subcategoria */}
         <div className="flex items-center gap-2 text-xs text-gray-600">
           <span className="font-medium">{item.categoria}</span>
           {item.subcategoria && (
@@ -200,6 +197,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           )}
         </div>
 
+        {/* Gênero e Tamanho */}
         <div className="flex items-center gap-2 text-xs">
           {getGeneroIcon()}
           {item.tamanho_valor && (
@@ -209,6 +207,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           )}
         </div>
 
+        {/* Localização */}
         {(item.endereco_cidade || item.endereco_bairro) && (
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <MapPin className="w-3 h-3" />
@@ -219,10 +218,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </div>
         )}
 
+        {/* Vendedor */}
         <div className="text-xs text-gray-600">
           <span className="font-medium">Por:</span> {vendedorNomeTruncado}
         </div>
 
+        {/* Preço */}
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <Sparkles className="w-4 h-4 text-primary" />
@@ -231,6 +232,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </span>
           </div>
           
+          {/* Detalhamento do preço se disponível */}
           {valorOriginal && valorTaxa && (
             <div className="text-xs text-gray-500 space-y-0.5">
               <div>Item: {valorOriginal} Girinhas</div>
@@ -239,11 +241,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           )}
         </div>
         
-        <div className="space-y-2">
-          {getActionButton()}
-          
-          {/* Remover botão WhatsApp do ItemCard por enquanto - será usado apenas em ReservaCard */}
-        </div>
+        {getActionButton()}
       </CardContent>
     </Card>
   );

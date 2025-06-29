@@ -1,254 +1,325 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, Package, User, MapPin } from 'lucide-react';
-import { BotaoWhatsApp } from '@/components/shared/BotaoWhatsApp';
-import LazyImage from '@/components/ui/lazy-image';
-import CodigoConfirmacaoModal from './CodigoConfirmacaoModal';
+import { useState } from "react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Clock, MessageCircle, CheckCircle, X, Users, Star, Key } from "lucide-react";
+import ChatModal from "@/components/chat/ChatModal";
+import AvaliacaoModal from "./AvaliacaoModal";
+import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { useReservas } from "@/hooks/useReservas";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReservaCardProps {
-  reserva: any;
-  onConfirmarEntrega?: (reservaId: string, codigo: string) => Promise<boolean>;
-  onCancelarReserva?: (reservaId: string) => void;
-  onVerificarCodigo?: (reservaId: string) => void;
+  reserva: {
+    id: string;
+    item_id: string;
+    usuario_reservou: string;
+    usuario_item: string;
+    valor_girinhas: number;
+    status: string;
+    prazo_expiracao: string;
+    codigo_confirmacao?: string;
+    posicao_fila?: number;
+    tempo_restante?: number;
+    itens?: {
+      titulo: string;
+      fotos: string[] | null;
+      valor_girinhas: number;
+    } | null;
+    profiles_reservador?: {
+      nome: string;
+      avatar_url: string | null;
+    } | null;
+    profiles_vendedor?: {
+      nome: string;
+      avatar_url: string | null;
+    } | null;
+  };
+  onConfirmarEntrega: (reservaId: string, codigo: string) => Promise<boolean>;
+  onCancelarReserva: (reservaId: string) => void;
   onRefresh?: () => void;
-  isVendedor?: boolean;
 }
 
-export const ReservaCard: React.FC<ReservaCardProps> = ({
-  reserva,
-  onConfirmarEntrega,
-  onCancelarReserva,
-  onVerificarCodigo,
-  onRefresh,
-  isVendedor = false
-}) => {
+const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh }: ReservaCardProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { confirmarEntrega, loading } = useReservas();
+  const [showChat, setShowChat] = useState(false);
+  const [showAvaliacao, setShowAvaliacao] = useState(false);
   const [showCodigoModal, setShowCodigoModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingConfirmacao, setLoadingConfirmacao] = useState(false);
+  const [jaAvaliou, setJaAvaliou] = useState(false);
+
+  const isReservador = reserva.usuario_reservou === user?.id;
+  const isVendedor = reserva.usuario_item === user?.id;
+  const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
+  const imagemItem = reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
+
+  // Função com retry para verificação de avaliação
+  const verificarSeJaAvaliouComRetry = async (maxTentativas = 3): Promise<boolean> => {
+    for (let i = 0; i < maxTentativas; i++) {
+      try {
+        const { data } = await supabase
+          .from('avaliacoes')
+          .select('id')
+          .eq('reserva_id', reserva.id)
+          .eq('avaliador_id', user?.id)
+          .single();
+        
+        return !!data;
+      } catch (error) {
+        if (i === maxTentativas - 1) {
+          console.error('Erro ao verificar avaliação:', error);
+          return false;
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    return false;
+  };
+
+  const formatarTempo = (milliseconds: number) => {
+    const horas = Math.floor(milliseconds / (1000 * 60 * 60));
+    const minutos = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+    return `${horas}h ${minutos}m`;
+  };
+
+  // FUNÇÃO ATUALIZADA: Usar sistema V2 atômico
+  const handleConfirmarEntrega = async (codigo: string): Promise<boolean> => {
+    setLoadingConfirmacao(true);
+    try {
+      const sucesso = await onConfirmarEntrega(reserva.id, codigo);
+      
+      if (sucesso) {
+        setTimeout(async () => {
+          const { data: reservaAtualizada } = await supabase
+            .from('reservas')
+            .select('*')
+            .eq('id', reserva.id)
+            .single();
+
+          if (reservaAtualizada?.status === 'confirmada') {
+            const jaAvaliou = await verificarSeJaAvaliouComRetry();
+            
+            if (!jaAvaliou) {
+              setShowAvaliacao(true);
+              
+              toast({
+                title: "🎉 Troca concluída!",
+                description: "Agora você pode avaliar esta troca.",
+              });
+            }
+          }
+        }, 1000);
+        
+        setShowCodigoModal(false);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Erro ao confirmar entrega:', error);
+      return false;
+    } finally {
+      setLoadingConfirmacao(false);
+    }
+  };
 
   const getStatusBadge = () => {
     switch (reserva.status) {
       case 'pendente':
-        return <Badge className="bg-orange-500 text-white">Pendente</Badge>;
+        return <Badge className="bg-orange-500 text-white">Ativa</Badge>;
+      case 'fila_espera':
+        return <Badge className="bg-blue-500 text-white">Na Fila</Badge>;
       case 'confirmada':
-        return <Badge className="bg-green-500 text-white">Confirmada</Badge>;
+        return <Badge className="bg-green-500 text-white">Concluída</Badge>;
       case 'cancelada':
-        return <Badge className="bg-red-500 text-white">Cancelada</Badge>;
-      case 'expirada':
-        return <Badge className="bg-gray-500 text-white">Expirada</Badge>;
+        return <Badge className="bg-gray-500 text-white">Cancelada</Badge>;
       default:
-        return <Badge variant="secondary">{reserva.status}</Badge>;
+        return <Badge variant="outline">{reserva.status}</Badge>;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const handleConfirmarEntrega = () => {
-    if (isVendedor) {
-      setShowCodigoModal(true);
-    }
-  };
-
-  const handleConfirmarCodigo = async (codigo: string): Promise<boolean> => {
-    if (!onConfirmarEntrega) return false;
-    
-    setLoading(true);
-    try {
-      const sucesso = await onConfirmarEntrega(reserva.id, codigo);
-      if (sucesso) {
-        setShowCodigoModal(false);
-        onRefresh?.();
-      }
-      return sucesso;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getActionButtons = () => {
-    if (reserva.status !== 'pendente') return null;
-
-    if (isVendedor) {
+  const getPrioridade = () => {
+    if (reserva.status === 'fila_espera' && reserva.posicao_fila) {
       return (
-        <div className="flex gap-2 mt-4">
-          <Button
-            onClick={handleConfirmarEntrega}
-            className="flex-1 bg-green-600 hover:bg-green-700"
-          >
-            Confirmar Entrega
-          </Button>
-          <Button
-            onClick={() => onCancelarReserva?.(reserva.id)}
-            variant="outline"
-            className="flex-1"
-          >
-            Cancelar
-          </Button>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex gap-2 mt-4">
-          <Button
-            onClick={() => onCancelarReserva?.(reserva.id)}
-            variant="outline"
-            className="flex-1"
-          >
-            Cancelar Reserva
-          </Button>
+        <div className="flex items-center gap-1 text-sm text-blue-600">
+          <Users className="w-4 h-4" />
+          <span>{reserva.posicao_fila}º na fila</span>
         </div>
       );
     }
+    return null;
   };
 
-  const getWhatsAppButton = () => {
-    if (reserva.status !== 'pendente') return null;
-
-    const contato = isVendedor ? reserva.profiles_reservador : reserva.profiles_vendedor;
-    const numeroWhatsApp = contato?.numero_whatsapp || contato?.telefone?.replace('55', '');
-    
-    if (!numeroWhatsApp) return null;
-
-    return (
-      <BotaoWhatsApp
-        reservaId={reserva.id}
-        numeroWhatsApp={numeroWhatsApp}
-        nomeContato={contato?.nome || 'Usuário'}
-        tituloItem={reserva.itens?.titulo || 'Item'}
-        usuarioRecebeuId={contato?.id}
-        isVendedor={isVendedor}
-        className="mt-2"
-        size="sm"
-      />
-    );
+  const getTempoRestante = () => {
+    if (reserva.status === 'pendente' && reserva.tempo_restante) {
+      const isUrgente = reserva.tempo_restante < 3 * 60 * 60 * 1000; // menos de 3 horas
+      return (
+        <div className={`flex items-center gap-1 text-sm ${isUrgente ? 'text-red-600' : 'text-orange-600'}`}>
+          <Clock className="w-4 h-4" />
+          <span>Expira em {formatarTempo(reserva.tempo_restante)}</span>
+        </div>
+      );
+    }
+    return null;
   };
 
-  // Determinar se é vendedor baseado na estrutura dos dados
-  const eVendedor = reserva.usuario_item && reserva.profiles_reservador;
-  const eComprador = reserva.usuario_reservou && reserva.profiles_vendedor;
+  const mostrarBotaoAvaliar = reserva.status === 'confirmada' && !jaAvaliou;
 
   return (
     <>
-      <Card className="mb-4 shadow-sm hover:shadow-md transition-shadow">
+      <Card className="overflow-hidden">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">
-              {reserva.itens?.titulo || 'Item não encontrado'}
-            </CardTitle>
-            {getStatusBadge()}
-          </div>
-          <div className="text-sm text-gray-600">
-            <Clock className="w-4 h-4 inline mr-1" />
-            Reservado em {formatDate(reserva.data_reserva || reserva.created_at)}
+          <div className="flex justify-between items-start">
+            <div className="flex gap-3">
+              <img 
+                src={imagemItem} 
+                alt={reserva.itens?.titulo || "Item"} 
+                className="w-16 h-16 rounded-lg object-cover"
+              />
+              <div className="flex-grow">
+                <h3 className="font-semibold text-gray-800 line-clamp-1">
+                  {reserva.itens?.titulo || "Item não encontrado"}
+                </h3>
+                <div className="flex items-center gap-2 mt-1">
+                  {getStatusBadge()}
+                  <span className="text-sm text-primary font-medium">
+                    {reserva.valor_girinhas} Girinhas
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          {/* Imagem do item */}
-          {reserva.itens?.fotos?.[0] && (
-            <div className="w-full h-32 rounded-lg overflow-hidden">
-              <LazyImage
-                src={reserva.itens.fotos[0]}
-                alt={reserva.itens.titulo}
-                bucket="itens"
-                size="medium"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          {/* Informações do item */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
+        <CardContent className="py-3">
+          <div className="flex items-center gap-3 mb-3">
+            <Avatar className="w-8 h-8">
+              <AvatarImage src={outraPessoa?.avatar_url || undefined} />
+              <AvatarFallback className="text-xs">
+                {outraPessoa?.nome?.split(' ').map(n => n[0]).join('') || '?'}
+              </AvatarFallback>
+            </Avatar>
             <div>
-              <span className="font-medium text-gray-700">Valor:</span>
-              <div className="text-primary font-bold">
-                {reserva.valor_girinhas} {reserva.valor_girinhas === 1 ? 'Girinha' : 'Girinhas'}
-              </div>
-            </div>
-            <div>
-              <span className="font-medium text-gray-700">Taxa:</span>
-              <div className="text-gray-600">
-                {reserva.valor_taxa} {reserva.valor_taxa === 1 ? 'Girinha' : 'Girinhas'}
-              </div>
+              <p className="text-sm font-medium">
+                {isReservador ? 'Vendedor' : 'Comprador'}: {outraPessoa?.nome || 'Usuário'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {isReservador ? 'Você reservou este item' : 'Reservou seu item'}
+              </p>
             </div>
           </div>
 
-          {/* Informações de contato */}
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <div className="flex items-center gap-2 mb-2">
-              <User className="w-4 h-4 text-gray-600" />
-              <span className="font-medium">
-                {eVendedor ? 'Comprador' : 'Vendedor'}:
-              </span>
-              <span>{eVendedor ? reserva.profiles_reservador?.nome : reserva.profiles_vendedor?.nome}</span>
-            </div>
-            
-            {(reserva.profiles_vendedor?.cidade || reserva.profiles_vendedor?.bairro) && (
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-gray-600" />
-                <span className="text-sm text-gray-600">
-                  {[reserva.profiles_vendedor?.bairro, reserva.profiles_vendedor?.cidade]
-                    .filter(Boolean)
-                    .join(', ')}
-                </span>
+          <div className="space-y-2">
+            {getPrioridade()}
+            {getTempoRestante()}
+          </div>
+        </CardContent>
+
+        <CardFooter className="pt-3 bg-gray-50/50">
+          <div className="flex gap-2 w-full">
+            {reserva.status === 'pendente' && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowChat(true)}
+                  className="flex-1"
+                >
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  Chat
+                </Button>
+                
+                <Button 
+                  size="sm" 
+                  onClick={() => setShowCodigoModal(true)}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <Key className="w-4 h-4 mr-1" />
+                  {isVendedor ? 'Código' : 'Ver código'}
+                </Button>
+
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => onCancelarReserva(reserva.id)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </>
+            )}
+
+            {reserva.status === 'confirmada' && (
+              <div className="flex gap-2 w-full">
+                <Button variant="outline" size="sm" className="flex-1" disabled>
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Troca concluída
+                </Button>
+                
+                {mostrarBotaoAvaliar && (
+                  <Button 
+                    size="sm" 
+                    onClick={() => setShowAvaliacao(true)}
+                    className="bg-yellow-500 hover:bg-yellow-600"
+                  >
+                    <Star className="w-4 h-4 mr-1" />
+                    Avaliar
+                  </Button>
+                )}
               </div>
             )}
+
+            {reserva.status === 'fila_espera' && (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => onCancelarReserva(reserva.id)}
+                className="w-full"
+              >
+                <X className="w-4 h-4 mr-1" />
+                Sair da fila
+              </Button>
+            )}
           </div>
-
-          {/* Código de confirmação para vendedor */}
-          {eVendedor && reserva.status === 'pendente' && reserva.codigo_confirmacao && (
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <div className="text-sm font-medium text-blue-800 mb-1">
-                Código de Confirmação:
-              </div>
-              <div className="text-2xl font-bold text-blue-600 text-center">
-                {reserva.codigo_confirmacao}
-              </div>
-              <div className="text-xs text-blue-700 mt-1 text-center">
-                Peça este código ao comprador no momento da entrega
-              </div>
-            </div>
-          )}
-
-          {/* Instruções para comprador */}
-          {eComprador && reserva.status === 'pendente' && (
-            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-              <div className="text-sm text-green-800">
-                <strong>📱 Próximos passos:</strong>
-                <ol className="list-decimal list-inside mt-2 space-y-1">
-                  <li>Entre em contato pelo WhatsApp</li>
-                  <li>Combine local e horário</li>
-                  <li>Informe o código ao vendedor na entrega</li>
-                </ol>
-              </div>
-            </div>
-          )}
-
-          {/* Botão WhatsApp */}
-          {getWhatsAppButton()}
-
-          {/* Botões de ação */}
-          {getActionButtons()}
-        </CardContent>
+        </CardFooter>
       </Card>
 
-      {/* Modal de confirmação de código */}
+      {/* Modais */}
+      {showChat && outraPessoa && reserva.itens && (
+        <ChatModal
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          reservaId={reserva.id}
+          outraMae={{
+            nome: outraPessoa.nome,
+            avatar: outraPessoa.avatar_url || "https://images.unsplash.com/photo-1494790108755-2616b612b776?w=100"
+          }}
+          item={{
+            titulo: reserva.itens.titulo,
+            imagem: imagemItem
+          }}
+        />
+      )}
+
+      <AvaliacaoModal
+        isOpen={showAvaliacao}
+        onClose={() => setShowAvaliacao(false)}
+        reserva={reserva}
+        onAvaliacaoCompleta={() => {
+          setJaAvaliou(true);
+          setShowAvaliacao(false);
+        }}
+      />
+
       <CodigoConfirmacaoModal
         isOpen={showCodigoModal}
         onClose={() => setShowCodigoModal(false)}
         reserva={reserva}
-        isVendedor={eVendedor}
-        onConfirmarCodigo={handleConfirmarCodigo}
+        isVendedor={isVendedor}
+        onConfirmarCodigo={handleConfirmarEntrega}
         loading={loading}
       />
     </>
