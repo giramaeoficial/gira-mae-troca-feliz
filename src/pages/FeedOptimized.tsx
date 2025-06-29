@@ -31,6 +31,11 @@ const FeedOptimized = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
+  console.log('🔍 [DEBUG] FeedOptimized renderizando:', {
+    user: user ? { id: user.id, email: user.email } : null,
+    timestamp: new Date().toISOString()
+  });
+  
   // Estados de filtros
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
@@ -42,7 +47,7 @@ const FeedOptimized = () => {
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
-  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
+  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>({});
 
   // Hooks essenciais
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
@@ -75,17 +80,22 @@ const FeedOptimized = () => {
   const locationForSearch = getLocationForSearch();
   
   // Objeto com todos os filtros consolidado
-  const filtrosCompletos = useMemo(() => ({
-    busca: debouncedBusca,
-    cidade: locationForSearch.cidade || cidadeManual,
-    categoria: categoria === 'todas' ? undefined : categoria,
-    subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
-    genero: genero === 'todos' ? undefined : genero,
-    tamanho: tamanho === 'todos' ? undefined : tamanho,
-    precoMin: precoRange[0],
-    precoMax: precoRange[1],
-    mostrarReservados
-  }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
+  const filtrosCompletos = useMemo(() => {
+    const filtros = {
+      busca: debouncedBusca,
+      cidade: locationForSearch.cidade || cidadeManual,
+      categoria: categoria === 'todas' ? undefined : categoria,
+      subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
+      genero: genero === 'todos' ? undefined : genero,
+      tamanho: tamanho === 'todos' ? undefined : tamanho,
+      precoMin: precoRange[0],
+      precoMax: precoRange[1],
+      mostrarReservados
+    };
+    
+    console.log('🔍 [DEBUG] Filtros completos calculados:', filtros);
+    return filtros;
+  }, [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
   
   // Hook consolidado com TODOS os filtros
   const {
@@ -94,12 +104,30 @@ const FeedOptimized = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading: loadingFeed,
-    refetch
+    refetch,
+    error: feedError
   } = useFeedInfinito(user?.id || '', filtrosCompletos);
+  
+  console.log('🔍 [DEBUG] Hook useFeedInfinito resultado:', {
+    paginasFeed,
+    paginasCount: paginasFeed?.pages?.length || 0,
+    loadingFeed,
+    feedError: feedError ? { message: feedError.message } : null,
+    hasNextPage,
+    isFetchingNextPage
+  });
   
   // Extrair dados das páginas
   const itens = useMemo(() => {
-    return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
+    const resultado = paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
+    console.log('🔍 [DEBUG] Itens extraídos das páginas:', {
+      totalItens: resultado.length,
+      primeiroItem: resultado[0] ? {
+        id: resultado[0].id,
+        titulo: resultado[0].titulo
+      } : null
+    });
+    return resultado;
   }, [paginasFeed]);
   
   const configuracoes = paginasFeed?.pages?.[0]?.configuracoes;
@@ -107,6 +135,14 @@ const FeedOptimized = () => {
   const todasSubcategorias = configuracoes?.subcategorias || [];
   const profile = paginasFeed?.pages?.[0]?.profile_essencial;
   
+  console.log('🔍 [DEBUG] Estados finais do feed:', {
+    itensCount: itens.length,
+    categoriasCount: categorias.length,
+    subcategoriasCount: todasSubcategorias.length,
+    loadingFeed,
+    mostrarReservados
+  });
+
   // Lógica de subcategorias filtradas
   const getSubcategoriasFiltradas = () => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
@@ -147,6 +183,12 @@ const FeedOptimized = () => {
   const itensFiltrados = mostrarReservados 
     ? itens 
     : itens.filter(item => item.status === 'disponivel');
+
+  console.log('🔍 [DEBUG] Itens após filtro de reservados:', {
+    totalItens: itens.length,
+    itensFiltrados: itensFiltrados.length,
+    mostrarReservados
+  });
 
   // Scroll infinito
   const { ref: infiniteRef } = useInfiniteScroll({
@@ -320,6 +362,26 @@ const FeedOptimized = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-6">
+        {/* Debug Info - apenas em desenvolvimento */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-xs">
+            <h3 className="font-bold text-yellow-800 mb-2">🔧 DEBUG INFO</h3>
+            <div className="grid grid-cols-2 gap-2 text-yellow-700">
+              <div>User ID: {user?.id || 'não logado'}</div>
+              <div>Loading: {loadingFeed ? 'sim' : 'não'}</div>
+              <div>Páginas: {paginasFeed?.pages?.length || 0}</div>
+              <div>Total Itens: {itens.length}</div>
+              <div>Itens Filtrados: {itensFiltrados.length}</div>
+              <div>Erro: {feedError ? 'SIM' : 'não'}</div>
+            </div>
+            {feedError && (
+              <div className="mt-2 text-red-600 text-xs">
+                Erro: {feedError.message}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
@@ -598,8 +660,22 @@ const FeedOptimized = () => {
           </div>
         )}
 
+        {/* Error state */}
+        {feedError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <h3 className="text-red-800 font-semibold mb-2">Erro ao carregar itens</h3>
+            <p className="text-red-600 text-sm mb-4">{feedError.message}</p>
+            <button
+              onClick={() => refetch()}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
         {/* Empty state */}
-        {!loadingFeed && itensFiltrados.length === 0 && (
+        {!loadingFeed && !feedError && itensFiltrados.length === 0 && (
           <EmptyState
             type="search"
             title={locationForSearch?.cidade ? 
