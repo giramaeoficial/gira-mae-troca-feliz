@@ -474,55 +474,6 @@ export type Database = {
         }
         Relationships: []
       }
-      conversas: {
-        Row: {
-          created_at: string
-          id: string
-          reserva_id: string | null
-          updated_at: string
-          usuario1_id: string
-          usuario2_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          reserva_id?: string | null
-          updated_at?: string
-          usuario1_id: string
-          usuario2_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          reserva_id?: string | null
-          updated_at?: string
-          usuario1_id?: string
-          usuario2_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversas_reserva_id_fkey"
-            columns: ["reserva_id"]
-            isOneToOne: false
-            referencedRelation: "reservas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversas_usuario1_id_fkey"
-            columns: ["usuario1_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversas_usuario2_id_fkey"
-            columns: ["usuario2_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       conversas_whatsapp_log: {
         Row: {
           created_at: string | null
@@ -1113,84 +1064,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      mencoes_mensagens: {
-        Row: {
-          created_at: string
-          id: string
-          mensagem_id: string
-          usuario_mencionado_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          mensagem_id: string
-          usuario_mencionado_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          mensagem_id?: string
-          usuario_mencionado_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mencoes_mensagens_mensagem_id_fkey"
-            columns: ["mensagem_id"]
-            isOneToOne: false
-            referencedRelation: "mensagens"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mencoes_mensagens_usuario_mencionado_id_fkey"
-            columns: ["usuario_mencionado_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mensagens: {
-        Row: {
-          conteudo: string
-          conversa_id: string
-          created_at: string
-          id: string
-          remetente_id: string
-          tipo: string
-        }
-        Insert: {
-          conteudo: string
-          conversa_id: string
-          created_at?: string
-          id?: string
-          remetente_id: string
-          tipo?: string
-        }
-        Update: {
-          conteudo?: string
-          conversa_id?: string
-          created_at?: string
-          id?: string
-          remetente_id?: string
-          tipo?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mensagens_conversa_id_fkey"
-            columns: ["conversa_id"]
-            isOneToOne: false
-            referencedRelation: "conversas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mensagens_remetente_id_fkey"
-            columns: ["remetente_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       metas_usuarios: {
         Row: {
@@ -2440,14 +2313,6 @@ export type Database = {
           proxima_expiracao: string
           detalhes_expiracao: Json
         }[]
-      }
-      obter_ou_criar_conversa: {
-        Args: { p_reserva_id: string }
-        Returns: string
-      }
-      obter_ou_criar_conversa_livre: {
-        Args: { p_usuario1_id: string; p_usuario2_id: string }
-        Returns: string
       }
       obter_preco_manual: {
         Args: Record<PropertyKey, never>

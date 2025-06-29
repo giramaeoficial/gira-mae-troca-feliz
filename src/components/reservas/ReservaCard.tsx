@@ -1,17 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, Package, User, MapPin, MessageCircle } from 'lucide-react';
+import { Clock, Package, User, MapPin } from 'lucide-react';
 import { BotaoWhatsApp } from '@/components/shared/BotaoWhatsApp';
 import LazyImage from '@/components/ui/lazy-image';
+import CodigoConfirmacaoModal from './CodigoConfirmacaoModal';
 
 interface ReservaCardProps {
   reserva: any;
-  onConfirmarEntrega?: (reservaId: string) => void;
+  onConfirmarEntrega?: (reservaId: string, codigo: string) => Promise<boolean>;
   onCancelarReserva?: (reservaId: string) => void;
   onVerificarCodigo?: (reservaId: string) => void;
+  onRefresh?: () => void;
   isVendedor?: boolean;
 }
 
@@ -20,8 +22,12 @@ export const ReservaCard: React.FC<ReservaCardProps> = ({
   onConfirmarEntrega,
   onCancelarReserva,
   onVerificarCodigo,
+  onRefresh,
   isVendedor = false
 }) => {
+  const [showCodigoModal, setShowCodigoModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const getStatusBadge = () => {
     switch (reserva.status) {
       case 'pendente':
@@ -47,6 +53,28 @@ export const ReservaCard: React.FC<ReservaCardProps> = ({
     });
   };
 
+  const handleConfirmarEntrega = () => {
+    if (isVendedor) {
+      setShowCodigoModal(true);
+    }
+  };
+
+  const handleConfirmarCodigo = async (codigo: string): Promise<boolean> => {
+    if (!onConfirmarEntrega) return false;
+    
+    setLoading(true);
+    try {
+      const sucesso = await onConfirmarEntrega(reserva.id, codigo);
+      if (sucesso) {
+        setShowCodigoModal(false);
+        onRefresh?.();
+      }
+      return sucesso;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getActionButtons = () => {
     if (reserva.status !== 'pendente') return null;
 
@@ -54,7 +82,7 @@ export const ReservaCard: React.FC<ReservaCardProps> = ({
       return (
         <div className="flex gap-2 mt-4">
           <Button
-            onClick={() => onVerificarCodigo?.(reserva.id)}
+            onClick={handleConfirmarEntrega}
             className="flex-1 bg-green-600 hover:bg-green-700"
           >
             Confirmar Entrega
@@ -86,7 +114,7 @@ export const ReservaCard: React.FC<ReservaCardProps> = ({
   const getWhatsAppButton = () => {
     if (reserva.status !== 'pendente') return null;
 
-    const contato = isVendedor ? reserva.comprador : reserva.vendedor;
+    const contato = isVendedor ? reserva.profiles_reservador : reserva.profiles_vendedor;
     const numeroWhatsApp = contato?.numero_whatsapp || contato?.telefone?.replace('55', '');
     
     if (!numeroWhatsApp) return null;
@@ -96,7 +124,7 @@ export const ReservaCard: React.FC<ReservaCardProps> = ({
         reservaId={reserva.id}
         numeroWhatsApp={numeroWhatsApp}
         nomeContato={contato?.nome || 'Usuário'}
-        tituloItem={reserva.item?.titulo || 'Item'}
+        tituloItem={reserva.itens?.titulo || 'Item'}
         usuarioRecebeuId={contato?.id}
         isVendedor={isVendedor}
         className="mt-2"
@@ -105,109 +133,125 @@ export const ReservaCard: React.FC<ReservaCardProps> = ({
     );
   };
 
+  // Determinar se é vendedor baseado na estrutura dos dados
+  const eVendedor = reserva.usuario_item && reserva.profiles_reservador;
+  const eComprador = reserva.usuario_reservou && reserva.profiles_vendedor;
+
   return (
-    <Card className="mb-4 shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">
-            {reserva.item?.titulo || 'Item não encontrado'}
-          </CardTitle>
-          {getStatusBadge()}
-        </div>
-        <div className="text-sm text-gray-600">
-          <Clock className="w-4 h-4 inline mr-1" />
-          Reservado em {formatDate(reserva.data_reserva)}
-        </div>
-      </CardHeader>
+    <>
+      <Card className="mb-4 shadow-sm hover:shadow-md transition-shadow">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold">
+              {reserva.itens?.titulo || 'Item não encontrado'}
+            </CardTitle>
+            {getStatusBadge()}
+          </div>
+          <div className="text-sm text-gray-600">
+            <Clock className="w-4 h-4 inline mr-1" />
+            Reservado em {formatDate(reserva.data_reserva || reserva.created_at)}
+          </div>
+        </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Imagem do item */}
-        {reserva.item?.fotos?.[0] && (
-          <div className="w-full h-32 rounded-lg overflow-hidden">
-            <LazyImage
-              src={reserva.item.fotos[0]}
-              alt={reserva.item.titulo}
-              bucket="itens"
-              size="medium"
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
-
-        {/* Informações do item */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="font-medium text-gray-700">Valor:</span>
-            <div className="text-primary font-bold">
-              {reserva.valor_girinhas} {reserva.valor_girinhas === 1 ? 'Girinha' : 'Girinhas'}
-            </div>
-          </div>
-          <div>
-            <span className="font-medium text-gray-700">Taxa:</span>
-            <div className="text-gray-600">
-              {reserva.valor_taxa} {reserva.valor_taxa === 1 ? 'Girinha' : 'Girinhas'}
-            </div>
-          </div>
-        </div>
-
-        {/* Informações de contato */}
-        <div className="bg-gray-50 p-3 rounded-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <User className="w-4 h-4 text-gray-600" />
-            <span className="font-medium">
-              {isVendedor ? 'Comprador' : 'Vendedor'}:
-            </span>
-            <span>{isVendedor ? reserva.comprador?.nome : reserva.vendedor?.nome}</span>
-          </div>
-          
-          {(reserva.vendedor?.cidade || reserva.vendedor?.bairro) && (
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-600" />
-              <span className="text-sm text-gray-600">
-                {[reserva.vendedor?.bairro, reserva.vendedor?.cidade]
-                  .filter(Boolean)
-                  .join(', ')}
-              </span>
+        <CardContent className="space-y-4">
+          {/* Imagem do item */}
+          {reserva.itens?.fotos?.[0] && (
+            <div className="w-full h-32 rounded-lg overflow-hidden">
+              <LazyImage
+                src={reserva.itens.fotos[0]}
+                alt={reserva.itens.titulo}
+                bucket="itens"
+                size="medium"
+                className="w-full h-full object-cover"
+              />
             </div>
           )}
-        </div>
 
-        {/* Código de confirmação para vendedor */}
-        {isVendedor && reserva.status === 'pendente' && reserva.codigo_confirmacao && (
-          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-            <div className="text-sm font-medium text-blue-800 mb-1">
-              Código de Confirmação:
+          {/* Informações do item */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="font-medium text-gray-700">Valor:</span>
+              <div className="text-primary font-bold">
+                {reserva.valor_girinhas} {reserva.valor_girinhas === 1 ? 'Girinha' : 'Girinhas'}
+              </div>
             </div>
-            <div className="text-2xl font-bold text-blue-600 text-center">
-              {reserva.codigo_confirmacao}
-            </div>
-            <div className="text-xs text-blue-700 mt-1 text-center">
-              Peça este código ao comprador no momento da entrega
-            </div>
-          </div>
-        )}
-
-        {/* Instruções para comprador */}
-        {!isVendedor && reserva.status === 'pendente' && (
-          <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-            <div className="text-sm text-green-800">
-              <strong>📱 Próximos passos:</strong>
-              <ol className="list-decimal list-inside mt-2 space-y-1">
-                <li>Entre em contato pelo WhatsApp</li>
-                <li>Combine local e horário</li>
-                <li>Informe o código ao vendedor na entrega</li>
-              </ol>
+            <div>
+              <span className="font-medium text-gray-700">Taxa:</span>
+              <div className="text-gray-600">
+                {reserva.valor_taxa} {reserva.valor_taxa === 1 ? 'Girinha' : 'Girinhas'}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Botão WhatsApp */}
-        {getWhatsAppButton()}
+          {/* Informações de contato */}
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <User className="w-4 h-4 text-gray-600" />
+              <span className="font-medium">
+                {eVendedor ? 'Comprador' : 'Vendedor'}:
+              </span>
+              <span>{eVendedor ? reserva.profiles_reservador?.nome : reserva.profiles_vendedor?.nome}</span>
+            </div>
+            
+            {(reserva.profiles_vendedor?.cidade || reserva.profiles_vendedor?.bairro) && (
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gray-600" />
+                <span className="text-sm text-gray-600">
+                  {[reserva.profiles_vendedor?.bairro, reserva.profiles_vendedor?.cidade]
+                    .filter(Boolean)
+                    .join(', ')}
+                </span>
+              </div>
+            )}
+          </div>
 
-        {/* Botões de ação */}
-        {getActionButtons()}
-      </CardContent>
-    </Card>
+          {/* Código de confirmação para vendedor */}
+          {eVendedor && reserva.status === 'pendente' && reserva.codigo_confirmacao && (
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="text-sm font-medium text-blue-800 mb-1">
+                Código de Confirmação:
+              </div>
+              <div className="text-2xl font-bold text-blue-600 text-center">
+                {reserva.codigo_confirmacao}
+              </div>
+              <div className="text-xs text-blue-700 mt-1 text-center">
+                Peça este código ao comprador no momento da entrega
+              </div>
+            </div>
+          )}
+
+          {/* Instruções para comprador */}
+          {eComprador && reserva.status === 'pendente' && (
+            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+              <div className="text-sm text-green-800">
+                <strong>📱 Próximos passos:</strong>
+                <ol className="list-decimal list-inside mt-2 space-y-1">
+                  <li>Entre em contato pelo WhatsApp</li>
+                  <li>Combine local e horário</li>
+                  <li>Informe o código ao vendedor na entrega</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Botão WhatsApp */}
+          {getWhatsAppButton()}
+
+          {/* Botões de ação */}
+          {getActionButtons()}
+        </CardContent>
+      </Card>
+
+      {/* Modal de confirmação de código */}
+      <CodigoConfirmacaoModal
+        isOpen={showCodigoModal}
+        onClose={() => setShowCodigoModal(false)}
+        reserva={reserva}
+        isVendedor={eVendedor}
+        onConfirmarCodigo={handleConfirmarCodigo}
+        loading={loading}
+      />
+    </>
   );
 };
 
