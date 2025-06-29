@@ -31,12 +31,7 @@ const FeedOptimized = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  console.log('🔍 [DEBUG] FeedOptimized renderizando:', {
-    user: user ? { id: user.id, email: user.email } : null,
-    timestamp: new Date().toISOString()
-  });
-  
-  // Estados de filtros
+  // ✅ MANTER TODOS os estados de filtros exatamente iguais
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
@@ -47,13 +42,14 @@ const FeedOptimized = () => {
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
-  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>({});
+  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // Hooks essenciais
+  // ✅ MANTER hooks essenciais
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
   const debouncedBusca = useDebounce(busca, 500);
   
+  // ✅ MANTER hooks de reservas e favoritos
   const { 
     reservas, 
     filasEspera, 
@@ -63,6 +59,7 @@ const FeedOptimized = () => {
   const { taxaTransacao } = useConfigSistema();
   const { toggleFavorito, verificarSeFavorito } = useFavoritos();
   
+  // ✅ Função para calcular location de forma segura
   const getLocationForSearch = () => {
     if (location) return location;
     
@@ -79,55 +76,32 @@ const FeedOptimized = () => {
 
   const locationForSearch = getLocationForSearch();
   
-  // Objeto com todos os filtros consolidado
-  const filtrosCompletos = useMemo(() => {
-    const filtros = {
-      busca: debouncedBusca,
-      cidade: locationForSearch.cidade || cidadeManual,
-      categoria: categoria === 'todas' ? undefined : categoria,
-      subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
-      genero: genero === 'todos' ? undefined : genero,
-      tamanho: tamanho === 'todos' ? undefined : tamanho,
-      precoMin: precoRange[0],
-      precoMax: precoRange[1],
-      mostrarReservados
-    };
-    
-    console.log('🔍 [DEBUG] Filtros completos calculados:', filtros);
-    return filtros;
-  }, [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
+  // ✅ NOVO: Objeto com todos os filtros consolidado
+  const filtrosCompletos = useMemo(() => ({
+    busca: debouncedBusca,
+    cidade: locationForSearch.cidade || cidadeManual,
+    categoria: categoria === 'todas' ? undefined : categoria,
+    subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
+    genero: genero === 'todos' ? undefined : genero,
+    tamanho: tamanho === 'todos' ? undefined : tamanho,
+    precoMin: precoRange[0],
+    precoMax: precoRange[1],
+    mostrarReservados
+  }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
   
-  // Hook consolidado com TODOS os filtros
+  // ✅ NOVO: Hook consolidado com TODOS os filtros
   const {
     data: paginasFeed,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isLoading: loadingFeed,
-    refetch,
-    error: feedError
+    refetch
   } = useFeedInfinito(user?.id || '', filtrosCompletos);
   
-  console.log('🔍 [DEBUG] Hook useFeedInfinito resultado:', {
-    paginasFeed,
-    paginasCount: paginasFeed?.pages?.length || 0,
-    loadingFeed,
-    feedError: feedError ? { message: feedError.message } : null,
-    hasNextPage,
-    isFetchingNextPage
-  });
-  
-  // Extrair dados das páginas
+  // ✅ Extrair dados das páginas
   const itens = useMemo(() => {
-    const resultado = paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
-    console.log('🔍 [DEBUG] Itens extraídos das páginas:', {
-      totalItens: resultado.length,
-      primeiroItem: resultado[0] ? {
-        id: resultado[0].id,
-        titulo: resultado[0].titulo
-      } : null
-    });
-    return resultado;
+    return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
   
   const configuracoes = paginasFeed?.pages?.[0]?.configuracoes;
@@ -135,15 +109,7 @@ const FeedOptimized = () => {
   const todasSubcategorias = configuracoes?.subcategorias || [];
   const profile = paginasFeed?.pages?.[0]?.profile_essencial;
   
-  console.log('🔍 [DEBUG] Estados finais do feed:', {
-    itensCount: itens.length,
-    categoriasCount: categorias.length,
-    subcategoriasCount: todasSubcategorias.length,
-    loadingFeed,
-    mostrarReservados
-  });
-
-  // Lógica de subcategorias filtradas
+  // ✅ MANTER toda a lógica de subcategorias filtradas
   const getSubcategoriasFiltradas = () => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
@@ -158,7 +124,7 @@ const FeedOptimized = () => {
     return subcategoriasUnicas;
   };
 
-  // Lógica de tamanhos
+  // ✅ MANTER lógica de tamanhos
   const getTamanhosDisponiveis = () => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
@@ -179,18 +145,12 @@ const FeedOptimized = () => {
   const subcategoriasFiltradas = getSubcategoriasFiltradas();
   const tamanhosDisponiveis = getTamanhosDisponiveis();
 
-  // Filtrar itens baseado na opção de mostrar reservados
+  // ✅ Filtrar itens baseado na opção de mostrar reservados
   const itensFiltrados = mostrarReservados 
     ? itens 
     : itens.filter(item => item.status === 'disponivel');
 
-  console.log('🔍 [DEBUG] Itens após filtro de reservados:', {
-    totalItens: itens.length,
-    itensFiltrados: itensFiltrados.length,
-    mostrarReservados
-  });
-
-  // Scroll infinito
+  // ✅ NOVO: Scroll infinito
   const { ref: infiniteRef } = useInfiniteScroll({
     loading: isFetchingNextPage,
     hasNextPage: hasNextPage || false,
@@ -203,7 +163,7 @@ const FeedOptimized = () => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
 
-  // Função para entrar na fila com mensagens adequadas
+  // ✅ FUNÇÃO CORRIGIDA: entrarNaFila com mensagens adequadas
   const entrarNaFila = async (itemId: string) => {
     if (!user) return;
     
@@ -226,6 +186,7 @@ const FeedOptimized = () => {
         return false;
       }
 
+      // Verificar se o resultado tem a estrutura esperada
       const result = data as { tipo?: string; posicao?: number } | null;
       
       if (result?.tipo === 'reserva_direta') {
@@ -262,7 +223,7 @@ const FeedOptimized = () => {
     }
   };
 
-  // Função para calcular filaInfo para cada item
+  // ✅ FUNÇÃO NOVA: calcular filaInfo para cada item
   const getFilaInfo = (itemId: string) => {
     const filaUsuario = filasEspera.find(f => f.item_id === itemId);
     const totalNaFila = filasEspera.filter(f => f.item_id === itemId).length;
@@ -273,7 +234,7 @@ const FeedOptimized = () => {
     };
   };
 
-  // Função para calcular valor total com taxa
+  // ✅ FUNÇÃO NOVA: calcular valor total com taxa
   const calcularValorTotal = (valorGirinhas: number) => {
     const taxa = valorGirinhas * (taxaTransacao / 100);
     const total = valorGirinhas + taxa;
@@ -362,26 +323,6 @@ const FeedOptimized = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-6">
-        {/* Debug Info - apenas em desenvolvimento */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 text-xs">
-            <h3 className="font-bold text-yellow-800 mb-2">🔧 DEBUG INFO</h3>
-            <div className="grid grid-cols-2 gap-2 text-yellow-700">
-              <div>User ID: {user?.id || 'não logado'}</div>
-              <div>Loading: {loadingFeed ? 'sim' : 'não'}</div>
-              <div>Páginas: {paginasFeed?.pages?.length || 0}</div>
-              <div>Total Itens: {itens.length}</div>
-              <div>Itens Filtrados: {itensFiltrados.length}</div>
-              <div>Erro: {feedError ? 'SIM' : 'não'}</div>
-            </div>
-            {feedError && (
-              <div className="mt-2 text-red-600 text-xs">
-                Erro: {feedError.message}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
@@ -392,7 +333,7 @@ const FeedOptimized = () => {
           </p>
         </div>
 
-        {/* Exibição da taxa de transação */}
+        {/* ✅ ADICIONADO: Exibição da taxa de transação */}
         {taxaTransacao > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
             <div className="flex items-center gap-2 text-blue-800">
@@ -660,22 +601,8 @@ const FeedOptimized = () => {
           </div>
         )}
 
-        {/* Error state */}
-        {feedError && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <h3 className="text-red-800 font-semibold mb-2">Erro ao carregar itens</h3>
-            <p className="text-red-600 text-sm mb-4">{feedError.message}</p>
-            <button
-              onClick={() => refetch()}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        )}
-
         {/* Empty state */}
-        {!loadingFeed && !feedError && itensFiltrados.length === 0 && (
+        {!loadingFeed && itensFiltrados.length === 0 && (
           <EmptyState
             type="search"
             title={locationForSearch?.cidade ? 
@@ -703,35 +630,47 @@ const FeedOptimized = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {itensFiltrados.map((item) => {
                 const filaInfo = getFilaInfo(item.id);
-                const valorCalculado = calcularValorTotal(item.valor_girinhas);
+                const valorTotal = calcularValorTotal(item.valor_girinhas);
                 
                 return (
-                  <ItemCard
-                    key={item.id}
-                    item={{
-                      ...item,
-                      valor_girinhas: valorCalculado.total
-                    }}
-                    onItemClick={handleItemClick}
-                    showActions={true}
-                    isFavorito={verificarSeFavorito(item.id)}
-                    onToggleFavorito={() => handleToggleFavorito(item.id)}
-                    onReservar={() => handleReservarItem(item.id)}
-                    onEntrarFila={() => handleEntrarFila(item.id)}
-                    actionState={actionStates[item.id]}
-                    filaInfo={filaInfo}
-                    reservas={reservas}
-                    currentUserId={user?.id}
-                    valorOriginal={valorCalculado.valorItem}
-                    valorTaxa={valorCalculado.taxa}
-                  />
+                  <div key={item.id} className="relative group">
+                    <ItemCard
+                      item={{
+                        ...item,
+                        valor_girinhas: valorTotal.total
+                      }}
+                      onItemClick={handleItemClick}
+                      showActions={true}
+                      isFavorito={verificarSeFavorito(item.id)}
+                      onToggleFavorito={() => handleToggleFavorito(item.id)}
+                      onReservar={() => handleReservarItem(item.id)}
+                      onEntrarFila={() => handleEntrarFila(item.id)}
+                      actionState={actionStates[item.id]}
+                      filaInfo={filaInfo}
+                      reservas={reservas}
+                      currentUserId={user?.id}
+                    />
+                    
+                    {/* ✅ ADICIONADO: Tooltip com breakdown do preço */}
+                    {taxaTransacao > 0 && (
+                      <div className="absolute -bottom-8 left-2 right-2 bg-gray-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                        <div className="text-center">
+                          <div>Item: {valorTotal.valorItem} Girinhas</div>
+                          <div>Taxa ({taxaTransacao}%): {valorTotal.taxa} Girinhas</div>
+                          <div className="font-bold border-t border-gray-600 pt-1 mt-1">
+                            Total: {valorTotal.total} Girinhas
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
           </>
         )}
 
-        {/* Scroll infinito e loading */}
+        {/* ✅ NOVO: Scroll infinito e loading */}
         <div ref={infiniteRef}>
           <InfiniteScrollIndicator
             isFetchingNextPage={isFetchingNextPage}

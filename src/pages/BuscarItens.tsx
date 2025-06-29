@@ -90,10 +90,6 @@ const BuscarItens = () => {
     setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
   };
 
-  const handleItemClick = (itemId: string) => {
-    navigate(`/item/${itemId}`);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -302,12 +298,7 @@ const BuscarItens = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {itens.map((item) => (
-                  <ItemCard 
-                    key={item.id} 
-                    item={item} 
-                    onItemClick={handleItemClick}
-                    showActions={false}
-                  />
+                  <ItemCard key={item.id} item={item} />
                 ))}
               </div>
             )}
