@@ -47,7 +47,6 @@ const DesktopNav: React.FC = () => {
         
         {/* Bloco de Funcionalidades */}
         <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
-        <NavLink to="/mensagens" icon={MessageCircle}>Mensagens</NavLink>
         
         {/* Separador Vertical */}
         <div className="border-l h-6 border-gray-300 mx-3"></div>
