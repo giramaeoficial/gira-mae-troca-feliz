@@ -115,7 +115,6 @@ const Header: React.FC = () => {
     { label: 'Publicar', path: '/publicar', icon: Plus },
     { label: 'Carteira', path: '/carteira', icon: Wallet },
     { label: 'Missões', path: '/missoes', icon: Trophy },
-    { label: 'Mensagens', path: '/mensagens', icon: MessageCircle },
     { label: 'Reservas', path: '/minhas-reservas', icon: Package }
   ];
 
