@@ -16,7 +16,6 @@ import AuthGuard from '@/components/auth/AuthGuard'; // ✅ ADICIONAR IMPORT
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
-import Mensagens from '@/pages/Mensagens';
 import Perfil from '@/pages/Perfil';
 import EditarPerfil from '@/pages/EditarPerfil';
 import PerfilPublicoMae from '@/pages/PerfilPublicoMae';
@@ -48,8 +47,6 @@ function App() {
           <Route path="/buscar-itens" element={<AuthGuard><BuscarItens /></AuthGuard>} /> {/* ✅ PROTEGER */}
           <Route path="/publicar" element={<AuthGuard><PublicarItem /></AuthGuard>} /> {/* ✅ PROTEGER */}
           <Route path="/missoes" element={<AuthGuard><Missoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/mensagens" element={<AuthGuard><Mensagens /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/mensagens/:conversaId" element={<AuthGuard><Mensagens /></AuthGuard>} /> {/* ✅ PROTEGER */}
           <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
           <Route path="/perfil/editar" element={<AuthGuard><EditarPerfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
           <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
