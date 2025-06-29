@@ -39,7 +39,6 @@ export interface ItemFeed {
     nome: string;
     avatar_url?: string;
     reputacao?: number;
-    telefone?: string;
   };
   escolas_inep?: {
     escola: string;
@@ -80,56 +79,34 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
     queryKey: ['feed-infinito', userId, filtros],
     queryFn: async ({ pageParam = 0 }) => {
       console.log('🔄 Carregando página do feed:', pageParam, 'Filtros:', filtros);
-      console.log('🔄 User ID:', userId);
       
-      try {
-        const { data, error } = await supabase.rpc(
-          'carregar_dados_feed_paginado' as any,
-          {
-            p_user_id: userId,
-            p_page: pageParam,
-            p_limit: 20,
-            p_busca: filtros.busca || '',
-            p_cidade: filtros.cidade || '',
-            p_categoria: filtros.categoria || 'todas',
-            p_subcategoria: filtros.subcategoria || 'todas',
-            p_genero: filtros.genero || 'todos',
-            p_tamanho: filtros.tamanho || 'todos',
-            p_preco_min: filtros.precoMin || 0,
-            p_preco_max: filtros.precoMax || 200,
-            p_mostrar_reservados: filtros.mostrarReservados ?? true
-          }
-        );
-        
-        if (error) {
-          console.error('❌ Erro ao carregar feed:', error);
-          throw error;
+      const { data, error } = await supabase.rpc(
+        'carregar_dados_feed_paginado' as any,
+        {
+          p_user_id: userId,
+          p_page: pageParam,
+          p_limit: 20,
+          p_busca: filtros.busca || '',
+          p_cidade: filtros.cidade || '',
+          p_categoria: filtros.categoria || 'todas',
+          p_subcategoria: filtros.subcategoria || 'todas',
+          p_genero: filtros.genero || 'todos',
+          p_tamanho: filtros.tamanho || 'todos',
+          p_preco_min: filtros.precoMin || 0,
+          p_preco_max: filtros.precoMax || 200,
+          p_mostrar_reservados: filtros.mostrarReservados ?? true
         }
-        
-        console.log('🔍 Dados brutos recebidos:', data);
-        
-        // Garantir que temos um objeto válido
-        const result = (data || {
-          itens: [],
-          has_more: false,
-          total_count: 0,
-          configuracoes: null,
-          profile_essencial: null
-        }) as PaginaFeed;
-        
-        // Garantir que itens é sempre um array
-        if (!Array.isArray(result.itens)) {
-          result.itens = [];
-        }
-        
-        console.log('✅ Feed processado:', result.itens.length, 'itens, has_more:', result.has_more);
-        console.log('📱 Itens com telefone:', result.itens.filter(item => item.publicado_por_profile?.telefone).length);
-        
-        return result;
-      } catch (err) {
-        console.error('💥 Erro crítico no feed:', err);
-        throw err;
+      );
+      
+      if (error) {
+        console.error('❌ Erro ao carregar feed:', error);
+        throw error;
       }
+      
+      const result = data as unknown as PaginaFeed;
+      console.log('✅ Feed carregado:', result.itens.length, 'itens, has_more:', result.has_more);
+      
+      return result;
     },
     initialPageParam: 0,
     enabled: !!userId,

@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, Sparkles, Users, MapPin } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
-import BotaoWhatsApp from '@/components/shared/BotaoWhatsApp';
 import { ItemFeed } from '@/hooks/useFeedInfinito';
 
 interface ItemCardProps {
@@ -23,8 +22,8 @@ interface ItemCardProps {
   };
   reservas?: any[];
   currentUserId?: string;
-  valorOriginal?: number;
-  valorTaxa?: number;
+  valorOriginal?: number; // Valor sem taxa
+  valorTaxa?: number; // Valor da taxa
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
@@ -42,16 +41,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   valorOriginal,
   valorTaxa
 }) => {
-  // Debug logs
-  console.log('🔍 ItemCard Debug:', {
-    itemId: item.id,
-    titulo: item.titulo,
-    status: item.status,
-    vendedorTelefone: item.publicado_por_profile?.telefone,
-    currentUserId,
-    reservas: reservas.length
-  });
-
   const getStatusBadge = () => {
     switch (item.status) {
       case 'disponivel':
@@ -91,43 +80,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
     const minhaReserva = reservas.find(r => r.item_id === item.id && r.usuario_reservou === currentUserId);
     const isReservadoPorMim = !!minhaReserva;
-    const vendedorTemTelefone = item.publicado_por_profile?.telefone;
 
-    console.log('🔍 Botão Debug:', {
-      itemId: item.id,
-      isReservadoPorMim,
-      vendedorTemTelefone,
-      minhaReserva: minhaReserva?.id
-    });
-
-    // Se reservado por mim, mostrar botão para falar com vendedor (se tiver telefone)
     if (isReservadoPorMim) {
-      if (vendedorTemTelefone) {
-        return (
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" disabled className="text-xs flex-1">
-              Reservado por você
-            </Button>
-            <BotaoWhatsApp
-              telefone={vendedorTemTelefone}
-              nomeContato={item.publicado_por_profile?.nome || 'Vendedor'}
-              tituloItem={item.titulo}
-              reservaId={minhaReserva.id}
-              isVendedor={false}
-              className="text-xs"
-            />
-          </div>
-        );
-      } else {
-        return (
-          <Button size="sm" variant="outline" disabled className="text-xs">
-            Reservado por você
-          </Button>
-        );
-      }
+      return (
+        <Button size="sm" variant="outline" disabled className="text-xs">
+          Reservado por você
+        </Button>
+      );
     }
 
-    // Se estou na fila de espera
     if (filaInfo && filaInfo.posicao_usuario > 0) {
       return (
         <Button size="sm" variant="outline" disabled className="text-xs">
@@ -136,7 +97,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       );
     }
 
-    // Se item está disponível
     if (item.status === 'disponivel') {
       return (
         <Button
@@ -153,7 +113,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       );
     }
 
-    // Se item está reservado por outra pessoa
     if (item.status === 'reservado') {
       return (
         <Button
@@ -262,9 +221,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         {/* Vendedor */}
         <div className="text-xs text-gray-600">
           <span className="font-medium">Por:</span> {vendedorNomeTruncado}
-          {item.publicado_por_profile?.telefone && (
-            <span className="text-green-600 ml-1">📱</span>
-          )}
         </div>
 
         {/* Preço */}
