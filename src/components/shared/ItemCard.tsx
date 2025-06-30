@@ -327,7 +327,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* 🔧 CORRIGIDO: Preço com taxa sempre visível */}
+          {/* 🔧 SIMPLIFICADO: Preço total com taxa incluída */}
           <div className="mb-3">
             <div className="flex items-center gap-1 mb-1">
               <Sparkles className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />
@@ -335,35 +335,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 "font-bold text-primary",
                 compact ? "text-base" : "text-lg"
               )}>
-                {valores.total}
+                {valores.total} Girinhas
               </span>
-              <Sparkles className="w-3 h-3" style={{ color: 'hsl(var(--primary))' }} />
             </div>
             
-            {/* 🔧 CORRIGIDO: Breakdown da taxa sempre visível quando há taxa */}
+            {/* 🔧 SIMPLIFICADO: Apenas informação da taxa incluída */}
             {taxaTransacao > 0 && valores.taxa > 0 && (
-              <div className="text-xs text-gray-500 space-y-0.5">
-                <div className="flex items-center justify-between">
-                  <span>Item:</span>
-                  <div className="flex items-center gap-1">
-                    <span>{valores.valorItem}</span>
-                    <Sparkles className="w-2.5 h-2.5" style={{ color: 'hsl(var(--primary))' }} />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Taxa ({taxaTransacao}%):</span>
-                  <div className="flex items-center gap-1">
-                    <span>+{valores.taxa}</span>
-                    <Sparkles className="w-2.5 h-2.5" style={{ color: 'hsl(var(--primary))' }} />
-                  </div>
-                </div>
-                <div className="border-t border-gray-200 pt-1 flex items-center justify-between font-medium">
-                  <span>Total:</span>
-                  <div className="flex items-center gap-1">
-                    <span>{valores.total}</span>
-                    <Sparkles className="w-2.5 h-2.5" style={{ color: 'hsl(var(--primary))' }} />
-                  </div>
-                </div>
+              <div className="text-xs text-gray-500">
+                taxa {taxaTransacao}% já incluso
               </div>
             )}
           </div>
