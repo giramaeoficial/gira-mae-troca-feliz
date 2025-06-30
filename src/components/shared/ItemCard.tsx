@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { useCommonSchool } from '@/hooks/useCommonSchool';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,7 @@ interface ItemCardProps {
       nome: string;
       avatar_url?: string;
       reputacao?: number;
+      whatsapp?: string; // 🆕 ADICIONADO: Campo WhatsApp do vendedor
     };
   };
   // ✅ ADICIONADO: Props para integração com Feed
@@ -96,6 +97,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     r.usuario_reservou === currentUserId
   );
 
+  // 🆕 ADICIONADO: Verificar se pode mostrar WhatsApp
+  const canShowWhatsApp = item.publicado_por_profile?.whatsapp && 
+    hasActiveReservation && 
+    item.publicado_por !== currentUserId;
+
   // ✅ ADICIONADO: Determinar se deve mostrar o botão de ação
   const shouldShowActionButton = showActions && 
     (onEntrarFila || onReservar) && 
@@ -124,6 +130,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     } else if (itemIsDisponivel && onReservar) {
       onReservar();
     }
+  };
+
+  // 🆕 ADICIONADO: Handler para WhatsApp
+  const handleWhatsAppClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!item.publicado_por_profile?.whatsapp) return;
+    
+    const whatsappNumber = item.publicado_por_profile.whatsapp;
+    const vendedorNome = item.publicado_por_profile.nome;
+    const mensagem = `Olá ${vendedorNome}! Sobre o item "${item.titulo}" que reservei. Quando podemos combinar a entrega? 😊`;
+    const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(mensagem)}`;
+    
+    window.open(whatsappUrl, '_blank');
   };
 
   // ✅ MELHORADO: Função para obter ícone de gênero
@@ -302,6 +321,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 </div>
               )}
             </div>
+          )}
+
+          {/* 🆕 ADICIONADO: Botão WhatsApp quando há reserva ativa */}
+          {canShowWhatsApp && !compact && (
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="w-full mb-2 bg-green-50 border-green-200 hover:bg-green-100 text-green-700"
+              onClick={handleWhatsAppClick}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Conversar no WhatsApp
+            </Button>
           )}
 
           {/* ✅ MODIFICADO: Botão de ação inteligente baseado no status */}
