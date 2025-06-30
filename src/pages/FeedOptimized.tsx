@@ -234,17 +234,6 @@ const FeedOptimized = () => {
     };
   };
 
-  // ✅ FUNÇÃO NOVA: calcular valor total com taxa
-  const calcularValorTotal = (valorGirinhas: number) => {
-    const taxa = valorGirinhas * (taxaTransacao / 100);
-    const total = valorGirinhas + taxa;
-    return {
-      valorItem: valorGirinhas,
-      taxa: Math.round(taxa * 100) / 100,
-      total: Math.round(total * 100) / 100
-    };
-  };
-
   // Handlers para ações dos itens
   const handleReservarItem = async (itemId: string) => {
     try {
@@ -333,17 +322,7 @@ const FeedOptimized = () => {
           </p>
         </div>
 
-        {/* ✅ ADICIONADO: Exibição da taxa de transação */}
-        {taxaTransacao > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-            <div className="flex items-center gap-2 text-blue-800">
-              <span className="text-sm">ℹ️</span>
-              <span className="text-sm font-medium">
-                Taxa de transação: {taxaTransacao}% - será adicionada ao valor do item na reserva
-              </span>
-            </div>
-          </div>
-        )}
+        {/* 🔧 REMOVIDO: Banner de taxa (informação agora está no card) */}
 
         {/* Header com localização e publicar */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
@@ -558,7 +537,7 @@ const FeedOptimized = () => {
               {/* Faixa de Preço */}
               <div>
                 <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                  PREÇO: {precoRange[0]} - {precoRange[1]} Girinhas
+                  PREÇO: {precoRange[0]} - {precoRange[1]} G
                 </h3>
                 <div className="px-2">
                   <Slider
@@ -630,40 +609,23 @@ const FeedOptimized = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {itensFiltrados.map((item) => {
                 const filaInfo = getFilaInfo(item.id);
-                const valorTotal = calcularValorTotal(item.valor_girinhas);
                 
                 return (
-                  <div key={item.id} className="relative group">
-                    <ItemCard
-                      item={{
-                        ...item,
-                        valor_girinhas: valorTotal.total
-                      }}
-                      onItemClick={handleItemClick}
-                      showActions={true}
-                      isFavorito={verificarSeFavorito(item.id)}
-                      onToggleFavorito={() => handleToggleFavorito(item.id)}
-                      onReservar={() => handleReservarItem(item.id)}
-                      onEntrarFila={() => handleEntrarFila(item.id)}
-                      actionState={actionStates[item.id]}
-                      filaInfo={filaInfo}
-                      reservas={reservas}
-                      currentUserId={user?.id}
-                    />
-                    
-                    {/* ✅ ADICIONADO: Tooltip com breakdown do preço */}
-                    {taxaTransacao > 0 && (
-                      <div className="absolute -bottom-8 left-2 right-2 bg-gray-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <div className="text-center">
-                          <div>Item: {valorTotal.valorItem} Girinhas</div>
-                          <div>Taxa ({taxaTransacao}%): {valorTotal.taxa} Girinhas</div>
-                          <div className="font-bold border-t border-gray-600 pt-1 mt-1">
-                            Total: {valorTotal.total} Girinhas
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    onItemClick={handleItemClick}
+                    showActions={true}
+                    isFavorito={verificarSeFavorito(item.id)}
+                    onToggleFavorito={() => handleToggleFavorito(item.id)}
+                    onReservar={() => handleReservarItem(item.id)}
+                    onEntrarFila={() => handleEntrarFila(item.id)}
+                    actionState={actionStates[item.id]}
+                    filaInfo={filaInfo}
+                    reservas={reservas}
+                    currentUserId={user?.id}
+                    taxaTransacao={taxaTransacao}
+                  />
                 );
               })}
             </div>
