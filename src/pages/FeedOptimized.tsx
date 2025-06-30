@@ -73,7 +73,8 @@ const FeedOptimized = () => {
     tamanho: tamanho === 'todos' ? undefined : tamanho,
     precoMin: precoRange[0],
     precoMax: precoRange[1],
-    mostrarReservados
+    mostrarReservados,
+    itemId: undefined // ✅ ADICIONADO: Feed não filtra por ID específico
   }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
   
   // ✅ Hook consolidado com TODOS os dados
