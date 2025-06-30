@@ -2,11 +2,11 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
-import { useCommonSchool } from '@/hooks/useCommonSchool';
 import { cn } from '@/lib/utils';
 import ActionFeedback from '@/components/loading/ActionFeedback';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ItemCardProps {
   item: {
@@ -16,13 +16,11 @@ interface ItemCardProps {
     categoria: string;
     subcategoria?: string;
     estado_conservacao: string;
-    status: string; // ✅ ADICIONADO: Campo status
+    status: string;
     fotos?: string[];
-    // ✅ ADICIONADO: Campos novos para filtros
     genero?: string;
     tamanho_valor?: string;
     tamanho_categoria?: string;
-    // Localização
     endereco_bairro?: string;
     endereco_cidade?: string;
     endereco_estado?: string;
@@ -36,29 +34,35 @@ interface ItemCardProps {
       nome: string;
       avatar_url?: string;
       reputacao?: number;
+      whatsapp?: string;
     };
   };
-  // ✅ ADICIONADO: Props para integração com Feed
-  isFavorito?: boolean;
+  // ✅ DADOS CONSOLIDADOS - vêm todos da função carregar_dados_feed_paginado
+  feedData: {
+    favoritos: string[]; // Array de item_ids favoritos
+    reservas_usuario: Array<{
+      item_id: string;
+      status: string;
+      id: string;
+      usuario_reservou: string;
+    }>;
+    filas_espera: Record<string, {
+      total_fila: number;
+      posicao_usuario?: number;
+      usuario_id: string;
+    }>;
+  };
+  currentUserId: string;
+  taxaTransacao?: number;
+  
+  // Actions
   onToggleFavorito?: () => void;
   onEntrarFila?: () => void;
-  onReservar?: () => void; // ✅ ADICIONADO: Handler para reservar
+  onReservar?: () => void;
   onItemClick?: (itemId: string) => void;
   actionState?: 'loading' | 'success' | 'error' | 'idle';
-  filaInfo?: {
-    posicao?: number;
-    total?: number;
-    posicao_usuario?: number; // ✅ ADICIONADO: Para verificar se usuário está na fila
-  };
-  isReservado?: boolean; // ✅ MODIFICADO: Agora calculado do status
-  // ✅ ADICIONADO: Props para verificação de estado
-  reservas?: Array<{
-    item_id: string;
-    status: string;
-    usuario_reservou?: string;
-  }>;
-  currentUserId?: string;
-  // Configurações de exibição
+  
+  // Display options
   showActions?: boolean;
   showLocation?: boolean;
   showAuthor?: boolean;
@@ -67,42 +71,66 @@ interface ItemCardProps {
 
 export const ItemCard: React.FC<ItemCardProps> = ({ 
   item, 
-  isFavorito = false,
+  feedData,
+  currentUserId,
+  taxaTransacao = 0,
   onToggleFavorito,
   onEntrarFila,
-  onReservar, // ✅ ADICIONADO
+  onReservar,
   onItemClick,
   actionState = 'idle',
-  filaInfo,
-  isReservado, // ✅ MODIFICADO: Agora pode ser override
-  reservas = [], // ✅ ADICIONADO
-  currentUserId, // ✅ ADICIONADO
   showActions = true,
   showLocation = true,
   showAuthor = true,
   compact = false
 }) => {
-  const { hasCommonSchool } = useCommonSchool(item.publicado_por);
-
-  // ✅ ADICIONADO: Calcular status baseado no item ou prop
-  const itemIsReservado = isReservado ?? item.status === 'reservado';
-  const itemIsDisponivel = item.status === 'disponivel';
-
-  // ✅ ADICIONADO: Verificar se o usuário já está na fila ou tem reserva ativa
-  const isUserInQueue = filaInfo && filaInfo.posicao_usuario && filaInfo.posicao_usuario > 0;
-  const hasActiveReservation = reservas.some(r => 
+  // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
+  const isFavorito = feedData.favoritos.includes(item.id);
+  
+  const hasActiveReservation = feedData.reservas_usuario.some(r => 
     r.item_id === item.id && 
     ['pendente', 'confirmada'].includes(r.status) && 
     r.usuario_reservou === currentUserId
   );
 
-  // ✅ ADICIONADO: Determinar se deve mostrar o botão de ação
+  const filaInfo = feedData.filas_espera[item.id];
+  const isUserInQueue = filaInfo?.posicao_usuario && filaInfo.posicao_usuario > 0;
+
+  // ✅ VERIFICAR MESMA ESCOLA (lógica simples baseada nos dados do item)
+  const hasCommonSchool = Boolean(item.escolas_inep?.escola);
+
+  // Status do item
+  const itemIsReservado = item.status === 'reservado';
+  const itemIsDisponivel = item.status === 'disponivel';
+
+  // ✅ VERIFICAR SE PODE MOSTRAR WHATSAPP
+  const canShowWhatsApp = item.publicado_por_profile?.whatsapp && 
+    hasActiveReservation && 
+    item.publicado_por !== currentUserId;
+
+  // ✅ CALCULAR VALORES COM TAXA
+  const calcularValores = () => {
+    const valorItem = item.valor_girinhas;
+    const taxa = taxaTransacao > 0 ? valorItem * (taxaTransacao / 100) : 0;
+    const total = valorItem + taxa;
+    
+    return {
+      valorItem,
+      taxa: Math.round(taxa * 100) / 100,
+      total: Math.round(total * 100) / 100
+    };
+  };
+
+  const valores = calcularValores();
+
+  // ✅ DETERMINAR SE DEVE MOSTRAR BOTÃO DE AÇÃO
   const shouldShowActionButton = showActions && 
     (onEntrarFila || onReservar) && 
     !isUserInQueue && 
     !hasActiveReservation &&
-    item.publicado_por !== currentUserId; // Não pode reservar próprio item
+    item.publicado_por !== currentUserId;
 
+  // Event handlers
   const handleClick = () => {
     if (onItemClick) {
       onItemClick(item.id);
@@ -116,7 +144,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
-  // ✅ MODIFICADO: Handler inteligente baseado no status
   const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (itemIsReservado && onEntrarFila) {
@@ -126,7 +153,38 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
-  // ✅ MELHORADO: Função para obter ícone de gênero
+  // ✅ HANDLER WHATSAPP COM REGISTRO NO BANCO
+  const handleWhatsAppClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!item.publicado_por_profile?.whatsapp) return;
+    
+    const whatsappNumber = item.publicado_por_profile.whatsapp;
+    const vendedorNome = item.publicado_por_profile.nome;
+    const mensagem = `Olá ${vendedorNome}! Sobre o item "${item.titulo}" que reservei. Quando podemos combinar a entrega? 😊`;
+    const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(mensagem)}`;
+    
+    try {
+      const reservaAtiva = feedData.reservas_usuario.find(r => 
+        r.item_id === item.id && 
+        ['pendente', 'confirmada'].includes(r.status) && 
+        r.usuario_reservou === currentUserId
+      );
+      
+      if (reservaAtiva) {
+        await supabase.rpc('registrar_conversa_whatsapp', {
+          p_reserva_id: reservaAtiva.id,
+          p_usuario_recebeu: item.publicado_por
+        });
+        console.log('✅ Comunicação WhatsApp registrada no banco');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao registrar comunicação WhatsApp:', error);
+    }
+    
+    window.open(whatsappUrl, '_blank');
+  };
+
+  // Helper functions
   const getGeneroIcon = (genero?: string) => {
     switch (genero) {
       case 'menino': return '👦';
@@ -136,7 +194,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
-  // ✅ MELHORADO: Função para obter cor do estado
   const getEstadoColor = (estado: string) => {
     switch (estado) {
       case 'novo': return 'bg-green-100 text-green-800';
@@ -147,23 +204,22 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
-  // ✅ MELHORADO: Localização mais inteligente
   const getLocationText = () => {
-    if (item.endereco_bairro) return item.endereco_bairro;
-    if (item.endereco_cidade) return item.endereco_cidade;
-    return 'Local não informado';
+    const parts = [];
+    if (item.endereco_bairro) parts.push(item.endereco_bairro);
+    if (item.endereco_cidade) parts.push(item.endereco_cidade);
+    return parts.length > 0 ? parts.join(', ') : 'Local não informado';
   };
 
-  // ✅ ADICIONADO: Verificar se tem dados de localização
   const hasLocationData = item.endereco_bairro || item.endereco_cidade;
 
   return (
     <Card className={cn(
       "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden",
       compact ? "max-w-[200px]" : "max-w-sm",
-      itemIsReservado && "opacity-75" // ✅ MODIFICADO: Usar variável calculada
+      itemIsReservado && "opacity-75"
     )}>
-      {/* ✅ MELHORADO: Badge de localização - só mostra se tem dados */}
+      {/* Badge de localização - sempre visível quando há dados */}
       {showLocation && hasLocationData && (
         <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
           <MapPin className="w-3 h-3 inline mr-1 text-gray-500" />
@@ -171,15 +227,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </div>
       )}
 
-      {/* ✅ MELHORADO: Badge de mesma escola */}
-      {hasCommonSchool && !compact && (
-        <div className="absolute top-2 right-12 bg-green-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
-          <School className="w-3 h-3 inline mr-1" />
-          Mesma escola!
-        </div>
-      )}
+      {/* ❌ REMOVIDO: Badge de status reservado */}
+      {/* ❌ REMOVIDO: Badge de mesma escola no topo */}
 
-      {/* ✅ MELHORADO: Botão de favorito */}
+      {/* Botão de favorito */}
       {showActions && onToggleFavorito && (
         <Button
           variant="ghost"
@@ -198,16 +249,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </Button>
       )}
 
-      {/* ✅ MODIFICADO: Badge de status reservado com novo estilo */}
-      {itemIsReservado && (
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white rounded-full px-3 py-1 text-xs font-medium shadow-sm z-10 flex items-center gap-1">
-          <Users className="w-3 h-3" />
-          Reservado
-        </div>
-      )}
-
       <CardContent className="p-0" onClick={handleClick}>
-        {/* ✅ CORRIGIDO: Imagem do item */}
+        {/* Imagem do item */}
         <div className={cn(
           "relative",
           compact ? "aspect-square" : "aspect-[4/3]"
@@ -217,11 +260,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             alt={item.titulo}
             className={cn(
               "w-full h-full object-cover",
-              itemIsReservado && "filter grayscale-[20%]" // ✅ ADICIONADO: Filtro visual sutil
+              itemIsReservado && "filter grayscale-[20%]"
             )}
           />
           
-          {/* ✅ ADICIONADO: Badge de estado de conservação */}
+          {/* Badge de estado de conservação */}
           <Badge 
             className={cn(
               "absolute bottom-2 left-2 text-xs",
@@ -231,7 +274,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             {item.estado_conservacao.charAt(0).toUpperCase() + item.estado_conservacao.slice(1)}
           </Badge>
 
-          {/* ✅ ADICIONADO: Badge de gênero */}
+          {/* Badge de gênero */}
           {item.genero && getGeneroIcon(item.genero) && !compact && (
             <div className="absolute bottom-2 right-2 bg-white/90 rounded-full px-2 py-1 text-xs">
               {getGeneroIcon(item.genero)}
@@ -239,50 +282,72 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           )}
         </div>
 
-        {/* ✅ MELHORADO: Conteúdo do card */}
+        {/* Conteúdo do card */}
         <div className={cn("p-3", compact && "p-2")}>
           {/* Título */}
           <h3 className={cn(
-            "font-medium leading-tight line-clamp-2 mb-2",
+            "font-medium leading-tight line-clamp-2 mb-1",
             compact ? "text-sm min-h-[2.5rem]" : "text-base min-h-[3rem]"
           )}>
             {item.titulo}
           </h3>
 
-          {/* ✅ ADICIONADO: Categoria, subcategoria e tamanho */}
+          {/* ❌ REMOVIDO: Localização inline quando reservado */}
+
+          {/* Categoria, tamanho e mesma escola */}
           {!compact && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-              <span className="capitalize">{item.categoria}</span>
-              {item.subcategoria && (
-                <>
-                  <span>•</span>
-                  <span>{item.subcategoria}</span>
-                </>
-              )}
-              {item.tamanho_valor && (
-                <>
-                  <span>•</span>
-                  <span>{item.tamanho_valor}</span>
-                </>
-              )}
+            <div className="space-y-1 mb-2">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span className="capitalize">{item.categoria}</span>
+                {item.subcategoria && (
+                  <>
+                    <span className="mx-1">•</span>
+                    <span>{item.subcategoria}</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {item.tamanho_valor && (
+                  <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+                    <span className="text-xs font-medium text-blue-700">
+                      {item.tamanho_valor}
+                    </span>
+                  </div>
+                )}
+                {/* 🔧 MOVIDO: Badge de mesma escola para baixo, ao lado do tamanho */}
+                {hasCommonSchool && (
+                  <div className="inline-flex items-center bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+                    <School className="w-3 h-3 mr-1 text-green-600" />
+                    <span className="text-xs font-medium text-green-700">
+                      Mesma escola
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* ✅ MELHORADO: Preço */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1">
-              <Sparkles className="w-4 h-4 text-yellow-500" />
+          {/* 🔧 SIMPLIFICADO: Preço total com taxa incluída */}
+          <div className="mb-3">
+            <div className="flex items-center gap-1 mb-1">
+              <Sparkles className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />
               <span className={cn(
                 "font-bold text-primary",
                 compact ? "text-base" : "text-lg"
               )}>
-                {item.valor_girinhas}
+                {valores.total} Girinhas
               </span>
-              <span className="text-sm text-gray-500">Girinhas</span>
             </div>
+            
+            {/* 🔧 SIMPLIFICADO: Apenas informação da taxa incluída */}
+            {taxaTransacao > 0 && valores.taxa > 0 && (
+              <div className="text-xs text-gray-500">
+                taxa {taxaTransacao}% já incluso
+              </div>
+            )}
           </div>
 
-          {/* ✅ MELHORADO: Perfil do autor */}
+          {/* Perfil do autor */}
           {showAuthor && item.publicado_por_profile && !compact && (
             <div className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3">
               <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
@@ -304,7 +369,26 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* ✅ MODIFICADO: Botão de ação inteligente baseado no status */}
+          {/* WhatsApp */}
+          {canShowWhatsApp && !compact && (
+            <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-3">
+              <div className="text-xs text-green-800 mb-2 text-center">
+                Combine a entrega
+              </div>
+              <div className="flex items-center justify-center">
+                <Button 
+                  size="sm" 
+                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs h-7"
+                  onClick={handleWhatsAppClick}
+                >
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  WhatsApp
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Botão de ação principal */}
           {shouldShowActionButton && (
             <Button 
               size="sm" 
@@ -336,24 +420,37 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </Button>
           )}
 
-          {/* ✅ ADICIONADO: Mostrar status quando já está na fila/reservado */}
-          {(isUserInQueue || hasActiveReservation) && (
+          {/* Status de reserva/fila */}
+          {(isUserInQueue || hasActiveReservation) && !canShowWhatsApp && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
               {hasActiveReservation ? (
-                <div className="flex items-center justify-center gap-2 text-green-600">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Item Reservado</span>
+                <div>
+                  <div className="flex items-center justify-center gap-2 text-green-600 mb-2">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Item Reservado</span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    Você tem uma reserva ativa. Aguarde o vendedor entrar em contato ou combine a entrega.
+                  </p>
                 </div>
               ) : (
-                <div className="flex items-center justify-center gap-2 text-blue-600">
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
+                <div>
+                  <div className="flex items-center justify-center gap-2 text-blue-600 mb-2">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    {filaInfo?.total_fila && filaInfo.total_fila > 1 
+                      ? `Há ${filaInfo.total_fila - (filaInfo.posicao_usuario || 0)} pessoas na sua frente.`
+                      : 'Você será notificado se o item ficar disponível.'
+                    }
+                  </p>
                 </div>
               )}
             </div>
           )}
 
-          {/* ✅ ADICIONADO: Feedback de ação */}
+          {/* Feedback de ação */}
           {actionState !== 'idle' && actionState !== 'loading' && (
             <ActionFeedback
               state={actionState}

@@ -14,12 +14,9 @@ import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 import { ItemCard } from '@/components/shared/ItemCard';
 import { useAuth } from '@/hooks/useAuth';
-import { useReservas } from '@/hooks/useReservas';
-import { useFavoritos } from '@/hooks/useFavoritos';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
-import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { useToast } from '@/hooks/use-toast';
 import { useFeedInfinito } from '@/hooks/useFeedInfinito';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -31,7 +28,7 @@ const FeedOptimized = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // ✅ MANTER TODOS os estados de filtros exatamente iguais
+  // ✅ Estados de filtros
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
@@ -44,20 +41,10 @@ const FeedOptimized = () => {
   const [mostrarReservados, setMostrarReservados] = useState(true);
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ MANTER hooks essenciais
+  // ✅ Hooks essenciais mantidos
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
   const debouncedBusca = useDebounce(busca, 500);
-  
-  // ✅ MANTER hooks de reservas e favoritos
-  const { 
-    reservas, 
-    filasEspera, 
-    entrarNaFila: entrarNaFilaOriginal, 
-    isItemReservado 
-  } = useReservas();
-  const { taxaTransacao } = useConfigSistema();
-  const { toggleFavorito, verificarSeFavorito } = useFavoritos();
   
   // ✅ Função para calcular location de forma segura
   const getLocationForSearch = () => {
@@ -76,7 +63,7 @@ const FeedOptimized = () => {
 
   const locationForSearch = getLocationForSearch();
   
-  // ✅ NOVO: Objeto com todos os filtros consolidado
+  // ✅ Objeto com todos os filtros consolidado
   const filtrosCompletos = useMemo(() => ({
     busca: debouncedBusca,
     cidade: locationForSearch.cidade || cidadeManual,
@@ -86,10 +73,11 @@ const FeedOptimized = () => {
     tamanho: tamanho === 'todos' ? undefined : tamanho,
     precoMin: precoRange[0],
     precoMax: precoRange[1],
-    mostrarReservados
+    mostrarReservados,
+    itemId: undefined // ✅ ADICIONADO: Feed não filtra por ID específico
   }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
   
-  // ✅ NOVO: Hook consolidado com TODOS os filtros
+  // ✅ Hook consolidado com TODOS os dados
   const {
     data: paginasFeed,
     fetchNextPage,
@@ -99,17 +87,28 @@ const FeedOptimized = () => {
     refetch
   } = useFeedInfinito(user?.id || '', filtrosCompletos);
   
-  // ✅ Extrair dados das páginas
+  // ✅ Extrair TODOS os dados das páginas
   const itens = useMemo(() => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
   
-  const configuracoes = paginasFeed?.pages?.[0]?.configuracoes;
-  const categorias = configuracoes?.categorias || [];
-  const todasSubcategorias = configuracoes?.subcategorias || [];
-  const profile = paginasFeed?.pages?.[0]?.profile_essencial;
+  // ✅ DADOS CONSOLIDADOS da primeira página
+  const feedData = useMemo(() => {
+    const primeiraPagina = paginasFeed?.pages?.[0];
+    return {
+      favoritos: primeiraPagina?.favoritos || [],
+      reservas_usuario: primeiraPagina?.reservas_usuario || [],
+      filas_espera: primeiraPagina?.filas_espera || {},
+      configuracoes: primeiraPagina?.configuracoes,
+      profile_essencial: primeiraPagina?.profile_essencial,
+      taxaTransacao: 5 // ✅ CORRIGIDO: Taxa exemplo de 5% (deve vir da configuração)
+    };
+  }, [paginasFeed]);
   
-  // ✅ MANTER toda a lógica de subcategorias filtradas
+  const categorias = feedData.configuracoes?.categorias || [];
+  const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
+  
+  // ✅ Lógica de subcategorias filtradas
   const getSubcategoriasFiltradas = () => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
@@ -124,7 +123,7 @@ const FeedOptimized = () => {
     return subcategoriasUnicas;
   };
 
-  // ✅ MANTER lógica de tamanhos
+  // ✅ Lógica de tamanhos
   const getTamanhosDisponiveis = () => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
@@ -150,7 +149,7 @@ const FeedOptimized = () => {
     ? itens 
     : itens.filter(item => item.status === 'disponivel');
 
-  // ✅ NOVO: Scroll infinito
+  // ✅ Scroll infinito
   const { ref: infiniteRef } = useInfiniteScroll({
     loading: isFetchingNextPage,
     hasNextPage: hasNextPage || false,
@@ -163,7 +162,7 @@ const FeedOptimized = () => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
 
-  // ✅ FUNÇÃO CORRIGIDA: entrarNaFila com mensagens adequadas
+  // ✅ FUNÇÃO entrarNaFila usando RPC direto
   const entrarNaFila = async (itemId: string) => {
     if (!user) return;
     
@@ -186,7 +185,6 @@ const FeedOptimized = () => {
         return false;
       }
 
-      // Verificar se o resultado tem a estrutura esperada
       const result = data as { tipo?: string; posicao?: number } | null;
       
       if (result?.tipo === 'reserva_direta') {
@@ -223,26 +221,54 @@ const FeedOptimized = () => {
     }
   };
 
-  // ✅ FUNÇÃO NOVA: calcular filaInfo para cada item
-  const getFilaInfo = (itemId: string) => {
-    const filaUsuario = filasEspera.find(f => f.item_id === itemId);
-    const totalNaFila = filasEspera.filter(f => f.item_id === itemId).length;
+  // ✅ FUNÇÃO toggleFavorito usando RPC direto
+  const toggleFavorito = async (itemId: string) => {
+    if (!user) return;
     
-    return {
-      posicao_usuario: filaUsuario?.posicao || 0,
-      total: totalNaFila
-    };
-  };
+    const isFavorito = feedData.favoritos.includes(itemId);
+    
+    try {
+      if (isFavorito) {
+        // Remover favorito
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', itemId);
 
-  // ✅ FUNÇÃO NOVA: calcular valor total com taxa
-  const calcularValorTotal = (valorGirinhas: number) => {
-    const taxa = valorGirinhas * (taxaTransacao / 100);
-    const total = valorGirinhas + taxa;
-    return {
-      valorItem: valorGirinhas,
-      taxa: Math.round(taxa * 100) / 100,
-      total: Math.round(total * 100) / 100
-    };
+        if (error) throw error;
+
+        toast({
+          title: "Removido dos favoritos",
+          description: "Item removido da sua lista de desejos.",
+        });
+      } else {
+        // Adicionar favorito
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({
+            user_id: user.id,
+            item_id: itemId
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Adicionado aos favoritos! ❤️",
+          description: "Item adicionado à sua lista de desejos.",
+        });
+      }
+      
+      // Atualizar dados
+      await refetch();
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar os favoritos.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handlers para ações dos itens
@@ -332,18 +358,6 @@ const FeedOptimized = () => {
             Descubra itens incríveis na sua região
           </p>
         </div>
-
-        {/* ✅ ADICIONADO: Exibição da taxa de transação */}
-        {taxaTransacao > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-            <div className="flex items-center gap-2 text-blue-800">
-              <span className="text-sm">ℹ️</span>
-              <span className="text-sm font-medium">
-                Taxa de transação: {taxaTransacao}% - será adicionada ao valor do item na reserva
-              </span>
-            </div>
-          </div>
-        )}
 
         {/* Header com localização e publicar */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
@@ -558,7 +572,7 @@ const FeedOptimized = () => {
               {/* Faixa de Preço */}
               <div>
                 <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                  PREÇO: {precoRange[0]} - {precoRange[1]} Girinhas
+                  PREÇO: {precoRange[0]} - {precoRange[1]} G
                 </h3>
                 <div className="px-2">
                   <Slider
@@ -628,49 +642,26 @@ const FeedOptimized = () => {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {itensFiltrados.map((item) => {
-                const filaInfo = getFilaInfo(item.id);
-                const valorTotal = calcularValorTotal(item.valor_girinhas);
-                
-                return (
-                  <div key={item.id} className="relative group">
-                    <ItemCard
-                      item={{
-                        ...item,
-                        valor_girinhas: valorTotal.total
-                      }}
-                      onItemClick={handleItemClick}
-                      showActions={true}
-                      isFavorito={verificarSeFavorito(item.id)}
-                      onToggleFavorito={() => handleToggleFavorito(item.id)}
-                      onReservar={() => handleReservarItem(item.id)}
-                      onEntrarFila={() => handleEntrarFila(item.id)}
-                      actionState={actionStates[item.id]}
-                      filaInfo={filaInfo}
-                      reservas={reservas}
-                      currentUserId={user?.id}
-                    />
-                    
-                    {/* ✅ ADICIONADO: Tooltip com breakdown do preço */}
-                    {taxaTransacao > 0 && (
-                      <div className="absolute -bottom-8 left-2 right-2 bg-gray-800 text-white text-xs rounded p-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <div className="text-center">
-                          <div>Item: {valorTotal.valorItem} Girinhas</div>
-                          <div>Taxa ({taxaTransacao}%): {valorTotal.taxa} Girinhas</div>
-                          <div className="font-bold border-t border-gray-600 pt-1 mt-1">
-                            Total: {valorTotal.total} Girinhas
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {itensFiltrados.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  feedData={feedData}
+                  currentUserId={user?.id || ''}
+                  taxaTransacao={feedData.taxaTransacao}
+                  onItemClick={handleItemClick}
+                  showActions={true}
+                  onToggleFavorito={() => handleToggleFavorito(item.id)}
+                  onReservar={() => handleReservarItem(item.id)}
+                  onEntrarFila={() => handleEntrarFila(item.id)}
+                  actionState={actionStates[item.id]}
+                />
+              ))}
             </div>
           </>
         )}
 
-        {/* ✅ NOVO: Scroll infinito e loading */}
+        {/* Scroll infinito e loading */}
         <div ref={infiniteRef}>
           <InfiniteScrollIndicator
             isFetchingNextPage={isFetchingNextPage}

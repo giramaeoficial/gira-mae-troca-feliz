@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, Wallet, Package, Users, User } from 'lucide-react';
+import { Wallet, Package, Users, User } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -17,7 +17,6 @@ interface MoreMenuProps {
 
 const MoreMenu: React.FC<MoreMenuProps> = ({ children }) => {
   const moreItems = [
-    { icon: MessageCircle, label: "Chat", path: "/mensagens" },
     { icon: Wallet, label: "Carteira", path: "/carteira" },
     { icon: Package, label: "Reservas", path: "/minhas-reservas" },
     { icon: Users, label: "Indicações", path: "/indicacoes" },
