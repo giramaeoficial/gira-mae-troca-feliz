@@ -182,15 +182,23 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       compact ? "max-w-[200px]" : "max-w-sm",
       itemIsReservado && "opacity-75" // ✅ MODIFICADO: Usar variável calculada
     )}>
-      {/* ✅ MELHORADO: Badge de localização - só mostra se tem dados */}
-      {showLocation && hasLocationData && (
+      {/* 🔧 CORRIGIDO: Badge de localização no canto superior esquerdo */}
+      {showLocation && hasLocationData && !itemIsReservado && (
         <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
           <MapPin className="w-3 h-3 inline mr-1 text-gray-500" />
           {getLocationText()}
         </div>
       )}
 
-      {/* ✅ MELHORADO: Badge de mesma escola */}
+      {/* 🔧 CORRIGIDO: Badge de status reservado no topo esquerdo (prioritário) */}
+      {itemIsReservado && (
+        <div className="absolute top-2 left-2 bg-orange-500 text-white rounded-full px-3 py-1 text-xs font-medium shadow-sm z-10 flex items-center gap-1">
+          <Users className="w-3 h-3" />
+          Reservado
+        </div>
+      )}
+
+      {/* ✅ MELHORADO: Badge de mesma escola - ajustado posição */}
       {hasCommonSchool && !compact && (
         <div className="absolute top-2 right-12 bg-green-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
           <School className="w-3 h-3 inline mr-1" />
@@ -215,14 +223,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             )} 
           />
         </Button>
-      )}
-
-      {/* ✅ MODIFICADO: Badge de status reservado com novo estilo */}
-      {itemIsReservado && (
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-orange-500 text-white rounded-full px-3 py-1 text-xs font-medium shadow-sm z-10 flex items-center gap-1">
-          <Users className="w-3 h-3" />
-          Reservado
-        </div>
       )}
 
       <CardContent className="p-0" onClick={handleClick}>
@@ -267,6 +267,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           )}>
             {item.titulo}
           </h3>
+
+          {/* 🔧 CORRIGIDO: Localização integrada ao conteúdo quando reservado */}
+          {showLocation && hasLocationData && itemIsReservado && !compact && (
+            <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+              <MapPin className="w-3 h-3" />
+              <span>📍 {getLocationText()}</span>
+            </div>
+          )}
 
           {/* ✅ ADICIONADO: Categoria, subcategoria e tamanho */}
           {!compact && (
@@ -323,17 +331,29 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* 🆕 ADICIONADO: Botão WhatsApp quando há reserva ativa */}
+          {/* 🆕 MELHORADO: Botão WhatsApp com informação contextual */}
           {canShowWhatsApp && !compact && (
-            <Button 
-              size="sm" 
-              variant="outline"
-              className="w-full mb-2 bg-green-50 border-green-200 hover:bg-green-100 text-green-700"
-              onClick={handleWhatsAppClick}
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Conversar no WhatsApp
-            </Button>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <MessageCircle className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-sm font-medium text-green-800">
+                  Combine a entrega
+                </span>
+              </div>
+              <p className="text-xs text-green-700 mb-3">
+                Converse diretamente com {item.publicado_por_profile?.nome} para combinar horário, local e forma de entrega.
+              </p>
+              <Button 
+                size="sm" 
+                className="w-full bg-green-500 hover:bg-green-600 text-white"
+                onClick={handleWhatsAppClick}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Abrir WhatsApp
+              </Button>
+            </div>
           )}
 
           {/* ✅ MODIFICADO: Botão de ação inteligente baseado no status */}
@@ -368,18 +388,31 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </Button>
           )}
 
-          {/* ✅ ADICIONADO: Mostrar status quando já está na fila/reservado */}
-          {(isUserInQueue || hasActiveReservation) && (
+          {/* 🔧 MELHORADO: Status expandido com informações do tooltip */}
+          {(isUserInQueue || hasActiveReservation) && !canShowWhatsApp && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
               {hasActiveReservation ? (
-                <div className="flex items-center justify-center gap-2 text-green-600">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">Item Reservado</span>
+                <div>
+                  <div className="flex items-center justify-center gap-2 text-green-600 mb-2">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Item Reservado</span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    Você tem uma reserva ativa. Aguarde o vendedor entrar em contato ou combine a entrega.
+                  </p>
                 </div>
               ) : (
-                <div className="flex items-center justify-center gap-2 text-blue-600">
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
+                <div>
+                  <div className="flex items-center justify-center gap-2 text-blue-600 mb-2">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    {filaInfo?.total && filaInfo.total > 1 
+                      ? `Há ${filaInfo.total - (filaInfo.posicao_usuario || 0)} pessoas na sua frente.`
+                      : 'Você será notificado se o item ficar disponível.'
+                    }
+                  </p>
                 </div>
               )}
             </div>
