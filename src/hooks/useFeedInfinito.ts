@@ -1,3 +1,4 @@
+
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -42,6 +43,7 @@ export interface ItemFeed {
   escolas_inep?: {
     escola: string;
   };
+  escola_comum?: boolean; // ✅ ADICIONADO
 }
 
 export interface PaginaFeed {

@@ -54,7 +54,7 @@ type ItemComPerfil = Tables<'itens'> & {
   endereco_bairro?: string;
   endereco_cidade?: string;
   endereco_estado?: string;
-  escola_comum?: boolean; // ✅ ADICIONADO
+  escola_comum?: boolean;
 };
 
 const DetalhesItem = () => {
@@ -114,7 +114,11 @@ const DetalhesItem = () => {
 
     const itemAdaptado: ItemComPerfil = {
         ...item,
-        fotos: item.fotas || [], // Garantir que fotos existe
+        fotos: item.fotos || [], // ✅ CORRIGIDO: fotos em vez de fotas
+        genero: item.genero || '', // ✅ CORRIGIDO: garantir que genero não seja undefined
+        subcategoria: item.subcategoria || '', // ✅ CORRIGIDO: garantir que subcategoria não seja undefined
+        tamanho_categoria: item.tamanho_categoria || '', // ✅ CORRIGIDO: garantir que não seja undefined
+        tamanho_valor: item.tamanho_valor || '', // ✅ CORRIGIDO: garantir que não seja undefined
         profiles: item.publicado_por_profile ? {
             nome: item.publicado_por_profile.nome,
             bairro: item.endereco_bairro || null,
@@ -123,13 +127,13 @@ const DetalhesItem = () => {
             avatar_url: item.publicado_por_profile.avatar_url || null,
             reputacao: item.publicado_por_profile.reputacao || null,
         } : null,
-        escola_comum: item.escola_comum || false // ✅ CORRIGIDO
+        escola_comum: item.escola_comum || false // ✅ CORRIGIDO: usar propriedade correta
     };
 
     const hasCommonSchool = itemAdaptado.escola_comum || false;
 
-    const isFavorite = feedData.favoritos.includes(item.id) || false;
-    const filaInfo = item.id && feedData.filas_espera[item.id] 
+    const isFavorite = feedData.favoritos?.includes(item.id) || false;
+    const filaInfo = item.id && feedData.filas_espera?.[item.id] 
         ? {
             total_fila: feedData.filas_espera[item.id].total_fila || 0,
             posicao_usuario: feedData.filas_espera[item.id].posicao_usuario || 0
@@ -614,7 +618,11 @@ const DetalhesItem = () => {
                             estado: item.endereco_estado || '',
                             bairro: item.endereco_bairro || undefined
                         } : null}
-                        feedData={feedData}
+                        feedData={{
+                            favoritos: feedData.favoritos || [],
+                            reservas_usuario: feedData.reservas_usuario || [],
+                            filas_espera: feedData.filas_espera || {}
+                        }}
                         currentUserId={user?.id || ''}
                         userSchoolIds={userSchoolIds}
                     />
