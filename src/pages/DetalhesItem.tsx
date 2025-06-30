@@ -29,18 +29,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { useReservas } from "@/hooks/useReservas";
-import { useItens } from "@/hooks/useItens";
 import { useAuth } from "@/hooks/useAuth";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useFavoritos } from "@/hooks/useFavoritos";
 import { useCommonSchool } from "@/hooks/useCommonSchool";
 import { useItemCompatibility } from "@/hooks/useItemCompatibility";
+import { useFeedItem } from "@/hooks/useFeedItem"; // ✅ NOVO HOOK OTIMIZADO
 import { Tables } from "@/integrations/supabase/types";
 import LazyImage from "@/components/ui/lazy-image";
 import { cn } from "@/lib/utils";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import ItensRelacionados from "@/components/item/ItensRelacionados";
-import { useFilaEspera } from "@/hooks/useFilaEspera";
 
 type ItemComPerfil = Tables<'itens'> & {
   profiles?: {
@@ -51,6 +50,14 @@ type ItemComPerfil = Tables<'itens'> & {
     avatar_url: string | null;
     reputacao: number | null;
   } | null;
+  publicado_por_profile?: {
+    nome: string;
+    avatar_url?: string;
+    reputacao?: number;
+  };
+  endereco_bairro?: string;
+  endereco_cidade?: string;
+  endereco_estado?: string;
 };
 
 const DetalhesItem = () => {
@@ -58,58 +65,46 @@ const DetalhesItem = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { user } = useAuth();
-    const { entrarNaFila, isItemReservado } = useReservas();
+    const { entrarNaFila, reservarItem } = useReservas();
     const { saldo } = useCarteira();
-    const { buscarItemPorId, loading } = useItens();
-    const { verificarSeFavorito, toggleFavorito } = useFavoritos();
-    const { obterFilaItem } = useFilaEspera();
+    const { toggleFavorito } = useFavoritos();
+    
+    // ✅ USAR O HOOK OTIMIZADO AO INVÉS DOS HOOKS INDIVIDUAIS
+    const { data, isLoading: loading, error } = useFeedItem(user?.id || '', id || '');
+    
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [item, setItem] = useState<ItemComPerfil | null>(null);
     const [actionState, setActionState] = useState<'loading' | 'success' | 'error' | 'idle'>('idle');
     const [showImageModal, setShowImageModal] = useState(false);
-    const [filaInfo, setFilaInfo] = useState({ total_fila: 0, posicao_usuario: 0 });
+    
+    // ✅ EXTRAIR DADOS DO HOOK OTIMIZADO
+    const item = data?.item;
+    const feedData = data?.feedData;
+    
+    // ✅ ADAPTAR ITEM PARA O FORMATO ESPERADO
+    const itemAdaptado: ItemComPerfil | null = item ? {
+        ...item,
+        profiles: item.publicado_por_profile ? {
+            nome: item.publicado_por_profile.nome,
+            bairro: item.endereco_bairro || null,
+            cidade: item.endereco_cidade || null,
+            estado: item.endereco_estado || null,
+            avatar_url: item.publicado_por_profile.avatar_url || null,
+            reputacao: item.publicado_por_profile.reputacao || null,
+        } : null
+    } : null;
+    
+    // ✅ VERIFICAR ESTADOS A PARTIR DO FEED DATA
+    const isFavorite = feedData?.favoritos?.includes(item?.id) || false;
+    const filaInfo = item?.id ? feedData?.filas_espera?.[item.id] : { total_fila: 0, posicao_usuario: 0 };
+    const isItemReservado = (itemId: string) => {
+        return feedData?.reservas_usuario?.some(r => 
+            r.item_id === itemId && 
+            ['pendente', 'confirmada'].includes(r.status)
+        ) || false;
+    };
     
     const { hasCommonSchool } = useCommonSchool(item?.publicado_por || '');
     const { isCompatible, compatibleChildren } = useItemCompatibility(item || {} as Tables<'itens'>);
-    
-    useEffect(() => {
-        if (id) {
-            carregarItem();
-        }
-    }, [id]);
-
-    useEffect(() => {
-        if (item?.id) {
-            carregarFilaInfo();
-        }
-    }, [item?.id]);
-
-    const carregarItem = async () => {
-        if (!id) return;
-        
-        try {
-            const itemData = await buscarItemPorId(id);
-            console.log('Item carregado:', itemData);
-            setItem(itemData as ItemComPerfil);
-        } catch (error) {
-            console.error('Erro ao carregar item:', error);
-            toast({
-                title: "Erro",
-                description: "Não foi possível carregar os detalhes do item.",
-                variant: "destructive",
-            });
-        }
-    };
-
-    const carregarFilaInfo = async () => {
-        if (!item?.id) return;
-        try {
-            const info = await obterFilaItem(item.id);
-            setFilaInfo(info);
-        } catch (error) {
-            console.error('Erro ao carregar fila:', error);
-        }
-    };
 
     const getGeneroInfo = (genero?: string) => {
         switch (genero) {
@@ -199,16 +194,27 @@ const DetalhesItem = () => {
         }
 
         setActionState('loading');
-        const sucesso = await entrarNaFila(item.id);
         
-        if (sucesso) {
-            setActionState('success');
-            await Promise.all([carregarItem(), carregarFilaInfo()]);
-            toast({
-                title: "Sucesso!",
-                description: filaInfo.total_fila === 0 ? "Item reservado!" : "Você entrou na fila para este item.",
-            });
-        } else {
+        try {
+            if (filaInfo.total_fila === 0) {
+                // Item disponível - reservar diretamente
+                await reservarItem(item.id);
+                setActionState('success');
+                toast({
+                    title: "Sucesso!",
+                    description: "Item reservado!",
+                });
+            } else {
+                // Item com fila - entrar na fila
+                await entrarNaFila(item.id);
+                setActionState('success');
+                toast({
+                    title: "Sucesso!",
+                    description: "Você entrou na fila para este item.",
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao reservar/entrar na fila:', error);
             setActionState('error');
         }
         
@@ -217,7 +223,21 @@ const DetalhesItem = () => {
 
     const handleToggleFavorite = async () => {
         if (!item) return;
-        await toggleFavorito(item.id);
+        
+        try {
+            await toggleFavorito(item.id);
+            toast({
+                title: isFavorite ? "Removido dos favoritos" : "Adicionado aos favoritos",
+                description: isFavorite ? "Item removido dos seus favoritos." : "Item adicionado aos seus favoritos.",
+            });
+        } catch (error) {
+            console.error('Erro ao favoritar:', error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível atualizar os favoritos.",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleShare = async () => {
@@ -272,7 +292,7 @@ const DetalhesItem = () => {
         );
     }
 
-    if (!item) {
+    if (error || !item) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
                 <Header />
@@ -295,7 +315,6 @@ const DetalhesItem = () => {
     const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
     const semSaldo = saldo < Number(item.valor_girinhas);
     const isProprio = item.publicado_por === user?.id;
-    const isFavorite = verificarSeFavorito(item.id);
     const generoInfo = getGeneroInfo(item.genero);
     const estadoInfo = getEstadoInfo(item.estado_conservacao);
 
@@ -550,10 +569,10 @@ const DetalhesItem = () => {
                                     <Home className="w-4 h-4" />
                                     <span>Retirada no local</span>
                                 </div>
-                                {item.profiles?.bairro && (
+                                {item.endereco_bairro && (
                                     <div className="flex items-center gap-2 text-gray-600">
                                         <MapPin className="w-4 h-4" />
-                                        <span>{item.profiles.bairro}, {item.profiles.cidade}</span>
+                                        <span>{item.endereco_bairro}, {item.endereco_cidade}</span>
                                     </div>
                                 )}
                             </div>
@@ -572,20 +591,20 @@ const DetalhesItem = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <Avatar className="w-10 h-10">
-                                        <AvatarImage src={item.profiles?.avatar_url || undefined} />
+                                        <AvatarImage src={item.publicado_por_profile?.avatar_url || undefined} />
                                         <AvatarFallback className="text-sm">
-                                            {item.profiles?.nome?.[0]?.toUpperCase() || '?'}
+                                            {item.publicado_por_profile?.nome?.[0]?.toUpperCase() || '?'}
                                         </AvatarFallback>
                                     </Avatar>
                                     
                                     <div>
                                         <h3 className="font-semibold text-sm">
-                                            {item.profiles?.nome || 'Usuário'}
+                                            {item.publicado_por_profile?.nome || 'Usuário'}
                                         </h3>
-                                        {item.profiles?.reputacao && (
+                                        {item.publicado_por_profile?.reputacao && (
                                             <div className="flex items-center gap-1 text-xs text-gray-600">
                                                 <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                                <span>{item.profiles.reputacao.toFixed(1)}</span>
+                                                <span>{item.publicado_por_profile.reputacao.toFixed(1)}</span>
                                             </div>
                                         )}
                                     </div>
@@ -652,17 +671,19 @@ const DetalhesItem = () => {
                 )}
 
                 {/* Itens Relacionados */}
-                <ItensRelacionados 
-                    itemAtual={{
-                        ...item,
-                        publicado_por_profile: item.profiles
-                    }}
-                    location={item.profiles ? {
-                        cidade: item.profiles.cidade || '',
-                        estado: item.profiles.estado || '',
-                        bairro: item.profiles.bairro || undefined
-                    } : null}
-                />
+                {itemAdaptado && (
+                    <ItensRelacionados 
+                        itemAtual={{
+                            ...itemAdaptado,
+                            publicado_por_profile: item.publicado_por_profile
+                        }}
+                        location={item.endereco_cidade ? {
+                            cidade: item.endereco_cidade,
+                            estado: item.endereco_estado || '',
+                            bairro: item.endereco_bairro || undefined
+                        } : null}
+                    />
+                )}
             </main>
 
             {/* Modal de Zoom da Imagem */}
