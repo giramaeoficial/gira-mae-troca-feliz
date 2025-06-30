@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -93,15 +92,15 @@ const FeedOptimized = () => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
   
-  // ✅ DADOS CONSOLIDADOS da primeira página - CORRIGIDO
+  // ✅ DADOS CONSOLIDADOS da primeira página - CORRIGIDO DEFINITIVAMENTE
   const feedData = useMemo(() => {
     const primeiraPagina = paginasFeed?.pages?.[0];
     return {
-      favoritos: primeiraPagina?.dados_consolidados?.favoritos || [],
-      reservas_usuario: primeiraPagina?.dados_consolidados?.reservas_usuario || [],
-      filas_espera: primeiraPagina?.dados_consolidados?.filas_espera || {},
-      configuracoes: primeiraPagina?.dados_consolidados?.configuracoes,
-      profile_essencial: primeiraPagina?.dados_consolidados?.profile_essencial,
+      favoritos: primeiraPagina?.favoritos || [],
+      reservas_usuario: primeiraPagina?.reservas_usuario || [],
+      filas_espera: primeiraPagina?.filas_espera || {},
+      configuracoes: primeiraPagina?.configuracoes,
+      profile_essencial: primeiraPagina?.profile_essencial,
       taxaTransacao: 5 // ✅ CORRIGIDO: Taxa exemplo de 5% (deve vir da configuração)
     };
   }, [paginasFeed]);

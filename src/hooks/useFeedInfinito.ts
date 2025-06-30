@@ -12,6 +12,7 @@ export interface FiltrosFeed {
   precoMin?: number;
   precoMax?: number;
   mostrarReservados?: boolean;
+  itemId?: string; // ✅ ADICIONADO para suporte ao feed individual
 }
 
 export interface ItemFeed {
@@ -47,6 +48,19 @@ export interface ItemFeed {
 
 export interface PaginaFeed {
   itens: ItemFeed[];
+  // ✅ DADOS CONSOLIDADOS - adicionados diretamente na interface
+  favoritos: string[];
+  reservas_usuario: Array<{
+    item_id: string;
+    status: string;
+    usuario_reservou?: string;
+    id?: string;
+  }>;
+  filas_espera: Record<string, {
+    total_fila: number;
+    posicao_usuario: number;
+    usuario_id?: string;
+  }>;
   configuracoes?: {
     categorias: Array<{
       codigo: string;
@@ -69,6 +83,7 @@ export interface PaginaFeed {
     estado: string;
     bairro?: string;
     avatar_url?: string;
+    saldo_atual: number;
   };
   has_more: boolean;
   total_count: number;
@@ -95,7 +110,8 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
           p_tamanho: filtros.tamanho || 'todos',
           p_preco_min: filtros.precoMin || 0,
           p_preco_max: filtros.precoMax || 200,
-          p_mostrar_reservados: filtros.mostrarReservados ?? true
+          p_mostrar_reservados: filtros.mostrarReservados ?? true,
+          p_item_id: filtros.itemId || null // ✅ ADICIONADO suporte ao item específico
         }
       );
       
