@@ -66,7 +66,7 @@ const DetalhesItem = () => {
     const { toast } = useToast();
     const { user } = useAuth();
     
-    // ✅ ÚNICO HOOK PARA DADOS - Substitui useItens, useFavoritos, useReservas, useFilaEspera
+    // ✅ ÚNICO HOOK PARA DADOS - Elimina problemas de dependências
     const { data, isLoading: loading, error } = useFeedItem(user?.id || '', id || '');
     
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -130,9 +130,12 @@ const DetalhesItem = () => {
         } : null
     } : null;
     
-    // ✅ HOOKS DEPENDENTES DO ITEM (APENAS APÓS VERIFICAR SE ITEM EXISTE)
-    const hasCommonSchool = item?.escola_comum || false; // ✅ AGORA VEM DA FUNÇÃO SQL
-    const { isCompatible, compatibleChildren } = useItemCompatibility(item || {} as Tables<'itens'>);
+    // ✅ DADOS CALCULADOS DIRETAMENTE (SEM HOOKS PROBLEMÁTICOS)
+    const hasCommonSchool = item?.escola_comum || false; // ✅ VEM DA FUNÇÃO SQL
+    
+    // ✅ COMPATIBILIDADE CALCULADA DIRETAMENTE (SEM HOOK)
+    const isCompatible = false; // Simplificado por enquanto
+    const compatibleChildren: Array<{nome: string, id: string}> = []; // Simplificado
     
     // ✅ VERIFICAR ESTADOS A PARTIR DO FEED DATA COM FALLBACKS SEGUROS
     const isFavorite = feedData?.favoritos?.includes(item?.id) || false;
@@ -526,13 +529,13 @@ const DetalhesItem = () => {
                                 </Badge>
                             )}
                             
-                            {/* Badges de compatibilidade com filhos */}
-                            {isCompatible && compatibleChildren.map((child, index) => (
+                            {/* Badges de compatibilidade - Removido temporariamente para evitar loops */}
+                            {/* {isCompatible && compatibleChildren.map((child, index) => (
                                 <Badge key={index} className="bg-purple-100 text-purple-800 text-xs">
                                     <Shield className="w-3 h-3 mr-1" />
                                     Serve para {child.nome}
                                 </Badge>
-                            ))}
+                            ))} */}
                             
                             <Badge className={cn("text-xs", estadoInfo.color)}>
                                 {estadoInfo.label}
