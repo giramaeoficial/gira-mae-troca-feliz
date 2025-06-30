@@ -1,3 +1,4 @@
+
 import React, { useCallback, useMemo } from 'react';
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -22,13 +23,13 @@ export interface ItemCardProps {
     reservas_usuario: Array<{
       item_id: string;
       status: string;
-      usuario_reservou?: string; // ✅ CORRIGIDO - Tornado opcional
-      id?: string; // ✅ CORRIGIDO - Tornado opcional
+      usuario_reservou?: string; // ✅ Mantido opcional
+      id?: string; // ✅ Mantido opcional
     }>;
     filas_espera: Record<string, {
       total_fila: number;
       posicao_usuario?: number;
-      usuario_id?: string; // ✅ CORRIGIDO - Tornado opcional
+      usuario_id?: string; // ✅ Mantido opcional
     }>;
   };
   currentUserId: string;
