@@ -59,6 +59,8 @@ interface ItemCardProps {
     usuario_reservou?: string;
   }>;
   currentUserId?: string;
+  // 🆕 ADICIONADO: Taxa de transação
+  taxaTransacao?: number;
   // Configurações de exibição
   showActions?: boolean;
   showLocation?: boolean;
@@ -78,6 +80,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   isReservado, // ✅ MODIFICADO: Agora pode ser override
   reservas = [], // ✅ ADICIONADO
   currentUserId, // ✅ ADICIONADO
+  taxaTransacao = 0, // 🆕 ADICIONADO: Taxa de transação
   showActions = true,
   showLocation = true,
   showAuthor = true,
@@ -101,6 +104,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const canShowWhatsApp = item.publicado_por_profile?.whatsapp && 
     hasActiveReservation && 
     item.publicado_por !== currentUserId;
+
+  // 🆕 ADICIONADO: Calcular valores com taxa
+  const calcularValores = () => {
+    const valorItem = item.valor_girinhas;
+    const taxa = taxaTransacao > 0 ? valorItem * (taxaTransacao / 100) : 0;
+    const total = valorItem + taxa;
+    
+    return {
+      valorItem,
+      taxa: Math.round(taxa * 100) / 100,
+      total: Math.round(total * 100) / 100
+    };
+  };
+
+  const valores = calcularValores();
 
   // ✅ ADICIONADO: Determinar se deve mostrar o botão de ação
   const shouldShowActionButton = showActions && 
@@ -166,11 +184,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
-  // ✅ MELHORADO: Localização mais inteligente
+  // ✅ MELHORADO: Localização com cidade e bairro
   const getLocationText = () => {
-    if (item.endereco_bairro) return item.endereco_bairro;
-    if (item.endereco_cidade) return item.endereco_cidade;
-    return 'Local não informado';
+    const parts = [];
+    if (item.endereco_bairro) parts.push(item.endereco_bairro);
+    if (item.endereco_cidade) parts.push(item.endereco_cidade);
+    return parts.length > 0 ? parts.join(', ') : 'Local não informado';
   };
 
   // ✅ ADICIONADO: Verificar se tem dados de localização
@@ -296,18 +315,26 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* 🔧 CORRIGIDO: Preço sem repetir "Girinhas" */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1">
+          {/* 🔧 CORRIGIDO: Preço com breakdown da taxa */}
+          <div className="mb-3">
+            <div className="flex items-center gap-1 mb-1">
               <Sparkles className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />
               <span className={cn(
                 "font-bold text-primary",
                 compact ? "text-base" : "text-lg"
               )}>
-                {item.valor_girinhas}
+                {valores.total}
               </span>
               <span className="text-sm text-gray-500">G</span>
             </div>
+            
+            {/* 🆕 ADICIONADO: Breakdown da taxa dentro do card */}
+            {taxaTransacao > 0 && !compact && (
+              <div className="text-xs text-gray-500 space-y-0.5">
+                <div>Item: {valores.valorItem} G</div>
+                <div>Taxa ({taxaTransacao}%): +{valores.taxa} G</div>
+              </div>
+            )}
           </div>
 
           {/* ✅ MELHORADO: Perfil do autor */}
