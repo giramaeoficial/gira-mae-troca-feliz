@@ -268,44 +268,45 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             {item.titulo}
           </h3>
 
-          {/* 🔧 CORRIGIDO: Localização integrada ao conteúdo quando reservado */}
+          {/* 🔧 CORRIGIDO: Localização separada - cidade e bairro */}
           {showLocation && hasLocationData && itemIsReservado && !compact && (
             <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
               <MapPin className="w-3 h-3" />
-              <span>📍 {getLocationText()}</span>
+              <span>{item.endereco_bairro}{item.endereco_bairro && item.endereco_cidade && ', '}{item.endereco_cidade}</span>
             </div>
           )}
 
-          {/* ✅ ADICIONADO: Categoria, subcategoria e tamanho */}
+          {/* 🔧 CORRIGIDO: Categoria separada da idade/tamanho */}
           {!compact && (
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-              <span className="capitalize">{item.categoria}</span>
-              {item.subcategoria && (
-                <>
-                  <span>•</span>
-                  <span>{item.subcategoria}</span>
-                </>
-              )}
+            <div className="space-y-1 mb-2">
+              <div className="text-xs text-gray-500">
+                <span className="capitalize">{item.categoria}</span>
+                {item.subcategoria && (
+                  <>
+                    <span className="mx-1">•</span>
+                    <span>{item.subcategoria}</span>
+                  </>
+                )}
+              </div>
               {item.tamanho_valor && (
-                <>
-                  <span>•</span>
+                <div className="text-xs text-gray-500">
                   <span>{item.tamanho_valor}</span>
-                </>
+                </div>
               )}
             </div>
           )}
 
-          {/* ✅ MELHORADO: Preço */}
+          {/* 🔧 CORRIGIDO: Preço sem repetir "Girinhas" */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1">
-              <Sparkles className="w-4 h-4 text-yellow-500" />
+              <Sparkles className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />
               <span className={cn(
                 "font-bold text-primary",
                 compact ? "text-base" : "text-lg"
               )}>
                 {item.valor_girinhas}
               </span>
-              <span className="text-sm text-gray-500">Girinhas</span>
+              <span className="text-sm text-gray-500">G</span>
             </div>
           </div>
 
@@ -331,22 +332,22 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* 🆕 ULTRA-COMPACTO: Seção WhatsApp minimal para mobile */}
+          {/* 🔧 CORRIGIDO: WhatsApp com texto acima do botão */}
           {canShowWhatsApp && !compact && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-3">
-              <MessageCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="text-xs font-medium text-green-800 block truncate">
-                  Combine com {item.publicado_por_profile?.nome?.split(' ')[0]}
-                </span>
+            <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-3">
+              <div className="text-xs text-green-800 mb-2 text-center">
+                Combine a entrega
               </div>
-              <Button 
-                size="sm" 
-                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs h-7 flex-shrink-0"
-                onClick={handleWhatsAppClick}
-              >
-                WhatsApp
-              </Button>
+              <div className="flex items-center justify-center">
+                <Button 
+                  size="sm" 
+                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs h-7"
+                  onClick={handleWhatsAppClick}
+                >
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  WhatsApp
+                </Button>
+              </div>
             </div>
           )}
 
