@@ -93,9 +93,15 @@ const DetalhesItem = () => {
         } : null
     } : null;
     
-    // ✅ VERIFICAR ESTADOS A PARTIR DO FEED DATA
+    // ✅ VERIFICAR ESTADOS A PARTIR DO FEED DATA COM FALLBACKS SEGUROS
     const isFavorite = feedData?.favoritos?.includes(item?.id) || false;
-    const filaInfo = item?.id ? feedData?.filas_espera?.[item.id] : { total_fila: 0, posicao_usuario: 0 };
+    const filaInfo = item?.id && feedData?.filas_espera?.[item.id] 
+        ? {
+            total_fila: feedData.filas_espera[item.id].total_fila || 0,
+            posicao_usuario: feedData.filas_espera[item.id].posicao_usuario || 0
+          }
+        : { total_fila: 0, posicao_usuario: 0 };
+    
     const isItemReservado = (itemId: string) => {
         return feedData?.reservas_usuario?.some(r => 
             r.item_id === itemId && 
@@ -196,7 +202,7 @@ const DetalhesItem = () => {
         setActionState('loading');
         
         try {
-            if (filaInfo.total_fila === 0) {
+            if (!filaInfo?.total_fila || filaInfo.total_fila === 0) {
                 // Item disponível - reservar diretamente
                 await reservarItem(item.id);
                 setActionState('success');
@@ -325,9 +331,11 @@ const DetalhesItem = () => {
     // Determinar texto do botão baseado na situação real
     const getButtonText = () => {
         if (isReserved) {
-            return filaInfo.posicao_usuario > 0 ? `Na fila (posição ${filaInfo.posicao_usuario})` : 'Item Reservado';
+            return (filaInfo?.posicao_usuario && filaInfo.posicao_usuario > 0) 
+                ? `Na fila (posição ${filaInfo.posicao_usuario})` 
+                : 'Item Reservado';
         }
-        return filaInfo.total_fila === 0 ? 'Reservar Item' : 'Entrar na Fila';
+        return (filaInfo?.total_fila && filaInfo.total_fila > 0) ? 'Entrar na Fila' : 'Reservar Item';
     };
 
     return (
@@ -458,11 +466,13 @@ const DetalhesItem = () => {
                         <div className="flex flex-wrap gap-2 mb-4">
                             {isReserved && (
                                 <Badge variant="destructive" className="text-xs">
-                                    {filaInfo.posicao_usuario > 0 ? `Fila - Posição ${filaInfo.posicao_usuario}` : 'Reservado'}
+                                    {(filaInfo?.posicao_usuario && filaInfo.posicao_usuario > 0) 
+                                        ? `Fila - Posição ${filaInfo.posicao_usuario}` 
+                                        : 'Reservado'}
                                 </Badge>
                             )}
                             
-                            {filaInfo.total_fila > 0 && !isReserved && (
+                            {(filaInfo?.total_fila && filaInfo.total_fila > 0) && !isReserved && (
                                 <Badge className="bg-blue-100 text-blue-800 text-xs">
                                     <Users className="w-3 h-3 mr-1" />
                                     {filaInfo.total_fila} na fila
@@ -627,7 +637,7 @@ const DetalhesItem = () => {
                                 {actionState !== 'idle' && (
                                     <ActionFeedback
                                         state={actionState}
-                                        successMessage={filaInfo.total_fila === 0 ? "Item reservado!" : "Você entrou na fila!"}
+                                        successMessage={(!filaInfo?.total_fila || filaInfo.total_fila === 0) ? "Item reservado!" : "Você entrou na fila!"}
                                         errorMessage="Erro ao reservar. Tente novamente."
                                     />
                                 )}
@@ -641,7 +651,7 @@ const DetalhesItem = () => {
                                     {actionState === 'loading' ? (
                                         <div className="flex items-center gap-2">
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            {filaInfo.total_fila === 0 ? 'Reservando...' : 'Entrando na fila...'}
+                                            {(!filaInfo?.total_fila || filaInfo.total_fila === 0) ? 'Reservando...' : 'Entrando na fila...'}
                                         </div>
                                     ) : (
                                         getButtonText()
