@@ -14,12 +14,9 @@ import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 import { ItemCard } from '@/components/shared/ItemCard';
 import { useAuth } from '@/hooks/useAuth';
-import { useReservas } from '@/hooks/useReservas';
-import { useFavoritos } from '@/hooks/useFavoritos';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
-import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { useToast } from '@/hooks/use-toast';
 import { useFeedInfinito } from '@/hooks/useFeedInfinito';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -31,7 +28,7 @@ const FeedOptimized = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // ✅ MANTER TODOS os estados de filtros exatamente iguais
+  // ✅ Estados de filtros
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
@@ -44,20 +41,10 @@ const FeedOptimized = () => {
   const [mostrarReservados, setMostrarReservados] = useState(true);
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ MANTER hooks essenciais
+  // ✅ Hooks essenciais mantidos
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
   const debouncedBusca = useDebounce(busca, 500);
-  
-  // ✅ MANTER hooks de reservas e favoritos
-  const { 
-    reservas, 
-    filasEspera, 
-    entrarNaFila: entrarNaFilaOriginal, 
-    isItemReservado 
-  } = useReservas();
-  const { taxaTransacao } = useConfigSistema();
-  const { toggleFavorito, verificarSeFavorito } = useFavoritos();
   
   // ✅ Função para calcular location de forma segura
   const getLocationForSearch = () => {
@@ -76,7 +63,7 @@ const FeedOptimized = () => {
 
   const locationForSearch = getLocationForSearch();
   
-  // ✅ NOVO: Objeto com todos os filtros consolidado
+  // ✅ Objeto com todos os filtros consolidado
   const filtrosCompletos = useMemo(() => ({
     busca: debouncedBusca,
     cidade: locationForSearch.cidade || cidadeManual,
@@ -89,7 +76,7 @@ const FeedOptimized = () => {
     mostrarReservados
   }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
   
-  // ✅ NOVO: Hook consolidado com TODOS os filtros
+  // ✅ Hook consolidado com TODOS os dados
   const {
     data: paginasFeed,
     fetchNextPage,
@@ -99,17 +86,28 @@ const FeedOptimized = () => {
     refetch
   } = useFeedInfinito(user?.id || '', filtrosCompletos);
   
-  // ✅ Extrair dados das páginas
+  // ✅ Extrair TODOS os dados das páginas
   const itens = useMemo(() => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
   
-  const configuracoes = paginasFeed?.pages?.[0]?.configuracoes;
-  const categorias = configuracoes?.categorias || [];
-  const todasSubcategorias = configuracoes?.subcategorias || [];
-  const profile = paginasFeed?.pages?.[0]?.profile_essencial;
+  // ✅ DADOS CONSOLIDADOS da primeira página
+  const feedData = useMemo(() => {
+    const primeiraPagina = paginasFeed?.pages?.[0];
+    return {
+      favoritos: primeiraPagina?.favoritos || [],
+      reservas_usuario: primeiraPagina?.reservas_usuario || [],
+      filas_espera: primeiraPagina?.filas_espera || {},
+      configuracoes: primeiraPagina?.configuracoes,
+      profile_essencial: primeiraPagina?.profile_essencial,
+      taxaTransacao: 0 // TODO: Pegar da configuração do sistema se necessário
+    };
+  }, [paginasFeed]);
   
-  // ✅ MANTER toda a lógica de subcategorias filtradas
+  const categorias = feedData.configuracoes?.categorias || [];
+  const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
+  
+  // ✅ Lógica de subcategorias filtradas
   const getSubcategoriasFiltradas = () => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
@@ -124,7 +122,7 @@ const FeedOptimized = () => {
     return subcategoriasUnicas;
   };
 
-  // ✅ MANTER lógica de tamanhos
+  // ✅ Lógica de tamanhos
   const getTamanhosDisponiveis = () => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
@@ -150,7 +148,7 @@ const FeedOptimized = () => {
     ? itens 
     : itens.filter(item => item.status === 'disponivel');
 
-  // ✅ NOVO: Scroll infinito
+  // ✅ Scroll infinito
   const { ref: infiniteRef } = useInfiniteScroll({
     loading: isFetchingNextPage,
     hasNextPage: hasNextPage || false,
@@ -163,7 +161,7 @@ const FeedOptimized = () => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
 
-  // ✅ FUNÇÃO CORRIGIDA: entrarNaFila com mensagens adequadas
+  // ✅ FUNÇÃO entrarNaFila usando RPC direto
   const entrarNaFila = async (itemId: string) => {
     if (!user) return;
     
@@ -186,7 +184,6 @@ const FeedOptimized = () => {
         return false;
       }
 
-      // Verificar se o resultado tem a estrutura esperada
       const result = data as { tipo?: string; posicao?: number } | null;
       
       if (result?.tipo === 'reserva_direta') {
@@ -223,15 +220,54 @@ const FeedOptimized = () => {
     }
   };
 
-  // ✅ FUNÇÃO NOVA: calcular filaInfo para cada item
-  const getFilaInfo = (itemId: string) => {
-    const filaUsuario = filasEspera.find(f => f.item_id === itemId);
-    const totalNaFila = filasEspera.filter(f => f.item_id === itemId).length;
+  // ✅ FUNÇÃO toggleFavorito usando RPC direto
+  const toggleFavorito = async (itemId: string) => {
+    if (!user) return;
     
-    return {
-      posicao_usuario: filaUsuario?.posicao || 0,
-      total: totalNaFila
-    };
+    const isFavorito = feedData.favoritos.includes(itemId);
+    
+    try {
+      if (isFavorito) {
+        // Remover favorito
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', itemId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Removido dos favoritos",
+          description: "Item removido da sua lista de desejos.",
+        });
+      } else {
+        // Adicionar favorito
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({
+            user_id: user.id,
+            item_id: itemId
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Adicionado aos favoritos! ❤️",
+          description: "Item adicionado à sua lista de desejos.",
+        });
+      }
+      
+      // Atualizar dados
+      await refetch();
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar os favoritos.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handlers para ações dos itens
@@ -321,8 +357,6 @@ const FeedOptimized = () => {
             Descubra itens incríveis na sua região
           </p>
         </div>
-
-        {/* 🔧 REMOVIDO: Banner de taxa (informação agora está no card) */}
 
         {/* Header com localização e publicar */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
@@ -607,32 +641,26 @@ const FeedOptimized = () => {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {itensFiltrados.map((item) => {
-                const filaInfo = getFilaInfo(item.id);
-                
-                return (
-                  <ItemCard
-                    key={item.id}
-                    item={item}
-                    onItemClick={handleItemClick}
-                    showActions={true}
-                    isFavorito={verificarSeFavorito(item.id)}
-                    onToggleFavorito={() => handleToggleFavorito(item.id)}
-                    onReservar={() => handleReservarItem(item.id)}
-                    onEntrarFila={() => handleEntrarFila(item.id)}
-                    actionState={actionStates[item.id]}
-                    filaInfo={filaInfo}
-                    reservas={reservas}
-                    currentUserId={user?.id}
-                    taxaTransacao={taxaTransacao}
-                  />
-                );
-              })}
+              {itensFiltrados.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  feedData={feedData}
+                  currentUserId={user?.id || ''}
+                  taxaTransacao={feedData.taxaTransacao}
+                  onItemClick={handleItemClick}
+                  showActions={true}
+                  onToggleFavorito={() => handleToggleFavorito(item.id)}
+                  onReservar={() => handleReservarItem(item.id)}
+                  onEntrarFila={() => handleEntrarFila(item.id)}
+                  actionState={actionStates[item.id]}
+                />
+              ))}
             </div>
           </>
         )}
 
-        {/* ✅ NOVO: Scroll infinito e loading */}
+        {/* Scroll infinito e loading */}
         <div ref={infiniteRef}>
           <InfiniteScrollIndicator
             isFetchingNextPage={isFetchingNextPage}
