@@ -43,27 +43,35 @@ export interface ItemFeed {
   escolas_inep?: {
     escola: string;
   };
-  escola_comum?: boolean; // ✅ ADICIONADO
 }
 
 export interface PaginaFeed {
   itens: ItemFeed[];
-  total_count: number;
+  configuracoes?: {
+    categorias: Array<{
+      codigo: string;
+      nome: string;
+      icone: string;
+      ordem: number;
+    }>;
+    subcategorias: Array<{
+      id: string;
+      nome: string;
+      categoria_pai: string;
+      icone: string;
+      ordem: number;
+    }>;
+  };
+  profile_essencial?: {
+    id: string;
+    nome: string;
+    cidade: string;
+    estado: string;
+    bairro?: string;
+    avatar_url?: string;
+  };
   has_more: boolean;
-  favoritos?: string[];
-  reservas_usuario?: Array<{
-    item_id: string;
-    status: string;
-    usuario_reservou?: string;
-    id?: string;
-  }>;
-  filas_espera?: Record<string, {
-    total_fila: number;
-    posicao_usuario?: number;
-    usuario_id?: string;
-  }>;
-  configuracoes?: any;
-  profile_essencial?: any;
+  total_count: number;
 }
 
 export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {

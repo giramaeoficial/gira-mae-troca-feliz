@@ -47,6 +47,7 @@ const DesktopNav: React.FC = () => {
         
         {/* Bloco de Funcionalidades */}
         <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
+        <NavLink to="/mensagens" icon={MessageCircle}>Mensagens</NavLink>
         
         {/* Separador Vertical */}
         <div className="border-l h-6 border-gray-300 mx-3"></div>
@@ -115,6 +116,7 @@ const Header: React.FC = () => {
     { label: 'Publicar', path: '/publicar', icon: Plus },
     { label: 'Carteira', path: '/carteira', icon: Wallet },
     { label: 'Missões', path: '/missoes', icon: Trophy },
+    { label: 'Mensagens', path: '/mensagens', icon: MessageCircle },
     { label: 'Reservas', path: '/minhas-reservas', icon: Package }
   ];
 

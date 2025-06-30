@@ -1,10 +1,10 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, CheckCircle, X, Users, Star, Key } from "lucide-react";
+import { Clock, MessageCircle, CheckCircle, X, Users, Star, Key } from "lucide-react";
+import ChatModal from "@/components/chat/ChatModal";
 import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,6 +47,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
   const { user } = useAuth();
   const { toast } = useToast();
   const { confirmarEntrega, loading } = useReservas();
+  const [showChat, setShowChat] = useState(false);
   const [showAvaliacao, setShowAvaliacao] = useState(false);
   const [showCodigoModal, setShowCodigoModal] = useState(false);
   const [loadingConfirmacao, setLoadingConfirmacao] = useState(false);
@@ -223,6 +224,16 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
             {reserva.status === 'pendente' && (
               <>
                 <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowChat(true)}
+                  className="flex-1"
+                >
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  Chat
+                </Button>
+                
+                <Button 
                   size="sm" 
                   onClick={() => setShowCodigoModal(true)}
                   className="flex-1 bg-green-600 hover:bg-green-700"
@@ -277,6 +288,22 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
       </Card>
 
       {/* Modais */}
+      {showChat && outraPessoa && reserva.itens && (
+        <ChatModal
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+          reservaId={reserva.id}
+          outraMae={{
+            nome: outraPessoa.nome,
+            avatar: outraPessoa.avatar_url || "https://images.unsplash.com/photo-1494790108755-2616b612b776?w=100"
+          }}
+          item={{
+            titulo: reserva.itens.titulo,
+            imagem: imagemItem
+          }}
+        />
+      )}
+
       <AvaliacaoModal
         isOpen={showAvaliacao}
         onClose={() => setShowAvaliacao(false)}

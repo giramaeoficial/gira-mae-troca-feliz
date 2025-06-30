@@ -1,164 +1,68 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { UserDataProvider } from "@/contexts/UserDataContext";
 
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Cadastro from "./pages/Cadastro";
-import CadastroV2 from "./pages/CadastroV2";
-import FeedOptimized from "./pages/FeedOptimized";
-import DetalhesItem from "./pages/DetalhesItem";
-import PublicarItem from "./pages/PublicarItem";
-import MinhasReservas from "./pages/MinhasReservas";
-import Perfil from "./pages/Perfil";
-import PerfilPublicoMae from "./pages/PerfilPublicoMae";
-import EditarPerfil from "./pages/EditarPerfil";
-import Carteira from "./pages/Carteira";
-import ComprarGirinhas from "./pages/ComprarGirinhas";
-import Configuracoes from "./pages/Configuracoes";
-import Indicacoes from "./pages/Indicacoes";
-import Missoes from "./pages/Missoes";
-import BuscarItens from "./pages/BuscarItens";
-import AuthCallback from "./pages/AuthCallback";
-import AdminDashboard from "./pages/AdminDashboard";
-import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
+// src/App.tsx - ADICIONAR a rota AuthCallback
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-});
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>;
-  }
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
+import Index from '@/pages/Index';
+import Auth from '@/pages/Auth';
+import Login from '@/pages/Login';
+import Cadastro from '@/pages/Cadastro';
+import AuthCallback from '@/pages/AuthCallback';
+import AuthGuard from '@/components/auth/AuthGuard'; // ✅ ADICIONAR IMPORT
+import FeedOptimized from '@/pages/FeedOptimized';
+import BuscarItens from '@/pages/BuscarItens';
+import PublicarItem from '@/pages/PublicarItem';
+import Mensagens from '@/pages/Mensagens';
+import Perfil from '@/pages/Perfil';
+import EditarPerfil from '@/pages/EditarPerfil';
+import PerfilPublicoMae from '@/pages/PerfilPublicoMae';
+import Carteira from '@/pages/Carteira';
+import ComprarGirinhas from '@/pages/ComprarGirinhas';
+import Indicacoes from '@/pages/Indicacoes';
+import DetalhesItem from '@/pages/DetalhesItem';
+import MinhasReservas from '@/pages/MinhasReservas';
+import AdminDashboard from '@/pages/AdminDashboard';
+import NotFound from '@/pages/NotFound';
+import Missoes from '@/pages/Missoes';
+import Configuracoes from '@/pages/Configuracoes';
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <UserDataProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/cadastro" element={<Cadastro />} />
-              <Route path="/cadastro-v2" element={<CadastroV2 />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              
-              <Route path="/feed" element={
-                <ProtectedRoute>
-                  <FeedOptimized />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/item/:id" element={
-                <ProtectedRoute>
-                  <DetalhesItem />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/publicar" element={
-                <ProtectedRoute>
-                  <PublicarItem />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/reservas" element={
-                <ProtectedRoute>
-                  <MinhasReservas />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/perfil" element={
-                <ProtectedRoute>
-                  <Perfil />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/perfil/:id" element={
-                <ProtectedRoute>
-                  <PerfilPublicoMae />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/editar-perfil" element={
-                <ProtectedRoute>
-                  <EditarPerfil />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/carteira" element={
-                <ProtectedRoute>
-                  <Carteira />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/comprar-girinhas" element={
-                <ProtectedRoute>
-                  <ComprarGirinhas />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/configuracoes" element={
-                <ProtectedRoute>
-                  <Configuracoes />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/indicacoes" element={
-                <ProtectedRoute>
-                  <Indicacoes />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/missoes" element={
-                <ProtectedRoute>
-                  <Missoes />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/buscar" element={
-                <ProtectedRoute>
-                  <BuscarItens />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/admin" element={
-                <ProtectedRoute>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </UserDataProvider>
-      </TooltipProvider>
+      <Toaster />
+      <SonnerToaster />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/cadastro" element={<Cadastro />} />
+          <Route path="/feed" element={<AuthGuard><FeedOptimized /></AuthGuard>} /> {/* ✅ PROTEGER COM AUTHGUARD */}
+          <Route path="/buscar-itens" element={<AuthGuard><BuscarItens /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/publicar" element={<AuthGuard><PublicarItem /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/missoes" element={<AuthGuard><Missoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/mensagens" element={<AuthGuard><Mensagens /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/mensagens/:conversaId" element={<AuthGuard><Mensagens /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/perfil/editar" element={<AuthGuard><EditarPerfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
+          <Route path="/carteira" element={<AuthGuard><Carteira /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/comprar-girinhas" element={<AuthGuard><ComprarGirinhas /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/indicacoes" element={<AuthGuard><Indicacoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/item/:id" element={<DetalhesItem />} />
+          <Route path="/minhas-reservas" element={<AuthGuard><MinhasReservas /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/configuracoes" element={<AuthGuard><Configuracoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }
