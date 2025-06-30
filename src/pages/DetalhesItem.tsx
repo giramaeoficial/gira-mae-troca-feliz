@@ -130,6 +130,10 @@ const DetalhesItem = () => {
         } : null
     } : null;
     
+    // ✅ HOOKS DEPENDENTES DO ITEM (APENAS APÓS VERIFICAR SE ITEM EXISTE)
+    const hasCommonSchool = item?.escola_comum || false; // ✅ AGORA VEM DA FUNÇÃO SQL
+    const { isCompatible, compatibleChildren } = useItemCompatibility(item || {} as Tables<'itens'>);
+    
     // ✅ VERIFICAR ESTADOS A PARTIR DO FEED DATA COM FALLBACKS SEGUROS
     const isFavorite = feedData?.favoritos?.includes(item?.id) || false;
     const filaInfo = item?.id && feedData?.filas_espera?.[item.id] 
