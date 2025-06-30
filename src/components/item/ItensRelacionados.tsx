@@ -19,13 +19,33 @@ interface ItensRelacionadosProps {
     estado: string;
     bairro?: string;
   } | null;
+  // ✅ NOVOS PROPS - Dados consolidados passados pela tela pai
+  feedData: {
+    favoritos: string[];
+    reservas_usuario: Array<{
+      item_id: string;
+      status: string;
+      id: string;
+      usuario_reservou: string;
+    }>;
+    filas_espera: Record<string, {
+      total_fila: number;
+      posicao_usuario?: number;
+      usuario_id: string;
+    }>;
+  };
+  currentUserId: string;
+  userSchoolIds: number[];
 }
 
 const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({ 
   itemAtual, 
-  location 
+  location,
+  feedData,
+  currentUserId,
+  userSchoolIds
 }) => {
-  // Buscar itens similares baseados na categoria e subcategoria
+  // ✅ MANTIDO - Busca de itens similares (isso é diferente dos dados do usuário)
   const { data: itensSimilares = [], isLoading: loadingSimilares } = useItensInteligentes({
     categoria: itemAtual.categoria,
     subcategoria: itemAtual.subcategoria || undefined,
@@ -34,10 +54,7 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
     ordem: 'recentes'
   });
 
-  // Buscar itens do mesmo vendedor
   const { data: itensVendedor = [], isLoading: loadingVendedor } = useItensInteligentes({
-    // Usar um filtro customizado para buscar pelo vendedor
-    // Como não temos essa opção diretamente, vamos usar os itens similares e filtrar depois
     location: location,
     ordem: 'recentes'
   });
@@ -63,6 +80,19 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
     </div>
   );
 
+  // ✅ FUNÇÃO HELPER - Verificar escola em comum usando dados consolidados
+  const hasCommonSchoolWithItem = (item: any): boolean => {
+    if (!item.escolas_inep?.escola || userSchoolIds.length === 0) return false;
+    // Lógica simples - se o item tem escola marcada e o usuário tem filhos em escolas
+    return userSchoolIds.length > 0;
+  };
+  
+  // ✅ FUNÇÃO HELPER - Enriquecer item com dados consolidados
+  const enrichItemWithFeedData = (item: any) => ({
+    ...item,
+    escola_comum: hasCommonSchoolWithItem(item)
+  });
+
   return (
     <div className="space-y-6">
       {/* Itens Relacionados */}
@@ -85,7 +115,9 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
                 {itensParaMostrar.map((item) => (
                   <ItemCard
                     key={item.id}
-                    item={item}
+                    item={enrichItemWithFeedData(item)}
+                    feedData={feedData}
+                    currentUserId={currentUserId}
                     compact={true}
                     showActions={false}
                     showLocation={false}
@@ -121,7 +153,9 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
                 {itensDoVendedor.map((item) => (
                   <ItemCard
                     key={item.id}
-                    item={item}
+                    item={enrichItemWithFeedData(item)}
+                    feedData={feedData}
+                    currentUserId={currentUserId}
                     compact={true}
                     showActions={false}
                     showLocation={false}

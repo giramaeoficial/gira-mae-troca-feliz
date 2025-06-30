@@ -2142,6 +2142,7 @@ export type Database = {
           p_preco_min?: number
           p_preco_max?: number
           p_mostrar_reservados?: boolean
+          p_item_id?: string
         }
         Returns: Json
       }

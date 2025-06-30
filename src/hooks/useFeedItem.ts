@@ -1,18 +1,17 @@
-// src/hooks/useFeedItem.ts
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PaginaFeed } from './useFeedInfinito';
 
 /**
- * Hook específico para carregar um item individual usando a função otimizada.
- * Retorna todos os dados necessários para o ItemCard (favoritos, reservas, filas).
+ * ✅ HOOK OTIMIZADO - Única fonte de dados para tela de detalhes do item
+ * Retorna todos os dados necessários consolidados em uma única requisição RPC
  */
 export const useFeedItem = (userId: string, itemId: string) => {
   return useQuery({
     queryKey: ['feed-item', userId, itemId],
     queryFn: async () => {
-      // DEBUG: Log para rastreio de requisição
-      console.log('🔄 Carregando item individual:', itemId);
+      console.log('🔄 [ÚNICA REQUISIÇÃO] Carregando item individual:', itemId);
 
       const { data, error } = await supabase.rpc(
         'carregar_dados_feed_paginado' as any,
@@ -39,8 +38,13 @@ export const useFeedItem = (userId: string, itemId: string) => {
       }
 
       const result = data as unknown as PaginaFeed;
-      // DEBUG: Resultado bruto
-      console.log('✅ Item carregado:', result);
+      console.log('✅ [DADOS CONSOLIDADOS] Item carregado com todos os dados:', {
+        item: result.itens[0]?.titulo,
+        favoritos: result.favoritos?.length || 0,
+        reservas: result.reservas_usuario?.length || 0,
+        filas: Object.keys(result.filas_espera || {}).length,
+        profile: result.profile_essencial?.nome
+      });
 
       // Extrair o item específico e todos os dados do feed
       const item = result.itens[0] || null;
@@ -57,8 +61,10 @@ export const useFeedItem = (userId: string, itemId: string) => {
       };
     },
     enabled: !!userId && !!itemId,
-    staleTime: 30000, // 30 segundos
+    staleTime: 1000 * 60 * 5, // ✅ 5 minutos - dados ficam frescos
+    gcTime: 1000 * 60 * 10, // ✅ 10 minutos no cache
     refetchOnWindowFocus: false,
+    refetchOnMount: false, // ✅ Não refaz se já tem no cache
   });
 };
 

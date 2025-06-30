@@ -29,11 +29,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeedItem } from "@/hooks/useFeedItem";
+import { useUserData } from "@/contexts/UserDataContext";
 import { Tables } from "@/integrations/supabase/types";
 import LazyImage from "@/components/ui/lazy-image";
 import { cn } from "@/lib/utils";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import ItensRelacionados from "@/components/item/ItensRelacionados";
+import { supabase } from "@/integrations/supabase/client";
 
 type ItemComPerfil = Tables<'itens'> & {
   profiles?: {
@@ -59,19 +61,21 @@ const DetalhesItem = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { user } = useAuth();
-
-    // Hook otimizado para carregar o item
+    
+    // ✅ DADOS CENTRALIZADOS - Uma única fonte via contexto e hook otimizado
+    const { userData } = useUserData();
     const { data, isLoading: loading, error } = useFeedItem(user?.id || '', id || '');
 
-    // Estados locais
+    // Estados locais (apenas para UI)
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [actionState, setActionState] = useState<'loading' | 'success' | 'error' | 'idle'>('idle');
     const [showImageModal, setShowImageModal] = useState(false);
 
-    // Dados principais do hook
+    // ✅ DADOS CONSOLIDADOS - Tudo vem de uma única fonte
     const item = data?.item;
     const feedData = data?.feedData;
-    const saldo = data?.profile_essencial?.saldo_atual || 0;
+    const saldo = userData?.carteira?.saldo_atual || 0;
+    const userSchoolIds = userData?.escolasIds || [];
 
     // Retorno de loading/erro seguro
     if (loading) {
@@ -87,6 +91,7 @@ const DetalhesItem = () => {
             </div>
         );
     }
+    
     if (!item || !feedData) {
         if (error) {
             console.error('Erro ao carregar item:', error);
@@ -123,9 +128,10 @@ const DetalhesItem = () => {
         } : null
     } : null;
 
-    // DADOS calculados diretamente a partir do retorno SQL
+    // ✅ VERIFICAR ESCOLA EM COMUM - usando dados consolidados
     const hasCommonSchool = item?.escola_comum || false;
 
+    // ✅ STATUS CALCULADOS - usando dados consolidados do feedData
     const isFavorite = feedData.favoritos.includes(item.id) || false;
     const filaInfo = item.id && feedData.filas_espera[item.id] 
         ? {
@@ -194,7 +200,7 @@ const DetalhesItem = () => {
         return `${Math.floor(diffDias / 30)} meses atrás`;
     };
 
-    // AÇÕES
+    // AÇÕES (mantendo funcionalidade exata)
     const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
     const semSaldo = saldo < Number(item.valor_girinhas);
     const isProprio = item.publicado_por === user?.id;
@@ -235,7 +241,6 @@ const DetalhesItem = () => {
 
         setActionState('loading');
         try {
-            // Direto via supabase
             const { data: result, error } = await supabase.rpc('entrar_fila_espera', {
                 p_item_id: item.id,
                 p_usuario_id: user.id,
@@ -616,6 +621,9 @@ const DetalhesItem = () => {
                             estado: item.endereco_estado || '',
                             bairro: item.endereco_bairro || undefined
                         } : null}
+                        feedData={feedData}
+                        currentUserId={user?.id || ''}
+                        userSchoolIds={userSchoolIds}
                     />
                 )}
             </main>
