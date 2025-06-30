@@ -1,4 +1,3 @@
-
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -47,31 +46,22 @@ export interface ItemFeed {
 
 export interface PaginaFeed {
   itens: ItemFeed[];
-  configuracoes?: {
-    categorias: Array<{
-      codigo: string;
-      nome: string;
-      icone: string;
-      ordem: number;
-    }>;
-    subcategorias: Array<{
-      id: string;
-      nome: string;
-      categoria_pai: string;
-      icone: string;
-      ordem: number;
-    }>;
-  };
-  profile_essencial?: {
-    id: string;
-    nome: string;
-    cidade: string;
-    estado: string;
-    bairro?: string;
-    avatar_url?: string;
-  };
-  has_more: boolean;
   total_count: number;
+  has_more: boolean;
+  favoritos?: string[];
+  reservas_usuario?: Array<{
+    item_id: string;
+    status: string;
+    usuario_reservou?: string;
+    id?: string;
+  }>;
+  filas_espera?: Record<string, {
+    total_fila: number;
+    posicao_usuario?: number;
+    usuario_id?: string;
+  }>;
+  configuracoes?: any;
+  profile_essencial?: any;
 }
 
 export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {

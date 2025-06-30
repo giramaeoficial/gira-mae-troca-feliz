@@ -101,7 +101,7 @@ const FeedOptimized = () => {
       filas_espera: primeiraPagina?.filas_espera || {},
       configuracoes: primeiraPagina?.configuracoes,
       profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao: 5 // ✅ CORRIGIDO: Taxa exemplo de 5% (deve vir da configuração)
+      taxaTransacao: 5
     };
   }, [paginasFeed]);
   

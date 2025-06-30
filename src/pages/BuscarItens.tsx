@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Search, Filter } from 'lucide-react';
@@ -298,7 +297,16 @@ const BuscarItens = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {itens.map((item) => (
-                  <ItemCard key={item.id} item={item} />
+                  <ItemCard 
+                    key={item.id} 
+                    item={item}
+                    feedData={{
+                      favoritos: [],
+                      reservas_usuario: [],
+                      filas_espera: {}
+                    }}
+                    currentUserId=""
+                  />
                 ))}
               </div>
             )}

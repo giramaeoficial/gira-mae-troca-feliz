@@ -54,6 +54,7 @@ type ItemComPerfil = Tables<'itens'> & {
   endereco_bairro?: string;
   endereco_cidade?: string;
   endereco_estado?: string;
+  escola_comum?: boolean; // ✅ ADICIONADO
 };
 
 const DetalhesItem = () => {
@@ -62,22 +63,18 @@ const DetalhesItem = () => {
     const { toast } = useToast();
     const { user } = useAuth();
     
-    // ✅ DADOS CENTRALIZADOS - Uma única fonte via contexto e hook otimizado
     const { userData } = useUserData();
     const { data, isLoading: loading, error } = useFeedItem(user?.id || '', id || '');
 
-    // Estados locais (apenas para UI)
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [actionState, setActionState] = useState<'loading' | 'success' | 'error' | 'idle'>('idle');
     const [showImageModal, setShowImageModal] = useState(false);
 
-    // ✅ DADOS CONSOLIDADOS - Tudo vem de uma única fonte
     const item = data?.item;
     const feedData = data?.feedData;
     const saldo = userData?.carteira?.saldo_atual || 0;
     const userSchoolIds = userData?.escolasIds || [];
 
-    // Retorno de loading/erro seguro
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
@@ -115,9 +112,9 @@ const DetalhesItem = () => {
         );
     }
 
-    // Adaptar para formato esperado de compatibilidade com outros componentes
-    const itemAdaptado: ItemComPerfil | null = item ? {
+    const itemAdaptado: ItemComPerfil = {
         ...item,
+        fotos: item.fotas || [], // Garantir que fotos existe
         profiles: item.publicado_por_profile ? {
             nome: item.publicado_por_profile.nome,
             bairro: item.endereco_bairro || null,
@@ -125,13 +122,12 @@ const DetalhesItem = () => {
             estado: item.endereco_estado || null,
             avatar_url: item.publicado_por_profile.avatar_url || null,
             reputacao: item.publicado_por_profile.reputacao || null,
-        } : null
-    } : null;
+        } : null,
+        escola_comum: item.escola_comum || false // ✅ CORRIGIDO
+    };
 
-    // ✅ VERIFICAR ESCOLA EM COMUM - usando dados consolidados
-    const hasCommonSchool = item?.escola_comum || false;
+    const hasCommonSchool = itemAdaptado.escola_comum || false;
 
-    // ✅ STATUS CALCULADOS - usando dados consolidados do feedData
     const isFavorite = feedData.favoritos.includes(item.id) || false;
     const filaInfo = item.id && feedData.filas_espera[item.id] 
         ? {
@@ -200,7 +196,6 @@ const DetalhesItem = () => {
         return `${Math.floor(diffDias / 30)} meses atrás`;
     };
 
-    // AÇÕES (mantendo funcionalidade exata)
     const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
     const semSaldo = saldo < Number(item.valor_girinhas);
     const isProprio = item.publicado_por === user?.id;
@@ -243,12 +238,12 @@ const DetalhesItem = () => {
         try {
             const { data: result, error } = await supabase.rpc('entrar_fila_espera', {
                 p_item_id: item.id,
-                p_usuario_id: user.id,
-                p_valor_girinhas: item.valor_girinhas
+                p_usuario_id: user.id
             });
             if (error) throw error;
             setActionState('success');
-            const isDirectReservation = result?.tipo === 'reserva_direta';
+            
+            const isDirectReservation = result && typeof result === 'object' && 'tipo' in result && result.tipo === 'reserva_direta';
             toast({
                 title: "Sucesso!",
                 description: isDirectReservation ? "Item reservado!" : "Você entrou na fila para este item.",
@@ -261,7 +256,9 @@ const DetalhesItem = () => {
                 variant: "destructive",
             });
         }
-        setTimeout(() => setActionState('idle'), 3000);
+        finally {
+            setTimeout(() => setActionState('idle'), 3000);
+        }
     };
 
     const handleToggleFavorite = async () => {
@@ -317,6 +314,7 @@ const DetalhesItem = () => {
             prev === item.fotos!.length - 1 ? 0 : prev + 1
         );
     };
+    
     const prevImage = () => {
         if (!item?.fotos) return;
         setCurrentImageIndex((prev) => 
@@ -333,9 +331,9 @@ const DetalhesItem = () => {
         return (filaInfo?.total_fila && filaInfo.total_fila > 0) ? 'Entrar na Fila' : 'Reservar Item';
     };
 
+    
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-            {/* Header mobile-first */}
             <header className="bg-white shadow-sm border-b border-pink-100 sticky top-0 z-10">
                 <div className="max-w-4xl mx-auto px-4 py-3">
                     <div className="flex items-center justify-between">
@@ -361,8 +359,8 @@ const DetalhesItem = () => {
                     </div>
                 </div>
             </header>
+            
             <main className="max-w-4xl mx-auto p-3 space-y-4">
-                {/* Galeria de Imagens - Mobile first */}
                 <Card className="overflow-hidden shadow-lg">
                     <div className="relative">
                         <div className="aspect-square md:aspect-[4/3] relative">
@@ -427,7 +425,6 @@ const DetalhesItem = () => {
                         )}
                     </div>
                 </Card>
-                {/* Informações Principais */}
                 <Card className="shadow-lg">
                     <CardContent className="p-4">
                         <div className="flex flex-wrap gap-2 mb-4">
@@ -504,7 +501,6 @@ const DetalhesItem = () => {
                         )}
                     </CardContent>
                 </Card>
-                {/* Informações de Entrega e Vendedor */}
                 <div className="grid grid-cols-1 gap-4">
                     <Card className="shadow-lg">
                         <CardHeader className="pb-3">
@@ -612,10 +608,7 @@ const DetalhesItem = () => {
                 )}
                 {itemAdaptado && (
                     <ItensRelacionados 
-                        itemAtual={{
-                            ...itemAdaptado,
-                            publicado_por_profile: item.publicado_por_profile
-                        }}
+                        itemAtual={itemAdaptado}
                         location={item.endereco_cidade ? {
                             cidade: item.endereco_cidade,
                             estado: item.endereco_estado || '',
@@ -627,6 +620,7 @@ const DetalhesItem = () => {
                     />
                 )}
             </main>
+
             {showImageModal && (
                 <div 
                     className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"

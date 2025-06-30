@@ -5,7 +5,6 @@ import { PaginaFeed } from './useFeedInfinito';
 
 /**
  * ✅ HOOK OTIMIZADO - Única fonte de dados para tela de detalhes do item
- * Retorna todos os dados necessários consolidados em uma única requisição RPC
  */
 export const useFeedItem = (userId: string, itemId: string) => {
   return useQuery({
@@ -28,7 +27,7 @@ export const useFeedItem = (userId: string, itemId: string) => {
           p_preco_min: 0,
           p_preco_max: 200,
           p_mostrar_reservados: true,
-          p_item_id: itemId // ✅ Filtro específico por ID
+          p_item_id: itemId
         }
       );
 
@@ -38,16 +37,14 @@ export const useFeedItem = (userId: string, itemId: string) => {
       }
 
       const result = data as unknown as PaginaFeed;
-      console.log('✅ [DADOS CONSOLIDADOS] Item carregado com todos os dados:', {
-        item: result.itens[0]?.titulo,
+      console.log('✅ [DADOS CONSOLIDADOS] Item carregado:', {
+        item: result.itens?.[0]?.titulo,
         favoritos: result.favoritos?.length || 0,
         reservas: result.reservas_usuario?.length || 0,
-        filas: Object.keys(result.filas_espera || {}).length,
-        profile: result.profile_essencial?.nome
+        filas: Object.keys(result.filas_espera || {}).length
       });
 
-      // Extrair o item específico e todos os dados do feed
-      const item = result.itens[0] || null;
+      const item = result.itens?.[0] || null;
 
       return {
         item,
@@ -61,14 +58,13 @@ export const useFeedItem = (userId: string, itemId: string) => {
       };
     },
     enabled: !!userId && !!itemId,
-    staleTime: 1000 * 60 * 5, // ✅ 5 minutos - dados ficam frescos
-    gcTime: 1000 * 60 * 10, // ✅ 10 minutos no cache
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
-    refetchOnMount: false, // ✅ Não refaz se já tem no cache
+    refetchOnMount: false,
   });
 };
 
-// Interface para os dados retornados pelo hook
 export interface FeedItemData {
   item: any | null;
   feedData: {
@@ -81,7 +77,7 @@ export interface FeedItemData {
     }>;
     filas_espera: Record<string, {
       total_fila: number;
-      posicao_usuario: number;
+      posicao_usuario?: number;
       usuario_id?: string;
     }>;
   };
