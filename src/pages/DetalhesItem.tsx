@@ -65,20 +65,57 @@ const DetalhesItem = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { user } = useAuth();
-    const { entrarNaFila, reservarItem } = useReservas();
-    const { saldo } = useCarteira();
-    const { toggleFavorito } = useFavoritos();
     
-    // ✅ USAR O HOOK OTIMIZADO AO INVÉS DOS HOOKS INDIVIDUAIS
+    // ✅ ÚNICO HOOK PARA DADOS - Substitui useItens, useFavoritos, useReservas, useFilaEspera
     const { data, isLoading: loading, error } = useFeedItem(user?.id || '', id || '');
     
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [actionState, setActionState] = useState<'loading' | 'success' | 'error' | 'idle'>('idle');
     const [showImageModal, setShowImageModal] = useState(false);
     
-    // ✅ EXTRAIR DADOS DO HOOK OTIMIZADO
+    // ✅ EXTRAIR DADOS DO HOOK OTIMIZADO COM VERIFICAÇÕES DE SEGURANÇA
     const item = data?.item;
     const feedData = data?.feedData;
+    const saldo = data?.profile_essencial?.saldo_atual || 0; // ✅ SALDO VEM DA FUNÇÃO SQL
+    
+    // ✅ VERIFICAÇÕES DE SEGURANÇA MAIS RIGOROSAS
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-gray-600">Carregando detalhes do item...</p>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    // ✅ VERIFICAR SE TEMOS DADOS MÍNIMOS NECESSÁRIOS
+    if (!item || !feedData) {
+        if (error) {
+            console.error('Erro ao carregar item:', error);
+        }
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+                <Header />
+                <main className="flex-grow flex items-center justify-center">
+                    <Card className="max-w-md mx-auto text-center m-4">
+                        <CardContent className="p-8">
+                            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <h2 className="text-2xl font-bold mb-4">Item não encontrado</h2>
+                            <p className="text-gray-600 mb-6">O item que você está procurando não existe ou foi removido.</p>
+                            <Button asChild>
+                                <Link to="/feed">Voltar ao Feed</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </main>
+            </div>
+        );
+    }
     
     // ✅ ADAPTAR ITEM PARA O FORMATO ESPERADO
     const itemAdaptado: ItemComPerfil | null = item ? {
@@ -103,10 +140,11 @@ const DetalhesItem = () => {
         : { total_fila: 0, posicao_usuario: 0 };
     
     const isItemReservado = (itemId: string) => {
-        return feedData?.reservas_usuario?.some(r => 
+        if (!feedData?.reservas_usuario) return false;
+        return feedData.reservas_usuario.some(r => 
             r.item_id === itemId && 
             ['pendente', 'confirmada'].includes(r.status)
-        ) || false;
+        );
     };
     
     const { hasCommonSchool } = useCommonSchool(item?.publicado_por || '');
@@ -165,6 +203,7 @@ const DetalhesItem = () => {
         return `${Math.floor(diffDias / 30)} meses atrás`;
     };
 
+    // ✅ AÇÕES DIRETAS VIA SUPABASE - Substitui hooks individuais
     const handleReservar = async () => {
         if (!item || !user) return;
 
@@ -183,7 +222,7 @@ const DetalhesItem = () => {
 
         if (isReserved) {
             toast({
-                title: "Item indisponível",
+                title: "Item indisponível", 
                 description: "Este item já foi reservado ou não está mais disponível.",
                 variant: "destructive",
             });
@@ -202,40 +241,67 @@ const DetalhesItem = () => {
         setActionState('loading');
         
         try {
-            if (!filaInfo?.total_fila || filaInfo.total_fila === 0) {
-                // Item disponível - reservar diretamente
-                await reservarItem(item.id);
-                setActionState('success');
-                toast({
-                    title: "Sucesso!",
-                    description: "Item reservado!",
-                });
-            } else {
-                // Item com fila - entrar na fila
-                await entrarNaFila(item.id);
-                setActionState('success');
-                toast({
-                    title: "Sucesso!",
-                    description: "Você entrou na fila para este item.",
-                });
-            }
+            // ✅ AÇÃO DIRETA VIA SUPABASE
+            const { data: result, error } = await supabase.rpc('entrar_fila_espera', {
+                p_item_id: item.id,
+                p_usuario_id: user.id,
+                p_valor_girinhas: item.valor_girinhas
+            });
+
+            if (error) throw error;
+
+            setActionState('success');
+            const isDirectReservation = result?.tipo === 'reserva_direta';
+            
+            toast({
+                title: "Sucesso!",
+                description: isDirectReservation ? "Item reservado!" : "Você entrou na fila para este item.",
+            });
         } catch (error) {
             console.error('Erro ao reservar/entrar na fila:', error);
             setActionState('error');
+            toast({
+                title: "Erro",
+                description: "Não foi possível processar sua solicitação.",
+                variant: "destructive",
+            });
         }
         
         setTimeout(() => setActionState('idle'), 3000);
     };
 
     const handleToggleFavorite = async () => {
-        if (!item) return;
+        if (!item || !user) return;
         
         try {
-            await toggleFavorito(item.id);
-            toast({
-                title: isFavorite ? "Removido dos favoritos" : "Adicionado aos favoritos",
-                description: isFavorite ? "Item removido dos seus favoritos." : "Item adicionado aos seus favoritos.",
-            });
+            // ✅ AÇÃO DIRETA VIA SUPABASE
+            if (isFavorite) {
+                // Remover dos favoritos
+                const { error } = await supabase
+                    .from('favoritos')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('item_id', item.id);
+                
+                if (error) throw error;
+                
+                toast({
+                    title: "Removido dos favoritos",
+                    description: "Item removido dos seus favoritos.",
+                });
+            } else {
+                // Adicionar aos favoritos
+                const { error } = await supabase
+                    .from('favoritos')
+                    .insert({ user_id: user.id, item_id: item.id });
+                
+                if (error) throw error;
+                
+                toast({
+                    title: "Adicionado aos favoritos",
+                    description: "Item adicionado aos seus favoritos.",
+                });
+            }
         } catch (error) {
             console.error('Erro ao favoritar:', error);
             toast({
@@ -284,39 +350,9 @@ const DetalhesItem = () => {
         );
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
-                <Header />
-                <main className="flex-grow flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p className="text-gray-600">Carregando detalhes do item...</p>
-                    </div>
-                </main>
-            </div>
-        );
-    }
 
-    if (error || !item) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
-                <Header />
-                <main className="flex-grow flex items-center justify-center">
-                    <Card className="max-w-md mx-auto text-center m-4">
-                        <CardContent className="p-8">
-                            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold mb-4">Item não encontrado</h2>
-                            <p className="text-gray-600 mb-6">O item que você está procurando não existe ou foi removido.</p>
-                            <Button asChild>
-                                <Link to="/feed">Voltar ao Feed</Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </main>
-            </div>
-        );
-    }
+
+
 
     const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
     const semSaldo = saldo < Number(item.valor_girinhas);
