@@ -331,28 +331,32 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* 🆕 MELHORADO: Botão WhatsApp com informação contextual */}
+          {/* 🆕 MOBILE-OPTIMIZED: Seção WhatsApp compacta */}
           {canShowWhatsApp && !compact && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <MessageCircle className="w-3 h-3 text-white" />
+            <div className="bg-green-50 border border-green-200 rounded-lg p-2 mb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <MessageCircle className="w-3 h-3 text-white" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-green-800 block leading-tight">
+                      Combine a entrega
+                    </span>
+                    <span className="text-xs text-green-600">
+                      Converse com {item.publicado_por_profile?.nome?.split(' ')[0]}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-green-800">
-                  Combine a entrega
-                </span>
+                <Button 
+                  size="sm" 
+                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs"
+                  onClick={handleWhatsAppClick}
+                >
+                  <MessageCircle className="w-3 h-3 mr-1" />
+                  WhatsApp
+                </Button>
               </div>
-              <p className="text-xs text-green-700 mb-3">
-                Converse diretamente com {item.publicado_por_profile?.nome} para combinar horário, local e forma de entrega.
-              </p>
-              <Button 
-                size="sm" 
-                className="w-full bg-green-500 hover:bg-green-600 text-white"
-                onClick={handleWhatsAppClick}
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Abrir WhatsApp
-              </Button>
             </div>
           )}
 
