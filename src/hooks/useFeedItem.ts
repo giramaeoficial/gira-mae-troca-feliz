@@ -1,17 +1,16 @@
-// src/hooks/useFeedItem.ts
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { PaginaFeed } from './useFeedInfinito';
 
 /**
  * Hook específico para carregar um item individual usando a função otimizada.
- * Retorna todos os dados necessários para o ItemCard (favoritos, reservas, filas).
+ * Retorna todos os dados necessários para o ItemCard e tela de detalhes.
+ * FONTE ÚNICA DE DADOS - não usar outros hooks na mesma tela.
  */
 export const useFeedItem = (userId: string, itemId: string) => {
   return useQuery({
     queryKey: ['feed-item', userId, itemId],
     queryFn: async () => {
-      // DEBUG: Log para rastreio de requisição
       console.log('🔄 Carregando item individual:', itemId);
 
       const { data, error } = await supabase.rpc(
@@ -23,13 +22,13 @@ export const useFeedItem = (userId: string, itemId: string) => {
           p_busca: '',
           p_cidade: '',
           p_categoria: 'todas',
-          p_subcategoria: 'todas',
+          p_subcategoria: 'todas', 
           p_genero: 'todos',
           p_tamanho: 'todos',
           p_preco_min: 0,
           p_preco_max: 200,
           p_mostrar_reservados: true,
-          p_item_id: itemId // ✅ Filtro específico por ID
+          p_item_id: itemId // Filtro específico por ID
         }
       );
 
@@ -39,21 +38,20 @@ export const useFeedItem = (userId: string, itemId: string) => {
       }
 
       const result = data as unknown as PaginaFeed;
-      // DEBUG: Resultado bruto
-      console.log('✅ Item carregado:', result);
+      console.log('✅ Item carregado com dados consolidados:', result);
 
-      // Extrair o item específico e todos os dados do feed
       const item = result.itens[0] || null;
 
       return {
         item,
-        feedData: {
-          favoritos: result.favoritos || [],
-          reservas_usuario: result.reservas_usuario || [],
-          filas_espera: result.filas_espera || {}
-        },
+        // Dados consolidados do feed - FONTE ÚNICA
+        favoritos: result.favoritos || [],
+        reservas_usuario: result.reservas_usuario || [],
+        filas_espera: result.filas_espera || {},
         configuracoes: result.configuracoes,
-        profile_essencial: result.profile_essencial
+        profile_essencial: result.profile_essencial,
+        // Saldo do usuário
+        saldo_atual: result.profile_essencial?.saldo_atual || 0
       };
     },
     enabled: !!userId && !!itemId,
@@ -62,23 +60,29 @@ export const useFeedItem = (userId: string, itemId: string) => {
   });
 };
 
-// Interface para os dados retornados pelo hook
-export interface FeedItemData {
-  item: any | null;
-  feedData: {
-    favoritos: string[];
-    reservas_usuario: Array<{
-      item_id: string;
-      status: string;
-      usuario_reservou?: string;
-      id?: string;
-    }>;
-    filas_espera: Record<string, {
-      total_fila: number;
-      posicao_usuario: number;
-      usuario_id?: string;
-    }>;
-  };
+// Interface para compatibilidade
+export interface PaginaFeed {
+  itens: any[];
+  favoritos?: string[];
+  reservas_usuario?: Array<{
+    item_id: string;
+    status: string;
+    usuario_reservou?: string;
+    id?: string;
+  }>;
+  filas_espera?: Record<string, {
+    total_fila: number;
+    posicao_usuario: number;
+    usuario_id?: string;
+  }>;
   configuracoes?: any;
-  profile_essencial?: any;
+  profile_essencial?: {
+    id: string;
+    nome: string;
+    cidade: string;
+    estado: string;
+    bairro: string;
+    avatar_url: string;
+    saldo_atual: number;
+  };
 }

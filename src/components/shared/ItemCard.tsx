@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,13 +44,13 @@ interface ItemCardProps {
     reservas_usuario: Array<{
       item_id: string;
       status: string;
-      id: string;
-      usuario_reservou: string;
+      id?: string;
+      usuario_reservou?: string;
     }>;
     filas_espera: Record<string, {
       total_fila: number;
       posicao_usuario?: number;
-      usuario_id: string;
+      usuario_id?: string;
     }>;
   };
   currentUserId: string;
@@ -227,8 +228,20 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </div>
       )}
 
-      {/* ❌ REMOVIDO: Badge de status reservado */}
-      {/* ❌ REMOVIDO: Badge de mesma escola no topo */}
+      {/* Badge de status reservado */}
+      {itemIsReservado && (
+        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-red-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
+          Reservado
+        </div>
+      )}
+
+      {/* Badge de mesma escola no topo */}
+      {hasCommonSchool && (
+        <div className="absolute top-12 left-2 bg-green-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
+          <School className="w-3 h-3 inline mr-1" />
+          Mesma escola!
+        </div>
+      )}
 
       {/* Botão de favorito */}
       {showActions && onToggleFavorito && (
@@ -292,9 +305,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             {item.titulo}
           </h3>
 
-          {/* ❌ REMOVIDO: Localização inline quando reservado */}
+          {/* Localização inline quando reservado */}
+          {itemIsReservado && hasLocationData && (
+            <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+              <MapPin className="w-3 h-3" />
+              <span>{getLocationText()}</span>
+            </div>
+          )}
 
-          {/* Categoria, tamanho e mesma escola */}
+          {/* Categoria, tamanho e informações de entrega */}
           {!compact && (
             <div className="space-y-1 mb-2">
               <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -314,12 +333,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                     </span>
                   </div>
                 )}
-                {/* 🔧 MOVIDO: Badge de mesma escola para baixo, ao lado do tamanho */}
-                {hasCommonSchool && (
+                {item.aceita_entrega && (
                   <div className="inline-flex items-center bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
-                    <School className="w-3 h-3 mr-1 text-green-600" />
+                    <Truck className="w-3 h-3 mr-1 text-green-600" />
                     <span className="text-xs font-medium text-green-700">
-                      Mesma escola
+                      Entrega
+                    </span>
+                  </div>
+                )}
+                {!item.aceita_entrega && (
+                  <div className="inline-flex items-center bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
+                    <Home className="w-3 h-3 mr-1 text-orange-600" />
+                    <span className="text-xs font-medium text-orange-700">
+                      Retirada
                     </span>
                   </div>
                 )}
@@ -327,7 +353,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* 🔧 SIMPLIFICADO: Preço total com taxa incluída */}
+          {/* Preço com breakdown detalhado */}
           <div className="mb-3">
             <div className="flex items-center gap-1 mb-1">
               <Sparkles className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />
@@ -339,10 +365,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               </span>
             </div>
             
-            {/* 🔧 SIMPLIFICADO: Apenas informação da taxa incluída */}
+            {/* Breakdown detalhado quando há taxa */}
             {taxaTransacao > 0 && valores.taxa > 0 && (
-              <div className="text-xs text-gray-500">
-                taxa {taxaTransacao}% já incluso
+              <div className="text-xs text-gray-500 space-y-0.5">
+                <div className="flex justify-between">
+                  <span>Item:</span>
+                  <span>{valores.valorItem} Girinhas</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Taxa ({taxaTransacao}%):</span>
+                  <span>+{valores.taxa} Girinhas</span>
+                </div>
+                <div className="border-t pt-0.5 flex justify-between font-medium">
+                  <span>Total:</span>
+                  <span>{valores.total} Girinhas</span>
+                </div>
               </div>
             )}
           </div>

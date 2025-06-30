@@ -1,3 +1,4 @@
+
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import { Button } from "@/components/ui/button";
@@ -29,30 +30,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeedItem } from "@/hooks/useFeedItem";
-import { Tables } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 import LazyImage from "@/components/ui/lazy-image";
 import { cn } from "@/lib/utils";
 import ActionFeedback from "@/components/loading/ActionFeedback";
 import ItensRelacionados from "@/components/item/ItensRelacionados";
-
-type ItemComPerfil = Tables<'itens'> & {
-  profiles?: {
-    nome: string;
-    bairro: string | null;
-    cidade: string | null;
-    estado: string | null;
-    avatar_url: string | null;
-    reputacao: number | null;
-  } | null;
-  publicado_por_profile?: {
-    nome: string;
-    avatar_url?: string;
-    reputacao?: number;
-  };
-  endereco_bairro?: string;
-  endereco_cidade?: string;
-  endereco_estado?: string;
-};
 
 const DetalhesItem = () => {
     const { id } = useParams();
@@ -60,20 +42,22 @@ const DetalhesItem = () => {
     const { toast } = useToast();
     const { user } = useAuth();
 
-    // Hook otimizado para carregar o item
+    // ✅ FONTE ÚNICA DE DADOS - apenas este hook
     const { data, isLoading: loading, error } = useFeedItem(user?.id || '', id || '');
 
-    // Estados locais
+    // Estados locais para UI
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [actionState, setActionState] = useState<'loading' | 'success' | 'error' | 'idle'>('idle');
     const [showImageModal, setShowImageModal] = useState(false);
 
-    // Dados principais do hook
+    // ✅ DADOS CONSOLIDADOS - sem hooks extras
     const item = data?.item;
-    const feedData = data?.feedData;
-    const saldo = data?.profile_essencial?.saldo_atual || 0;
+    const favoritos = data?.favoritos || [];
+    const reservas_usuario = data?.reservas_usuario || [];
+    const filas_espera = data?.filas_espera || {};
+    const saldo_atual = data?.saldo_atual || 0;
 
-    // Retorno de loading/erro seguro
+    // Loading/Error states
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
@@ -87,7 +71,8 @@ const DetalhesItem = () => {
             </div>
         );
     }
-    if (!item || !feedData) {
+
+    if (!item) {
         if (error) {
             console.error('Erro ao carregar item:', error);
         }
@@ -110,38 +95,27 @@ const DetalhesItem = () => {
         );
     }
 
-    // Adaptar para formato esperado de compatibilidade com outros componentes
-    const itemAdaptado: ItemComPerfil | null = item ? {
-        ...item,
-        profiles: item.publicado_por_profile ? {
-            nome: item.publicado_por_profile.nome,
-            bairro: item.endereco_bairro || null,
-            cidade: item.endereco_cidade || null,
-            estado: item.endereco_estado || null,
-            avatar_url: item.publicado_por_profile.avatar_url || null,
-            reputacao: item.publicado_por_profile.reputacao || null,
-        } : null
-    } : null;
+    // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
+    const isFavorite = favoritos.includes(item.id);
+    
+    const hasActiveReservation = reservas_usuario.some(r => 
+        r.item_id === item.id && 
+        ['pendente', 'confirmada'].includes(r.status) && 
+        r.usuario_reservou === user?.id
+    );
 
-    // DADOS calculados diretamente a partir do retorno SQL
-    const hasCommonSchool = item?.escola_comum || false;
+    const filaInfo = filas_espera[item.id] || { total_fila: 0, posicao_usuario: 0 };
+    const isUserInQueue = filaInfo.posicao_usuario > 0;
 
-    const isFavorite = feedData.favoritos.includes(item.id) || false;
-    const filaInfo = item.id && feedData.filas_espera[item.id] 
-        ? {
-            total_fila: feedData.filas_espera[item.id].total_fila || 0,
-            posicao_usuario: feedData.filas_espera[item.id].posicao_usuario || 0
-          }
-        : { total_fila: 0, posicao_usuario: 0 };
+    // ✅ VERIFICAR MESMA ESCOLA (baseado nos dados do item retornados pela query)
+    const hasCommonSchool = Boolean(item.escolas_inep?.escola);
 
-    const isItemReservado = (itemId: string) => {
-        if (!feedData.reservas_usuario) return false;
-        return feedData.reservas_usuario.some(r => 
-            r.item_id === itemId && 
-            ['pendente', 'confirmada'].includes(r.status)
-        );
-    };
+    // Status do item
+    const isReserved = hasActiveReservation || item.status !== 'disponivel';
+    const semSaldo = saldo_atual < Number(item.valor_girinhas);
+    const isProprio = item.publicado_por === user?.id;
 
+    // Helper functions
     const getGeneroInfo = (genero?: string) => {
         switch (genero) {
             case 'menino': 
@@ -194,17 +168,7 @@ const DetalhesItem = () => {
         return `${Math.floor(diffDias / 30)} meses atrás`;
     };
 
-    // AÇÕES
-    const isReserved = isItemReservado(item.id) || item.status !== 'disponivel';
-    const semSaldo = saldo < Number(item.valor_girinhas);
-    const isProprio = item.publicado_por === user?.id;
-    const generoInfo = getGeneroInfo(item.genero);
-    const estadoInfo = getEstadoInfo(item.estado_conservacao);
-
-    const imagens = item.fotos && item.fotos.length > 0 
-        ? item.fotos 
-        : ['/placeholder-item.jpg'];
-
+    // Event handlers
     const handleReservar = async () => {
         if (!item || !user) return;
 
@@ -235,7 +199,6 @@ const DetalhesItem = () => {
 
         setActionState('loading');
         try {
-            // Direto via supabase
             const { data: result, error } = await supabase.rpc('entrar_fila_espera', {
                 p_item_id: item.id,
                 p_usuario_id: user.id,
@@ -306,27 +269,40 @@ const DetalhesItem = () => {
         } catch (error) {}
     };
 
+    // Image navigation
+    const imagens = item.fotos && item.fotos.length > 0 
+        ? item.fotos 
+        : ['/placeholder-item.jpg'];
+
     const nextImage = () => {
-        if (!item?.fotos) return;
         setCurrentImageIndex((prev) => 
-            prev === item.fotos!.length - 1 ? 0 : prev + 1
-        );
-    };
-    const prevImage = () => {
-        if (!item?.fotos) return;
-        setCurrentImageIndex((prev) => 
-            prev === 0 ? item.fotos!.length - 1 : prev - 1
+            prev === imagens.length - 1 ? 0 : prev + 1
         );
     };
 
+    const prevImage = () => {
+        setCurrentImageIndex((prev) => 
+            prev === 0 ? imagens.length - 1 : prev - 1
+        );
+    };
+
+    // Render helpers
+    const generoInfo = getGeneroInfo(item.genero);
+    const estadoInfo = getEstadoInfo(item.estado_conservacao);
+
     const getButtonText = () => {
         if (isReserved) {
-            return (filaInfo?.posicao_usuario && filaInfo.posicao_usuario > 0) 
+            return isUserInQueue 
                 ? `Na fila (posição ${filaInfo.posicao_usuario})` 
                 : 'Item Reservado';
         }
-        return (filaInfo?.total_fila && filaInfo.total_fila > 0) ? 'Entrar na Fila' : 'Reservar Item';
+        return (filaInfo.total_fila > 0) ? 'Entrar na Fila' : 'Reservar Item';
     };
+
+    // ✅ VERIFICAR SE PODE MOSTRAR WHATSAPP (conforme regras atuais)
+    const canShowWhatsApp = item.publicado_por_profile?.whatsapp && 
+        hasActiveReservation && 
+        item.publicado_por !== user?.id;
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
@@ -356,8 +332,9 @@ const DetalhesItem = () => {
                     </div>
                 </div>
             </header>
+
             <main className="max-w-4xl mx-auto p-3 space-y-4">
-                {/* Galeria de Imagens - Mobile first */}
+                {/* Galeria de Imagens */}
                 <Card className="overflow-hidden shadow-lg">
                     <div className="relative">
                         <div className="aspect-square md:aspect-[4/3] relative">
@@ -422,18 +399,19 @@ const DetalhesItem = () => {
                         )}
                     </div>
                 </Card>
+
                 {/* Informações Principais */}
                 <Card className="shadow-lg">
                     <CardContent className="p-4">
                         <div className="flex flex-wrap gap-2 mb-4">
                             {isReserved && (
                                 <Badge variant="destructive" className="text-xs">
-                                    {(filaInfo?.posicao_usuario && filaInfo.posicao_usuario > 0) 
+                                    {isUserInQueue 
                                         ? `Fila - Posição ${filaInfo.posicao_usuario}` 
                                         : 'Reservado'}
                                 </Badge>
                             )}
-                            {(filaInfo?.total_fila && filaInfo.total_fila > 0) && !isReserved && (
+                            {(filaInfo.total_fila > 0) && !isReserved && (
                                 <Badge className="bg-blue-100 text-blue-800 text-xs">
                                     <Users className="w-3 h-3 mr-1" />
                                     {filaInfo.total_fila} na fila
@@ -449,6 +427,7 @@ const DetalhesItem = () => {
                                 {estadoInfo.label}
                             </Badge>
                         </div>
+                        
                         <div className="flex flex-col gap-3 mb-4">
                             <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
                                 {item.titulo}
@@ -482,6 +461,7 @@ const DetalhesItem = () => {
                                 )}
                             </div>
                         </div>
+                        
                         {generoInfo && (
                             <div className="flex flex-wrap gap-2 mb-4">
                                 <Badge className={cn("text-xs", generoInfo.color)}>
@@ -489,6 +469,7 @@ const DetalhesItem = () => {
                                 </Badge>
                             </div>
                         )}
+                        
                         {item.descricao && (
                             <div className="mb-4">
                                 <h3 className="font-semibold text-base mb-2">Descrição</h3>
@@ -499,6 +480,7 @@ const DetalhesItem = () => {
                         )}
                     </CardContent>
                 </Card>
+
                 {/* Informações de Entrega e Vendedor */}
                 <div className="grid grid-cols-1 gap-4">
                     <Card className="shadow-lg">
@@ -523,6 +505,7 @@ const DetalhesItem = () => {
                             </div>
                         </CardContent>
                     </Card>
+                    
                     <Card className="shadow-lg">
                         <CardHeader className="pb-3">
                             <CardTitle className="flex items-center gap-2 text-base">
@@ -559,6 +542,35 @@ const DetalhesItem = () => {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* ✅ WHATSAPP - conforme regras atuais */}
+                {canShowWhatsApp && (
+                    <Card className="shadow-lg bg-green-50 border-green-200">
+                        <CardContent className="p-4">
+                            <div className="text-center">
+                                <h3 className="font-semibold text-green-800 mb-2">Combine a entrega</h3>
+                                <p className="text-sm text-green-700 mb-3">
+                                    Entre em contato com o vendedor para combinar a entrega
+                                </p>
+                                <Button 
+                                    className="bg-green-500 hover:bg-green-600 text-white"
+                                    onClick={() => {
+                                        const whatsappNumber = item.publicado_por_profile?.whatsapp;
+                                        const vendedorNome = item.publicado_por_profile?.nome;
+                                        const mensagem = `Olá ${vendedorNome}! Sobre o item "${item.titulo}" que reservei. Quando podemos combinar a entrega? 😊`;
+                                        const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(mensagem)}`;
+                                        window.open(whatsappUrl, '_blank');
+                                    }}
+                                >
+                                    <MessageCircle className="w-4 h-4 mr-2" />
+                                    Chamar no WhatsApp
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Ações do usuário */}
                 {!isProprio && (
                     <Card className="shadow-lg">
                         <CardContent className="p-4">
@@ -566,7 +578,7 @@ const DetalhesItem = () => {
                                 {actionState !== 'idle' && (
                                     <ActionFeedback
                                         state={actionState}
-                                        successMessage={(!filaInfo?.total_fila || filaInfo.total_fila === 0) ? "Item reservado!" : "Você entrou na fila!"}
+                                        successMessage={(filaInfo.total_fila === 0) ? "Item reservado!" : "Você entrou na fila!"}
                                         errorMessage="Erro ao reservar. Tente novamente."
                                     />
                                 )}
@@ -579,7 +591,7 @@ const DetalhesItem = () => {
                                     {actionState === 'loading' ? (
                                         <div className="flex items-center gap-2">
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            {(!filaInfo?.total_fila || filaInfo.total_fila === 0) ? 'Reservando...' : 'Entrando na fila...'}
+                                            {(filaInfo.total_fila === 0) ? 'Reservando...' : 'Entrando na fila...'}
                                         </div>
                                     ) : (
                                         getButtonText()
@@ -605,20 +617,22 @@ const DetalhesItem = () => {
                         </CardContent>
                     </Card>
                 )}
-                {itemAdaptado && (
-                    <ItensRelacionados 
-                        itemAtual={{
-                            ...itemAdaptado,
-                            publicado_por_profile: item.publicado_por_profile
-                        }}
-                        location={item.endereco_cidade ? {
-                            cidade: item.endereco_cidade,
-                            estado: item.endereco_estado || '',
-                            bairro: item.endereco_bairro || undefined
-                        } : null}
-                    />
-                )}
+
+                {/* ✅ ITENS RELACIONADOS - passando dados via props */}
+                <ItensRelacionados 
+                    itemAtual={{
+                        ...item,
+                        publicado_por_profile: item.publicado_por_profile
+                    }}
+                    location={item.endereco_cidade ? {
+                        cidade: item.endereco_cidade,
+                        estado: item.endereco_estado || '',
+                        bairro: item.endereco_bairro || undefined
+                    } : null}
+                />
             </main>
+
+            {/* Modal de imagem */}
             {showImageModal && (
                 <div 
                     className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
