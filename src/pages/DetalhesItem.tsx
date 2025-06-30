@@ -24,7 +24,8 @@ import {
   ZoomIn,
   Shield,
   Package,
-  Users
+  Users,
+  MessageCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -201,12 +202,12 @@ const DetalhesItem = () => {
         try {
             const { data: result, error } = await supabase.rpc('entrar_fila_espera', {
                 p_item_id: item.id,
-                p_usuario_id: user.id,
-                p_valor_girinhas: item.valor_girinhas
+                p_usuario_id: user.id
             });
             if (error) throw error;
             setActionState('success');
-            const isDirectReservation = result?.tipo === 'reserva_direta';
+            const resultObj = result as { tipo?: string } | null;
+            const isDirectReservation = resultObj?.tipo === 'reserva_direta';
             toast({
                 title: "Sucesso!",
                 description: isDirectReservation ? "Item reservado!" : "Você entrou na fila para este item.",

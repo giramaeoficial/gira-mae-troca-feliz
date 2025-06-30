@@ -63,14 +63,14 @@ export const useFeedItem = (userId: string, itemId: string) => {
 // Interface para compatibilidade
 export interface PaginaFeed {
   itens: any[];
-  favoritos?: string[];
-  reservas_usuario?: Array<{
+  favoritos: string[];
+  reservas_usuario: Array<{
     item_id: string;
     status: string;
     usuario_reservou?: string;
     id?: string;
   }>;
-  filas_espera?: Record<string, {
+  filas_espera: Record<string, {
     total_fila: number;
     posicao_usuario: number;
     usuario_id?: string;

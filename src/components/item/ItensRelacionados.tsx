@@ -5,6 +5,7 @@ import { ItemCard } from '@/components/shared/ItemCard';
 import { useItensInteligentes } from '@/hooks/useItensInteligentes';
 import { Sparkles, User } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ItensRelacionadosProps {
   itemAtual: Tables<'itens'> & {
@@ -25,6 +26,8 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
   itemAtual, 
   location 
 }) => {
+  const { user } = useAuth();
+  
   // Buscar itens similares baseados na categoria e subcategoria
   const { data: itensSimilares = [], isLoading: loadingSimilares } = useItensInteligentes({
     categoria: itemAtual.categoria,
@@ -36,8 +39,6 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
 
   // Buscar itens do mesmo vendedor
   const { data: itensVendedor = [], isLoading: loadingVendedor } = useItensInteligentes({
-    // Usar um filtro customizado para buscar pelo vendedor
-    // Como não temos essa opção diretamente, vamos usar os itens similares e filtrar depois
     location: location,
     ordem: 'recentes'
   });
@@ -54,6 +55,13 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
       item.id !== itemAtual.id
     )
     .slice(0, 4);
+
+  // Mock feedData for related items since they don't need full feed functionality
+  const mockFeedData = {
+    favoritos: [],
+    reservas_usuario: [],
+    filas_espera: {},
+  };
 
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -86,6 +94,8 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
                   <ItemCard
                     key={item.id}
                     item={item}
+                    feedData={mockFeedData}
+                    currentUserId={user?.id || ''}
                     compact={true}
                     showActions={false}
                     showLocation={false}
@@ -122,6 +132,8 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
                   <ItemCard
                     key={item.id}
                     item={item}
+                    feedData={mockFeedData}
+                    currentUserId={user?.id || ''}
                     compact={true}
                     showActions={false}
                     showLocation={false}
