@@ -19,19 +19,19 @@ interface ItensRelacionadosProps {
     estado: string;
     bairro?: string;
   } | null;
-  // ✅ NOVOS PROPS - Dados consolidados passados pela tela pai
+  // ✅ CORRIGIDO - Tipos flexíveis que correspondem aos dados reais
   feedData: {
     favoritos: string[];
     reservas_usuario: Array<{
       item_id: string;
       status: string;
-      id: string;
-      usuario_reservou: string;
+      usuario_reservou?: string;
+      id?: string;
     }>;
     filas_espera: Record<string, {
       total_fila: number;
       posicao_usuario?: number;
-      usuario_id: string;
+      usuario_id?: string;
     }>;
   };
   currentUserId: string;

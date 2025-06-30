@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter } from 'lucide-react';
@@ -39,7 +40,7 @@ const FeedOptimized = () => {
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
-  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>({});
+  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
   // ✅ Hooks essenciais mantidos
   const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();

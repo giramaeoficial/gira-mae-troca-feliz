@@ -618,11 +618,7 @@ const DetalhesItem = () => {
                             estado: item.endereco_estado || '',
                             bairro: item.endereco_bairro || undefined
                         } : null}
-                        feedData={{
-                            favoritos: feedData.favoritos || [],
-                            reservas_usuario: feedData.reservas_usuario || [],
-                            filas_espera: feedData.filas_espera || {}
-                        }}
+                        feedData={feedData}
                         currentUserId={user?.id || ''}
                         userSchoolIds={userSchoolIds}
                     />
