@@ -331,32 +331,22 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* 🆕 MOBILE-OPTIMIZED: Seção WhatsApp compacta */}
+          {/* 🆕 ULTRA-COMPACTO: Seção WhatsApp minimal para mobile */}
           {canShowWhatsApp && !compact && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-2 mb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                    <MessageCircle className="w-3 h-3 text-white" />
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-green-800 block leading-tight">
-                      Combine a entrega
-                    </span>
-                    <span className="text-xs text-green-600">
-                      Converse com {item.publicado_por_profile?.nome?.split(' ')[0]}
-                    </span>
-                  </div>
-                </div>
-                <Button 
-                  size="sm" 
-                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs"
-                  onClick={handleWhatsAppClick}
-                >
-                  <MessageCircle className="w-3 h-3 mr-1" />
-                  WhatsApp
-                </Button>
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-3">
+              <MessageCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-medium text-green-800 block truncate">
+                  Combine com {item.publicado_por_profile?.nome?.split(' ')[0]}
+                </span>
               </div>
+              <Button 
+                size="sm" 
+                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs h-7 flex-shrink-0"
+                onClick={handleWhatsAppClick}
+              >
+                WhatsApp
+              </Button>
             </div>
           )}
 
