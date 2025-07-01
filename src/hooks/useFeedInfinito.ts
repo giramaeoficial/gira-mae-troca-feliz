@@ -1,3 +1,4 @@
+// src/hooks/useFeedInfinito.ts - ATUALIZADO
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +13,14 @@ export interface FiltrosFeed {
   precoMin?: number;
   precoMax?: number;
   mostrarReservados?: boolean;
-  itemId?: string; // ✅ ADICIONADO para suporte ao feed individual
+  itemId?: string;
+  modalidadeLogistica?: 'todas' | 'entrega' | 'busca'; // ✅ NOVO
+}
+
+export interface LogisticaInfo {
+  entrega_disponivel: boolean;
+  busca_disponivel: boolean;
+  distancia_km: number | null;
 }
 
 export interface ItemFeed {
@@ -36,19 +44,18 @@ export interface ItemFeed {
   endereco_estado?: string;
   aceita_entrega?: boolean;
   raio_entrega_km?: number;
+  logistica?: LogisticaInfo; // ✅ NOVO
   publicado_por_profile?: {
     nome: string;
     avatar_url?: string;
     reputacao?: number;
+    whatsapp?: string;
   };
-  escolas_inep?: {
-    escola: string;
-  };
+  escola_comum?: boolean;
 }
 
 export interface PaginaFeed {
   itens: ItemFeed[];
-  // ✅ DADOS CONSOLIDADOS - adicionados diretamente na interface
   favoritos: string[];
   reservas_usuario: Array<{
     item_id: string;
@@ -84,6 +91,10 @@ export interface PaginaFeed {
     bairro?: string;
     avatar_url?: string;
     saldo_atual: number;
+    aceita_entrega?: boolean; // ✅ NOVO
+    raio_entrega_km?: number; // ✅ NOVO  
+    latitude?: number; // ✅ NOVO
+    longitude?: number; // ✅ NOVO
   };
   has_more: boolean;
   total_count: number;
@@ -95,7 +106,6 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
     queryFn: async ({ pageParam = 0 }) => {
       console.log('🔄 Carregando página do feed:', pageParam, 'Filtros:', filtros);
       
-      // Use direct RPC call to work around TypeScript limitation
       const { data, error } = await supabase.rpc(
         'carregar_dados_feed_paginado' as any,
         {
@@ -111,7 +121,8 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
           p_preco_min: filtros.precoMin || 0,
           p_preco_max: filtros.precoMax || 200,
           p_mostrar_reservados: filtros.mostrarReservados ?? true,
-          p_item_id: filtros.itemId || null // ✅ ADICIONADO suporte ao item específico
+          p_item_id: filtros.itemId || null,
+          p_modalidade_logistica: filtros.modalidadeLogistica || 'todas' // ✅ NOVO
         }
       );
       
@@ -130,8 +141,47 @@ export const useFeedInfinito = (userId: string, filtros: FiltrosFeed = {}) => {
     getNextPageParam: (lastPage, allPages) => {
       return lastPage?.has_more ? allPages.length : undefined;
     },
-    staleTime: 60000, // 1 minuto
+    staleTime: 60000,
     refetchOnWindowFocus: false,
     retry: 3,
   });
+};
+
+// ✅ Hook utilitário para badges de logística
+export const useLogisticaBadges = (item: ItemFeed) => {
+  const badges = [];
+  
+  if (item.logistica?.entrega_disponivel) {
+    badges.push({
+      type: 'entrega',
+      label: '🚚 Entrega grátis',
+      variant: 'success'
+    });
+  }
+  
+  if (item.logistica?.busca_disponivel && !item.logistica?.entrega_disponivel) {
+    badges.push({
+      type: 'busca',
+      label: '🚗 Você pode buscar',
+      variant: 'info'
+    });
+  }
+  
+  if (item.logistica?.distancia_km) {
+    badges.push({
+      type: 'distancia',
+      label: `📍 ${item.logistica.distancia_km}km`,
+      variant: 'neutral'
+    });
+  }
+  
+  if (item.escola_comum) {
+    badges.push({
+      type: 'escola',
+      label: '🏫 Mesma escola',
+      variant: 'primary'
+    });
+  }
+  
+  return badges;
 };
