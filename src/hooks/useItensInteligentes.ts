@@ -6,8 +6,8 @@ interface UseItensInteligenteParams {
   categoria?: string;
   subcategoria?: string;
   genero?: string;
-  vendedorId?: string; // ✅ NOVO: para filtrar por vendedor específico
-  busca?: string; // ✅ ADICIONADO: para suporte à busca
+  vendedorId?: string;
+  busca?: string;
   location?: {
     cidade: string;
     estado: string;
@@ -16,8 +16,8 @@ interface UseItensInteligenteParams {
   ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
 }
 
-// ✅ Tipagem simplificada para evitar recursão infinita
-export type ItemResponse = {
+// ✅ Simplified type to avoid deep instantiation
+type SimpleItemResponse = {
   id: string;
   titulo: string;
   descricao: string;
@@ -37,7 +37,7 @@ export type ItemResponse = {
     nome: string;
     avatar_url?: string;
     reputacao?: number;
-  };
+  } | null;
 };
 
 export const useItensInteligentes = (params: UseItensInteligenteParams) => {
@@ -108,10 +108,10 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
       }
 
       console.log('✅ Itens inteligentes carregados:', data?.length || 0);
-      return data || [];
+      return (data || []) as SimpleItemResponse[];
     },
     enabled: true,
     staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos (era cacheTime)
+    gcTime: 5 * 60 * 1000, // 5 minutos
   });
 };
