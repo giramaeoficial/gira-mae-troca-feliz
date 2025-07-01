@@ -7,6 +7,7 @@ interface UseItensInteligenteParams {
   subcategoria?: string;
   genero?: string;
   vendedorId?: string; // ✅ NOVO: para filtrar por vendedor específico
+  busca?: string; // ✅ ADICIONADO: para suporte à busca
   location?: {
     cidade: string;
     estado: string;
@@ -15,10 +16,34 @@ interface UseItensInteligenteParams {
   ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
 }
 
+// ✅ Tipagem simplificada para evitar recursão infinita
+type ItemResponse = {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: string;
+  subcategoria?: string;
+  genero?: string;
+  tamanho_categoria?: string;
+  tamanho_valor?: string;
+  estado_conservacao: string;
+  valor_girinhas: number;
+  fotos?: string[];
+  status: string;
+  publicado_por: string;
+  created_at: string;
+  updated_at: string;
+  publicado_por_profile?: {
+    nome: string;
+    avatar_url?: string;
+    reputacao?: number;
+  };
+};
+
 export const useItensInteligentes = (params: UseItensInteligenteParams) => {
   return useQuery({
     queryKey: ['itens-inteligentes', params],
-    queryFn: async () => {
+    queryFn: async (): Promise<ItemResponse[]> => {
       console.log('🔄 Carregando itens inteligentes:', params);
       
       let query = supabase
@@ -36,6 +61,11 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
       // ✅ OTIMIZAÇÃO: Filtro por vendedor específico
       if (params.vendedorId) {
         query = query.eq('publicado_por', params.vendedorId);
+      }
+
+      // ✅ Filtro por busca
+      if (params.busca) {
+        query = query.or(`titulo.ilike.%${params.busca}%,descricao.ilike.%${params.busca}%`);
       }
 
       // Filtros existentes
@@ -82,6 +112,6 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
     },
     enabled: true,
     staleTime: 2 * 60 * 1000, // 2 minutos
-    cacheTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos (era cacheTime)
   });
 };
