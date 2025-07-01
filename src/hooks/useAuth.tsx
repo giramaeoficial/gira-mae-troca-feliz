@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,27 +21,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log('🔄 useAuth: Inicializando auth...');
-    
-    // ✅ CORREÇÃO: Configurar listener primeiro
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔄 useAuth: Sessão inicial carregada:', session?.user?.id || 'nenhuma');
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('🔄 useAuth: Mudança de auth detectada:', _event, session?.user?.id || 'logout');
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false); // ✅ IMPORTANTE: Sempre setar loading false após mudança
-    });
-
-    // ✅ CORREÇÃO: Depois buscar sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔄 useAuth: Sessão inicial carregada:', session?.user?.id || 'nenhuma');
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false); // ✅ IMPORTANTE: Sempre setar loading false
-    }).catch((error) => {
-      console.error('🔄 useAuth: Erro ao carregar sessão inicial:', error);
-      setLoading(false); // ✅ IMPORTANTE: Setar false mesmo em caso de erro
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -54,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth-callback`
+        redirectTo: `${window.location.origin}/auth-callback` // ✅ Login direto vai para auth-callback
       }
     });
 
@@ -73,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth-callback`
+          redirectTo: `${window.location.origin}/auth-callback` // ✅ Cadastro também vai para auth-callback
         }
       });
 
@@ -94,10 +88,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('🚪 useAuth: Iniciando logout...');
     
     try {
-      // ✅ CORREÇÃO: Limpar estado local imediatamente
+      // Limpar estado local imediatamente
       setSession(null);
       setUser(null);
       
+      // Tentar fazer logout no Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error && error.message !== 'Auth session missing!') {
