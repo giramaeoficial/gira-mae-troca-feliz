@@ -41,9 +41,9 @@ export type ItemResponse = {
 };
 
 export const useItensInteligentes = (params: UseItensInteligenteParams) => {
-  return useQuery<ItemResponse[]>({
+  return useQuery({
     queryKey: ['itens-inteligentes', params],
-    queryFn: async (): Promise<ItemResponse[]> => {
+    queryFn: async () => {
       console.log('🔄 Carregando itens inteligentes:', params);
       
       let query = supabase
@@ -108,7 +108,7 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
       }
 
       console.log('✅ Itens inteligentes carregados:', data?.length || 0);
-      return (data || []) as ItemResponse[];
+      return data || [];
     },
     enabled: true,
     staleTime: 2 * 60 * 1000, // 2 minutos
