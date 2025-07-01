@@ -1,13 +1,18 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
 import ActionFeedback from '@/components/loading/ActionFeedback';
 import { supabase } from '@/integrations/supabase/client';
+
+interface LogisticaInfo {
+  entrega_disponivel: boolean;
+  busca_disponivel: boolean;
+  distancia_km: number | null;
+}
 
 interface ItemCardProps {
   item: {
@@ -27,6 +32,8 @@ interface ItemCardProps {
     endereco_estado?: string;
     aceita_entrega?: boolean;
     raio_entrega_km?: number;
+    logistica?: LogisticaInfo; // ✅ NOVO
+    escola_comum?: boolean; // ✅ NOVO
     publicado_por: string;
     escolas_inep?: {
       escola: string;
@@ -97,8 +104,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const filaInfo = feedData.filas_espera[item.id];
   const isUserInQueue = filaInfo?.posicao_usuario && filaInfo.posicao_usuario > 0;
 
-  // ✅ VERIFICAR MESMA ESCOLA (lógica simples baseada nos dados do item)
-  const hasCommonSchool = Boolean(item.escolas_inep?.escola);
+  // ✅ VERIFICAR MESMA ESCOLA (agora vem do backend)
+  const hasCommonSchool = Boolean(item.escola_comum);
 
   // Status do item
   const itemIsReservado = item.status === 'reservado';
@@ -130,6 +137,50 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     !isUserInQueue && 
     !hasActiveReservation &&
     item.publicado_por !== currentUserId;
+
+  // ✅ FUNÇÃO PARA GERAR BADGES DE LOGÍSTICA
+  const getLogisticaBadges = () => {
+    const badges = [];
+
+    // 🏫 Escola em comum (máxima prioridade)
+    if (hasCommonSchool) {
+      badges.push({
+        icon: <School className="w-3 h-3" />,
+        label: 'Mesma escola',
+        className: 'bg-purple-100 text-purple-800 border-purple-200'
+      });
+    }
+
+    // 🚚 Entrega disponível
+    if (item.logistica?.entrega_disponivel) {
+      badges.push({
+        icon: <Truck className="w-3 h-3" />,
+        label: 'Entrega grátis',
+        className: 'bg-green-100 text-green-800 border-green-200'
+      });
+    }
+    // 🚗 Busca disponível (só se não tem entrega)
+    else if (item.logistica?.busca_disponivel) {
+      badges.push({
+        icon: <Car className="w-3 h-3" />,
+        label: 'Você pode buscar',
+        className: 'bg-blue-100 text-blue-800 border-blue-200'
+      });
+    }
+
+    // 📍 Distância (sempre mostrar se disponível)
+    if (item.logistica?.distancia_km !== null && item.logistica?.distancia_km !== undefined) {
+      badges.push({
+        icon: <MapPin className="w-3 h-3" />,
+        label: `${item.logistica.distancia_km}km`,
+        className: 'bg-gray-50 text-gray-600 border-gray-200'
+      });
+    }
+
+    return badges;
+  };
+
+  const logisticaBadges = getLogisticaBadges();
 
   // Event handlers
   const handleClick = () => {
@@ -220,26 +271,25 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       compact ? "max-w-[200px]" : "max-w-sm",
       itemIsReservado && "opacity-75"
     )}>
-      {/* Badge de localização - sempre visível quando há dados */}
-      {showLocation && hasLocationData && (
-        <div className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
-          <MapPin className="w-3 h-3 inline mr-1 text-gray-500" />
-          {getLocationText()}
+      {/* ✅ BADGES DE LOGÍSTICA NO TOPO */}
+      {logisticaBadges.length > 0 && (
+        <div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10 max-w-[calc(100%-4rem)]">
+          {logisticaBadges.map((badge, index) => (
+            <Badge 
+              key={index}
+              className={`text-xs px-2 py-1 flex items-center gap-1 ${badge.className} backdrop-blur-sm`}
+            >
+              {badge.icon}
+              {badge.label}
+            </Badge>
+          ))}
         </div>
       )}
 
       {/* Badge de status reservado */}
       {itemIsReservado && (
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-red-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
+        <div className="absolute top-2 right-12 bg-red-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10 backdrop-blur-sm">
           Reservado
-        </div>
-      )}
-
-      {/* Badge de mesma escola no topo */}
-      {hasCommonSchool && (
-        <div className="absolute top-12 left-2 bg-green-500 text-white rounded-full px-2 py-1 text-xs font-medium shadow-sm z-10">
-          <School className="w-3 h-3 inline mr-1" />
-          Mesma escola!
         </div>
       )}
 
@@ -305,8 +355,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             {item.titulo}
           </h3>
 
-          {/* Localização inline quando reservado */}
-          {itemIsReservado && hasLocationData && (
+          {/* Localização inline quando reservado (fallback para itens sem logística) */}
+          {itemIsReservado && hasLocationData && !item.logistica?.distancia_km && (
             <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
               <MapPin className="w-3 h-3" />
               <span>{getLocationText()}</span>
@@ -333,7 +383,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                     </span>
                   </div>
                 )}
-                {item.aceita_entrega && (
+                
+                {/* ✅ INFORMAÇÕES DE ENTREGA SIMPLIFICADAS (já mostradas nos badges) */}
+                {!item.logistica && item.aceita_entrega && (
                   <div className="inline-flex items-center bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
                     <Truck className="w-3 h-3 mr-1 text-green-600" />
                     <span className="text-xs font-medium text-green-700">
@@ -341,7 +393,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                     </span>
                   </div>
                 )}
-                {!item.aceita_entrega && (
+                {!item.logistica && !item.aceita_entrega && (
                   <div className="inline-flex items-center bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
                     <Home className="w-3 h-3 mr-1 text-orange-600" />
                     <span className="text-xs font-medium text-orange-700">
