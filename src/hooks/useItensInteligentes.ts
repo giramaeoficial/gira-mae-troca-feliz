@@ -16,7 +16,8 @@ interface UseItensInteligenteParams {
   ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
 }
 
-type SimpleItemResponse = {
+// Simplified item type
+type ItemSimples = {
   id: string;
   titulo: string;
   descricao: string;
@@ -39,15 +40,8 @@ type SimpleItemResponse = {
   } | null;
 };
 
-interface QueryResult {
-  data: SimpleItemResponse[];
-  isLoading: boolean;
-  error: any;
-  refetch: () => void;
-}
-
-export const useItensInteligentes = (params: UseItensInteligenteParams): QueryResult => {
-  const query = useQuery({
+export const useItensInteligentes = (params: UseItensInteligenteParams) => {
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['itens-inteligentes', params],
     queryFn: async () => {
       console.log('🔄 Carregando itens inteligentes:', params);
@@ -106,19 +100,19 @@ export const useItensInteligentes = (params: UseItensInteligenteParams): QueryRe
       // Limitar resultados
       query = query.limit(20);
 
-      const { data, error } = await query;
+      const { data: rawData, error } = await query;
 
       if (error) {
         console.error('❌ Erro ao carregar itens inteligentes:', error);
         throw error;
       }
 
-      console.log('✅ Itens inteligentes carregados:', data?.length || 0);
+      console.log('✅ Itens inteligentes carregados:', rawData?.length || 0);
       
-      // Mapear dados explicitamente
-      if (!data) return [];
+      // Simple mapping without complex types
+      if (!rawData) return [];
       
-      const mappedData = data.map((item) => ({
+      const items: ItemSimples[] = rawData.map((item: any) => ({
         id: item.id,
         titulo: item.titulo,
         descricao: item.descricao,
@@ -137,7 +131,7 @@ export const useItensInteligentes = (params: UseItensInteligenteParams): QueryRe
         publicado_por_profile: item.publicado_por_profile
       }));
       
-      return mappedData;
+      return items;
     },
     enabled: true,
     staleTime: 2 * 60 * 1000,
@@ -145,9 +139,9 @@ export const useItensInteligentes = (params: UseItensInteligenteParams): QueryRe
   });
 
   return {
-    data: query.data || [],
-    isLoading: query.isLoading,
-    error: query.error,
-    refetch: query.refetch
+    data: data || [],
+    isLoading,
+    error,
+    refetch
   };
 };
