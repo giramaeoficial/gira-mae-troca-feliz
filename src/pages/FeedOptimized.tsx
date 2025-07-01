@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, MapPin, Search, Filter } from 'lucide-react';
+import { Plus, MapPin, Search, Filter, Truck, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +28,7 @@ const FeedOptimized = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // ✅ Estados de filtros
+  // ✅ Estados de filtros (incluindo novo filtro de logística)
   const [busca, setBusca] = useState('');
   const [cidadeManual, setCidadeManual] = useState('');
   const [categoria, setCategoria] = useState('todas');
@@ -36,6 +36,7 @@ const FeedOptimized = () => {
   const [genero, setGenero] = useState('todos');
   const [tamanho, setTamanho] = useState('todos');
   const [precoRange, setPrecoRange] = useState([0, 200]);
+  const [modalidadeLogistica, setModalidadeLogistica] = useState<'todas' | 'entrega' | 'busca'>('todas'); // ✅ NOVO
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
@@ -63,7 +64,7 @@ const FeedOptimized = () => {
 
   const locationForSearch = getLocationForSearch();
   
-  // ✅ Objeto com todos os filtros consolidado
+  // ✅ Objeto com todos os filtros consolidado (incluindo modalidade logística)
   const filtrosCompletos = useMemo(() => ({
     busca: debouncedBusca,
     cidade: locationForSearch.cidade || cidadeManual,
@@ -74,8 +75,9 @@ const FeedOptimized = () => {
     precoMin: precoRange[0],
     precoMax: precoRange[1],
     mostrarReservados,
-    itemId: undefined // ✅ ADICIONADO: Feed não filtra por ID específico
-  }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados]);
+    modalidadeLogistica, // ✅ NOVO FILTRO
+    itemId: undefined
+  }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados, modalidadeLogistica]);
   
   // ✅ Hook consolidado com TODOS os dados
   const {
@@ -92,7 +94,7 @@ const FeedOptimized = () => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
   
-  // ✅ DADOS CONSOLIDADOS da primeira página - CORRIGIDO DEFINITIVAMENTE
+  // ✅ DADOS CONSOLIDADOS da primeira página
   const feedData = useMemo(() => {
     const primeiraPagina = paginasFeed?.pages?.[0];
     return {
@@ -101,7 +103,7 @@ const FeedOptimized = () => {
       filas_espera: primeiraPagina?.filas_espera || {},
       configuracoes: primeiraPagina?.configuracoes,
       profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao: 5 // ✅ CORRIGIDO: Taxa exemplo de 5% (deve vir da configuração)
+      taxaTransacao: 5
     };
   }, [paginasFeed]);
   
@@ -309,6 +311,7 @@ const FeedOptimized = () => {
     setGenero('todos');
     setTamanho('todos');
     setPrecoRange([0, 200]);
+    setModalidadeLogistica('todas'); // ✅ RESET NOVO FILTRO
     setMostrarReservados(true);
     limparLocalizacao();
     setMostrarFiltrosAvancados(false);
@@ -344,6 +347,15 @@ const FeedOptimized = () => {
     return 'próximos';
   };
 
+  // ✅ Função para obter texto do filtro de logística ativo
+  const getLogisticaFilterText = () => {
+    switch (modalidadeLogistica) {
+      case 'entrega': return ' com entrega';
+      case 'busca': return ' que posso buscar';
+      default: return '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
       <Header />
@@ -352,7 +364,7 @@ const FeedOptimized = () => {
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-            Encontre Tesouros {getLocationText()}
+            Encontre Tesouros {getLocationText()}{getLogisticaFilterText()}
           </h1>
           <p className="text-gray-600 text-lg">
             Descubra itens incríveis na sua região
@@ -383,6 +395,36 @@ const FeedOptimized = () => {
             >
               <Plus className="w-4 h-4 mr-1" />
               Publicar
+            </Button>
+          </div>
+
+          {/* ✅ FILTRO RÁPIDO DE LOGÍSTICA */}
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant={modalidadeLogistica === 'todas' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setModalidadeLogistica('todas')}
+              className="text-xs"
+            >
+              🔄 Todas
+            </Button>
+            <Button
+              variant={modalidadeLogistica === 'entrega' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setModalidadeLogistica('entrega')}
+              className="text-xs"
+            >
+              <Truck className="w-3 h-3 mr-1" />
+              Só com entrega
+            </Button>
+            <Button
+              variant={modalidadeLogistica === 'busca' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setModalidadeLogistica('busca')}
+              className="text-xs"
+            >
+              <Car className="w-3 h-3 mr-1" />
+              Posso buscar
             </Button>
           </div>
 
@@ -452,6 +494,55 @@ const FeedOptimized = () => {
                 {geoError && (
                   <p className="text-red-500 text-sm mt-2">{geoError}</p>
                 )}
+              </div>
+
+              {/* ✅ FILTRO AVANÇADO DE LOGÍSTICA */}
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">MODALIDADE DE ENTREGA</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="modalidade"
+                      value="todas"
+                      checked={modalidadeLogistica === 'todas'}
+                      onChange={(e) => setModalidadeLogistica(e.target.value as 'todas')}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm text-gray-700 flex items-center gap-2">
+                      <span>🔄</span>
+                      Todas as opções
+                    </span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="modalidade"
+                      value="entrega"
+                      checked={modalidadeLogistica === 'entrega'}
+                      onChange={(e) => setModalidadeLogistica(e.target.value as 'entrega')}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm text-gray-700 flex items-center gap-2">
+                      <Truck className="w-4 h-4" />
+                      Só com entrega grátis
+                    </span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="modalidade"
+                      value="busca"
+                      checked={modalidadeLogistica === 'busca'}
+                      onChange={(e) => setModalidadeLogistica(e.target.value as 'busca')}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm text-gray-700 flex items-center gap-2">
+                      <Car className="w-4 h-4" />
+                      Posso buscar
+                    </span>
+                  </label>
+                </div>
               </div>
 
               {/* Categoria e Subcategoria */}
@@ -620,12 +711,14 @@ const FeedOptimized = () => {
           <EmptyState
             type="search"
             title={locationForSearch?.cidade ? 
-              `Nenhum item encontrado em ${locationForSearch.cidade}` : 
-              "Nenhum item encontrado"
+              `Nenhum item encontrado em ${locationForSearch.cidade}${getLogisticaFilterText()}` : 
+              `Nenhum item encontrado${getLogisticaFilterText()}`
             }
             description={
               !mostrarReservados 
                 ? "Tente incluir itens reservados ou ajustar os filtros"
+                : modalidadeLogistica !== 'todas'
+                ? "Tente mudar a modalidade de entrega ou ajustar outros filtros"
                 : "Tente ajustar os filtros para ver mais opções"
             }
             actionLabel="Limpar filtros"
@@ -636,9 +729,23 @@ const FeedOptimized = () => {
         {/* Grid de itens */}
         {itensFiltrados.length > 0 && (
           <>
-            <div className="mb-4 text-sm text-gray-600">
-              {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
-              {locationForSearch && locationForSearch.cidade && ` em ${locationForSearch.cidade}`}
+            <div className="mb-4 text-sm text-gray-600 flex items-center justify-between">
+              <span>
+                {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
+                {locationForSearch && locationForSearch.cidade && ` em ${locationForSearch.cidade}`}
+                {getLogisticaFilterText()}
+              </span>
+              
+              {/* ✅ Indicador visual do filtro ativo */}
+              {modalidadeLogistica !== 'todas' && (
+                <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
+                  {modalidadeLogistica === 'entrega' ? (
+                    <><Truck className="w-3 h-3" /> Só com entrega</>
+                  ) : (
+                    <><Car className="w-3 h-3" /> Posso buscar</>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
