@@ -41,9 +41,10 @@ type SimpleItemResponse = {
 };
 
 export const useItensInteligentes = (params: UseItensInteligenteParams) => {
-  return useQuery({
+  // ✅ Fix: Explicitly type useQuery to avoid deep instantiation
+  return useQuery<SimpleItemResponse[], Error>({
     queryKey: ['itens-inteligentes', params],
-    queryFn: async () => {
+    queryFn: async (): Promise<SimpleItemResponse[]> => {
       console.log('🔄 Carregando itens inteligentes:', params);
       
       let query = supabase
