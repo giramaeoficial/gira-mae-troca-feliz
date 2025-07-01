@@ -47,9 +47,9 @@ interface QueryResult {
 }
 
 export const useItensInteligentes = (params: UseItensInteligenteParams): QueryResult => {
-  const query = useQuery<SimpleItemResponse[], Error>({
+  const query = useQuery({
     queryKey: ['itens-inteligentes', params],
-    queryFn: async (): Promise<SimpleItemResponse[]> => {
+    queryFn: async () => {
       console.log('🔄 Carregando itens inteligentes:', params);
       
       let query = supabase
@@ -118,7 +118,7 @@ export const useItensInteligentes = (params: UseItensInteligenteParams): QueryRe
       // Mapear dados explicitamente
       if (!data) return [];
       
-      return data.map((item: any): SimpleItemResponse => ({
+      const mappedData = data.map((item) => ({
         id: item.id,
         titulo: item.titulo,
         descricao: item.descricao,
@@ -136,6 +136,8 @@ export const useItensInteligentes = (params: UseItensInteligenteParams): QueryRe
         updated_at: item.updated_at,
         publicado_por_profile: item.publicado_por_profile
       }));
+      
+      return mappedData;
     },
     enabled: true,
     staleTime: 2 * 60 * 1000,
