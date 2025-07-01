@@ -16,7 +16,7 @@ interface UseItensInteligenteParams {
   ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
 }
 
-// ✅ Simplified type to avoid deep instantiation
+// ✅ Simplified type - no complex nested relationships
 type SimpleItemResponse = {
   id: string;
   titulo: string;
@@ -41,8 +41,7 @@ type SimpleItemResponse = {
 };
 
 export const useItensInteligentes = (params: UseItensInteligenteParams) => {
-  // ✅ Fix: Remove explicit generics to avoid deep type instantiation
-  return useQuery({
+  const queryResult = useQuery({
     queryKey: ['itens-inteligentes', params],
     queryFn: async () => {
       console.log('🔄 Carregando itens inteligentes:', params);
@@ -109,11 +108,38 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
       }
 
       console.log('✅ Itens inteligentes carregados:', data?.length || 0);
-      // ✅ Type assertion to avoid complex inference
-      return (data || []) as SimpleItemResponse[];
+      
+      // ✅ Direct type assertion without complex inference
+      const typedData: SimpleItemResponse[] = (data || []).map(item => ({
+        id: item.id,
+        titulo: item.titulo,
+        descricao: item.descricao,
+        categoria: item.categoria,
+        subcategoria: item.subcategoria,
+        genero: item.genero,
+        tamanho_categoria: item.tamanho_categoria,
+        tamanho_valor: item.tamanho_valor,
+        estado_conservacao: item.estado_conservacao,
+        valor_girinhas: item.valor_girinhas,
+        fotos: item.fotos,
+        status: item.status,
+        publicado_por: item.publicado_por,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        publicado_por_profile: item.publicado_por_profile
+      }));
+      
+      return typedData;
     },
     enabled: true,
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 5 * 60 * 1000, // 5 minutos
   });
+
+  return {
+    data: queryResult.data || [],
+    isLoading: queryResult.isLoading,
+    error: queryResult.error,
+    refetch: queryResult.refetch
+  };
 };
