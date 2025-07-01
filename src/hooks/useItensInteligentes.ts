@@ -1,189 +1,260 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
+import { useFavoritos } from '@/hooks/useFavoritos';
+import { useSeguidores } from '@/hooks/useSeguidores';
 
-interface UseItensInteligenteParams {
+interface ItensInteligentesFiltros {
+  location?: { estado: string; cidade: string; bairro?: string } | null;
+  mesmaEscola?: boolean;
+  mesmoBairro?: boolean;
+  paraFilhos?: boolean;
+  apenasFavoritos?: boolean;
+  apenasSeguidoras?: boolean;
   categoria?: string;
   subcategoria?: string;
   genero?: string;
-  vendedorId?: string;
+  ordem?: string;
   busca?: string;
-  location?: {
-    cidade: string;
-    estado: string;
-    bairro?: string;
-  } | null;
-  ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
+  precoMin?: number;
+  precoMax?: number;
+  locationDetected?: boolean;
 }
 
-type ItemSimples = {
-  id: string;
-  titulo: string;
-  descricao: string;
-  categoria: string;
-  subcategoria?: string;
-  genero?: string;
-  tamanho_categoria?: string;
-  tamanho_valor?: string;
-  estado_conservacao: string;
-  valor_girinhas: number;
-  fotos?: string[];
-  status: string;
-  publicado_por: string;
-  created_at: string;
-  updated_at: string;
-  publicado_por_profile?: {
-    nome: string;
-    avatar_url?: string;
-    reputacao?: number;
-  } | null;
-};
+export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { favoritos } = useFavoritos();
+  const { buscarItensDasMinhasSeguidas } = useSeguidores();
 
-interface UseItensInteligenteResult {
-  data: ItemSimples[];
-  isLoading: boolean;
-  error: Error | null;
-  refetch: () => Promise<void>;
-}
-
-export const useItensInteligentes = (params: UseItensInteligenteParams): UseItensInteligenteResult => {
-  const [data, setData] = useState<ItemSimples[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      console.log('🔄 Carregando itens inteligentes:', params);
-      
-      // Build query step by step to avoid complex type inference
-      const baseQuery = supabase.from('itens');
-      
-      // Simple select without complex joins
-      let queryBuilder = baseQuery.select('*').eq('status', 'disponivel');
-
-      // Apply filters one by one
-      if (params.vendedorId) {
-        queryBuilder = queryBuilder.eq('publicado_por', params.vendedorId);
+  return useQuery({
+    queryKey: ['itens-inteligentes', filtros, user?.id, favoritos.length],
+    queryFn: async () => {
+      // ✅ CORREÇÃO: Retornar array vazio se não tem usuário
+      if (!user?.id) {
+        return [];
       }
 
-      if (params.busca) {
-        queryBuilder = queryBuilder.or(`titulo.ilike.%${params.busca}%,descricao.ilike.%${params.busca}%`);
+      // Se é apenas favoritos, buscar apenas os IDs dos favoritos
+      if (filtros.apenasFavoritos) {
+        if (favoritos.length === 0) {
+          return [];
+        }
+
+        const favoritosIds = favoritos.map(fav => fav.item_id);
+
+        const { data, error } = await supabase
+          .from('itens')
+          .select(`
+            *,
+            publicado_por_profile:profiles!publicado_por(*)
+          `)
+          .in('id', favoritosIds)
+          .in('status', ['disponivel', 'reservado']);
+
+        if (error) throw error;
+
+        let itensFiltrados = data || [];
+
+        // Aplicar filtros adicionais
+        if (filtros.categoria && filtros.categoria !== 'todas') {
+          itensFiltrados = itensFiltrados.filter(item => item.categoria === filtros.categoria);
+        }
+
+        if (filtros.subcategoria) {
+          itensFiltrados = itensFiltrados.filter(item => item.subcategoria === filtros.subcategoria);
+        }
+
+        if (filtros.genero && filtros.genero !== 'todos') {
+          itensFiltrados = itensFiltrados.filter(item => item.genero === filtros.genero);
+        }
+
+        // Aplicar filtros de preço
+        if (filtros.precoMin !== undefined && filtros.precoMin > 0) {
+          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas >= filtros.precoMin);
+        }
+        if (filtros.precoMax !== undefined && filtros.precoMax < 200) {
+          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas <= filtros.precoMax);
+        }
+
+        // Ordenação
+        itensFiltrados.sort((a, b) => {
+          switch (filtros.ordem) {
+            case 'menor-preco':
+              return a.valor_girinhas - b.valor_girinhas;
+            case 'maior-preco':
+              return b.valor_girinhas - a.valor_girinhas;
+            default:
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+        });
+
+        return itensFiltrados;
       }
 
-      if (params.categoria) {
-        queryBuilder = queryBuilder.eq('categoria', params.categoria);
+      // Se é apenas das seguidas
+      if (filtros.apenasSeguidoras) {
+        const itensSeguidas = await buscarItensDasMinhasSeguidas();
+        
+        // Aplicar filtros adicionais aos itens das seguidas
+        let itensFiltrados = itensSeguidas;
+
+        if (filtros.categoria && filtros.categoria !== 'todas') {
+          itensFiltrados = itensFiltrados.filter(item => item.categoria === filtros.categoria);
+        }
+
+        if (filtros.subcategoria) {
+          itensFiltrados = itensFiltrados.filter(item => item.subcategoria === filtros.subcategoria);
+        }
+
+        if (filtros.genero && filtros.genero !== 'todos') {
+          itensFiltrados = itensFiltrados.filter(item => item.genero === filtros.genero);
+        }
+
+        if (filtros.busca) {
+          const buscaLower = filtros.busca.toLowerCase();
+          itensFiltrados = itensFiltrados.filter(item =>
+            item.titulo.toLowerCase().includes(buscaLower) ||
+            item.descricao?.toLowerCase().includes(buscaLower)
+          );
+        }
+
+        // Aplicar filtros de preço
+        if (filtros.precoMin !== undefined && filtros.precoMin > 0) {
+          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas >= filtros.precoMin);
+        }
+        if (filtros.precoMax !== undefined && filtros.precoMax < 200) {
+          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas <= filtros.precoMax);
+        }
+
+        // Ordenação
+        itensFiltrados.sort((a, b) => {
+          switch (filtros.ordem) {
+            case 'menor-preco':
+              return a.valor_girinhas - b.valor_girinhas;
+            case 'maior-preco':
+              return b.valor_girinhas - a.valor_girinhas;
+            default:
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+        });
+
+        return itensFiltrados;
       }
 
-      if (params.subcategoria) {
-        queryBuilder = queryBuilder.eq('subcategoria', params.subcategoria);
+      // Busca geral com filtros inteligentes
+      let query = supabase
+        .from('itens')
+        .select(`
+          *,
+          publicado_por_profile:profiles!publicado_por(*)
+        `)
+        .in('status', ['disponivel', 'reservado'])
+        .neq('publicado_por', user.id);
+
+      // Filtro por categoria
+      if (filtros.categoria && filtros.categoria !== 'todas') {
+        query = query.eq('categoria', filtros.categoria);
       }
 
-      if (params.genero) {
-        queryBuilder = queryBuilder.eq('genero', params.genero);
+      // Filtro por subcategoria
+      if (filtros.subcategoria) {
+        query = query.eq('subcategoria', filtros.subcategoria);
       }
 
-      // Apply ordering
-      switch (params.ordem) {
-        case 'preco_asc':
-          queryBuilder = queryBuilder.order('valor_girinhas', { ascending: true });
+      // Filtro por gênero
+      if (filtros.genero && filtros.genero !== 'todos') {
+        query = query.eq('genero', filtros.genero);
+      }
+
+      // Filtro por busca
+      if (filtros.busca) {
+        query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
+      }
+
+      // Filtros de preço
+      if (filtros.precoMin !== undefined && filtros.precoMin > 0) {
+        query = query.gte('valor_girinhas', filtros.precoMin);
+      }
+      if (filtros.precoMax !== undefined && filtros.precoMax < 200) {
+        query = query.lte('valor_girinhas', filtros.precoMax);
+      }
+
+      // Ordenação
+      switch (filtros.ordem) {
+        case 'menor-preco':
+          query = query.order('valor_girinhas', { ascending: true });
           break;
-        case 'preco_desc':
-          queryBuilder = queryBuilder.order('valor_girinhas', { ascending: false });
+        case 'maior-preco':
+          query = query.order('valor_girinhas', { ascending: false });
           break;
         default:
-          queryBuilder = queryBuilder.order('created_at', { ascending: false });
+          query = query.order('created_at', { ascending: false });
       }
 
-      queryBuilder = queryBuilder.limit(20);
+      const { data, error } = await query;
+      if (error) throw error;
 
-      // Execute query
-      const { data: rawData, error: queryError } = await queryBuilder;
+      let itensFiltrados = data || [];
 
-      if (queryError) {
-        throw queryError;
-      }
+      // Aplicar filtros de localização via JavaScript (após busca no DB)
+      if (filtros.location) {
+        itensFiltrados = itensFiltrados.filter(item => {
+          const profile = item.publicado_por_profile;
+          if (!profile) return false;
 
-      console.log('✅ Itens base carregados:', rawData?.length || 0);
-      
-      // Now fetch profiles separately to avoid complex joins
-      const items: ItemSimples[] = [];
-      
-      if (rawData && rawData.length > 0) {
-        // Get unique publisher IDs
-        const publisherIds = [...new Set(rawData.map(item => item.publicado_por))];
-        
-        // Fetch profiles separately
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, nome, avatar_url, reputacao')
-          .in('id', publisherIds);
+          // Filtro por cidade
+          if (filtros.location?.cidade && profile.cidade !== filtros.location.cidade) {
+            return false;
+          }
 
-        // Create a map for quick lookup
-        const profileMap = new Map();
-        if (profiles) {
-          profiles.forEach(profile => {
-            profileMap.set(profile.id, profile);
-          });
-        }
+          // Filtro por estado
+          if (filtros.location?.estado && profile.estado !== filtros.location.estado) {
+            return false;
+          }
 
-        // Map items with profiles
-        for (const item of rawData) {
-          const profile = profileMap.get(item.publicado_por);
-          
-          items.push({
-            id: item.id,
-            titulo: item.titulo,
-            descricao: item.descricao,
-            categoria: item.categoria,
-            subcategoria: item.subcategoria || undefined,
-            genero: item.genero || undefined,
-            tamanho_categoria: item.tamanho_categoria || undefined,
-            tamanho_valor: item.tamanho_valor || undefined,
-            estado_conservacao: item.estado_conservacao,
-            valor_girinhas: item.valor_girinhas,
-            fotos: item.fotos || undefined,
-            status: item.status,
-            publicado_por: item.publicado_por,
-            created_at: item.created_at,
-            updated_at: item.updated_at,
-            publicado_por_profile: profile ? {
-              nome: profile.nome || '',
-              avatar_url: profile.avatar_url || undefined,
-              reputacao: profile.reputacao || 0
-            } : null
+          // Filtro por bairro (se especificado)
+          if (filtros.location?.bairro && profile.bairro !== filtros.location.bairro) {
+            return false;
+          }
+
+          return true;
+        });
+
+        // Se é localização detectada automaticamente, priorizar por proximidade
+        if (filtros.locationDetected && profile?.bairro) {
+          itensFiltrados.sort((a, b) => {
+            const aProfile = a.publicado_por_profile;
+            const bProfile = b.publicado_por_profile;
+            
+            // Priorizar mesmo bairro
+            const aMesmoBairro = aProfile?.bairro === profile.bairro ? 1 : 0;
+            const bMesmoBairro = bProfile?.bairro === profile.bairro ? 1 : 0;
+            
+            if (aMesmoBairro !== bMesmoBairro) {
+              return bMesmoBairro - aMesmoBairro;
+            }
+            
+            // Depois por data de criação
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           });
         }
       }
-      
-      setData(items);
-    } catch (err) {
-      console.error('❌ Erro ao carregar itens inteligentes:', err);
-      setError(err instanceof Error ? err : new Error('Erro desconhecido'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  useEffect(() => {
-    fetchData();
-  }, [
-    params.categoria,
-    params.subcategoria,
-    params.genero,
-    params.vendedorId,
-    params.busca,
-    params.location?.cidade,
-    params.location?.estado,
-    params.ordem
-  ]);
+      // Filtro por mesmo bairro do usuário
+      if (filtros.mesmoBairro && profile?.bairro) {
+        itensFiltrados = itensFiltrados.filter(item => 
+          item.publicado_por_profile?.bairro === profile.bairro
+        );
+      }
 
-  return {
-    data,
-    isLoading,
-    error,
-    refetch: fetchData
-  };
+      return itensFiltrados;
+    },
+    // ✅ CORREÇÃO: enabled só quando tem usuário
+    enabled: !!user?.id,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
 };
