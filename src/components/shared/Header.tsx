@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, MessageCircle } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
+import { useUserData } from '@/contexts/UserDataContext';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -61,7 +61,7 @@ const DesktopNav: React.FC = () => {
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
+  const { profile } = useUserData();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -172,70 +172,71 @@ const Header: React.FC = () => {
               </div>
             )}
 
-            {/* Right side - Desktop */}
-            <div className="hidden md:flex items-center space-x-4">
-              {/* Notification Bell - Hide during signup */}
+            {/* Right side - OTIMIZADO: Um único NotificationBell responsivo */}
+            <div className="flex items-center space-x-4">
+              {/* ✅ OTIMIZAÇÃO: NotificationBell único com classes responsivas */}
               {!shouldHideMenus && <NotificationBell />}
               
-              {/* User Menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                    {profile?.avatar_url ? (
-                      <img 
-                        src={profile.avatar_url} 
-                        alt={profile.nome || 'Avatar'} 
-                        className="w-8 h-8 rounded-full"
-                      />
-                    ) : (
-                      <User className="w-5 h-5" />
+              {/* User Menu - Desktop */}
+              <div className="hidden md:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                      {profile?.avatar_url ? (
+                        <img 
+                          src={profile.avatar_url} 
+                          alt={profile.nome || 'Avatar'} 
+                          className="w-8 h-8 rounded-full"
+                        />
+                      ) : (
+                        <User className="w-5 h-5" />
+                      )}
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {!shouldHideMenus && (
+                      <>
+                        <DropdownMenuItem onClick={() => navigate('/perfil')}>
+                          Meu Perfil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate('/perfil/editar')}>
+                          Editar Perfil
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
+                          Configurações
+                        </DropdownMenuItem>
+                      </>
                     )}
-                    <ChevronDown className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  {!shouldHideMenus && (
-                    <>
-                      <DropdownMenuItem onClick={() => navigate('/perfil')}>
-                        Meu Perfil
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/perfil/editar')}>
-                        Editar Perfil
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/configuracoes')}>
-                        Configurações
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-            {/* Mobile menu button and notification */}
-            <div className="md:hidden flex items-center space-x-2">
-              {!shouldHideMenus && <NotificationBell />}
-              {!shouldHideMenus ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-2"
-                >
-                  {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSignOut}
-                  className="p-2 text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              )}
+              {/* Mobile menu button - Movido para cá para ficar ao lado do NotificationBell */}
+              <div className="md:hidden">
+                {!shouldHideMenus ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="p-2"
+                  >
+                    {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSignOut}
+                    className="p-2 text-gray-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>

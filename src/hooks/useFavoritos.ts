@@ -1,54 +1,14 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
-
-type Favorito = Tables<'favoritos'>;
+import { useUserData } from '@/contexts/UserDataContext';
 
 export const useFavoritos = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [favoritos, setFavoritos] = useState<Favorito[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const buscarFavoritos = useCallback(async () => {
-    if (!user?.id) {
-      setFavoritos([]);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('favoritos')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Erro ao buscar favoritos:', error);
-        throw error;
-      }
-      
-      setFavoritos(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar favoritos:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar seus favoritos.",
-        variant: "destructive",
-      });
-      setFavoritos([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id, toast]);
-
-  const verificarSeFavorito = useCallback((itemId: string): boolean => {
-    return favoritos.some(fav => fav.item_id === itemId);
-  }, [favoritos]);
+  const { favoritos, loading, refetchFavoritos, verificarSeFavorito } = useUserData();
 
   const adicionarFavorito = useCallback(async (itemId: string): Promise<boolean> => {
     if (!user?.id) {
@@ -82,14 +42,8 @@ export const useFavoritos = () => {
         description: "Item adicionado à sua lista de desejos.",
       });
 
-      // Atualizar lista local imediatamente
-      setFavoritos(prev => [...prev, { 
-        id: crypto.randomUUID(), 
-        user_id: user.id, 
-        item_id: itemId, 
-        created_at: new Date().toISOString() 
-      }]);
-
+      // Atualizar dados do contexto
+      await refetchFavoritos();
       return true;
     } catch (error) {
       console.error('Erro ao adicionar favorito:', error);
@@ -100,7 +54,7 @@ export const useFavoritos = () => {
       });
       return false;
     }
-  }, [user?.id, toast, verificarSeFavorito]);
+  }, [user?.id, toast, verificarSeFavorito, refetchFavoritos]);
 
   const removerFavorito = useCallback(async (itemId: string): Promise<boolean> => {
     if (!user?.id) return false;
@@ -122,9 +76,8 @@ export const useFavoritos = () => {
         description: "Item removido da sua lista de desejos.",
       });
 
-      // Atualizar lista local imediatamente
-      setFavoritos(prev => prev.filter(fav => fav.item_id !== itemId));
-
+      // Atualizar dados do contexto
+      await refetchFavoritos();
       return true;
     } catch (error) {
       console.error('Erro ao remover favorito:', error);
@@ -135,7 +88,7 @@ export const useFavoritos = () => {
       });
       return false;
     }
-  }, [user?.id, toast]);
+  }, [user?.id, toast, refetchFavoritos]);
 
   const toggleFavorito = useCallback(async (itemId: string): Promise<boolean> => {
     const ehFavorito = verificarSeFavorito(itemId);
@@ -147,17 +100,6 @@ export const useFavoritos = () => {
     }
   }, [verificarSeFavorito, removerFavorito, adicionarFavorito]);
 
-  // ✅ CORREÇÃO: useEffect mais estável
-  useEffect(() => {
-    // Só busca favoritos se tem usuário logado
-    if (user?.id) {
-      buscarFavoritos();
-    } else {
-      // Se não tem usuário, limpa os favoritos imediatamente
-      setFavoritos([]);
-    }
-  }, [user?.id, buscarFavoritos]);
-
   return {
     favoritos,
     loading,
@@ -165,6 +107,6 @@ export const useFavoritos = () => {
     adicionarFavorito,
     removerFavorito,
     toggleFavorito,
-    refetch: buscarFavoritos
+    refetch: refetchFavoritos
   };
 };
