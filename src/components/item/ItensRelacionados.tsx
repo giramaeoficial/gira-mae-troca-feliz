@@ -37,8 +37,9 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
     ordem: 'recentes'
   });
 
-  // Buscar itens do mesmo vendedor
+  // ✅ OTIMIZAÇÃO: Buscar itens do mesmo vendedor com filtro direto no banco
   const { data: itensVendedor = [], isLoading: loadingVendedor } = useItensInteligentes({
+    vendedorId: itemAtual.publicado_por, // ✅ NOVO: filtro específico por vendedor
     location: location,
     ordem: 'recentes'
   });
@@ -48,12 +49,9 @@ const ItensRelacionados: React.FC<ItensRelacionadosProps> = ({
     .filter(item => item.id !== itemAtual.id)
     .slice(0, 4);
 
-  // Filtrar itens do mesmo vendedor (excluindo o atual)
+  // ✅ OTIMIZAÇÃO: Não precisa mais filtrar no JavaScript, já vem filtrado do banco
   const itensDoVendedor = itensVendedor
-    .filter(item => 
-      item.publicado_por === itemAtual.publicado_por && 
-      item.id !== itemAtual.id
-    )
+    .filter(item => item.id !== itemAtual.id) // Apenas remove o item atual
     .slice(0, 4);
 
   // Mock feedData for related items since they don't need full feed functionality

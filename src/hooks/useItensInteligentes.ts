@@ -1,260 +1,87 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-import { useFavoritos } from '@/hooks/useFavoritos';
-import { useSeguidores } from '@/hooks/useSeguidores';
 
-interface ItensInteligentesFiltros {
-  location?: { estado: string; cidade: string; bairro?: string } | null;
-  mesmaEscola?: boolean;
-  mesmoBairro?: boolean;
-  paraFilhos?: boolean;
-  apenasFavoritos?: boolean;
-  apenasSeguidoras?: boolean;
+interface UseItensInteligenteParams {
   categoria?: string;
   subcategoria?: string;
   genero?: string;
-  ordem?: string;
-  busca?: string;
-  precoMin?: number;
-  precoMax?: number;
-  locationDetected?: boolean;
+  vendedorId?: string; // ✅ NOVO: para filtrar por vendedor específico
+  location?: {
+    cidade: string;
+    estado: string;
+    bairro?: string;
+  } | null;
+  ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
 }
 
-export const useItensInteligentes = (filtros: ItensInteligentesFiltros) => {
-  const { user } = useAuth();
-  const { profile } = useProfile();
-  const { favoritos } = useFavoritos();
-  const { buscarItensDasMinhasSeguidas } = useSeguidores();
-
+export const useItensInteligentes = (params: UseItensInteligenteParams) => {
   return useQuery({
-    queryKey: ['itens-inteligentes', filtros, user?.id, favoritos.length],
+    queryKey: ['itens-inteligentes', params],
     queryFn: async () => {
-      // ✅ CORREÇÃO: Retornar array vazio se não tem usuário
-      if (!user?.id) {
-        return [];
-      }
-
-      // Se é apenas favoritos, buscar apenas os IDs dos favoritos
-      if (filtros.apenasFavoritos) {
-        if (favoritos.length === 0) {
-          return [];
-        }
-
-        const favoritosIds = favoritos.map(fav => fav.item_id);
-
-        const { data, error } = await supabase
-          .from('itens')
-          .select(`
-            *,
-            publicado_por_profile:profiles!publicado_por(*)
-          `)
-          .in('id', favoritosIds)
-          .in('status', ['disponivel', 'reservado']);
-
-        if (error) throw error;
-
-        let itensFiltrados = data || [];
-
-        // Aplicar filtros adicionais
-        if (filtros.categoria && filtros.categoria !== 'todas') {
-          itensFiltrados = itensFiltrados.filter(item => item.categoria === filtros.categoria);
-        }
-
-        if (filtros.subcategoria) {
-          itensFiltrados = itensFiltrados.filter(item => item.subcategoria === filtros.subcategoria);
-        }
-
-        if (filtros.genero && filtros.genero !== 'todos') {
-          itensFiltrados = itensFiltrados.filter(item => item.genero === filtros.genero);
-        }
-
-        // Aplicar filtros de preço
-        if (filtros.precoMin !== undefined && filtros.precoMin > 0) {
-          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas >= filtros.precoMin);
-        }
-        if (filtros.precoMax !== undefined && filtros.precoMax < 200) {
-          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas <= filtros.precoMax);
-        }
-
-        // Ordenação
-        itensFiltrados.sort((a, b) => {
-          switch (filtros.ordem) {
-            case 'menor-preco':
-              return a.valor_girinhas - b.valor_girinhas;
-            case 'maior-preco':
-              return b.valor_girinhas - a.valor_girinhas;
-            default:
-              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          }
-        });
-
-        return itensFiltrados;
-      }
-
-      // Se é apenas das seguidas
-      if (filtros.apenasSeguidoras) {
-        const itensSeguidas = await buscarItensDasMinhasSeguidas();
-        
-        // Aplicar filtros adicionais aos itens das seguidas
-        let itensFiltrados = itensSeguidas;
-
-        if (filtros.categoria && filtros.categoria !== 'todas') {
-          itensFiltrados = itensFiltrados.filter(item => item.categoria === filtros.categoria);
-        }
-
-        if (filtros.subcategoria) {
-          itensFiltrados = itensFiltrados.filter(item => item.subcategoria === filtros.subcategoria);
-        }
-
-        if (filtros.genero && filtros.genero !== 'todos') {
-          itensFiltrados = itensFiltrados.filter(item => item.genero === filtros.genero);
-        }
-
-        if (filtros.busca) {
-          const buscaLower = filtros.busca.toLowerCase();
-          itensFiltrados = itensFiltrados.filter(item =>
-            item.titulo.toLowerCase().includes(buscaLower) ||
-            item.descricao?.toLowerCase().includes(buscaLower)
-          );
-        }
-
-        // Aplicar filtros de preço
-        if (filtros.precoMin !== undefined && filtros.precoMin > 0) {
-          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas >= filtros.precoMin);
-        }
-        if (filtros.precoMax !== undefined && filtros.precoMax < 200) {
-          itensFiltrados = itensFiltrados.filter(item => item.valor_girinhas <= filtros.precoMax);
-        }
-
-        // Ordenação
-        itensFiltrados.sort((a, b) => {
-          switch (filtros.ordem) {
-            case 'menor-preco':
-              return a.valor_girinhas - b.valor_girinhas;
-            case 'maior-preco':
-              return b.valor_girinhas - a.valor_girinhas;
-            default:
-              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          }
-        });
-
-        return itensFiltrados;
-      }
-
-      // Busca geral com filtros inteligentes
+      console.log('🔄 Carregando itens inteligentes:', params);
+      
       let query = supabase
         .from('itens')
         .select(`
           *,
-          publicado_por_profile:profiles!publicado_por(*)
+          publicado_por_profile:profiles!itens_publicado_por_fkey (
+            nome,
+            avatar_url,
+            reputacao
+          )
         `)
-        .in('status', ['disponivel', 'reservado'])
-        .neq('publicado_por', user.id);
+        .eq('status', 'disponivel');
 
-      // Filtro por categoria
-      if (filtros.categoria && filtros.categoria !== 'todas') {
-        query = query.eq('categoria', filtros.categoria);
+      // ✅ OTIMIZAÇÃO: Filtro por vendedor específico
+      if (params.vendedorId) {
+        query = query.eq('publicado_por', params.vendedorId);
       }
 
-      // Filtro por subcategoria
-      if (filtros.subcategoria) {
-        query = query.eq('subcategoria', filtros.subcategoria);
+      // Filtros existentes
+      if (params.categoria) {
+        query = query.eq('categoria', params.categoria);
       }
 
-      // Filtro por gênero
-      if (filtros.genero && filtros.genero !== 'todos') {
-        query = query.eq('genero', filtros.genero);
+      if (params.subcategoria) {
+        query = query.eq('subcategoria', params.subcategoria);
       }
 
-      // Filtro por busca
-      if (filtros.busca) {
-        query = query.or(`titulo.ilike.%${filtros.busca}%,descricao.ilike.%${filtros.busca}%`);
+      if (params.genero) {
+        query = query.eq('genero', params.genero);
       }
 
-      // Filtros de preço
-      if (filtros.precoMin !== undefined && filtros.precoMin > 0) {
-        query = query.gte('valor_girinhas', filtros.precoMin);
-      }
-      if (filtros.precoMax !== undefined && filtros.precoMax < 200) {
-        query = query.lte('valor_girinhas', filtros.precoMax);
+      if (params.location?.cidade) {
+        query = query.eq('endereco_cidade', params.location.cidade);
       }
 
       // Ordenação
-      switch (filtros.ordem) {
-        case 'menor-preco':
+      switch (params.ordem) {
+        case 'preco_asc':
           query = query.order('valor_girinhas', { ascending: true });
           break;
-        case 'maior-preco':
+        case 'preco_desc':
           query = query.order('valor_girinhas', { ascending: false });
           break;
         default:
           query = query.order('created_at', { ascending: false });
       }
 
+      // Limitar resultados para evitar requisições grandes
+      query = query.limit(20);
+
       const { data, error } = await query;
-      if (error) throw error;
 
-      let itensFiltrados = data || [];
-
-      // Aplicar filtros de localização via JavaScript (após busca no DB)
-      if (filtros.location) {
-        itensFiltrados = itensFiltrados.filter(item => {
-          const profile = item.publicado_por_profile;
-          if (!profile) return false;
-
-          // Filtro por cidade
-          if (filtros.location?.cidade && profile.cidade !== filtros.location.cidade) {
-            return false;
-          }
-
-          // Filtro por estado
-          if (filtros.location?.estado && profile.estado !== filtros.location.estado) {
-            return false;
-          }
-
-          // Filtro por bairro (se especificado)
-          if (filtros.location?.bairro && profile.bairro !== filtros.location.bairro) {
-            return false;
-          }
-
-          return true;
-        });
-
-        // Se é localização detectada automaticamente, priorizar por proximidade
-        if (filtros.locationDetected && profile?.bairro) {
-          itensFiltrados.sort((a, b) => {
-            const aProfile = a.publicado_por_profile;
-            const bProfile = b.publicado_por_profile;
-            
-            // Priorizar mesmo bairro
-            const aMesmoBairro = aProfile?.bairro === profile.bairro ? 1 : 0;
-            const bMesmoBairro = bProfile?.bairro === profile.bairro ? 1 : 0;
-            
-            if (aMesmoBairro !== bMesmoBairro) {
-              return bMesmoBairro - aMesmoBairro;
-            }
-            
-            // Depois por data de criação
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          });
-        }
+      if (error) {
+        console.error('❌ Erro ao carregar itens inteligentes:', error);
+        throw error;
       }
 
-      // Filtro por mesmo bairro do usuário
-      if (filtros.mesmoBairro && profile?.bairro) {
-        itensFiltrados = itensFiltrados.filter(item => 
-          item.publicado_por_profile?.bairro === profile.bairro
-        );
-      }
-
-      return itensFiltrados;
+      console.log('✅ Itens inteligentes carregados:', data?.length || 0);
+      return data || [];
     },
-    // ✅ CORREÇÃO: enabled só quando tem usuário
-    enabled: !!user?.id,
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
+    enabled: true,
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    cacheTime: 5 * 60 * 1000, // 5 minutos
   });
 };

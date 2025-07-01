@@ -1,67 +1,42 @@
 
-// src/App.tsx - ADICIONAR a rota AuthCallback
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { UserDataProvider } from "@/contexts/UserDataContext";
+import Index from "./pages/Index";
 
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// ✅ OTIMIZAÇÃO: Cache agressivo no React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos
+      cacheTime: 10 * 60 * 1000, // 10 minutos
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 1
+    },
+  },
+});
 
-import Index from '@/pages/Index';
-import Auth from '@/pages/Auth';
-import Login from '@/pages/Login';
-import Cadastro from '@/pages/Cadastro';
-import AuthCallback from '@/pages/AuthCallback';
-import AuthGuard from '@/components/auth/AuthGuard'; // ✅ ADICIONAR IMPORT
-import FeedOptimized from '@/pages/FeedOptimized';
-import BuscarItens from '@/pages/BuscarItens';
-import PublicarItem from '@/pages/PublicarItem';
-import Perfil from '@/pages/Perfil';
-import EditarPerfil from '@/pages/EditarPerfil';
-import PerfilPublicoMae from '@/pages/PerfilPublicoMae';
-import Carteira from '@/pages/Carteira';
-import ComprarGirinhas from '@/pages/ComprarGirinhas';
-import Indicacoes from '@/pages/Indicacoes';
-import DetalhesItem from '@/pages/DetalhesItem';
-import MinhasReservas from '@/pages/MinhasReservas';
-import AdminDashboard from '@/pages/AdminDashboard';
-import NotFound from '@/pages/NotFound';
-import Missoes from '@/pages/Missoes';
-import Configuracoes from '@/pages/Configuracoes';
-
-const queryClient = new QueryClient();
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
       <Toaster />
-      <SonnerToaster />
+      <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth-callback" element={<AuthCallback />} />
-          <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/feed" element={<AuthGuard><FeedOptimized /></AuthGuard>} /> {/* ✅ PROTEGER COM AUTHGUARD */}
-          <Route path="/buscar-itens" element={<AuthGuard><BuscarItens /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/publicar" element={<AuthGuard><PublicarItem /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/missoes" element={<AuthGuard><Missoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/perfil/editar" element={<AuthGuard><EditarPerfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
-          <Route path="/carteira" element={<AuthGuard><Carteira /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/comprar-girinhas" element={<AuthGuard><ComprarGirinhas /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/indicacoes" element={<AuthGuard><Indicacoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/item/:id" element={<DetalhesItem />} />
-          <Route path="/minhas-reservas" element={<AuthGuard><MinhasReservas /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/configuracoes" element={<AuthGuard><Configuracoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <UserDataProvider>
+            <Routes>
+              <Route path="/*" element={<Index />} />
+            </Routes>
+          </UserDataProvider>
+        </AuthProvider>
       </BrowserRouter>
-    </QueryClientProvider>
-  );
-}
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
