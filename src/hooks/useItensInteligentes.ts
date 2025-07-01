@@ -16,7 +16,6 @@ interface UseItensInteligenteParams {
   ordem?: 'recentes' | 'preco_asc' | 'preco_desc';
 }
 
-// ✅ Simplified type - no complex nested relationships
 type SimpleItemResponse = {
   id: string;
   titulo: string;
@@ -40,10 +39,17 @@ type SimpleItemResponse = {
   } | null;
 };
 
-export const useItensInteligentes = (params: UseItensInteligenteParams) => {
-  const queryResult = useQuery({
+interface QueryResult {
+  data: SimpleItemResponse[];
+  isLoading: boolean;
+  error: any;
+  refetch: () => void;
+}
+
+export const useItensInteligentes = (params: UseItensInteligenteParams): QueryResult => {
+  const query = useQuery<SimpleItemResponse[], Error>({
     queryKey: ['itens-inteligentes', params],
-    queryFn: async () => {
+    queryFn: async (): Promise<SimpleItemResponse[]> => {
       console.log('🔄 Carregando itens inteligentes:', params);
       
       let query = supabase
@@ -58,12 +64,12 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
         `)
         .eq('status', 'disponivel');
 
-      // ✅ OTIMIZAÇÃO: Filtro por vendedor específico
+      // Filtro por vendedor específico
       if (params.vendedorId) {
         query = query.eq('publicado_por', params.vendedorId);
       }
 
-      // ✅ Filtro por busca
+      // Filtro por busca
       if (params.busca) {
         query = query.or(`titulo.ilike.%${params.busca}%,descricao.ilike.%${params.busca}%`);
       }
@@ -97,7 +103,7 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
           query = query.order('created_at', { ascending: false });
       }
 
-      // Limitar resultados para evitar requisições grandes
+      // Limitar resultados
       query = query.limit(20);
 
       const { data, error } = await query;
@@ -109,8 +115,10 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
 
       console.log('✅ Itens inteligentes carregados:', data?.length || 0);
       
-      // ✅ Direct type assertion without complex inference
-      const typedData: SimpleItemResponse[] = (data || []).map(item => ({
+      // Mapear dados explicitamente
+      if (!data) return [];
+      
+      return data.map((item: any): SimpleItemResponse => ({
         id: item.id,
         titulo: item.titulo,
         descricao: item.descricao,
@@ -128,18 +136,16 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
         updated_at: item.updated_at,
         publicado_por_profile: item.publicado_por_profile
       }));
-      
-      return typedData;
     },
     enabled: true,
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   return {
-    data: queryResult.data || [],
-    isLoading: queryResult.isLoading,
-    error: queryResult.error,
-    refetch: queryResult.refetch
+    data: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch
   };
 };
