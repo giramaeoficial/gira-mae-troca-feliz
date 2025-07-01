@@ -17,7 +17,7 @@ interface UseItensInteligenteParams {
 }
 
 // ✅ Tipagem simplificada para evitar recursão infinita
-type ItemResponse = {
+export type ItemResponse = {
   id: string;
   titulo: string;
   descricao: string;
@@ -41,7 +41,7 @@ type ItemResponse = {
 };
 
 export const useItensInteligentes = (params: UseItensInteligenteParams) => {
-  return useQuery({
+  return useQuery<ItemResponse[]>({
     queryKey: ['itens-inteligentes', params],
     queryFn: async (): Promise<ItemResponse[]> => {
       console.log('🔄 Carregando itens inteligentes:', params);
@@ -108,7 +108,7 @@ export const useItensInteligentes = (params: UseItensInteligenteParams) => {
       }
 
       console.log('✅ Itens inteligentes carregados:', data?.length || 0);
-      return data || [];
+      return (data || []) as ItemResponse[];
     },
     enabled: true,
     staleTime: 2 * 60 * 1000, // 2 minutos
