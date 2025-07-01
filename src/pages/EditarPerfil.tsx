@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, User, MapPin, Baby, Bell } from 'lucide-react';
@@ -24,10 +23,12 @@ const EditarPerfil = () => {
   // Estados do formulário
   const [formData, setFormData] = useState({
     nome: '',
+    sobrenome: '',
     bio: '',
     profissao: '',
     instagram: '',
     telefone: '',
+    numero_whatsapp: '',
     data_nascimento: '',
     interesses: [] as string[],
     categorias_favoritas: [] as string[],
@@ -62,15 +63,46 @@ const EditarPerfil = () => {
   const [activeTab, setActiveTab] = useState('pessoais');
   const [saving, setSaving] = useState(false);
 
+  // Função para processar dados antes de enviar ao Supabase
+  const processFormDataForDatabase = (data: any) => {
+    const processedData = { ...data };
+    
+    // Converter strings vazias em null para campos de data
+    if (processedData.data_nascimento === '') {
+      processedData.data_nascimento = null;
+    }
+    
+    // Converter outras strings vazias em null para campos opcionais
+    const nullableStringFields = [
+      'bio', 
+      'profissao', 
+      'instagram', 
+      'sobrenome',
+      'numero_whatsapp',
+      'complemento', 
+      'ponto_referencia'
+    ];
+    
+    nullableStringFields.forEach(field => {
+      if (processedData[field] === '') {
+        processedData[field] = null;
+      }
+    });
+    
+    return processedData;
+  };
+
   // Carregar dados do perfil
   useEffect(() => {
     if (profile) {
       setFormData({
         nome: profile.nome || '',
+        sobrenome: profile.sobrenome || '',
         bio: profile.bio || '',
         profissao: profile.profissao || '',
         instagram: profile.instagram || '',
         telefone: profile.telefone || '',
+        numero_whatsapp: profile.numero_whatsapp || '',
         data_nascimento: profile.data_nascimento || '',
         interesses: profile.interesses || [],
         categorias_favoritas: profile.categorias_favoritas || [],
@@ -264,11 +296,17 @@ const EditarPerfil = () => {
         avatar_url = await uploadAvatar();
       }
 
-      const updateData = {
+      // Processar dados antes de enviar
+      const rawUpdateData = {
         ...formData,
         ...enderecoForm,
         avatar_url
       };
+
+      // Converter strings vazias em null para campos de data e outros campos opcionais
+      const updateData = processFormDataForDatabase(rawUpdateData);
+
+      console.log('Dados processados para envio:', updateData);
 
       const success = await updateProfile(updateData);
       
