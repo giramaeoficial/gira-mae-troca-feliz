@@ -3,6 +3,9 @@ export type TipoTransacaoEnum =
   // Entrada: Compra
   | 'compra'
   
+  // Entrada: Bônus Diário
+  | 'bonus_diario'
+  
   // Entrada: Bônus de Cadastro/Indicação
   | 'bonus_cadastro'
   | 'bonus_indicacao_cadastro'
@@ -12,13 +15,6 @@ export type TipoTransacaoEnum =
   // Entrada: Bônus de Atividades
   | 'bonus_troca_concluida'
   | 'bonus_avaliacao'
-  | 'bonus_diario'
-  
-  // Entrada: Bônus de Metas
-  | 'bonus_meta_bronze'
-  | 'bonus_meta_prata'
-  | 'bonus_meta_ouro'
-  | 'bonus_meta_diamante'
   
   // Entrada: Missões e Vendas
   | 'missao'
@@ -35,7 +31,6 @@ export type TipoTransacaoEnum =
   // Saída: Taxas e Queimas
   | 'taxa_transferencia'
   | 'taxa_extensao_validade'
-  | 'taxa_marketplace'
   | 'queima_expiracao'
   | 'queima_administrativa';
 
@@ -70,16 +65,4 @@ export interface TransacaoDetalhada {
   item_id: string | null;
   reserva_id: string | null;
   transferencia_id: string | null;
-}
-
-export interface SaldoDetalhado {
-  user_id: string;
-  tipo: TipoTransacaoEnum;
-  descricao_pt: string;
-  categoria: string;
-  icone: string;
-  cor_hex: string;
-  valor_liquido: number;
-  data_expiracao: string | null;
-  status_validade: 'vitalicia' | 'expirada' | 'expirando' | 'valida';
 }

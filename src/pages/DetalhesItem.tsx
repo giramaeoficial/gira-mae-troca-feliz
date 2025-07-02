@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -23,11 +23,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth";
@@ -35,7 +32,6 @@ import { supabase } from '@/integrations/supabase/client';
 import FriendlyError from '@/components/error/FriendlyError';
 import { useReservas } from '@/hooks/useReservas';
 import { useBonificacoes } from '@/hooks/useBonificacoes';
-import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface ItemFeed {
   id: string;
@@ -56,10 +52,6 @@ interface ItemFeed {
     reputacao?: number;
     whatsapp?: string;
   };
-  distancia_km?: number;
-  escola_comum?: boolean;
-  proximidade_score?: number;
-  visibilidade_score?: number;
   vendedor_bairro?: string;
   vendedor_cidade?: string;
   vendedor_estado?: string;
@@ -76,9 +68,7 @@ const DetalhesItem = () => {
   const { toast } = useToast();
   const { criarReserva, cancelarReserva } = useReservas();
   const { processarBonusTrocaConcluida } = useBonificacoes();
-  const { coords } = useGeolocation();
   const [denunciaDialogOpen, setDenunciaDialogOpen] = useState(false);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [motivoDenuncia, setMotivoDenuncia] = useState('');
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -88,9 +78,7 @@ const DetalhesItem = () => {
 
       const { data, error } = await supabase
         .from('itens_completos')
-        .select(`
-          *
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -124,10 +112,6 @@ const DetalhesItem = () => {
         reputacao: data.vendedor_reputacao || 0,
         whatsapp: data.vendedor_telefone || ''
       },
-      distancia_km: 0,
-      escola_comum: false,
-      proximidade_score: 0,
-      visibilidade_score: 0,
       vendedor_bairro: data.vendedor_bairro || '',
       vendedor_cidade: data.vendedor_cidade || '',
       vendedor_estado: data.vendedor_estado || '',
@@ -177,7 +161,6 @@ const DetalhesItem = () => {
     if (!id || !motivoDenuncia.trim()) return;
 
     try {
-      // Simplified reporting without the denuncias table
       toast({
         title: "Obrigado pelo feedback",
         description: "Sua denúncia foi registrada e será analisada.",
@@ -209,34 +192,23 @@ const DetalhesItem = () => {
     window.open(linkWhatsApp, '_blank');
   };
 
-  const PageSkeleton = () => (
-    <div className="container mx-auto p-4">
-      <div className="mb-4">
-        <Skeleton className="h-10 w-3/4" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Skeleton className="h-64 w-full" />
-        </div>
-        <div>
-          <Skeleton className="h-8 w-1/2 mb-2" />
-          <Skeleton className="h-6 w-3/4 mb-2" />
-          <Skeleton className="h-4 w-full mb-1" />
-          <Skeleton className="h-4 w-full mb-1" />
-          <Skeleton className="h-4 w-full mb-1" />
-        </div>
-      </div>
-      <div className="mt-4">
-        <Skeleton className="h-8 w-1/4 mb-2" />
-        <Skeleton className="h-4 w-full mb-1" />
-        <Skeleton className="h-4 w-full mb-1" />
-        <Skeleton className="h-4 w-full mb-1" />
-      </div>
-    </div>
-  );
-
   if (isLoading) {
-    return <PageSkeleton />;
+    return (
+      <div className="container mx-auto p-4">
+        <div className="mb-4">
+          <Skeleton className="h-10 w-3/4" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-64 w-full" />
+          <div>
+            <Skeleton className="h-8 w-1/2 mb-2" />
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-full mb-1" />
+            <Skeleton className="h-4 w-full mb-1" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -286,21 +258,15 @@ const DetalhesItem = () => {
                   <DialogHeader>
                     <DialogTitle>Reportar Item</DialogTitle>
                     <DialogDescription>
-                      Por favor, selecione o motivo da denúncia.
+                      Por favor, descreva o motivo da denúncia.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="motivo" className="text-right">
-                        Motivo
-                      </Label>
-                      <Textarea 
-                        id="motivo" 
-                        className="col-span-3" 
-                        value={motivoDenuncia} 
-                        onChange={(e) => setMotivoDenuncia(e.target.value)} 
-                      />
-                    </div>
+                    <Textarea 
+                      placeholder="Descreva o motivo da denúncia..."
+                      value={motivoDenuncia} 
+                      onChange={(e) => setMotivoDenuncia(e.target.value)} 
+                    />
                   </div>
                   <Button onClick={handleReportarItem}>Reportar</Button>
                 </DialogContent>
@@ -428,7 +394,6 @@ const DetalhesItem = () => {
                         .update({ status: 'trocado' })
                         .eq('id', id);
 
-                      // Dar bônus para quem doou
                       await processarBonusTrocaConcluida(id);
 
                       toast({
