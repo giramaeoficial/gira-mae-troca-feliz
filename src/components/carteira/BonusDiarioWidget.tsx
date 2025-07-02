@@ -77,7 +77,7 @@ const BonusDiarioWidget: React.FC = () => {
             {/* ✅ CORREÇÃO: Nova mensagem sobre validade */}
             <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
               <Calendar className="inline h-3 w-3 mr-1" />
-              <strong>Válido até meia-noite!</strong> Colete hoje e expire em {validadeHoras}h após coleta.
+              <strong>Válido até meia-noite!</strong>
             </div>
 
             <Button 
@@ -135,7 +135,6 @@ const BonusDiarioWidget: React.FC = () => {
         <div className="text-xs text-gray-500 text-center pt-2 border-t space-y-1">
           <p>🎁 Receba {valorGirinhas} Girinhas grátis todos os dias</p>
           <p>⏰ Renovação automática à meia-noite</p>
-          <p>📅 Válido por {validadeHoras}h após coletar</p>
         </div>
       </CardContent>
     </Card>
