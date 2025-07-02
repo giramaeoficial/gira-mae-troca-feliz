@@ -1,4 +1,5 @@
 
+
 export type TipoTransacaoEnum = 
   // Entrada: Compra
   | 'compra'
@@ -37,6 +38,7 @@ export type TipoTransacaoEnum =
   // Saída: Taxas e Queimas
   | 'taxa_transferencia'
   | 'taxa_extensao_validade'
+  | 'taxa_marketplace'
   | 'queima_expiracao'
   | 'queima_administrativa';
 
@@ -72,3 +74,4 @@ export interface TransacaoDetalhada {
   reserva_id: string | null;
   transferencia_id: string | null;
 }
+

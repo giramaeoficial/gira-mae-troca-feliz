@@ -23,6 +23,7 @@ export const formatarTipoTransacao = (tipo: string): string => {
     'transferencia_p2p_saida': 'Transferência Enviada',
     'taxa_transferencia': 'Taxa Transferência',
     'taxa_extensao_validade': 'Taxa Extensão',
+    'taxa_marketplace': 'Taxa Marketplace',
     'queima_expiracao': 'Expiração',
     'queima_administrativa': 'Queima Admin'
   };
@@ -80,3 +81,4 @@ export const criarTransacaoValidada = async (
   if (error) throw error;
   return data;
 };
+
