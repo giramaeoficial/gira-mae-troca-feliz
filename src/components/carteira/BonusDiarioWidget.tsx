@@ -1,11 +1,13 @@
-
+// ✅ VERSÃO CORRIGIDA: BonusDiarioWidget.tsx
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Gift, Clock, CheckCircle } from 'lucide-react';
+import { Gift, Clock, CheckCircle, Calendar } from 'lucide-react';
 import { useBonusDiario } from '@/hooks/useBonusDiario';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const BonusDiarioWidget: React.FC = () => {
   const {
@@ -15,7 +17,7 @@ const BonusDiarioWidget: React.FC = () => {
     coletarBonus,
     isColetando,
     podeColetarBonus,
-    horasRestantes,
+    proximaRenovacao,
     jaColetouHoje
   } = useBonusDiario();
 
@@ -25,7 +27,23 @@ const BonusDiarioWidget: React.FC = () => {
 
   const valorGirinhas = config.valor_girinhas;
   const validadeHoras = config.validade_horas;
-  const progressoHoras = horasRestantes > 0 ? ((validadeHoras - horasRestantes) / validadeHoras) * 100 : 100;
+
+  // ✅ NOVA LÓGICA: Calcular tempo até próxima meia-noite
+  const calcularTempoAteMeiaNoite = () => {
+    const agora = new Date();
+    const proximaMeiaNoite = new Date();
+    proximaMeiaNoite.setDate(proximaMeiaNoite.getDate() + 1);
+    proximaMeiaNoite.setHours(0, 0, 0, 0);
+    
+    const diferencaMs = proximaMeiaNoite.getTime() - agora.getTime();
+    const horasRestantes = Math.floor(diferencaMs / (1000 * 60 * 60));
+    const minutosRestantes = Math.floor((diferencaMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { horasRestantes, minutosRestantes, proximaMeiaNoite };
+  };
+
+  const { horasRestantes, minutosRestantes, proximaMeiaNoite } = calcularTempoAteMeiaNoite();
+  const progressoAteMeiaNoite = ((24 - horasRestantes - (minutosRestantes / 60)) / 24) * 100;
 
   const handleColetarBonus = () => {
     coletarBonus();
@@ -49,15 +67,17 @@ const BonusDiarioWidget: React.FC = () => {
 
       <CardContent className="space-y-4">
         {podeColetarBonus ? (
-          // Bônus disponível para coleta
+          // ✅ Bônus disponível para coleta
           <div className="text-center space-y-3">
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-xl">
               <div className="text-3xl font-bold">+{valorGirinhas}</div>
               <div className="text-sm opacity-90">Girinhas grátis</div>
             </div>
             
-            <div className="text-xs text-gray-600 bg-yellow-50 p-2 rounded border-l-4 border-yellow-400">
-              ⚡ <strong>Urgente:</strong> Válido por apenas {validadeHoras}h após coletar!
+            {/* ✅ CORREÇÃO: Nova mensagem sobre validade */}
+            <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
+              <Calendar className="inline h-3 w-3 mr-1" />
+              <strong>Válido até meia-noite!</strong> Colete hoje e expire em {validadeHoras}h após coleta.
             </div>
 
             <Button 
@@ -76,7 +96,7 @@ const BonusDiarioWidget: React.FC = () => {
             </Button>
           </div>
         ) : jaColetouHoje ? (
-          // Já coletou hoje - mostrar countdown
+          // ✅ Já coletou hoje - mostrar countdown até meia-noite
           <div className="text-center space-y-3">
             <div className="flex items-center justify-center gap-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
@@ -85,21 +105,22 @@ const BonusDiarioWidget: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Próximo bônus em:</span>
+                <span className="text-gray-600">Novo bônus disponível em:</span>
                 <span className="font-semibold text-purple-600">
-                  {horasRestantes}h restantes
+                  {horasRestantes}h {minutosRestantes}m
                 </span>
               </div>
               
               <Progress 
-                value={progressoHoras} 
+                value={progressoAteMeiaNoite} 
                 className="h-2 bg-gray-200"
               />
             </div>
 
+            {/* ✅ CORREÇÃO: Informação clara sobre renovação */}
             <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
               <Clock className="inline h-3 w-3 mr-1" />
-              Volte em {horasRestantes} hora{horasRestantes !== 1 ? 's' : ''} para o próximo bônus
+              Seu próximo bônus estará disponível à meia-noite ({format(proximaMeiaNoite, 'dd/MM HH:mm', { locale: ptBR })})
             </div>
           </div>
         ) : (
@@ -110,9 +131,11 @@ const BonusDiarioWidget: React.FC = () => {
           </div>
         )}
 
-        {/* Informações extras */}
-        <div className="text-xs text-gray-500 text-center pt-2 border-t">
-          💡 Receba {valorGirinhas} Girinhas grátis todo dia • Expire em {validadeHoras}h
+        {/* ✅ CORREÇÃO: Informações sobre o funcionamento do sistema */}
+        <div className="text-xs text-gray-500 text-center pt-2 border-t space-y-1">
+          <p>🎁 Receba {valorGirinhas} Girinhas grátis todos os dias</p>
+          <p>⏰ Renovação automática à meia-noite</p>
+          <p>📅 Válido por {validadeHoras}h após coletar</p>
         </div>
       </CardContent>
     </Card>
