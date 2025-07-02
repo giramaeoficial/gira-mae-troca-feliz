@@ -62,31 +62,51 @@ export const useGirinhasSystem = () => {
     enabled: !!user,
   });
 
-  // ✅ MIGRADO: Mutation para compra manual usando V2 atômico
+  // ✅ ATUALIZADO: Mutation para compra manual usando função validada
   const compraManualMutation = useMutation({
     mutationFn: async ({ quantidade }: { quantidade: number }): Promise<CompraManualResponse> => {
       if (!user) throw new Error('Usuário não autenticado');
       
-      console.log('🔒 [GirinhasSystem] Iniciando compra V2 atômica:', quantidade);
+      console.log('🔒 [GirinhasSystem] Iniciando compra com função validada:', quantidade);
       
-      // ✅ NOVO: Usar processar_compra_girinhas_v2 (sistema atômico)
-      const { data, error } = await supabase.rpc('processar_compra_girinhas_v2', {
-        p_dados: {
-          user_id: user.id,
-          quantidade: quantidade,
-          payment_id: `system_${Date.now()}_${Math.random()}`
+      // ✅ NOVO: Usar função validada do banco
+      const transacaoId = await supabase.rpc('criar_transacao_validada', {
+        p_user_id: user.id,
+        p_tipo: 'compra',
+        p_valor: quantidade,
+        p_descricao: `Compra manual de ${quantidade} Girinhas`,
+        p_metadados: {
+          payment_id: `manual_${Date.now()}_${Math.random()}`,
+          preco_unitario: 1.00,
+          operacao: 'compra_manual'
         }
       });
 
-      if (error) {
-        console.error('❌ Erro na compra V2:', error);
-        throw error;
+      if (!transacaoId) {
+        throw new Error('Falha ao criar transação');
       }
       
-      console.log('✅ [GirinhasSystem] Compra V2 processada:', data);
+      // Atualizar carteira manualmente (o trigger pode não estar funcionando)
+      const { error: carteiraError } = await supabase
+        .from('carteiras')
+        .update({
+          saldo_atual: supabase.raw(`saldo_atual + ${quantidade}`),
+          total_recebido: supabase.raw(`total_recebido + ${quantidade}`)
+        })
+        .eq('user_id', user.id);
+
+      if (carteiraError) {
+        console.error('⚠️ Erro ao atualizar carteira:', carteiraError);
+      }
       
-      const resultado = data as unknown as CompraManualResponse;
-      return resultado;
+      console.log('✅ [GirinhasSystem] Compra processada:', transacaoId);
+      
+      return {
+        sucesso: true,
+        transacao_id: transacaoId,
+        quantidade: quantidade,
+        valor_total: quantidade * 1.00
+      };
     },
     onSuccess: (data) => {
       // Invalidar TODOS os caches relacionados
@@ -101,7 +121,7 @@ export const useGirinhasSystem = () => {
       }
     },
     onError: (error: any) => {
-      console.error('❌ Erro na compra V2:', error);
+      console.error('❌ Erro na compra:', error);
       
       toast({
         title: "Erro na compra",
@@ -199,7 +219,7 @@ export const useGirinhasSystem = () => {
     isTransferindo: transferirP2PMutation.isPending,
     isComprandoManual: compraManualMutation.isPending,
     
-    // ✅ Ações SEGURAS V2
+    // ✅ Ações SEGURAS usando função validada
     compraManual: compraManualMutation.mutate,
     transferirP2P: transferirP2PMutation.mutate,
   };

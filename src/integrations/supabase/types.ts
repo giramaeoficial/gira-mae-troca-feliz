@@ -1365,6 +1365,8 @@ export type Database = {
           id: string
           instagram: string | null
           interesses: string[] | null
+          latitude: number | null
+          longitude: number | null
           nome: string | null
           numero: string | null
           numero_whatsapp: string | null
@@ -1404,6 +1406,8 @@ export type Database = {
           id: string
           instagram?: string | null
           interesses?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
@@ -1443,6 +1447,8 @@ export type Database = {
           id?: string
           instagram?: string | null
           interesses?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
@@ -1718,6 +1724,54 @@ export type Database = {
           },
         ]
       }
+      transacao_config: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          config: Json | null
+          cor_hex: string | null
+          created_at: string | null
+          descricao_pt: string
+          icone: string | null
+          ordem_exibicao: number | null
+          sinal: number
+          tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
+          updated_at: string | null
+          validade_dias: number | null
+          valor_padrao: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria: string
+          config?: Json | null
+          cor_hex?: string | null
+          created_at?: string | null
+          descricao_pt: string
+          icone?: string | null
+          ordem_exibicao?: number | null
+          sinal: number
+          tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
+          updated_at?: string | null
+          validade_dias?: number | null
+          valor_padrao?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          config?: Json | null
+          cor_hex?: string | null
+          created_at?: string | null
+          descricao_pt?: string
+          icone?: string | null
+          ordem_exibicao?: number | null
+          sinal?: number
+          tipo?: Database["public"]["Enums"]["tipo_transacao_enum"]
+          updated_at?: string | null
+          validade_dias?: number | null
+          valor_padrao?: number | null
+        }
+        Relationships: []
+      }
       transacoes: {
         Row: {
           cotacao_utilizada: number | null
@@ -1729,7 +1783,7 @@ export type Database = {
           metadados: Json | null
           quantidade_girinhas: number | null
           reserva_id: string | null
-          tipo: string
+          tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
           transferencia_id: string | null
           user_id: string
           usuario_origem: string | null
@@ -1746,7 +1800,7 @@ export type Database = {
           metadados?: Json | null
           quantidade_girinhas?: number | null
           reserva_id?: string | null
-          tipo: string
+          tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
           transferencia_id?: string | null
           user_id: string
           usuario_origem?: string | null
@@ -1763,7 +1817,7 @@ export type Database = {
           metadados?: Json | null
           quantidade_girinhas?: number | null
           reserva_id?: string | null
-          tipo?: string
+          tipo?: Database["public"]["Enums"]["tipo_transacao_enum"]
           transferencia_id?: string | null
           user_id?: string
           usuario_origem?: string | null
@@ -2002,6 +2056,30 @@ export type Database = {
       }
     }
     Views: {
+      geocoding_queue: {
+        Row: {
+          enqueued_at: string | null
+          message: Json | null
+          msg_id: number | null
+          read_ct: number | null
+          vt: string | null
+        }
+        Insert: {
+          enqueued_at?: string | null
+          message?: Json | null
+          msg_id?: number | null
+          read_ct?: number | null
+          vt?: string | null
+        }
+        Update: {
+          enqueued_at?: string | null
+          message?: Json | null
+          msg_id?: number | null
+          read_ct?: number | null
+          vt?: string | null
+        }
+        Relationships: []
+      }
       itens_completos: {
         Row: {
           aceita_entrega_domicilio: boolean | null
@@ -2062,6 +2140,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saldo_detalhado_v2: {
+        Row: {
+          categoria: string | null
+          cor_hex: string | null
+          data_expiracao: string | null
+          descricao_pt: string | null
+          icone: string | null
+          status_validade: string | null
+          tipo: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+          user_id: string | null
+          valor_liquido: number | null
+        }
+        Relationships: []
+      }
+      tipos_credito: {
+        Row: {
+          cor_hex: string | null
+          descricao_pt: string | null
+          icone: string | null
+          tipo: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+          validade_dias: number | null
+          valor_padrao: number | null
+        }
+        Insert: {
+          cor_hex?: string | null
+          descricao_pt?: string | null
+          icone?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+          validade_dias?: number | null
+          valor_padrao?: number | null
+        }
+        Update: {
+          cor_hex?: string | null
+          descricao_pt?: string | null
+          icone?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+          validade_dias?: number | null
+          valor_padrao?: number | null
+        }
+        Relationships: []
+      }
+      tipos_debito: {
+        Row: {
+          cor_hex: string | null
+          descricao_pt: string | null
+          icone: string | null
+          tipo: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+        }
+        Insert: {
+          cor_hex?: string | null
+          descricao_pt?: string | null
+          icone?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+        }
+        Update: {
+          cor_hex?: string | null
+          descricao_pt?: string | null
+          icone?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+        }
+        Relationships: []
       }
     }
     Functions: {
@@ -2143,6 +2283,7 @@ export type Database = {
           p_preco_max?: number
           p_mostrar_reservados?: boolean
           p_item_id?: string
+          p_modalidade_logistica?: string
         }
         Returns: Json
       }
@@ -2187,6 +2328,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      criar_transacao_validada: {
+        Args: {
+          p_user_id: string
+          p_tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
+          p_valor: number
+          p_descricao: string
+          p_metadados?: Json
+        }
+        Returns: string
+      }
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2229,6 +2380,10 @@ export type Database = {
       finalizar_troca_com_codigo: {
         Args: { p_reserva_id: string; p_codigo_confirmacao: string }
         Returns: boolean
+      }
+      geocoding_queue_delete: {
+        Args: { msg_ids: number[] }
+        Returns: undefined
       }
       get_cadastro_temp_data: {
         Args: { p_step: string }
@@ -2383,16 +2538,31 @@ export type Database = {
         Returns: undefined
       }
       processar_reserva: {
-        Args: {
-          p_item_id: string
-          p_usuario_reservou: string
-          p_valor: number
-          p_permitir_reservado?: boolean
-        }
+        Args:
+          | {
+              p_item_id: string
+              p_usuario_reservou: string
+              p_valor: number
+              p_permitir_reservado?: boolean
+            }
+          | {
+              p_item_id: string
+              p_usuario_reservou: string
+              p_valor_girinhas: number
+              p_valor_taxa: number
+              p_valor_total: number
+              p_permitir_reservado?: boolean
+            }
         Returns: string
       }
       processar_reserva_da_fila: {
-        Args: { p_item_id: string; p_usuario_reservou: string; p_valor: number }
+        Args: {
+          p_item_id: string
+          p_usuario_reservou: string
+          p_valor_girinhas: number
+          p_valor_taxa: number
+          p_valor_total: number
+        }
         Returns: string
       }
       processar_reserva_item_v2: {
@@ -2544,7 +2714,30 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      tipo_transacao_enum:
+        | "compra"
+        | "bonus_cadastro"
+        | "bonus_indicacao_cadastro"
+        | "bonus_indicacao_primeiro_item"
+        | "bonus_indicacao_primeira_compra"
+        | "bonus_troca_concluida"
+        | "bonus_avaliacao"
+        | "bonus_diario"
+        | "bonus_meta_bronze"
+        | "bonus_meta_prata"
+        | "bonus_meta_ouro"
+        | "bonus_meta_diamante"
+        | "missao"
+        | "recebido_item"
+        | "transferencia_p2p_entrada"
+        | "reembolso"
+        | "bloqueio_reserva"
+        | "transferencia_p2p_saida"
+        | "taxa_transferencia"
+        | "taxa_extensao_validade"
+        | "taxa_marketplace"
+        | "queima_expiracao"
+        | "queima_administrativa"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2659,6 +2852,32 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      tipo_transacao_enum: [
+        "compra",
+        "bonus_cadastro",
+        "bonus_indicacao_cadastro",
+        "bonus_indicacao_primeiro_item",
+        "bonus_indicacao_primeira_compra",
+        "bonus_troca_concluida",
+        "bonus_avaliacao",
+        "bonus_diario",
+        "bonus_meta_bronze",
+        "bonus_meta_prata",
+        "bonus_meta_ouro",
+        "bonus_meta_diamante",
+        "missao",
+        "recebido_item",
+        "transferencia_p2p_entrada",
+        "reembolso",
+        "bloqueio_reserva",
+        "transferencia_p2p_saida",
+        "taxa_transferencia",
+        "taxa_extensao_validade",
+        "taxa_marketplace",
+        "queima_expiracao",
+        "queima_administrativa",
+      ],
+    },
   },
 } as const

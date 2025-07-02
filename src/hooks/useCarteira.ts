@@ -1,9 +1,11 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
+import { TipoTransacaoEnum } from '@/types/transacao.types';
 
 type Carteira = Tables<'carteiras'>;
 type Transacao = Tables<'transacoes'>;
@@ -115,42 +117,39 @@ export const useCarteira = () => {
     }
   }, [error?.message]);
 
-  // 🔒 SEGURANÇA: Mutation APENAS para transações internas (não compras)
+  // ✅ ATUALIZADO: Mutation usando novo sistema de tipos
   const adicionarTransacaoMutation = useMutation({
     mutationFn: async ({
       tipo,
       valor,
       descricao,
       itemId,
-      usuarioOrigem
+      usuarioOrigem,
+      metadados
     }: {
-      tipo: 'recebido' | 'gasto' | 'bonus' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa' | 'extensao_validade';
+      tipo: TipoTransacaoEnum;
       valor: number;
       descricao: string;
       itemId?: string;
       usuarioOrigem?: string;
+      metadados?: Record<string, any>;
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('💳 [useCarteira] Adicionando transação INTERNA:', { tipo, valor, descricao });
+      console.log('💳 [useCarteira] Adicionando transação com novo tipo:', { tipo, valor, descricao });
 
-      // 🔒 SEGURANÇA: Usar apenas RPC para transações que afetam saldo
-      const { data, error } = await supabase
-        .from('transacoes')
-        .insert({
-          user_id: user.id,
-          tipo,
-          valor,
-          descricao,
-          item_id: itemId || null,
-          usuario_origem: usuarioOrigem || null,
-          // Deixar trigger preencher automaticamente
-          cotacao_utilizada: null,
-          quantidade_girinhas: null,
-          data_expiracao: null
-        })
-        .select()
-        .single();
+      // ✅ NOVO: Usar função validada do banco
+      const { data, error } = await supabase.rpc('criar_transacao_validada', {
+        p_user_id: user.id,
+        p_tipo: tipo,
+        p_valor: valor,
+        p_descricao: descricao,
+        p_metadados: {
+          item_id: itemId,
+          usuario_origem: usuarioOrigem,
+          ...metadados
+        }
+      });
 
       if (error) throw error;
       return data;
@@ -172,10 +171,16 @@ export const useCarteira = () => {
     onError: (error: any) => {
       console.error('❌ [useCarteira] Erro ao adicionar transação:', error);
       
-      if (error.message?.includes('insufficient_funds')) {
+      if (error.message?.includes('insufficient_funds') || error.message?.includes('Saldo insuficiente')) {
         toast({
           title: "Saldo Insuficiente",
           description: "Você não tem Girinhas suficientes para esta transação.",
+          variant: "destructive",
+        });
+      } else if (error.message?.includes('inválido ou inativo')) {
+        toast({
+          title: "Tipo de Transação Inválido",
+          description: "Este tipo de transação não é permitido.",
           variant: "destructive",
         });
       } else {
@@ -206,40 +211,44 @@ export const useCarteira = () => {
 
     if (carteiraError) throw carteiraError;
 
-    // Criar transações iniciais
+    // ✅ NOVO: Criar transações iniciais usando novos tipos
     const transacoesIniciais = [
       {
-        user_id: userId,
-        tipo: 'bonus' as const,
-        valor: 50.00,
-        descricao: 'Bônus de boas-vindas',
-        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        p_user_id: userId,
+        p_tipo: 'bonus_cadastro' as TipoTransacaoEnum,
+        p_valor: 50.00,
+        p_descricao: 'Bônus de boas-vindas',
+        p_metadados: { origem: 'sistema_inicial' }
       },
       {
-        user_id: userId,
-        tipo: 'bonus' as const,
-        valor: 100.00,
-        descricao: 'Girinhas iniciais da comunidade',
-        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+        p_user_id: userId,
+        p_tipo: 'bonus_cadastro' as TipoTransacaoEnum,
+        p_valor: 100.00,
+        p_descricao: 'Girinhas iniciais da comunidade',
+        p_metadados: { origem: 'sistema_inicial' }
       }
     ];
 
-    const { error: transacoesError } = await supabase
-      .from('transacoes')
-      .insert(transacoesIniciais);
-
-    if (transacoesError) console.error('⚠️ Erro ao criar transações iniciais:', transacoesError);
+    // Usar função validada para criar transações
+    for (const transacao of transacoesIniciais) {
+      try {
+        await supabase.rpc('criar_transacao_validada', transacao);
+      } catch (error) {
+        console.error('⚠️ Erro ao criar transação inicial:', error);
+      }
+    }
 
     return carteiraData;
   };
 
-  // 🔒 SEGURANÇA: Função simplificada - SEM parâmetros de cotação
+  // ✅ ATUALIZADO: Função simplificada usando novos tipos
   const adicionarTransacao = async (
-    tipo: 'recebido' | 'gasto' | 'bonus' | 'queima' | 'transferencia_p2p_saida' | 'transferencia_p2p_entrada' | 'taxa' | 'extensao_validade',
+    tipo: TipoTransacaoEnum,
     valor: number,
     descricao: string,
     itemId?: string,
-    usuarioOrigem?: string
+    usuarioOrigem?: string,
+    metadados?: Record<string, any>
   ) => {
     try {
       await adicionarTransacaoMutation.mutateAsync({
@@ -247,7 +256,8 @@ export const useCarteira = () => {
         valor,
         descricao,
         itemId,
-        usuarioOrigem
+        usuarioOrigem,
+        metadados
       });
       return true;
     } catch {
@@ -272,16 +282,16 @@ export const useCarteira = () => {
     totalGasto: carteiraData?.carteira ? Number(carteiraData.carteira.total_gasto) : 0,
     isAddingTransaction: adicionarTransacaoMutation.isPending,
     
-    // Métodos compatíveis com CarteiraContext para facilitar migração
+    // ✅ MANTIDO: Métodos compatíveis usando novos tipos
     transferirGirinhas: (valor: number, para: string, itemId: number, descricao: string): boolean => {
       if (!verificarSaldo(valor)) {
         return false;
       }
-      adicionarTransacao('gasto', valor, `${descricao} - para ${para}`, String(itemId));
+      adicionarTransacao('bloqueio_reserva', valor, `${descricao} - para ${para}`, String(itemId));
       return true;
     },
     receberGirinhas: (valor: number, de: string, itemId: number, descricao: string) => {
-      adicionarTransacao('recebido', valor, `${descricao} - de ${de}`, String(itemId));
+      adicionarTransacao('recebido_item', valor, `${descricao} - de ${de}`, String(itemId));
     },
     recarregarSaldo: () => refetch()
   };

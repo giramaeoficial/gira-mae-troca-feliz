@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react';
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -15,6 +16,7 @@ import BonusDiarioWidget from '@/components/carteira/BonusDiarioWidget';
 import { useConfigSistema } from "@/hooks/useConfigSistema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { formatarTipoTransacao, isTransacaoPositiva, getCorTipo } from '@/utils/transacaoUtils';
 
 const Carteira = () => {
   const { carteira, transacoes, loading, saldo, totalRecebido, totalGasto } = useCarteira();
@@ -50,50 +52,6 @@ const Carteira = () => {
       </div>
     );
   }
-
-  // ✅ MAPEAMENTO COMPLETO de todos os tipos de transação
-  const formatarTipoTransacao = (tipo: string) => {
-    const tipos = {
-      // ✅ ADIÇÕES (+) - Verde
-      'compra': 'Compra',
-      'bonus': 'Bônus',
-      'missao': 'Missão',
-      'transferencia_p2p_entrada': 'Transferência Recebida',
-      'recebido': 'Recebido',
-      'reembolso': 'Reembolso',
-      
-      // ❌ DEDUÇÕES (-) - Vermelho
-      'gasto': 'Gasto',
-      'bloqueio_reserva': 'Bloqueio Reserva',
-      'taxa': 'Taxa',
-      'transferencia_p2p_saida': 'Transferência Enviada',
-      'extensao_validade': 'Extensão de Validade',
-      'queima': 'Queima'
-    };
-    return tipos[tipo as keyof typeof tipos] || tipo;
-  };
-
-  // ✅ DEFINIÇÃO CLARA: Quais tipos ADICIONAM (+) ou DEDUZEM (-) saldo
-  const isTransacaoPositiva = (tipo: string): boolean => {
-    const tiposPositivos = [
-      'compra',
-      'bonus', 
-      'missao',
-      'transferencia_p2p_entrada',
-      'recebido',
-      'reembolso'
-    ];
-    return tiposPositivos.includes(tipo);
-  };
-
-  // ✅ CORES baseadas em ADIÇÃO/DEDUÇÃO + contexto visual
-  const getCorTipo = (tipo: string) => {
-    if (isTransacaoPositiva(tipo)) {
-      return 'text-green-600 bg-green-50 border-green-200';
-    } else {
-      return 'text-red-600 bg-red-50 border-red-200';
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
