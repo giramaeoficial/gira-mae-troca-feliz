@@ -52,7 +52,7 @@ export const useTiposTransacao = () => {
         ordem_exibicao: item.ordem_exibicao,
         icone: item.icone,
         cor_hex: item.cor_hex,
-        config: item.config,
+        config: typeof item.config === 'object' && item.config !== null ? item.config as Record<string, any> : {},
         created_at: item.created_at,
         updated_at: item.updated_at
       }));

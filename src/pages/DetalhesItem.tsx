@@ -1,13 +1,9 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
-import { Carousel } from 'react-responsive-carousel';
-import 'react-responsive-carousel/lib/styles/carousel.min.css';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { ptBR } from 'date-fns/locale/pt-BR';
 import {
   Card,
   CardContent,
@@ -36,27 +32,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from '@/integrations/supabase/client';
-import { formatarValor } from '@/utils/formatUtils';
-import { FriendlyError } from '@/components/FriendlyError';
-import { IconeCategoria } from '@/components/IconeCategoria';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { FriendlyError } from '@/components/error/FriendlyError';
 import { useReservas } from '@/hooks/useReservas';
 import { useBonificacoes } from '@/hooks/useBonificacoes';
-import { useDenuncias } from '@/hooks/useDenuncias';
-import { useChat } from '@/hooks/useChat';
-import { useInteresses } from '@/hooks/useInteresses';
 import { useGeolocation } from '@/hooks/useGeolocation';
-
-// Leaflet workaround for default marker
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface ItemFeed {
   id: string;
@@ -75,7 +54,7 @@ interface ItemFeed {
     nome: string;
     avatar_url?: string;
     reputacao?: number;
-	  whatsapp?: string;
+    whatsapp?: string;
   };
   distancia_km?: number;
   escola_comum?: boolean;
@@ -97,16 +76,12 @@ const DetalhesItem = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { obterMensagens } = useChat();
-  const { verificarInteresse, expressarInteresse, removerInteresse } = useInteresses();
-  const { reportarItem } = useDenuncias();
-  const { obterLocalizacao } = useGeolocation();
-  const { processarReserva, cancelarReserva } = useReservas();
+  const { criarReserva, cancelarReserva } = useReservas();
   const { processarBonusTrocaConcluida } = useBonificacoes();
+  const { location } = useGeolocation();
   const [denunciaDialogOpen, setDenunciaDialogOpen] = useState(false);
-	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [motivoDenuncia, setMotivoDenuncia] = useState('');
-  const [map, setMap] = useState<L.Map | null>(null);
   const [itemLatitude, setItemLatitude] = useState<number | null>(null);
   const [itemLongitude, setItemLongitude] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number | null; longitude: number | null }>({ latitude: null, longitude: null });
@@ -117,10 +92,9 @@ const DetalhesItem = () => {
       if (!id) throw new Error('ID do item não fornecido');
 
       const { data, error } = await supabase
-        .from('v_itens_feed')
+        .from('itens_completos')
         .select(`
-          *,
-          publicado_por_profile:profiles!publicado_por(nome, avatar_url, reputacao, whatsapp)
+          *
         `)
         .eq('id', id)
         .single();
@@ -134,40 +108,39 @@ const DetalhesItem = () => {
     if (!data) return null;
     
     return {
-      id: data.id,
-      titulo: data.titulo,
-      descricao: data.descricao,
-      categoria: data.categoria,
+      id: data.id || '',
+      titulo: data.titulo || '',
+      descricao: data.descricao || '',
+      categoria: data.categoria || '',
       subcategoria: data.subcategoria || '',
       genero: data.genero || '',
       tamanho_categoria: data.tamanho_categoria || '',
       tamanho_valor: data.tamanho_valor || '',
-      estado_conservacao: data.estado_conservacao,
+      estado_conservacao: data.estado_conservacao || '',
       fotos: data.fotos || [],
-      valor_girinhas: data.valor_girinhas,
-      status: data.status,
-      publicado_por: data.publicado_por,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-      publicado_por_profile: data.publicado_por_profile,
-      distancia_km: data.distancia_km,
-      escola_comum: data.escola_comum,
-      proximidade_score: data.proximidade_score,
-      visibilidade_score: data.visibilidade_score,
-      vendedor_latitude: data.vendedor_latitude,
-      vendedor_longitude: data.vendedor_longitude,
-      vendedor_bairro: data.vendedor_bairro,
-      vendedor_cidade: data.vendedor_cidade,
-      vendedor_estado: data.vendedor_estado,
-      vendedor_cep: data.vendedor_cep,
+      valor_girinhas: data.valor_girinhas || 0,
+      status: data.status || '',
+      publicado_por: data.publicado_por || '',
+      created_at: data.created_at || '',
+      updated_at: data.updated_at || '',
+      publicado_por_profile: {
+        nome: data.vendedor_nome || '',
+        avatar_url: data.vendedor_avatar || '',
+        reputacao: data.vendedor_reputacao || 0,
+        whatsapp: data.vendedor_telefone || ''
+      },
+      distancia_km: 0,
+      escola_comum: false,
+      proximidade_score: 0,
+      visibilidade_score: 0,
+      vendedor_latitude: Number(data.vendedor_latitude) || null,
+      vendedor_longitude: Number(data.vendedor_longitude) || null,
+      vendedor_bairro: data.vendedor_bairro || '',
+      vendedor_cidade: data.vendedor_cidade || '',
+      vendedor_estado: data.vendedor_estado || '',
+      vendedor_cep: data.vendedor_cep || '',
     };
   }, [data]);
-
-  const { data: interesseAtivo, refetch: refetchInteresse } = useQuery({
-    queryKey: ['interesse', user?.id, id],
-    queryFn: () => verificarInteresse(id || ''),
-    enabled: !!user && !!id,
-  });
 
   useEffect(() => {
     if (item?.vendedor_latitude && item?.vendedor_longitude) {
@@ -177,59 +150,16 @@ const DetalhesItem = () => {
   }, [item]);
 
   useEffect(() => {
-    const getInitialLocation = async () => {
-      const location = await obterLocalizacao();
-      if (location) {
-        setUserLocation({ latitude: location.latitude, longitude: location.longitude });
-      }
-    };
-
-    getInitialLocation();
-  }, []);
-
-  const handleExpressarInteresse = async () => {
-    if (!id) return;
-
-    try {
-      await expressarInteresse(id);
-      toast({
-        title: "Interesse expresso!",
-        description: "O vendedor foi notificado do seu interesse.",
-      });
-      refetchInteresse();
-    } catch (error: any) {
-      toast({
-        title: "Erro ao expressar interesse",
-        description: error.message,
-        variant: "destructive",
-      });
+    if (location?.latitude && location.longitude) {
+      setUserLocation({ latitude: location.latitude, longitude: location.longitude });
     }
-  };
-
-  const handleRemoverInteresse = async () => {
-    if (!id) return;
-
-    try {
-      await removerInteresse(id);
-      toast({
-        title: "Interesse removido",
-        description: "Seu interesse neste item foi removido.",
-      });
-      refetchInteresse();
-    } catch (error: any) {
-      toast({
-        title: "Erro ao remover interesse",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
+  }, [location]);
 
   const handleReservarItem = async () => {
     if (!id) return;
 
     try {
-      await processarReserva(id);
+      await criarReserva(id);
       toast({
         title: "Item reservado!",
         description: "O vendedor foi notificado da sua reserva.",
@@ -264,10 +194,20 @@ const DetalhesItem = () => {
   };
 
   const handleReportarItem = async () => {
-    if (!id) return;
+    if (!id || !motivoDenuncia.trim()) return;
 
     try {
-      await reportarItem(id, motivoDenuncia);
+      const { error } = await supabase
+        .from('denuncias')
+        .insert({
+          item_id: id,
+          denunciante_id: user?.id,
+          motivo: motivoDenuncia,
+          status: 'pendente'
+        });
+
+      if (error) throw error;
+
       toast({
         title: "Item reportado",
         description: "Obrigado! Sua denúncia foi enviada para análise.",
@@ -356,8 +296,8 @@ const DetalhesItem = () => {
             <CardTitle className="text-xl font-semibold">{item.titulo}</CardTitle>
             <div className="flex items-center space-x-2">
               {isItemAvailable && !isOwner && (
-                <Button variant="outline" size="sm" onClick={handleExpressarInteresse} disabled={interesseAtivo}>
-                  {interesseAtivo ? 'Interessado' : 'Tenho Interesse'}
+                <Button variant="outline" size="sm">
+                  Tenho Interesse
                 </Button>
               )}
               {isItemAvailable && isOwner && (
@@ -366,7 +306,7 @@ const DetalhesItem = () => {
               {isItemReserved && (
                 <Badge variant="destructive">Reservado</Badge>
               )}
-              <Dialog>
+              <Dialog open={denunciaDialogOpen} onOpenChange={setDenunciaDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="sm">
                     Reportar
@@ -384,7 +324,12 @@ const DetalhesItem = () => {
                       <Label htmlFor="motivo" className="text-right">
                         Motivo
                       </Label>
-                      <Textarea id="motivo" className="col-span-3" value={motivoDenuncia} onChange={(e) => setMotivoDenuncia(e.target.value)} />
+                      <Textarea 
+                        id="motivo" 
+                        className="col-span-3" 
+                        value={motivoDenuncia} 
+                        onChange={(e) => setMotivoDenuncia(e.target.value)} 
+                      />
                     </div>
                   </div>
                   <Button onClick={handleReportarItem}>Reportar</Button>
@@ -394,13 +339,23 @@ const DetalhesItem = () => {
           </CardHeader>
           <CardContent className="py-2">
             <ScrollArea className="h-[400px] w-full">
-              <Carousel showThumbs={false} infiniteLoop={true} autoPlay={true} interval={5000}>
-                {item.fotos.map((foto, index) => (
-                  <div key={index}>
-                    <img src={foto} alt={`Foto do item ${index + 1}`} className="max-h-64 object-contain mx-auto" />
-                  </div>
-                ))}
-              </Carousel>
+              {item.fotos && item.fotos.length > 0 ? (
+                <div className="space-y-4">
+                  {item.fotos.map((foto, index) => (
+                    <div key={index} className="flex justify-center">
+                      <img 
+                        src={foto} 
+                        alt={`Foto do item ${index + 1}`} 
+                        className="max-h-64 object-contain mx-auto rounded-lg" 
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">Nenhuma foto disponível</p>
+                </div>
+              )}
               <div className="mt-4">
                 <p className="text-gray-600">{item.descricao}</p>
               </div>
@@ -421,10 +376,9 @@ const DetalhesItem = () => {
             </div>
             <div className="flex items-center space-x-4 mt-2 md:mt-0">
               <div className="flex items-center space-x-1">
-                <IconeCategoria categoria={item.categoria} className="h-5 w-5" />
                 <span className="text-sm text-gray-600">{item.categoria}</span>
               </div>
-              <span className="text-lg font-bold">{formatarValor(item.valor_girinhas)}</span>
+              <span className="text-lg font-bold">{item.valor_girinhas} Girinhas</span>
             </div>
           </CardFooter>
         </Card>
@@ -500,70 +454,46 @@ const DetalhesItem = () => {
                   </Button>
                 )}
                 {isOwner && isItemReserved && (
-                  <ConfirmDialog
-                    title="Confirmar Troca"
-                    description="Deseja confirmar a troca deste item? Esta ação é irreversível."
-                    onConfirm={async () => {
-                      if (!id) return;
+                  <Button onClick={async () => {
+                    if (!id) return;
 
-                      try {
-                        await supabase
-                          .from('itens')
-                          .update({ status: 'trocado' })
-                          .eq('id', id);
+                    try {
+                      await supabase
+                        .from('itens')
+                        .update({ status: 'trocado' })
+                        .eq('id', id);
 
-                        // Dar bônus para quem doou
-                        await processarBonusTrocaConcluida(id);
+                      // Dar bônus para quem doou
+                      await processarBonusTrocaConcluida(id);
 
-                        toast({
-                          title: "Troca Confirmada!",
-                          description: "O item foi marcado como trocado.",
-                        });
-                        refetch();
-                      } catch (error: any) {
-                        toast({
-                          title: "Erro ao confirmar troca",
-                          description: error.message,
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                  >
+                      toast({
+                        title: "Troca Confirmada!",
+                        description: "O item foi marcado como trocado.",
+                      });
+                      refetch();
+                    } catch (error: any) {
+                      toast({
+                        title: "Erro ao confirmar troca",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    }
+                  }}>
                     Confirmar Troca
-                  </ConfirmDialog>
+                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {itemLatitude !== null && itemLongitude !== null && (
+        {item.vendedor_bairro && item.vendedor_cidade && (
           <Card className="mt-6 bg-white shadow-md rounded-md overflow-hidden">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-semibold">Localização</CardTitle>
             </CardHeader>
             <CardContent className="py-2">
-              <MapContainer
-                center={[itemLatitude, itemLongitude]}
-                zoom={13}
-                style={{ height: '300px', width: '100%' }}
-                className="rounded-md"
-                whenCreated={setMap}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {itemLatitude && itemLongitude && (
-                  <Marker position={[itemLatitude, itemLongitude]}>
-                    <Popup>
-                      Localização aproximada do item.
-                    </Popup>
-                  </Marker>
-                )}
-                <LocationMarker userLocation={userLocation} />
-              </MapContainer>
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-gray-500">
                 {item.vendedor_bairro}, {item.vendedor_cidade} - {item.vendedor_estado}
               </p>
             </CardContent>
@@ -573,18 +503,5 @@ const DetalhesItem = () => {
     </div>
   );
 };
-
-function LocationMarker({ userLocation }: { userLocation: { latitude: number | null; longitude: number | null } }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (userLocation.latitude !== null && userLocation.longitude !== null) {
-      const marker = L.marker([userLocation.latitude, userLocation.longitude]).addTo(map);
-      marker.bindPopup("Sua localização aproximada").openPopup();
-    }
-  }, [userLocation, map]);
-
-  return null;
-}
 
 export default DetalhesItem;

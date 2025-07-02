@@ -86,17 +86,30 @@ export const useGirinhasSystem = () => {
         throw new Error('Falha ao criar transação');
       }
       
-      // Atualizar carteira manualmente (o trigger pode não estar funcionando)
-      const { error: carteiraError } = await supabase
+      // Atualizar carteira manualmente (sem usar supabase.raw que não existe)
+      const { data: carteiraAtual, error: carteiraSelectError } = await supabase
         .from('carteiras')
-        .update({
-          saldo_atual: supabase.raw(`saldo_atual + ${quantidade}`),
-          total_recebido: supabase.raw(`total_recebido + ${quantidade}`)
-        })
-        .eq('user_id', user.id);
+        .select('saldo_atual, total_recebido')
+        .eq('user_id', user.id)
+        .single();
 
-      if (carteiraError) {
-        console.error('⚠️ Erro ao atualizar carteira:', carteiraError);
+      if (carteiraSelectError) {
+        console.error('⚠️ Erro ao buscar carteira:', carteiraSelectError);
+      } else {
+        const novoSaldo = (carteiraAtual?.saldo_atual || 0) + quantidade;
+        const novoTotalRecebido = (carteiraAtual?.total_recebido || 0) + quantidade;
+
+        const { error: carteiraError } = await supabase
+          .from('carteiras')
+          .update({
+            saldo_atual: novoSaldo,
+            total_recebido: novoTotalRecebido
+          })
+          .eq('user_id', user.id);
+
+        if (carteiraError) {
+          console.error('⚠️ Erro ao atualizar carteira:', carteiraError);
+        }
       }
       
       console.log('✅ [GirinhasSystem] Compra processada:', transacaoId);
