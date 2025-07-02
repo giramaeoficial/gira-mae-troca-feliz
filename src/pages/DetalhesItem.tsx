@@ -60,8 +60,6 @@ interface ItemFeed {
   escola_comum?: boolean;
   proximidade_score?: number;
   visibilidade_score?: number;
-  vendedor_latitude?: number;
-  vendedor_longitude?: number;
   vendedor_bairro?: string;
   vendedor_cidade?: string;
   vendedor_estado?: string;
@@ -82,9 +80,6 @@ const DetalhesItem = () => {
   const [denunciaDialogOpen, setDenunciaDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [motivoDenuncia, setMotivoDenuncia] = useState('');
-  const [itemLatitude, setItemLatitude] = useState<number | null>(null);
-  const [itemLongitude, setItemLongitude] = useState<number | null>(null);
-  const [userLocation, setUserLocation] = useState<{ latitude: number | null; longitude: number | null }>({ latitude: null, longitude: null });
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['item', id],
@@ -133,27 +128,12 @@ const DetalhesItem = () => {
       escola_comum: false,
       proximidade_score: 0,
       visibilidade_score: 0,
-      vendedor_latitude: data.vendedor_latitude ? Number(data.vendedor_latitude) : null,
-      vendedor_longitude: data.vendedor_longitude ? Number(data.vendedor_longitude) : null,
       vendedor_bairro: data.vendedor_bairro || '',
       vendedor_cidade: data.vendedor_cidade || '',
       vendedor_estado: data.vendedor_estado || '',
       vendedor_cep: data.vendedor_cep || '',
     };
   }, [data]);
-
-  useEffect(() => {
-    if (item?.vendedor_latitude && item?.vendedor_longitude) {
-      setItemLatitude(item.vendedor_latitude);
-      setItemLongitude(item.vendedor_longitude);
-    }
-  }, [item]);
-
-  useEffect(() => {
-    if (coords?.latitude && coords.longitude) {
-      setUserLocation({ latitude: coords.latitude, longitude: coords.longitude });
-    }
-  }, [coords]);
 
   const handleReservarItem = async () => {
     if (!id) return;
@@ -407,11 +387,6 @@ const DetalhesItem = () => {
                   <p className="text-gray-600">
                     <strong>Publicado em:</strong> {formatDistanceToNow(new Date(item.updated_at), { addSuffix: true, locale: ptBR })}
                   </p>
-                  {item.distancia_km !== undefined && (
-                    <p className="text-gray-600">
-                      <strong>Distância:</strong> {item.distancia_km.toFixed(2)} km
-                    </p>
-                  )}
                 </div>
               </div>
             </CardContent>
