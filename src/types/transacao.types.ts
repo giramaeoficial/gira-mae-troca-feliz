@@ -16,6 +16,12 @@ export type TipoTransacaoEnum =
   | 'bonus_troca_concluida'
   | 'bonus_avaliacao'
   
+  // Entrada: Bônus de Metas
+  | 'bonus_meta_bronze'
+  | 'bonus_meta_prata'
+  | 'bonus_meta_ouro'
+  | 'bonus_meta_diamante'
+  
   // Entrada: Missões e Vendas
   | 'missao'
   | 'recebido_item'
