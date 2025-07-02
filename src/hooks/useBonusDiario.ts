@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { TipoTransacaoEnum } from '@/types/transacao.types';
 
 interface BonusDiarioConfig {
   ativo: boolean;
@@ -64,13 +65,12 @@ export const useBonusDiario = () => {
     queryFn: async (): Promise<StatusBonusDiario> => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      // Buscar último bônus diário
+      // ✅ CORREÇÃO: Usar novo tipo enum
       const { data: ultimoBonus, error } = await supabase
         .from('transacoes')
         .select('created_at')
         .eq('user_id', user.id)
-        .eq('tipo', 'bonus')
-        .like('descricao', 'Bônus diário%')
+        .eq('tipo', 'bonus_diario' as TipoTransacaoEnum)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -123,20 +123,21 @@ export const useBonusDiario = () => {
       const dataExpiracao = new Date();
       dataExpiracao.setHours(dataExpiracao.getHours() + validadeHoras);
 
-      // Criar transação de bônus diário
-      const { data, error } = await supabase
-        .from('transacoes')
-        .insert({
-          user_id: user.id,
-          tipo: 'bonus',
-          valor: valorGirinhas,
-          descricao: `Bônus diário - ${valorGirinhas} Girinhas`,
-          data_expiracao: dataExpiracao.toISOString().split('T')[0]
-        })
-        .select()
-        .single();
+      // ✅ CORREÇÃO: Usar função validada do backend
+      const transacaoId = await supabase.rpc('criar_transacao_validada', {
+        p_user_id: user.id,
+        p_tipo: 'bonus_diario' as TipoTransacaoEnum,
+        p_valor: valorGirinhas,
+        p_descricao: `Bônus diário - ${valorGirinhas} Girinhas`,
+        p_metadados: {
+          validade_horas: validadeHoras,
+          tipo_bonus: 'diario'
+        }
+      });
 
-      if (error) throw error;
+      if (!transacaoId) {
+        throw new Error('Falha ao criar transação de bônus');
+      }
 
       // Buscar carteira atual
       const { data: carteiraAtual } = await supabase
@@ -159,7 +160,7 @@ export const useBonusDiario = () => {
 
       if (carteiraError) throw carteiraError;
 
-      return data;
+      return { transacao_id: transacaoId, valor: valorGirinhas };
     },
     onSuccess: () => {
       const valorGirinhas = config?.valor_girinhas ?? 5;

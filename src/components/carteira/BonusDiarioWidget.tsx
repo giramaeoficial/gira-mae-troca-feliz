@@ -1,3 +1,4 @@
+
 // ✅ VERSÃO CORRIGIDA: BonusDiarioWidget.tsx
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +18,7 @@ const BonusDiarioWidget: React.FC = () => {
     coletarBonus,
     isColetando,
     podeColetarBonus,
-    proximaRenovacao,
+    proximaColeta,
     jaColetouHoje
   } = useBonusDiario();
 

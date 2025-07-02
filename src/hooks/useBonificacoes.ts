@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 import { useConfiguracoesBonus } from '@/hooks/useConfiguracoesBonus';
+import { TipoTransacaoEnum } from '@/types/transacao.types';
 
 interface Bonificacao {
   id: string;
@@ -43,7 +45,7 @@ export const useBonificacoes = () => {
           .select('id')
           .eq('user_id', user.id)
           .eq('item_id', reserva.item_id)
-          .eq('tipo', 'bonus')
+          .eq('tipo', 'bonus_troca_concluida' as TipoTransacaoEnum)
           .eq('descricao', 'Bônus por troca concluída');
 
         if (!transacaoExistente || transacaoExistente.length === 0) {
@@ -51,18 +53,20 @@ export const useBonificacoes = () => {
           const valorBonus = obterValorBonus('bonus_troca_concluida');
           
           if (valorBonus > 0) {
-            // Dar bônus
-            const { error: bonusError } = await supabase
-              .from('transacoes')
-              .insert({
-                user_id: user.id,
-                tipo: 'bonus',
-                valor: valorBonus,
-                descricao: 'Bônus por troca concluída',
-                item_id: reserva.item_id
-              });
+            // ✅ CORREÇÃO: Usar função validada
+            const transacaoId = await supabase.rpc('criar_transacao_validada', {
+              p_user_id: user.id,
+              p_tipo: 'bonus_troca_concluida' as TipoTransacaoEnum,
+              p_valor: valorBonus,
+              p_descricao: 'Bônus por troca concluída',
+              p_metadados: {
+                item_id: reserva.item_id,
+                reserva_id: reservaId,
+                tipo_bonus: 'troca_concluida'
+              }
+            });
 
-            if (!bonusError) {
+            if (transacaoId) {
               // Mostrar notificação visual
               mostrarRecompensa({
                 tipo: 'troca',
@@ -107,22 +111,23 @@ export const useBonificacoes = () => {
           .from('transacoes')
           .select('id')
           .eq('user_id', user.id)
-          .eq('tipo', 'bonus')
-          .ilike('descricao', '%avaliação%')
+          .eq('tipo', 'bonus_avaliacao' as TipoTransacaoEnum)
           .gte('created_at', avaliacao.created_at);
 
         if (!bonusExistente || bonusExistente.length === 0) {
           const valorBonus = obterValorBonus('bonus_avaliacao');
           
           if (valorBonus > 0) {
-            await supabase
-              .from('transacoes')
-              .insert({
-                user_id: user.id,
-                tipo: 'bonus',
-                valor: valorBonus,
-                descricao: 'Bônus por fazer avaliação'
-              });
+            await supabase.rpc('criar_transacao_validada', {
+              p_user_id: user.id,
+              p_tipo: 'bonus_avaliacao' as TipoTransacaoEnum,
+              p_valor: valorBonus,
+              p_descricao: 'Bônus por fazer avaliação',
+              p_metadados: {
+                avaliacao_id: avaliacao.id,
+                tipo_bonus: 'avaliacao'
+              }
+            });
 
             // Mostrar notificação visual
             mostrarRecompensa({
@@ -162,21 +167,23 @@ export const useBonificacoes = () => {
           .from('transacoes')
           .select('id')
           .eq('user_id', user.id)
-          .eq('tipo', 'bonus')
+          .eq('tipo', 'bonus_indicacao_cadastro' as TipoTransacaoEnum)
           .eq('descricao', `Bônus por indicação - ${perfilIndicado.nome}`);
 
         if (!bonusExistente || bonusExistente.length === 0) {
           const valorBonus = obterValorBonus('indicacao_cadastro');
           
           if (valorBonus > 0) {
-            await supabase
-              .from('transacoes')
-              .insert({
-                user_id: user.id,
-                tipo: 'bonus',
-                valor: valorBonus,
-                descricao: `Bônus por indicação - ${perfilIndicado.nome}`
-              });
+            await supabase.rpc('criar_transacao_validada', {
+              p_user_id: user.id,
+              p_tipo: 'bonus_indicacao_cadastro' as TipoTransacaoEnum,
+              p_valor: valorBonus,
+              p_descricao: `Bônus por indicação - ${perfilIndicado.nome}`,
+              p_metadados: {
+                indicado_id: indicadoId,
+                tipo_bonus: 'indicacao_cadastro'
+              }
+            });
 
             // Mostrar notificação visual
             mostrarRecompensa({
@@ -236,15 +243,37 @@ export const useBonificacoes = () => {
           .eq('id', meta.id);
 
         if (!updateError) {
+          // ✅ CORREÇÃO: Usar tipo específico da meta
+          let tipoMeta: TipoTransacaoEnum;
+          switch (meta.tipo_meta) {
+            case 'bronze':
+              tipoMeta = 'bonus_meta_bronze';
+              break;
+            case 'prata':
+              tipoMeta = 'bonus_meta_prata';
+              break;
+            case 'ouro':
+              tipoMeta = 'bonus_meta_ouro';
+              break;
+            case 'diamante':
+              tipoMeta = 'bonus_meta_diamante';
+              break;
+            default:
+              tipoMeta = 'bonus_meta_bronze';
+          }
+
           // Dar bônus da meta
-          await supabase
-            .from('transacoes')
-            .insert({
-              user_id: user.id,
-              tipo: 'bonus',
-              valor: meta.girinhas_bonus,
-              descricao: `Meta conquistada: ${meta.tipo_meta.toUpperCase()}`
-            });
+          await supabase.rpc('criar_transacao_validada', {
+            p_user_id: user.id,
+            p_tipo: tipoMeta,
+            p_valor: meta.girinhas_bonus,
+            p_descricao: `Meta conquistada: ${meta.tipo_meta.toUpperCase()}`,
+            p_metadados: {
+              meta_id: meta.id,
+              tipo_meta: meta.tipo_meta,
+              trocas_realizadas: totalTrocas
+            }
+          });
 
           // Mostrar notificação visual especial para metas
           mostrarRecompensa({
@@ -276,21 +305,22 @@ export const useBonificacoes = () => {
         .from('transacoes')
         .select('id')
         .eq('user_id', user.id)
-        .eq('tipo', 'bonus')
+        .eq('tipo', 'bonus_cadastro' as TipoTransacaoEnum)
         .eq('descricao', 'Bônus de boas-vindas');
 
       if (!bonusExistente || bonusExistente.length === 0) {
         const valorBonus = obterValorBonus('bonus_cadastro');
         
         if (valorBonus > 0) {
-          await supabase
-            .from('transacoes')
-            .insert({
-              user_id: user.id,
-              tipo: 'bonus',
-              valor: valorBonus,
-              descricao: 'Bônus de boas-vindas'
-            });
+          await supabase.rpc('criar_transacao_validada', {
+            p_user_id: user.id,
+            p_tipo: 'bonus_cadastro' as TipoTransacaoEnum,
+            p_valor: valorBonus,
+            p_descricao: 'Bônus de boas-vindas',
+            p_metadados: {
+              tipo_bonus: 'cadastro'
+            }
+          });
 
           // Mostrar notificação visual especial de boas-vindas
           mostrarRecompensa({
