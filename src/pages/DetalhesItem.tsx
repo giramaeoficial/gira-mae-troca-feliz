@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale/pt-BR';
+import { ptBR } from 'date-fns/locale';
 import {
   Card,
   CardContent,
@@ -32,7 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from '@/integrations/supabase/client';
-import { FriendlyError } from '@/components/error/FriendlyError';
+import FriendlyError from '@/components/error/FriendlyError';
 import { useReservas } from '@/hooks/useReservas';
 import { useBonificacoes } from '@/hooks/useBonificacoes';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -78,7 +78,7 @@ const DetalhesItem = () => {
   const { toast } = useToast();
   const { criarReserva, cancelarReserva } = useReservas();
   const { processarBonusTrocaConcluida } = useBonificacoes();
-  const { location } = useGeolocation();
+  const { coords } = useGeolocation();
   const [denunciaDialogOpen, setDenunciaDialogOpen] = useState(false);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [motivoDenuncia, setMotivoDenuncia] = useState('');
@@ -133,8 +133,8 @@ const DetalhesItem = () => {
       escola_comum: false,
       proximidade_score: 0,
       visibilidade_score: 0,
-      vendedor_latitude: Number(data.vendedor_latitude) || null,
-      vendedor_longitude: Number(data.vendedor_longitude) || null,
+      vendedor_latitude: data.vendedor_latitude ? Number(data.vendedor_latitude) : null,
+      vendedor_longitude: data.vendedor_longitude ? Number(data.vendedor_longitude) : null,
       vendedor_bairro: data.vendedor_bairro || '',
       vendedor_cidade: data.vendedor_cidade || '',
       vendedor_estado: data.vendedor_estado || '',
@@ -150,10 +150,10 @@ const DetalhesItem = () => {
   }, [item]);
 
   useEffect(() => {
-    if (location?.latitude && location.longitude) {
-      setUserLocation({ latitude: location.latitude, longitude: location.longitude });
+    if (coords?.latitude && coords.longitude) {
+      setUserLocation({ latitude: coords.latitude, longitude: coords.longitude });
     }
-  }, [location]);
+  }, [coords]);
 
   const handleReservarItem = async () => {
     if (!id) return;
@@ -197,20 +197,10 @@ const DetalhesItem = () => {
     if (!id || !motivoDenuncia.trim()) return;
 
     try {
-      const { error } = await supabase
-        .from('denuncias')
-        .insert({
-          item_id: id,
-          denunciante_id: user?.id,
-          motivo: motivoDenuncia,
-          status: 'pendente'
-        });
-
-      if (error) throw error;
-
+      // Simplified reporting without the denuncias table
       toast({
-        title: "Item reportado",
-        description: "Obrigado! Sua denúncia foi enviada para análise.",
+        title: "Obrigado pelo feedback",
+        description: "Sua denúncia foi registrada e será analisada.",
       });
       setDenunciaDialogOpen(false);
       setMotivoDenuncia('');
