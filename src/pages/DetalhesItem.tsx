@@ -1,663 +1,590 @@
-
-import { useParams, Link, useNavigate } from "react-router-dom";
-import Header from "@/components/shared/Header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Sparkles, 
-  Star, 
-  Heart, 
-  Share2, 
-  Flag, 
-  Clock,
-  User,
-  Truck,
-  Home,
-  School,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  Shield,
-  Package,
-  Users,
-  MessageCircle
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
+import { Carousel } from 'react-responsive-carousel';
+import 'react-responsive-carousel/lib/styles/carousel.min.css';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth";
-import { useFeedItem } from "@/hooks/useFeedItem";
-import { supabase } from "@/integrations/supabase/client";
-import LazyImage from "@/components/ui/lazy-image";
-import { cn } from "@/lib/utils";
-import ActionFeedback from "@/components/loading/ActionFeedback";
-import ItensRelacionados from "@/components/item/ItensRelacionados";
+import { supabase } from '@/integrations/supabase/client';
+import { formatarValor } from '@/utils/formatUtils';
+import { FriendlyError } from '@/components/FriendlyError';
+import { IconeCategoria } from '@/components/IconeCategoria';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useReservas } from '@/hooks/useReservas';
+import { useBonificacoes } from '@/hooks/useBonificacoes';
+import { useDenuncias } from '@/hooks/useDenuncias';
+import { useChat } from '@/hooks/useChat';
+import { useInteresses } from '@/hooks/useInteresses';
+import { useGeolocation } from '@/hooks/useGeolocation';
+
+// Leaflet workaround for default marker
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+interface ItemFeed {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: string;
+  subcategoria?: string;
+  estado_conservacao: string;
+  fotos: string[];
+  valor_girinhas: number;
+  status: string;
+  publicado_por: string;
+  created_at: string;
+  updated_at: string;
+  publicado_por_profile: {
+    nome: string;
+    avatar_url?: string;
+    reputacao?: number;
+	  whatsapp?: string;
+  };
+  distancia_km?: number;
+  escola_comum?: boolean;
+  proximidade_score?: number;
+  visibilidade_score?: number;
+  vendedor_latitude?: number;
+  vendedor_longitude?: number;
+  vendedor_bairro?: string;
+  vendedor_cidade?: string;
+  vendedor_estado?: string;
+  vendedor_cep?: string;
+  genero?: string;
+  tamanho_categoria?: string;
+  tamanho_valor?: string;
+}
 
 const DetalhesItem = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const { toast } = useToast();
-    const { user } = useAuth();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { obterMensagens } = useChat();
+  const { verificarInteresse, expressarInteresse, removerInteresse } = useInteresses();
+  const { reportarItem } = useDenuncias();
+  const { obterLocalizacao } = useGeolocation();
+  const { processarReserva, cancelarReserva } = useReservas();
+  const { processarBonusTrocaConcluida } = useBonificacoes();
+  const [denunciaDialogOpen, setDenunciaDialogOpen] = useState(false);
+	const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [motivoDenuncia, setMotivoDenuncia] = useState('');
+  const [map, setMap] = useState<L.Map | null>(null);
+  const [itemLatitude, setItemLatitude] = useState<number | null>(null);
+  const [itemLongitude, setItemLongitude] = useState<number | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number | null; longitude: number | null }>({ latitude: null, longitude: null });
 
-    // ✅ FONTE ÚNICA DE DADOS - apenas este hook
-    const { data, isLoading: loading, error } = useFeedItem(user?.id || '', id || '');
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['item', id],
+    queryFn: async () => {
+      if (!id) throw new Error('ID do item não fornecido');
 
-    // Estados locais para UI
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [actionState, setActionState] = useState<'loading' | 'success' | 'error' | 'idle'>('idle');
-    const [showImageModal, setShowImageModal] = useState(false);
+      const { data, error } = await supabase
+        .from('v_itens_feed')
+        .select(`
+          *,
+          publicado_por_profile:profiles!publicado_por(nome, avatar_url, reputacao, whatsapp)
+        `)
+        .eq('id', id)
+        .single();
 
-    // ✅ DADOS CONSOLIDADOS - sem hooks extras
-    const item = data?.item;
-    const favoritos = data?.favoritos || [];
-    const reservas_usuario = data?.reservas_usuario || [];
-    const filas_espera = data?.filas_espera || {};
-    const saldo_atual = data?.saldo_atual || 0;
+      if (error) throw error;
+      return data;
+    },
+  });
 
-    // Loading/Error states
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
-                <Header />
-                <main className="flex-grow flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p className="text-gray-600">Carregando detalhes do item...</p>
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
-    if (!item) {
-        if (error) {
-            console.error('Erro ao carregar item:', error);
-        }
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
-                <Header />
-                <main className="flex-grow flex items-center justify-center">
-                    <Card className="max-w-md mx-auto text-center m-4">
-                        <CardContent className="p-8">
-                            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold mb-4">Item não encontrado</h2>
-                            <p className="text-gray-600 mb-6">O item que você está procurando não existe ou foi removido.</p>
-                            <Button asChild>
-                                <Link to="/feed">Voltar ao Feed</Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </main>
-            </div>
-        );
-    }
-
-    // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
-    const isFavorite = favoritos.includes(item.id);
+  const item = useMemo(() => {
+    if (!data) return null;
     
-    const hasActiveReservation = reservas_usuario.some(r => 
-        r.item_id === item.id && 
-        ['pendente', 'confirmada'].includes(r.status) && 
-        r.usuario_reservou === user?.id
-    );
+    return {
+      id: data.id,
+      titulo: data.titulo,
+      descricao: data.descricao,
+      categoria: data.categoria,
+      subcategoria: data.subcategoria || '',
+      genero: data.genero || '',
+      tamanho_categoria: data.tamanho_categoria || '',
+      tamanho_valor: data.tamanho_valor || '',
+      estado_conservacao: data.estado_conservacao,
+      fotos: data.fotos || [],
+      valor_girinhas: data.valor_girinhas,
+      status: data.status,
+      publicado_por: data.publicado_por,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      publicado_por_profile: data.publicado_por_profile,
+      distancia_km: data.distancia_km,
+      escola_comum: data.escola_comum,
+      proximidade_score: data.proximidade_score,
+      visibilidade_score: data.visibilidade_score,
+      vendedor_latitude: data.vendedor_latitude,
+      vendedor_longitude: data.vendedor_longitude,
+      vendedor_bairro: data.vendedor_bairro,
+      vendedor_cidade: data.vendedor_cidade,
+      vendedor_estado: data.vendedor_estado,
+      vendedor_cep: data.vendedor_cep,
+    };
+  }, [data]);
 
-    const filaInfo = filas_espera[item.id] || { total_fila: 0, posicao_usuario: 0 };
-    const isUserInQueue = filaInfo.posicao_usuario > 0;
+  const { data: interesseAtivo, refetch: refetchInteresse } = useQuery({
+    queryKey: ['interesse', user?.id, id],
+    queryFn: () => verificarInteresse(id || ''),
+    enabled: !!user && !!id,
+  });
 
-    // ✅ VERIFICAR MESMA ESCOLA (baseado nos dados do item retornados pela query)
-    const hasCommonSchool = Boolean(item.escolas_inep?.escola);
+  useEffect(() => {
+    if (item?.vendedor_latitude && item?.vendedor_longitude) {
+      setItemLatitude(item.vendedor_latitude);
+      setItemLongitude(item.vendedor_longitude);
+    }
+  }, [item]);
 
-    // Status do item
-    const isReserved = hasActiveReservation || item.status !== 'disponivel';
-    const semSaldo = saldo_atual < Number(item.valor_girinhas);
-    const isProprio = item.publicado_por === user?.id;
-
-    // Helper functions
-    const getGeneroInfo = (genero?: string) => {
-        switch (genero) {
-            case 'menino': 
-                return { icon: '👦', label: 'Menino', color: 'bg-blue-100 text-blue-800' };
-            case 'menina': 
-                return { icon: '👧', label: 'Menina', color: 'bg-pink-100 text-pink-800' };
-            case 'unissex': 
-                return { icon: '👶', label: 'Unissex', color: 'bg-purple-100 text-purple-800' };
-            default: 
-                return null;
-        }
+  useEffect(() => {
+    const getInitialLocation = async () => {
+      const location = await obterLocalizacao();
+      if (location) {
+        setUserLocation({ latitude: location.latitude, longitude: location.longitude });
+      }
     };
 
-    const getEstadoInfo = (estado: string) => {
-        switch (estado) {
-            case 'novo': 
-                return { label: 'Novo', color: 'bg-green-100 text-green-800' };
-            case 'seminovo': 
-                return { label: 'Seminovo', color: 'bg-blue-100 text-blue-800' };
-            case 'usado': 
-                return { label: 'Usado', color: 'bg-yellow-100 text-yellow-800' };
-            case 'muito_usado': 
-                return { label: 'Muito Usado', color: 'bg-orange-100 text-orange-800' };
-            default: 
-                return { label: estado, color: 'bg-gray-100 text-gray-800' };
-        }
-    };
+    getInitialLocation();
+  }, []);
 
-    const formatarCategoria = (categoria: string) => {
-        const categorias = {
-            'roupas': 'Roupas',
-            'brinquedos': 'Brinquedos',
-            'calcados': 'Calçados',
-            'acessorios': 'Acessórios',
-            'equipamentos': 'Equipamentos',
-            'livros': 'Livros'
-        };
-        return categorias[categoria as keyof typeof categorias] || categoria;
-    };
+  const handleExpressarInteresse = async () => {
+    if (!id) return;
 
-    const getTempoPublicacao = (dataPublicacao: string) => {
-        const agora = new Date();
-        const publicacao = new Date(dataPublicacao);
-        const diffMs = agora.getTime() - publicacao.getTime();
-        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        if (diffDias === 0) return 'Hoje';
-        if (diffDias === 1) return 'Ontem';
-        if (diffDias < 7) return `${diffDias} dias atrás`;
-        if (diffDias < 30) return `${Math.floor(diffDias / 7)} semanas atrás`;
-        return `${Math.floor(diffDias / 30)} meses atrás`;
-    };
+    try {
+      await expressarInteresse(id);
+      toast({
+        title: "Interesse expresso!",
+        description: "O vendedor foi notificado do seu interesse.",
+      });
+      refetchInteresse();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao expressar interesse",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
-    // Event handlers
-    const handleReservar = async () => {
-        if (!item || !user) return;
+  const handleRemoverInteresse = async () => {
+    if (!id) return;
 
-        if (isProprio) {
-            toast({
-                title: "Não é possível reservar",
-                description: "Você não pode reservar seu próprio item.",
-                variant: "destructive",
-            });
-            return;
-        }
-        if (isReserved) {
-            toast({
-                title: "Item indisponível", 
-                description: "Este item já foi reservado ou não está mais disponível.",
-                variant: "destructive",
-            });
-            return;
-        }
-        if (semSaldo) {
-            toast({
-                title: "Saldo insuficiente",
-                description: "Você não tem Girinhas suficientes para esta reserva.",
-                variant: "destructive",
-            });
-            return;
-        }
+    try {
+      await removerInteresse(id);
+      toast({
+        title: "Interesse removido",
+        description: "Seu interesse neste item foi removido.",
+      });
+      refetchInteresse();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao remover interesse",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
-        setActionState('loading');
-        try {
-            const { data: result, error } = await supabase.rpc('entrar_fila_espera', {
-                p_item_id: item.id,
-                p_usuario_id: user.id
-            });
-            if (error) throw error;
-            setActionState('success');
-            const resultObj = result as { tipo?: string } | null;
-            const isDirectReservation = resultObj?.tipo === 'reserva_direta';
-            toast({
-                title: "Sucesso!",
-                description: isDirectReservation ? "Item reservado!" : "Você entrou na fila para este item.",
-            });
-        } catch (error) {
-            setActionState('error');
-            toast({
-                title: "Erro",
-                description: "Não foi possível processar sua solicitação.",
-                variant: "destructive",
-            });
-        }
-        setTimeout(() => setActionState('idle'), 3000);
-    };
+  const handleReservarItem = async () => {
+    if (!id) return;
 
-    const handleToggleFavorite = async () => {
-        if (!item || !user) return;
-        try {
-            if (isFavorite) {
-                const { error } = await supabase
-                    .from('favoritos')
-                    .delete()
-                    .eq('user_id', user.id)
-                    .eq('item_id', item.id);
-                if (error) throw error;
-                toast({ title: "Removido dos favoritos", description: "Item removido dos seus favoritos." });
-            } else {
-                const { error } = await supabase
-                    .from('favoritos')
-                    .insert({ user_id: user.id, item_id: item.id });
-                if (error) throw error;
-                toast({ title: "Adicionado aos favoritos", description: "Item adicionado aos seus favoritos." });
-            }
-        } catch (error) {
-            toast({
-                title: "Erro",
-                description: "Não foi possível atualizar os favoritos.",
-                variant: "destructive",
-            });
-        }
-    };
+    try {
+      await processarReserva(id);
+      toast({
+        title: "Item reservado!",
+        description: "O vendedor foi notificado da sua reserva.",
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao reservar item",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
-    const handleShare = async () => {
-        if (!item) return;
-        const shareData = {
-            title: item.titulo,
-            text: `Confira este item no GiraMãe: ${item.titulo}`,
-            url: window.location.href,
-        };
-        try {
-            if (navigator.share && navigator.canShare(shareData)) {
-                await navigator.share(shareData);
-            } else {
-                await navigator.clipboard.writeText(window.location.href);
-                toast({
-                    title: "Link copiado!",
-                    description: "O link do item foi copiado para a área de transferência.",
-                });
-            }
-        } catch (error) {}
-    };
+  const handleCancelarReserva = async () => {
+    if (!id) return;
 
-    // Image navigation
-    const imagens = item.fotos && item.fotos.length > 0 
-        ? item.fotos 
-        : ['/placeholder-item.jpg'];
+    try {
+      await cancelarReserva(id);
+      toast({
+        title: "Reserva cancelada",
+        description: "A reserva deste item foi cancelada.",
+      });
+      refetch();
+    } catch (error: any) {
+      toast({
+        title: "Erro ao cancelar reserva",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
-    const nextImage = () => {
-        setCurrentImageIndex((prev) => 
-            prev === imagens.length - 1 ? 0 : prev + 1
-        );
-    };
+  const handleReportarItem = async () => {
+    if (!id) return;
 
-    const prevImage = () => {
-        setCurrentImageIndex((prev) => 
-            prev === 0 ? imagens.length - 1 : prev - 1
-        );
-    };
+    try {
+      await reportarItem(id, motivoDenuncia);
+      toast({
+        title: "Item reportado",
+        description: "Obrigado! Sua denúncia foi enviada para análise.",
+      });
+      setDenunciaDialogOpen(false);
+      setMotivoDenuncia('');
+    } catch (error: any) {
+      toast({
+        title: "Erro ao reportar item",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
-    // Render helpers
-    const generoInfo = getGeneroInfo(item.genero);
-    const estadoInfo = getEstadoInfo(item.estado_conservacao);
+  const handleTrocarMensagens = async () => {
+    if (!item?.publicado_por_profile?.whatsapp) {
+      toast({
+        title: "Vendedor sem WhatsApp",
+        description: "Este vendedor não possui WhatsApp cadastrado.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const getButtonText = () => {
-        if (isReserved) {
-            return isUserInQueue 
-                ? `Na fila (posição ${filaInfo.posicao_usuario})` 
-                : 'Item Reservado';
-        }
-        return (filaInfo.total_fila > 0) ? 'Entrar na Fila' : 'Reservar Item';
-    };
+    const numeroWhatsApp = item.publicado_por_profile.whatsapp.replace(/\D/g, '');
+    const mensagemPadrao = `Olá! Tenho interesse no item "${item.titulo}" que você está doando no GiraMãe.`;
+    const linkWhatsApp = `https://wa.me/55${numeroWhatsApp}?text=${encodeURIComponent(mensagemPadrao)}`;
+    window.open(linkWhatsApp, '_blank');
+  };
 
-    // ✅ VERIFICAR SE PODE MOSTRAR WHATSAPP (conforme regras atuais)
-    const canShowWhatsApp = item.publicado_por_profile?.whatsapp && 
-        hasActiveReservation && 
-        item.publicado_por !== user?.id;
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-            {/* Header mobile-first */}
-            <header className="bg-white shadow-sm border-b border-pink-100 sticky top-0 z-10">
-                <div className="max-w-4xl mx-auto px-4 py-3">
-                    <div className="flex items-center justify-between">
-                        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="p-2">
-                            <ArrowLeft size={20} />
-                        </Button>
-                        <h1 className="text-base font-semibold text-gray-800 text-center flex-1 px-4 truncate">
-                            {item.titulo}
-                        </h1>
-                        <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" onClick={handleShare} className="p-2">
-                                <Share2 size={18} className="text-gray-600" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={handleToggleFavorite} className="p-2">
-                                <Heart 
-                                    size={18} 
-                                    className={cn(
-                                        isFavorite ? "fill-red-500 text-red-500" : "text-gray-600"
-                                    )} 
-                                />
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <main className="max-w-4xl mx-auto p-3 space-y-4">
-                {/* Galeria de Imagens */}
-                <Card className="overflow-hidden shadow-lg">
-                    <div className="relative">
-                        <div className="aspect-square md:aspect-[4/3] relative">
-                            <LazyImage
-                                src={imagens[currentImageIndex]}
-                                alt={`${item.titulo} - Imagem ${currentImageIndex + 1}`}
-                                className="w-full h-full object-cover"
-                            />
-                            {imagens.length > 1 && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90 p-2"
-                                        onClick={prevImage}
-                                    >
-                                        <ChevronLeft size={20} />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white/90 p-2"
-                                        onClick={nextImage}
-                                    >
-                                        <ChevronRight size={20} />
-                                    </Button>
-                                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
-                                        {currentImageIndex + 1} / {imagens.length}
-                                    </div>
-                                </>
-                            )}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute top-2 right-2 bg-white/80 hover:bg-white/90 p-2"
-                                onClick={() => setShowImageModal(true)}
-                            >
-                                <ZoomIn size={16} />
-                            </Button>
-                        </div>
-                        {imagens.length > 1 && (
-                            <div className="flex space-x-2 p-3 overflow-x-auto bg-gray-50">
-                                {imagens.map((image, index) => (
-                                    <button
-                                        key={index}
-                                        onClick={() => setCurrentImageIndex(index)}
-                                        className={cn(
-                                            "w-12 h-12 md:w-16 md:h-16 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all",
-                                            index === currentImageIndex
-                                                ? "border-primary shadow-md"
-                                                : "border-gray-200 hover:border-gray-300"
-                                        )}
-                                    >
-                                        <LazyImage
-                                            src={image}
-                                            alt={`${item.titulo} - Miniatura ${index + 1}`}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </Card>
-
-                {/* Informações Principais */}
-                <Card className="shadow-lg">
-                    <CardContent className="p-4">
-                        <div className="flex flex-wrap gap-2 mb-4">
-                            {isReserved && (
-                                <Badge variant="destructive" className="text-xs">
-                                    {isUserInQueue 
-                                        ? `Fila - Posição ${filaInfo.posicao_usuario}` 
-                                        : 'Reservado'}
-                                </Badge>
-                            )}
-                            {(filaInfo.total_fila > 0) && !isReserved && (
-                                <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                    <Users className="w-3 h-3 mr-1" />
-                                    {filaInfo.total_fila} na fila
-                                </Badge>
-                            )}
-                            {hasCommonSchool && (
-                                <Badge className="bg-green-100 text-green-800 text-xs">
-                                    <School className="w-3 h-3 mr-1" />
-                                    Mesma escola!
-                                </Badge>
-                            )}
-                            <Badge className={cn("text-xs", estadoInfo.color)}>
-                                {estadoInfo.label}
-                            </Badge>
-                        </div>
-                        
-                        <div className="flex flex-col gap-3 mb-4">
-                            <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
-                                {item.titulo}
-                            </h1>
-                            <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                                <span className="flex items-center gap-1">
-                                    <Package className="w-4 h-4" />
-                                    {formatarCategoria(item.categoria)}
-                                </span>
-                                {item.subcategoria && (
-                                    <span>• {item.subcategoria}</span>
-                                )}
-                                {item.tamanho_valor && (
-                                    <span>• {item.tamanho_valor}</span>
-                                )}
-                                <span className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    {getTempoPublicacao(item.created_at)}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2 py-2">
-                                <Sparkles className="w-6 h-6 text-yellow-500" />
-                                <span className="text-2xl md:text-3xl font-bold text-primary">
-                                    {item.valor_girinhas}
-                                </span>
-                                <span className="text-lg text-gray-600">Girinhas</span>
-                                {semSaldo && !isProprio && (
-                                    <Badge variant="destructive" className="ml-auto text-xs">
-                                        Saldo insuficiente
-                                    </Badge>
-                                )}
-                            </div>
-                        </div>
-                        
-                        {generoInfo && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                <Badge className={cn("text-xs", generoInfo.color)}>
-                                    {generoInfo.icon} {generoInfo.label}
-                                </Badge>
-                            </div>
-                        )}
-                        
-                        {item.descricao && (
-                            <div className="mb-4">
-                                <h3 className="font-semibold text-base mb-2">Descrição</h3>
-                                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm">
-                                    {item.descricao}
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* Informações de Entrega e Vendedor */}
-                <div className="grid grid-cols-1 gap-4">
-                    <Card className="shadow-lg">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <Truck className="w-5 h-5" />
-                                Entrega e Retirada
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                            <div className="space-y-2 text-sm">
-                                <div className="flex items-center gap-2 text-gray-600">
-                                    <Home className="w-4 h-4" />
-                                    <span>Retirada no local</span>
-                                </div>
-                                {item.endereco_bairro && (
-                                    <div className="flex items-center gap-2 text-gray-600">
-                                        <MapPin className="w-4 h-4" />
-                                        <span>{item.endereco_bairro}, {item.endereco_cidade}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card className="shadow-lg">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                                <User className="w-5 h-5" />
-                                Vendedor
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="w-10 h-10">
-                                        <AvatarImage src={item.publicado_por_profile?.avatar_url || undefined} />
-                                        <AvatarFallback className="text-sm">
-                                            {item.publicado_por_profile?.nome?.[0]?.toUpperCase() || '?'}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h3 className="font-semibold text-sm">
-                                            {item.publicado_por_profile?.nome || 'Usuário'}
-                                        </h3>
-                                        {item.publicado_por_profile?.reputacao && (
-                                            <div className="flex items-center gap-1 text-xs text-gray-600">
-                                                <Star className="w-3 h-3 text-yellow-500 fill-current" />
-                                                <span>{item.publicado_por_profile.reputacao.toFixed(1)}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <Button variant="outline" size="sm" className="text-xs">
-                                    <Eye className="w-3 h-3 mr-1" />
-                                    Ver Perfil
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* ✅ WHATSAPP - conforme regras atuais */}
-                {canShowWhatsApp && (
-                    <Card className="shadow-lg bg-green-50 border-green-200">
-                        <CardContent className="p-4">
-                            <div className="text-center">
-                                <h3 className="font-semibold text-green-800 mb-2">Combine a entrega</h3>
-                                <p className="text-sm text-green-700 mb-3">
-                                    Entre em contato com o vendedor para combinar a entrega
-                                </p>
-                                <Button 
-                                    className="bg-green-500 hover:bg-green-600 text-white"
-                                    onClick={() => {
-                                        const whatsappNumber = item.publicado_por_profile?.whatsapp;
-                                        const vendedorNome = item.publicado_por_profile?.nome;
-                                        const mensagem = `Olá ${vendedorNome}! Sobre o item "${item.titulo}" que reservei. Quando podemos combinar a entrega? 😊`;
-                                        const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(mensagem)}`;
-                                        window.open(whatsappUrl, '_blank');
-                                    }}
-                                >
-                                    <MessageCircle className="w-4 h-4 mr-2" />
-                                    Chamar no WhatsApp
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Ações do usuário */}
-                {!isProprio && (
-                    <Card className="shadow-lg">
-                        <CardContent className="p-4">
-                            <div className="space-y-3">
-                                {actionState !== 'idle' && (
-                                    <ActionFeedback
-                                        state={actionState}
-                                        successMessage={(filaInfo.total_fila === 0) ? "Item reservado!" : "Você entrou na fila!"}
-                                        errorMessage="Erro ao reservar. Tente novamente."
-                                    />
-                                )}
-                                <Button
-                                    size="lg"
-                                    className="w-full text-base font-semibold bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
-                                    onClick={handleReservar}
-                                    disabled={isReserved || semSaldo || actionState === 'loading'}
-                                >
-                                    {actionState === 'loading' ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                            {(filaInfo.total_fila === 0) ? 'Reservando...' : 'Entrando na fila...'}
-                                        </div>
-                                    ) : (
-                                        getButtonText()
-                                    )}
-                                </Button>
-                                <div className="flex gap-2">
-                                    <Button 
-                                        variant="outline" 
-                                        className="flex-1 text-sm"
-                                        onClick={handleToggleFavorite}
-                                    >
-                                        <Heart className={cn(
-                                            "w-4 h-4 mr-2",
-                                            isFavorite && "fill-current text-red-500"
-                                        )} />
-                                        {isFavorite ? 'Favorito' : 'Favoritar'}
-                                    </Button>
-                                    <Button variant="outline" size="sm" className="px-3">
-                                        <Flag className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* ✅ ITENS RELACIONADOS - passando dados via props */}
-                <ItensRelacionados 
-                    itemAtual={{
-                        ...item,
-                        publicado_por_profile: item.publicado_por_profile
-                    }}
-                    location={item.endereco_cidade ? {
-                        cidade: item.endereco_cidade,
-                        estado: item.endereco_estado || '',
-                        bairro: item.endereco_bairro || undefined
-                    } : null}
-                />
-            </main>
-
-            {/* Modal de imagem */}
-            {showImageModal && (
-                <div 
-                    className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-                    onClick={() => setShowImageModal(false)}
-                >
-                    <div className="relative max-w-4xl max-h-full">
-                        <LazyImage
-                            src={imagens[currentImageIndex]}
-                            alt={`${item.titulo} - Zoom`}
-                            className="max-w-full max-h-full object-contain"
-                        />
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white text-xl"
-                            onClick={() => setShowImageModal(false)}
-                        >
-                            ×
-                        </Button>
-                    </div>
-                </div>
-            )}
+  const PageSkeleton = () => (
+    <div className="container mx-auto p-4">
+      <div className="mb-4">
+        <Skeleton className="h-10 w-3/4" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Skeleton className="h-64 w-full" />
         </div>
-    );
+        <div>
+          <Skeleton className="h-8 w-1/2 mb-2" />
+          <Skeleton className="h-6 w-3/4 mb-2" />
+          <Skeleton className="h-4 w-full mb-1" />
+          <Skeleton className="h-4 w-full mb-1" />
+          <Skeleton className="h-4 w-full mb-1" />
+        </div>
+      </div>
+      <div className="mt-4">
+        <Skeleton className="h-8 w-1/4 mb-2" />
+        <Skeleton className="h-4 w-full mb-1" />
+        <Skeleton className="h-4 w-full mb-1" />
+        <Skeleton className="h-4 w-full mb-1" />
+      </div>
+    </div>
+  );
+
+  if (isLoading) {
+    return <PageSkeleton />;
+  }
+
+  if (error) {
+    return <FriendlyError 
+      title="Erro ao carregar item"
+      message="Não foi possível carregar os detalhes do item. Tente novamente mais tarde."
+      onRetry={() => window.location.reload()}
+    />;
+  }
+
+  if (!item) {
+    return <FriendlyError 
+      title="Item não encontrado"
+      message="O item que você está procurando não foi encontrado ou não está mais disponível."
+    />;
+  }
+
+  const isOwner = user?.id === item.publicado_por;
+  const isItemAvailable = item.status === 'disponivel';
+  const isItemReserved = item.status === 'reservado';
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-4">
+        <Card className="bg-white shadow-md rounded-md overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xl font-semibold">{item.titulo}</CardTitle>
+            <div className="flex items-center space-x-2">
+              {isItemAvailable && !isOwner && (
+                <Button variant="outline" size="sm" onClick={handleExpressarInteresse} disabled={interesseAtivo}>
+                  {interesseAtivo ? 'Interessado' : 'Tenho Interesse'}
+                </Button>
+              )}
+              {isItemAvailable && isOwner && (
+                <Badge variant="secondary">Disponível</Badge>
+              )}
+              {isItemReserved && (
+                <Badge variant="destructive">Reservado</Badge>
+              )}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    Reportar
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Reportar Item</DialogTitle>
+                    <DialogDescription>
+                      Por favor, selecione o motivo da denúncia.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="motivo" className="text-right">
+                        Motivo
+                      </Label>
+                      <Textarea id="motivo" className="col-span-3" value={motivoDenuncia} onChange={(e) => setMotivoDenuncia(e.target.value)} />
+                    </div>
+                  </div>
+                  <Button onClick={handleReportarItem}>Reportar</Button>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent className="py-2">
+            <ScrollArea className="h-[400px] w-full">
+              <Carousel showThumbs={false} infiniteLoop={true} autoPlay={true} interval={5000}>
+                {item.fotos.map((foto, index) => (
+                  <div key={index}>
+                    <img src={foto} alt={`Foto do item ${index + 1}`} className="max-h-64 object-contain mx-auto" />
+                  </div>
+                ))}
+              </Carousel>
+              <div className="mt-4">
+                <p className="text-gray-600">{item.descricao}</p>
+              </div>
+            </ScrollArea>
+          </CardContent>
+          <CardFooter className="flex flex-col md:flex-row items-center justify-between py-4">
+            <div className="flex items-center space-x-4">
+              <Avatar>
+                <AvatarImage src={item.publicado_por_profile?.avatar_url || ''} alt={item.publicado_por_profile?.nome} />
+                <AvatarFallback>{item.publicado_por_profile?.nome?.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">{item.publicado_por_profile?.nome}</span>
+                <span className="text-xs text-gray-500">
+                  Membro há {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 mt-2 md:mt-0">
+              <div className="flex items-center space-x-1">
+                <IconeCategoria categoria={item.categoria} className="h-5 w-5" />
+                <span className="text-sm text-gray-600">{item.categoria}</span>
+              </div>
+              <span className="text-lg font-bold">{formatarValor(item.valor_girinhas)}</span>
+            </div>
+          </CardFooter>
+        </Card>
+
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-white shadow-md rounded-md overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Detalhes da Doação</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-600">
+                    <strong>Categoria:</strong> {item.categoria}
+                  </p>
+                  {item.subcategoria && (
+                    <p className="text-gray-600">
+                      <strong>Subcategoria:</strong> {item.subcategoria}
+                    </p>
+                  )}
+                  {item.genero && (
+                    <p className="text-gray-600">
+                      <strong>Gênero:</strong> {item.genero}
+                    </p>
+                  )}
+                  {item.tamanho_categoria && item.tamanho_valor && (
+                    <p className="text-gray-600">
+                      <strong>Tamanho:</strong> {item.tamanho_valor} ({item.tamanho_categoria})
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-gray-600">
+                    <strong>Estado de Conservação:</strong> {item.estado_conservacao}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong>Publicado em:</strong> {formatDistanceToNow(new Date(item.updated_at), { addSuffix: true, locale: ptBR })}
+                  </p>
+                  {item.distancia_km !== undefined && (
+                    <p className="text-gray-600">
+                      <strong>Distância:</strong> {item.distancia_km.toFixed(2)} km
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white shadow-md rounded-md overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Ações</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <div className="flex flex-col space-y-2">
+                {!isOwner && isItemAvailable && (
+                  <>
+                    <Button onClick={handleTrocarMensagens}>
+                      Trocar Mensagens
+                    </Button>
+                    <Button onClick={handleReservarItem}>
+                      Reservar Item
+                    </Button>
+                  </>
+                )}
+                {!isOwner && isItemReserved && (
+                  <Button variant="destructive" onClick={handleCancelarReserva}>
+                    Cancelar Reserva
+                  </Button>
+                )}
+                {isOwner && isItemAvailable && (
+                  <Button variant="secondary" disabled>
+                    Aguardando Interessados
+                  </Button>
+                )}
+                {isOwner && isItemReserved && (
+                  <ConfirmDialog
+                    title="Confirmar Troca"
+                    description="Deseja confirmar a troca deste item? Esta ação é irreversível."
+                    onConfirm={async () => {
+                      if (!id) return;
+
+                      try {
+                        await supabase
+                          .from('itens')
+                          .update({ status: 'trocado' })
+                          .eq('id', id);
+
+                        // Dar bônus para quem doou
+                        await processarBonusTrocaConcluida(id);
+
+                        toast({
+                          title: "Troca Confirmada!",
+                          description: "O item foi marcado como trocado.",
+                        });
+                        refetch();
+                      } catch (error: any) {
+                        toast({
+                          title: "Erro ao confirmar troca",
+                          description: error.message,
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    Confirmar Troca
+                  </ConfirmDialog>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {itemLatitude !== null && itemLongitude !== null && (
+          <Card className="mt-6 bg-white shadow-md rounded-md overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Localização</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <MapContainer
+                center={[itemLatitude, itemLongitude]}
+                zoom={13}
+                style={{ height: '300px', width: '100%' }}
+                className="rounded-md"
+                whenCreated={setMap}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                {itemLatitude && itemLongitude && (
+                  <Marker position={[itemLatitude, itemLongitude]}>
+                    <Popup>
+                      Localização aproximada do item.
+                    </Popup>
+                  </Marker>
+                )}
+                <LocationMarker userLocation={userLocation} />
+              </MapContainer>
+              <p className="text-sm text-gray-500 mt-2">
+                {item.vendedor_bairro}, {item.vendedor_cidade} - {item.vendedor_estado}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
 };
+
+function LocationMarker({ userLocation }: { userLocation: { latitude: number | null; longitude: number | null } }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (userLocation.latitude !== null && userLocation.longitude !== null) {
+      const marker = L.marker([userLocation.latitude, userLocation.longitude]).addTo(map);
+      marker.bindPopup("Sua localização aproximada").openPopup();
+    }
+  }, [userLocation, map]);
+
+  return null;
+}
 
 export default DetalhesItem;

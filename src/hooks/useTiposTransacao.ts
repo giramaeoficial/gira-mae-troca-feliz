@@ -6,7 +6,7 @@ import { TipoTransacaoConfig } from '@/types/transacao.types';
 export const useTiposTransacao = () => {
   const { data: tiposCredito, isLoading: loadingCredito } = useQuery({
     queryKey: ['tipos-credito'],
-    queryFn: async (): Promise<TipoTransacaoConfig[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('tipos_credito')
         .select('*');
@@ -19,7 +19,7 @@ export const useTiposTransacao = () => {
 
   const { data: tiposDebito, isLoading: loadingDebito } = useQuery({
     queryKey: ['tipos-debito'],
-    queryFn: async (): Promise<TipoTransacaoConfig[]> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('tipos_debito')
         .select('*');
@@ -41,7 +41,21 @@ export const useTiposTransacao = () => {
         .order('ordem_exibicao');
       
       if (error) throw error;
-      return data || [];
+      return (data || []).map(item => ({
+        tipo: item.tipo,
+        sinal: item.sinal as -1 | 1,
+        validade_dias: item.validade_dias,
+        valor_padrao: item.valor_padrao,
+        descricao_pt: item.descricao_pt,
+        categoria: item.categoria,
+        ativo: item.ativo,
+        ordem_exibicao: item.ordem_exibicao,
+        icone: item.icone,
+        cor_hex: item.cor_hex,
+        config: item.config,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });

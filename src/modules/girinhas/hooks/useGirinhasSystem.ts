@@ -70,7 +70,7 @@ export const useGirinhasSystem = () => {
       console.log('🔒 [GirinhasSystem] Iniciando compra com função validada:', quantidade);
       
       // ✅ NOVO: Usar função validada do banco
-      const transacaoId = await supabase.rpc('criar_transacao_validada', {
+      const { data: transacaoId, error } = await supabase.rpc('criar_transacao_validada', {
         p_user_id: user.id,
         p_tipo: 'compra',
         p_valor: quantidade,
@@ -82,7 +82,7 @@ export const useGirinhasSystem = () => {
         }
       });
 
-      if (!transacaoId) {
+      if (error || !transacaoId) {
         throw new Error('Falha ao criar transação');
       }
       
