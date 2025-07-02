@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, History, ShoppingCart, Send, Sparkles, TrendingUp, Calendar } from "lucide-react";
+import { Wallet, History, ShoppingCart, Send, Sparkles, TrendingUp, Calendar, Clock } from "lucide-react";
 import { useCarteira } from "@/hooks/useCarteira";
 import { useGirinhasExpiracaoSegura } from "@/hooks/useGirinhasExpiracaoSegura";
 import CotacaoWidget from "@/modules/girinhas/components/CotacaoWidget";
@@ -13,11 +13,28 @@ import CompraComImpacto from "@/modules/girinhas/components/CompraComImpacto";
 import ValidadeGirinhasSegura from "@/components/carteira/ValidadeGirinhasSegura";
 import BonusDiarioWidget from '@/components/carteira/BonusDiarioWidget';
 import { useConfigSistema } from "@/hooks/useConfigSistema";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const Carteira = () => {
   const { carteira, transacoes, loading, saldo, totalRecebido, totalGasto } = useCarteira();
   const { expiracao } = useGirinhasExpiracaoSegura();
   const { taxaTransferencia, taxaTransacao } = useConfigSistema();
+
+  // ✅ Performance: Memoizar cálculos que dependem de transacoes
+  const transacoesEsteMes = useMemo(() => 
+    transacoes.filter(t => 
+      new Date(t.created_at).getMonth() === new Date().getMonth()
+    ).length,
+    [transacoes]
+  );
+
+  const ultimaMovimentacao = useMemo(() => 
+    transacoes.length > 0 
+      ? format(new Date(transacoes[0].created_at), 'dd/MM/yyyy', { locale: ptBR })
+      : 'Nenhuma',
+    [transacoes]
+  );
 
   if (loading) {
     return (
@@ -34,29 +51,48 @@ const Carteira = () => {
     );
   }
 
+  // ✅ MAPEAMENTO COMPLETO de todos os tipos de transação
   const formatarTipoTransacao = (tipo: string) => {
     const tipos = {
-      'recebido': 'Recebido',
-      'gasto': 'Gasto',
-      'bonus': 'Bônus',
+      // ✅ ADIÇÕES (+) - Verde
       'compra': 'Compra',
-      'queima': 'Queima',
-      'transferencia_p2p_saida': 'Transferência Enviada',
+      'bonus': 'Bônus',
+      'missao': 'Missão',
       'transferencia_p2p_entrada': 'Transferência Recebida',
+      'recebido': 'Recebido',
+      'reembolso': 'Reembolso',
+      
+      // ❌ DEDUÇÕES (-) - Vermelho
+      'gasto': 'Gasto',
+      'bloqueio_reserva': 'Bloqueio Reserva',
       'taxa': 'Taxa',
-      'extensao_validade': 'Extensão de Validade'
+      'transferencia_p2p_saida': 'Transferência Enviada',
+      'extensao_validade': 'Extensão de Validade',
+      'queima': 'Queima'
     };
     return tipos[tipo as keyof typeof tipos] || tipo;
   };
 
+  // ✅ DEFINIÇÃO CLARA: Quais tipos ADICIONAM (+) ou DEDUZEM (-) saldo
+  const isTransacaoPositiva = (tipo: string): boolean => {
+    const tiposPositivos = [
+      'compra',
+      'bonus', 
+      'missao',
+      'transferencia_p2p_entrada',
+      'recebido',
+      'reembolso'
+    ];
+    return tiposPositivos.includes(tipo);
+  };
+
+  // ✅ CORES baseadas em ADIÇÃO/DEDUÇÃO + contexto visual
   const getCorTipo = (tipo: string) => {
-    if (['recebido', 'bonus', 'transferencia_p2p_entrada'].includes(tipo)) {
-      return 'text-green-600 bg-green-50';
+    if (isTransacaoPositiva(tipo)) {
+      return 'text-green-600 bg-green-50 border-green-200';
+    } else {
+      return 'text-red-600 bg-red-50 border-red-200';
     }
-    if (['gasto', 'queima', 'transferencia_p2p_saida', 'taxa', 'extensao_validade'].includes(tipo)) {
-      return 'text-red-600 bg-red-50';
-    }
-    return 'text-blue-600 bg-blue-50';
   };
 
   return (
@@ -90,7 +126,7 @@ const Carteira = () => {
               <CardContent>
                 <div className="text-center">
                   <p className="text-4xl font-bold text-primary mb-2">
-                    {saldo.toFixed(0)}
+                    {saldo.toFixed(2)}
                   </p>
                   <p className="text-gray-600">Girinhas com sistema seguro</p>
                   
@@ -98,28 +134,28 @@ const Carteira = () => {
                   {expiracao.total_expirando_7_dias > 0 && (
                     <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded-lg">
                       <p className="text-sm text-red-700 font-medium flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {expiracao.total_expirando_7_dias.toFixed(0)} expirando em 7 dias
+                        <Clock className="w-4 h-4" />
+                        {expiracao.total_expirando_7_dias.toFixed(2)} expirando em 7 dias
                       </p>
                     </div>
                   )}
                   {expiracao.total_expirando_30_dias > 0 && expiracao.total_expirando_7_dias === 0 && (
                     <div className="mt-3 p-2 bg-yellow-100 border border-yellow-200 rounded-lg">
                       <p className="text-sm text-yellow-700 font-medium flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {expiracao.total_expirando_30_dias.toFixed(0)} expirando em 30 dias
+                        <Clock className="w-4 h-4" />
+                        {expiracao.total_expirando_30_dias.toFixed(2)} expirando em 30 dias
                       </p>
                     </div>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <div className="text-center p-2 bg-white/50 rounded-lg">
-                    <p className="text-sm text-gray-600">Total Recebido</p>
-                    <p className="font-bold text-green-600">{totalRecebido.toFixed(0)}</p>
+                    <p className="text-sm text-gray-600">Total Ganho</p>
+                    <p className="font-bold text-green-600">{totalRecebido.toFixed(2)}</p>
                   </div>
                   <div className="text-center p-2 bg-white/50 rounded-lg">
-                    <p className="text-sm text-gray-600">Total Gasto</p>
-                    <p className="font-bold text-red-600">{totalGasto.toFixed(0)}</p>
+                    <p className="text-sm text-gray-600">Total Usado</p>
+                    <p className="font-bold text-red-600">{totalGasto.toFixed(2)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -140,18 +176,13 @@ const Carteira = () => {
                 <div className="bg-white/60 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Transações este mês</p>
                   <p className="font-bold text-gray-800">
-                    {transacoes.filter(t => 
-                      new Date(t.created_at).getMonth() === new Date().getMonth()
-                    ).length}
+                    {transacoesEsteMes}
                   </p>
                 </div>
                 <div className="bg-white/60 rounded-lg p-3">
                   <p className="text-sm text-gray-600">Última movimentação</p>
                   <p className="font-bold text-gray-800">
-                    {transacoes.length > 0 
-                      ? new Date(transacoes[0].created_at).toLocaleDateString('pt-BR')
-                      : 'Nenhuma'
-                    }
+                    {ultimaMovimentacao}
                   </p>
                 </div>
               </CardContent>
@@ -181,7 +212,7 @@ const Carteira = () => {
 
             <TabsContent value="historico">
               <Card className="border-0 shadow-lg">
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <CardTitle>Histórico de Transações</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -198,30 +229,31 @@ const Carteira = () => {
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getCorTipo(transacao.tipo)}`}>
+                            <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getCorTipo(transacao.tipo)}`}>
                               {formatarTipoTransacao(transacao.tipo)}
                             </div>
                             <div>
                               <p className="font-medium text-gray-800">{transacao.descricao}</p>
                               <p className="text-sm text-gray-500">
-                                {new Date(transacao.created_at).toLocaleString('pt-BR')}
+                                {format(new Date(transacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                               </p>
                               {/* Mostrar data de expiração para compras */}
                               {transacao.tipo === 'compra' && transacao.data_expiracao && (
-                                <p className="text-xs text-blue-600">
-                                  Expira em: {new Date(transacao.data_expiracao).toLocaleDateString('pt-BR')}
+                                <p className="text-xs text-blue-600 flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  Expira em: {format(new Date(transacao.data_expiracao), 'dd/MM/yyyy', { locale: ptBR })}
                                 </p>
                               )}
                             </div>
                           </div>
                           <div className="text-right">
                             <p className={`font-bold ${
-                              ['recebido', 'bonus', 'transferencia_p2p_entrada'].includes(transacao.tipo)
+                              isTransacaoPositiva(transacao.tipo)
                                 ? 'text-green-600' 
                                 : 'text-red-600'
                             }`}>
-                              {['recebido', 'bonus', 'transferencia_p2p_entrada'].includes(transacao.tipo) ? '+' : '-'}
-                              {Number(transacao.valor).toFixed(0)}
+                              {isTransacaoPositiva(transacao.tipo) ? '+' : '-'}
+                              {Number(transacao.valor).toFixed(2)}
                             </p>
                             {transacao.cotacao_utilizada && (
                               <p className="text-xs text-gray-500">
