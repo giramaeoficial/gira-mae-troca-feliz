@@ -66,6 +66,7 @@ export const useNotificationSystem = () => {
   // Refs para controle de estado
   const isLoadingRef = useRef(false);
   const channelManager = useRef(ChannelManager.getInstance());
+  const oneSignalInitialized = useRef(false);
 
   // Carregar notificações in-app
   const loadNotifications = useCallback(async () => {
@@ -165,7 +166,66 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Solicitar permissão para push notifications e registrar no OneSignal
+  // Inicializar OneSignal corretamente
+  const initializeOneSignal = useCallback(async () => {
+    if (oneSignalInitialized.current || !user || typeof window === 'undefined') return;
+
+    try {
+      console.log('🚀 Inicializando OneSignal para usuário:', user.id);
+
+      // Aguardar OneSignal carregar
+      const waitForOneSignal = () => {
+        return new Promise<void>((resolve, reject) => {
+          const checkInterval = setInterval(() => {
+            if (window.OneSignal?.User) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 100);
+
+          // Timeout após 10 segundos
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            reject(new Error('OneSignal não carregou em 10 segundos'));
+          }, 10000);
+        });
+      };
+
+      await waitForOneSignal();
+
+      // Verificar se já está inicializado
+      if (oneSignalInitialized.current) return;
+
+      oneSignalInitialized.current = true;
+      console.log('✅ OneSignal carregado, registrando usuário...');
+
+      // Registrar External User ID
+      await window.OneSignal.User.addAlias('external_id', user.id);
+      console.log('✅ External User ID registrado:', user.id);
+
+      // Aguardar um pouco para subscription ser criada
+      setTimeout(async () => {
+        try {
+          const playerId = await window.OneSignal.User.PushSubscription.id;
+          console.log('🎯 OneSignal Player ID após inicialização:', playerId);
+
+          if (playerId) {
+            console.log('✅ Usuário registrado com sucesso no OneSignal');
+          } else {
+            console.log('⚠️ Player ID ainda não disponível - usuário precisa aceitar permissões');
+          }
+        } catch (error) {
+          console.warn('⚠️ Erro ao obter Player ID:', error);
+        }
+      }, 2000);
+
+    } catch (error) {
+      console.error('❌ Erro ao inicializar OneSignal:', error);
+      oneSignalInitialized.current = false;
+    }
+  }, [user]);
+
+  // Solicitar permissão para push notifications
   const requestPushPermission = async () => {
     try {
       if ('Notification' in window) {
@@ -174,21 +234,28 @@ export const useNotificationSystem = () => {
           await updatePreferences({ push_enabled: true });
           setPushEnabled(true);
           
-          // Registrar usuário no OneSignal após aceitar permissão
-          if (user && window.OneSignal?.User) {
+          // Inicializar OneSignal após aceitar permissão
+          setTimeout(async () => {
             try {
-              console.log('🔗 Registrando usuário no OneSignal após aceitar permissão:', user.id);
-              await window.OneSignal.User.addAlias('external_id', user.id);
+              await initializeOneSignal();
               
-              // Verificar se o registro funcionou
-              const playerId = await window.OneSignal.User.PushSubscription.id;
-              console.log('✅ OneSignal Player ID após aceitar permissão:', playerId);
-              
-              toast.success('Usuário registrado no OneSignal com sucesso!');
+              // Aguardar subscription ser criada
+              setTimeout(async () => {
+                if (window.OneSignal?.User) {
+                  const playerId = await window.OneSignal.User.PushSubscription.id;
+                  console.log('🎯 Player ID após aceitar permissão:', playerId);
+                  
+                  if (playerId) {
+                    toast.success('Notificações ativadas com sucesso!');
+                  } else {
+                    console.log('⚠️ Player ID ainda não disponível');
+                  }
+                }
+              }, 3000);
             } catch (error) {
-              console.error('❌ Erro ao registrar no OneSignal após permissão:', error);
+              console.error('❌ Erro ao inicializar OneSignal após permissão:', error);
             }
-          }
+          }, 1000);
           
           return true;
         }
@@ -348,31 +415,14 @@ export const useNotificationSystem = () => {
     }
   }, [user, loadPreferences, loadNotifications]);
 
-  // Registrar usuário no OneSignal quando necessário
+  // Effect para inicializar OneSignal quando necessário
   useEffect(() => {
-    const registerUserInOneSignal = async () => {
-      if (!user || !window.OneSignal?.User) return;
-      
-      const browserPermission = 'Notification' in window ? Notification.permission : 'denied';
-      if (browserPermission !== 'granted') return;
-      
-      try {
-        console.log('🔗 Registrando usuário no OneSignal (External User ID):', user.id);
-        await window.OneSignal.User.addAlias('external_id', user.id);
-        
-        const playerId = await window.OneSignal.User.PushSubscription.id;
-        console.log('✅ OneSignal Player ID:', playerId);
-        
-        console.log('✅ Usuário registrado no OneSignal com External User ID');
-      } catch (error) {
-        console.error('❌ Erro ao registrar usuário no OneSignal:', error);
-      }
-    };
-
-    // Aguardar OneSignal carregar
-    const timer = setTimeout(registerUserInOneSignal, 2000);
-    return () => clearTimeout(timer);
-  }, [user]);
+    if (user && !oneSignalInitialized.current) {
+      // Aguardar um pouco antes de inicializar
+      const timer = setTimeout(initializeOneSignal, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, initializeOneSignal]);
 
   // Realtime subscription
   useEffect(() => {
@@ -435,7 +485,7 @@ export const useNotificationSystem = () => {
     // Push Notifications
     pushEnabled,
     playerId: null, // Não mais necessário
-    oneSignalInitialized: true, // Sistema agora é gerenciado via edge function
+    oneSignalInitialized: oneSignalInitialized.current,
     requestPushPermission,
     sendTestNotification,
     

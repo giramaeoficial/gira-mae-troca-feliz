@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNotificationSystem } from '@/hooks/useNotificationSystem';
 import { useAuth } from '@/hooks/useAuth';
-import { Bell, BellOff, AlertTriangle, CheckCircle, Smartphone } from 'lucide-react';
+import { Bell, BellOff, AlertTriangle, CheckCircle, Smartphone, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const OneSignalSettings: React.FC = () => {
@@ -18,61 +18,11 @@ export const OneSignalSettings: React.FC = () => {
   const isPushSupported = typeof window !== 'undefined' && 'Notification' in window;
   const browserPermission = isPushSupported ? Notification.permission : 'denied';
 
-  // Registrar usuário no OneSignal quando já tem permissão
-  useEffect(() => {
-    const registerUserInOneSignal = async () => {
-      if (!user || !browserPermission || browserPermission !== 'granted') return;
-      
-      // Aguardar OneSignal carregar se necessário
-      if (typeof window !== 'undefined' && window.OneSignal?.User) {
-        try {
-          console.log('🔗 Registrando usuário no OneSignal v16 (External User ID):', user.id);
-          
-          // Usar addAlias em vez de addTag
-          await window.OneSignal.User.addAlias('external_id', user.id);
-          
-          // Verificar se o registro funcionou
-          const playerId = await window.OneSignal.User.PushSubscription.id;
-          console.log('✅ OneSignal Player ID:', playerId);
-          
-          console.log('✅ Usuário registrado no OneSignal com External User ID');
-        } catch (error) {
-          console.error('❌ Erro ao registrar usuário no OneSignal:', error);
-        }
-      }
-    };
-
-    // Pequeno delay para garantir que OneSignal carregou
-    const timer = setTimeout(registerUserInOneSignal, 2000);
-    return () => clearTimeout(timer);
-  }, [user, browserPermission]);
-
   const handleRequestPermission = async () => {
     try {
       const granted = await requestPushPermission();
       if (granted && user) {
-        toast.success('Permissão concedida! Notificações ativadas.');
-        
-        // Registrar no OneSignal após aceitar permissão
-        setTimeout(async () => {
-          if (window.OneSignal?.User) {
-            try {
-              console.log('🔗 Registrando usuário após aceitar permissão (External User ID):', user.id);
-              
-              // Usar addAlias
-              await window.OneSignal.User.addAlias('external_id', user.id);
-              
-              // Verificar registro
-              const playerId = await window.OneSignal.User.PushSubscription.id;
-              console.log('✅ OneSignal Player ID após registro:', playerId);
-              
-              console.log('✅ Usuário registrado no OneSignal após permissão');
-              toast.success('Usuário registrado com sucesso!');
-            } catch (error) {
-              console.error('❌ Erro ao registrar após permissão:', error);
-            }
-          }
-        }, 3000);
+        toast.success('Permissão concedida! Configurando notificações...');
       } else {
         toast.error('Permissão negada. Você pode ativá-la manualmente nas configurações do seu navegador.');
       }
@@ -87,22 +37,9 @@ export const OneSignalSettings: React.FC = () => {
       return;
     }
 
-    // Garantir que usuário está registrado antes de testar
-    if (window.OneSignal?.User && browserPermission === 'granted') {
-      try {
-        console.log('🔗 Verificando registro do usuário antes do teste (External User ID)...');
-        
-        // Usar addAlias em vez de addTag
-        await window.OneSignal.User.addAlias('external_id', user.id);
-        
-        // Verificar Player ID
-        const playerId = await window.OneSignal.User.PushSubscription.id;
-        console.log('✅ OneSignal Player ID antes do teste:', playerId);
-        
-        console.log('✅ Usuário registrado/verificado antes do teste');
-      } catch (error) {
-        console.warn('⚠️ Aviso ao verificar registro:', error);
-      }
+    if (browserPermission !== 'granted') {
+      toast.error('Você precisa aceitar as permissões de notificação primeiro');
+      return;
     }
 
     // Enviar notificação de teste
@@ -110,6 +47,10 @@ export const OneSignalSettings: React.FC = () => {
     toast.info('Notificação de teste enviada!', {
       description: 'Você deve recebê-la em seu dispositivo em alguns instantes.',
     });
+  };
+
+  const handleRefreshPermission = () => {
+    window.location.reload();
   };
 
   return (
@@ -155,9 +96,15 @@ export const OneSignalSettings: React.FC = () => {
           )}
 
           {browserPermission === 'denied' && (
-             <p className="text-xs text-center text-red-600 p-2 bg-red-50 rounded-md">
-                Você bloqueou as notificações. Para reativar, acesse as configurações de permissão do seu navegador para este site.
-            </p>
+             <div className="space-y-2">
+               <p className="text-xs text-center text-red-600 p-2 bg-red-50 rounded-md">
+                  Você bloqueou as notificações. Para reativar, acesse as configurações de permissão do seu navegador para este site.
+               </p>
+               <Button onClick={handleRefreshPermission} variant="outline" className="w-full">
+                 <RefreshCw className="w-4 h-4 mr-2" />
+                 Atualizar Status
+               </Button>
+             </div>
           )}
 
           {browserPermission === 'granted' && (
@@ -170,7 +117,10 @@ export const OneSignalSettings: React.FC = () => {
         {user && browserPermission === 'granted' && (
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-600">
-              <strong>Status:</strong> Configurado e ativo para o usuário {user.id.slice(0, 8)}... (External User ID)
+              <strong>Status:</strong> Configurado e ativo para o usuário {user.id.slice(0, 8)}...
+            </p>
+            <p className="text-xs text-blue-500 mt-1">
+              <strong>Dica:</strong> Se não receber notificações, teste novamente em alguns minutos para o OneSignal processar seu registro.
             </p>
           </div>
         )}
