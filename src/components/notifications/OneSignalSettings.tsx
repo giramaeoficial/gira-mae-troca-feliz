@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,8 @@ export const OneSignalSettings: React.FC = () => {
   const { 
     pushEnabled: isPermissionGranted,
     requestPushPermission,
-    sendTestNotification 
+    sendTestNotification,
+    updatePreferences
   } = useNotificationSystem();
   const { user } = useAuth();
   
@@ -42,6 +42,16 @@ export const OneSignalSettings: React.FC = () => {
       }
     } catch (error) {
       toast.error('Ocorreu um erro ao solicitar a permissão.');
+    }
+  };
+
+  const handleDisablePushNotifications = async () => {
+    try {
+      await updatePreferences({ push_enabled: false });
+      toast.success('Notificações push desativadas com sucesso!');
+    } catch (error) {
+      console.error('Erro ao desativar notificações:', error);
+      toast.error('Erro ao desativar notificações push');
     }
   };
 
@@ -120,6 +130,7 @@ export const OneSignalSettings: React.FC = () => {
 
         {/* Ações do Usuário */}
         <div className="space-y-3 pt-4 border-t">
+          {/* Quando permissão não foi concedida */}
           {browserPermission !== 'granted' && (
             <Button onClick={handleRequestPermission} className="w-full">
               <Bell className="w-4 h-4 mr-2" />
@@ -127,6 +138,7 @@ export const OneSignalSettings: React.FC = () => {
             </Button>
           )}
 
+          {/* Quando permissão foi negada */}
           {browserPermission === 'denied' && (
              <div className="space-y-2">
                <p className="text-xs text-center text-red-600 p-2 bg-red-50 rounded-md">
@@ -139,10 +151,37 @@ export const OneSignalSettings: React.FC = () => {
              </div>
           )}
 
+          {/* Quando permissão foi concedida */}
           {browserPermission === 'granted' && (
-            <Button onClick={handleTestNotification} variant="outline" className="w-full">
-              Testar Notificação
-            </Button>
+            <div className="space-y-2">
+              {/* Botão para desativar push (só aparece se estiver ativo) */}
+              {isPermissionGranted && (
+                <Button 
+                  onClick={handleDisablePushNotifications} 
+                  variant="destructive"
+                  className="w-full"
+                >
+                  <BellOff className="w-4 h-4 mr-2" />
+                  Desativar Alertas no Dispositivo
+                </Button>
+              )}
+
+              {/* Botão para reativar push (só aparece se estiver inativo) */}
+              {!isPermissionGranted && (
+                <Button 
+                  onClick={handleRequestPermission} 
+                  className="w-full"
+                >
+                  <Bell className="w-4 h-4 mr-2" />
+                  Reativar Alertas no Dispositivo
+                </Button>
+              )}
+
+              {/* Botão de teste (sempre disponível quando permissão concedida) */}
+              <Button onClick={handleTestNotification} variant="outline" className="w-full">
+                Testar Notificação
+              </Button>
+            </div>
           )}
         </div>
 
@@ -163,10 +202,10 @@ export const OneSignalSettings: React.FC = () => {
             {browserPermission === 'granted' && !isPermissionGranted && (
               <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
                 <p className="text-xs text-yellow-700 font-medium">
-                  ⏳ Finalizando configuração...
+                  ⚠️ Notificações push desativadas
                 </p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  Sistema está configurando as notificações. Se demorar, atualize a página.
+                  Você não receberá alertas no dispositivo. Clique em "Reativar" para receber novamente.
                 </p>
               </div>
             )}
