@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { Notification, NotificationPreferences } from '@/types/notifications';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export const useNotificationSystem = () => {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export const useNotificationSystem = () => {
 
   const isLoadingRef = useRef(false);
   const registrationInProgress = useRef(false);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Carregar notificações
   const loadNotifications = useCallback(async () => {
@@ -339,9 +341,23 @@ export const useNotificationSystem = () => {
     }
   }, [user, loadPreferences, loadNotifications]);
 
-  // Realtime subscription
+  // Realtime subscription com controle de canal único
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Limpar canal existente se não há usuário
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
+
+    // Se já existe um canal, não criar outro
+    if (channelRef.current) {
+      return;
+    }
+
+    console.log('🔄 Criando canal de notificações para:', user.id);
 
     const channel = supabase
       .channel(`notifications-${user.id}`)
@@ -351,6 +367,8 @@ export const useNotificationSystem = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
+        console.log('📨 Nova notificação recebida:', payload);
+        
         const newNotification = payload.new as any;
         const convertedNotification: Notification = {
           id: newNotification.id,
@@ -372,8 +390,14 @@ export const useNotificationSystem = () => {
       })
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      console.log('🧹 Limpando canal de notificações');
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [user]);
 
