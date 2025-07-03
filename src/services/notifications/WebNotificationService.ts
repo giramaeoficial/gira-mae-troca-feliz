@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { TemplateService } from './TemplateService';
-import { OneSignalProvider } from './providers/OneSignalProvider';
 import { ResendProvider } from './providers/ResendProvider';
 import { 
   NotificationRequest, 
@@ -12,17 +11,12 @@ import {
 
 export class WebNotificationService {
   private templateService: TemplateService;
-  private pushProvider?: OneSignalProvider;
   private emailProvider?: ResendProvider;
   private inAppNotifications: InAppNotification[] = [];
   private listeners: ((notifications: InAppNotification[]) => void)[] = [];
 
   constructor() {
     this.templateService = new TemplateService();
-  }
-
-  setPushProvider(provider: OneSignalProvider) {
-    this.pushProvider = provider;
   }
 
   setEmailProvider(provider: ResendProvider) {
@@ -70,9 +64,16 @@ export class WebNotificationService {
   ): Promise<void> {
     switch (channel) {
       case 'push':
-        if (this.pushProvider) {
-          await this.pushProvider.sendPushNotification(userId, title, body);
-        }
+        // Push notifications agora são enviadas via edge function
+        await supabase.functions.invoke('send-notification', {
+          body: {
+            user_id: userId,
+            type: 'push',
+            title,
+            message: body,
+            send_push: true
+          }
+        });
         break;
 
       case 'email':
