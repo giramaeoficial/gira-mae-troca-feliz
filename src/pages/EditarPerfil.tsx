@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, User, MapPin, Baby, Bell } from 'lucide-react';
+import { ArrowLeft, Save, User, MapPin, Baby } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
-import NotificationSettings from '@/components/location/NotificationSettings';
 import DadosPessoaisSection from '@/components/perfil/sections/DadosPessoaisSection';
 import EnderecoSection from '@/components/perfil/sections/EnderecoSection';
 import FilhosSection from '@/components/perfil/sections/FilhosSection';
@@ -372,7 +372,7 @@ const EditarPerfil = () => {
 
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="pessoais" className="text-xs">
               <User className="w-4 h-4 mr-1" />
               Pessoais
@@ -384,10 +384,6 @@ const EditarPerfil = () => {
             <TabsTrigger value="filhos" className="text-xs">
               <Baby className="w-4 h-4 mr-1" />
               Filhos
-            </TabsTrigger>
-            <TabsTrigger value="notificacoes" className="text-xs">
-              <Bell className="w-4 h-4 mr-1" />
-              Alertas
             </TabsTrigger>
           </TabsList>
 
@@ -421,10 +417,6 @@ const EditarPerfil = () => {
               onRemoverFilho={handleRemoverFilho}
               onAdicionarFilho={handleAdicionarFilho}
             />
-          </TabsContent>
-
-          <TabsContent value="notificacoes">
-            <NotificationSettings />
           </TabsContent>
         </Tabs>
       </main>
