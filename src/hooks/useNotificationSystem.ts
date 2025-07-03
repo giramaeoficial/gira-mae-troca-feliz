@@ -1,10 +1,52 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { Notification, NotificationPreferences } from '@/types/notifications';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+
+// Singleton para gerenciar channels
+class ChannelManager {
+  private static instance: ChannelManager;
+  private channels: Map<string, any> = new Map();
+
+  static getInstance(): ChannelManager {
+    if (!ChannelManager.instance) {
+      ChannelManager.instance = new ChannelManager();
+    }
+    return ChannelManager.instance;
+  }
+
+  getOrCreateChannel(key: string, factory: () => any): any {
+    if (!this.channels.has(key)) {
+      const channel = factory();
+      this.channels.set(key, channel);
+    }
+    return this.channels.get(key);
+  }
+
+  removeChannel(key: string): void {
+    const channel = this.channels.get(key);
+    if (channel) {
+      try {
+        supabase.removeChannel(channel);
+      } catch (error) {
+        console.warn('Error removing channel:', error);
+      }
+      this.channels.delete(key);
+    }
+  }
+
+  removeAllChannels(): void {
+    this.channels.forEach((channel, key) => {
+      try {
+        supabase.removeChannel(channel);
+      } catch (error) {
+        console.warn('Error removing channel:', key, error);
+      }
+    });
+    this.channels.clear();
+  }
+}
 
 export const useNotificationSystem = () => {
   const { user } = useAuth();
@@ -20,11 +62,12 @@ export const useNotificationSystem = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Refs para controle de estado
   const isLoadingRef = useRef(false);
+  const channelManager = useRef(ChannelManager.getInstance());
   const registrationInProgress = useRef(false);
-  const channelRef = useRef<RealtimeChannel | null>(null);
 
-  // Carregar notificações
+  // Carregar notificações in-app
   const loadNotifications = useCallback(async () => {
     if (!user || isLoadingRef.current) return;
     
@@ -88,20 +131,47 @@ export const useNotificationSystem = () => {
           push_enabled: data.push_enabled
         });
         setPushEnabled(data.push_enabled);
+      } else {
+        // Criar preferências padrão
+        const { data: newPrefs, error: insertError } = await supabase
+          .from('user_notification_preferences')
+          .insert({
+            user_id: user.id,
+            mensagens: true,
+            reservas: true,
+            girinhas: true,
+            sistema: true,
+            push_enabled: false
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Erro ao criar preferências:', insertError);
+        } else if (newPrefs) {
+          setPreferences({
+            mensagens: newPrefs.mensagens,
+            reservas: newPrefs.reservas,
+            girinhas: newPrefs.girinhas,
+            sistema: newPrefs.sistema,
+            push_enabled: newPrefs.push_enabled
+          });
+          setPushEnabled(newPrefs.push_enabled);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar preferências:', error);
     }
   }, [user]);
 
-  // Registrar usuário no OneSignal
+  // Registrar usuário no OneSignal via edge function
   const registerUserInOneSignal = useCallback(async (playerId?: string) => {
     if (!user || registrationInProgress.current) return false;
     
     registrationInProgress.current = true;
     
     try {
-      console.log('🚀 Registrando usuário no OneSignal...');
+      console.log('🚀 Registrando usuário no OneSignal via edge function...');
       
       const { data, error } = await supabase.functions.invoke('register-onesignal-user', {
         body: {
@@ -115,7 +185,7 @@ export const useNotificationSystem = () => {
         return false;
       }
 
-      console.log('✅ Usuário registrado:', data);
+      console.log('✅ Usuário registrado com sucesso:', data);
       return true;
     } catch (error) {
       console.error('❌ Erro na edge function:', error);
@@ -131,22 +201,24 @@ export const useNotificationSystem = () => {
       if ('Notification' in window) {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          // Aguardar OneSignal estar pronto
+          await updatePreferences({ push_enabled: true });
+          setPushEnabled(true);
+          
+          // Aguardar OneSignal estar pronto e registrar usuário
           setTimeout(async () => {
             try {
               let playerId: string | undefined;
               
+              // Tentar obter player ID se OneSignal estiver disponível
               if (window.OneSignal?.User?.PushSubscription?.id) {
                 playerId = window.OneSignal.User.PushSubscription.id || undefined;
               }
               
               const registered = await registerUserInOneSignal(playerId);
               if (registered) {
-                await updatePreferences({ push_enabled: true });
-                setPushEnabled(true);
                 toast.success('Notificações ativadas com sucesso!');
               } else {
-                toast.error('Erro ao configurar notificações');
+                toast.info('Permissão concedida! Finalizando configuração...');
               }
             } catch (error) {
               console.error('❌ Erro ao registrar usuário:', error);
@@ -156,7 +228,7 @@ export const useNotificationSystem = () => {
           
           return true;
         } else {
-          toast.error('Permissão negada para notificações');
+          toast.error('Permissão negada. Você pode ativá-la manualmente nas configurações do seu navegador.');
         }
       }
       return false;
@@ -216,11 +288,12 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Atualizar preferências
+  // Atualizar preferências - VERSÃO CORRIGIDA
   const updatePreferences = useCallback(async (newPrefs: Partial<NotificationPreferences>) => {
     if (!user) return;
 
     try {
+      // Primeiro, tentar atualizar o registro existente
       const { data: existingPrefs, error: selectError } = await supabase
         .from('user_notification_preferences')
         .select('*')
@@ -234,6 +307,7 @@ export const useNotificationSystem = () => {
 
       let result;
       if (existingPrefs) {
+        // Atualizar registro existente
         result = await supabase
           .from('user_notification_preferences')
           .update({
@@ -242,6 +316,7 @@ export const useNotificationSystem = () => {
           })
           .eq('user_id', user.id);
       } else {
+        // Criar novo registro
         result = await supabase
           .from('user_notification_preferences')
           .insert({
@@ -262,6 +337,7 @@ export const useNotificationSystem = () => {
         return;
       }
 
+      // Atualizar estado local
       setPreferences(prev => ({ ...prev, ...newPrefs }));
       if (newPrefs.push_enabled !== undefined) {
         setPushEnabled(newPrefs.push_enabled);
@@ -297,11 +373,11 @@ export const useNotificationSystem = () => {
       });
 
       if (error) {
-        console.error('Erro ao enviar notificação:', error);
+        console.error('Erro ao enviar notificação via edge function:', error);
         throw error;
       }
 
-      console.log('Notificação enviada:', result);
+      console.log('Notificação enviada com sucesso:', result);
       return result;
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
@@ -329,7 +405,7 @@ export const useNotificationSystem = () => {
     }
   }, [user, sendNotification]);
 
-  // Effect para carregar dados
+  // Effect para carregar dados do usuário
   useEffect(() => {
     if (user) {
       loadPreferences();
@@ -341,78 +417,77 @@ export const useNotificationSystem = () => {
     }
   }, [user, loadPreferences, loadNotifications]);
 
-  // Realtime subscription com controle de canal único
+  // Realtime subscription
   useEffect(() => {
-    if (!user) {
-      // Limpar canal existente se não há usuário
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      return;
-    }
+    if (!user) return;
 
-    // Se já existe um canal, não criar outro
-    if (channelRef.current) {
-      return;
-    }
-
-    console.log('🔄 Criando canal de notificações para:', user.id);
-
-    const channel = supabase
-      .channel(`notifications-${user.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        console.log('📨 Nova notificação recebida:', payload);
-        
-        const newNotification = payload.new as any;
-        const convertedNotification: Notification = {
-          id: newNotification.id,
-          user_id: newNotification.user_id,
-          type: newNotification.type,
-          title: newNotification.title,
-          message: newNotification.message,
-          data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
-          read: newNotification.read,
-          created_at: newNotification.created_at
-        };
-        
-        setNotifications(prev => [convertedNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        toast(convertedNotification.title, {
-          description: convertedNotification.message,
-        });
-      })
-      .subscribe();
-
-    channelRef.current = channel;
+    const channelKey = `notifications-${user.id}`;
+    
+    const channel = channelManager.current.getOrCreateChannel(channelKey, () => {
+      return supabase
+        .channel(channelKey)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          const newNotification = payload.new as any;
+          const convertedNotification: Notification = {
+            id: newNotification.id,
+            user_id: newNotification.user_id,
+            type: newNotification.type,
+            title: newNotification.title,
+            message: newNotification.message,
+            data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
+            read: newNotification.read,
+            created_at: newNotification.created_at
+          };
+          
+          setNotifications(prev => [convertedNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          // Toast notification
+          toast(convertedNotification.title, {
+            description: convertedNotification.message,
+          });
+        })
+        .subscribe();
+    });
 
     return () => {
-      console.log('🧹 Limpando canal de notificações');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      channelManager.current.removeChannel(channelKey);
     };
   }, [user]);
 
+  // Cleanup global no unmount
+  useEffect(() => {
+    return () => {
+      channelManager.current.removeAllChannels();
+    };
+  }, []);
+
   return {
+    // In-App Notifications
     notifications,
     unreadCount,
     loading,
     markAsRead,
     markAllAsRead,
+    
+    // Push Notifications
     pushEnabled,
     requestPushPermission,
     sendTestNotification,
+    
+    // Preferences
     preferences,
     updatePreferences,
+    
+    // Unified sending
     sendNotification,
+    
+    // Utility
     refetch: loadNotifications
   };
 };

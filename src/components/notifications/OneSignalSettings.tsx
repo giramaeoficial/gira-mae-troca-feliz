@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { toast } from 'sonner';
 
 export const OneSignalSettings: React.FC = () => {
   const { 
-    pushEnabled,
+    pushEnabled: isPermissionGranted,
     requestPushPermission,
     sendTestNotification,
     updatePreferences
@@ -21,7 +20,7 @@ export const OneSignalSettings: React.FC = () => {
   const isPushSupported = typeof window !== 'undefined' && 'Notification' in window;
   const browserPermission = isPushSupported ? Notification.permission : 'denied';
 
-  // Verificar se OneSignal está pronto
+  // Verificar se OneSignal está carregado
   useEffect(() => {
     const checkOneSignal = () => {
       if (window.OneSignal) {
@@ -29,8 +28,8 @@ export const OneSignalSettings: React.FC = () => {
       }
     };
 
-    const interval = setInterval(checkOneSignal, 1000);
     checkOneSignal();
+    const interval = setInterval(checkOneSignal, 1000);
     
     return () => clearInterval(interval);
   }, []);
@@ -39,18 +38,19 @@ export const OneSignalSettings: React.FC = () => {
     try {
       const granted = await requestPushPermission();
       if (!granted) {
-        toast.error('Permissão negada. Ative nas configurações do navegador.');
+        toast.error('Permissão negada. Você pode ativá-la manualmente nas configurações do seu navegador.');
       }
     } catch (error) {
-      toast.error('Erro ao solicitar permissão.');
+      toast.error('Ocorreu um erro ao solicitar a permissão.');
     }
   };
 
   const handleDisablePushNotifications = async () => {
     try {
       await updatePreferences({ push_enabled: false });
-      toast.success('Notificações push desativadas!');
+      toast.success('Notificações push desativadas com sucesso!');
     } catch (error) {
+      console.error('Erro ao desativar notificações:', error);
       toast.error('Erro ao desativar notificações push');
     }
   };
@@ -62,15 +62,19 @@ export const OneSignalSettings: React.FC = () => {
     }
 
     if (browserPermission !== 'granted') {
-      toast.error('Aceite as permissões de notificação primeiro');
+      toast.error('Você precisa aceitar as permissões de notificação primeiro');
       return;
     }
 
     await sendTestNotification();
   };
 
+  const handleRefreshPermission = () => {
+    window.location.reload();
+  };
+
   const getStatusColor = () => {
-    if (browserPermission === 'granted' && pushEnabled) {
+    if (browserPermission === 'granted' && isPermissionGranted) {
       return 'bg-green-50 text-green-800 border-green-200';
     }
     if (browserPermission === 'denied') {
@@ -80,7 +84,7 @@ export const OneSignalSettings: React.FC = () => {
   };
 
   const getStatusIcon = () => {
-    if (browserPermission === 'granted' && pushEnabled) {
+    if (browserPermission === 'granted' && isPermissionGranted) {
       return <CheckCircle className="w-5 h-5" />;
     }
     if (browserPermission === 'denied') {
@@ -90,7 +94,7 @@ export const OneSignalSettings: React.FC = () => {
   };
 
   const getStatusText = () => {
-    if (browserPermission === 'granted' && pushEnabled) {
+    if (browserPermission === 'granted' && isPermissionGranted) {
       return 'Ativo';
     }
     if (browserPermission === 'denied') {
@@ -109,21 +113,24 @@ export const OneSignalSettings: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <p className="text-sm text-gray-600">
-          Receba alertas importantes mesmo quando o aplicativo não estiver aberto.
+          Receba alertas importantes, como novas mensagens e atualizações de reservas,
+          mesmo quando o aplicativo não estiver aberto.
         </p>
 
-        {/* Status */}
+        {/* Status das Notificações */}
         <div className={`flex items-center justify-between p-3 rounded-lg border ${getStatusColor()}`}>
           <div className="flex items-center gap-2">
             {getStatusIcon()}
             <span className="font-medium">Status das Notificações</span>
           </div>
-          <span className="font-semibold">{getStatusText()}</span>
+          <span className="font-semibold">
+            {getStatusText()}
+          </span>
         </div>
 
-        {/* Ações */}
+        {/* Ações do Usuário */}
         <div className="space-y-3 pt-4 border-t">
-          {/* Não permitido */}
+          {/* Quando permissão não foi concedida */}
           {browserPermission !== 'granted' && (
             <Button onClick={handleRequestPermission} className="w-full">
               <Bell className="w-4 h-4 mr-2" />
@@ -131,38 +138,46 @@ export const OneSignalSettings: React.FC = () => {
             </Button>
           )}
 
-          {/* Bloqueado */}
+          {/* Quando permissão foi negada */}
           {browserPermission === 'denied' && (
-            <div className="space-y-2">
-              <p className="text-xs text-center text-red-600 p-2 bg-red-50 rounded-md">
-                Notificações bloqueadas. Ative nas configurações do navegador.
-              </p>
-              <Button onClick={() => window.location.reload()} variant="outline" className="w-full">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Atualizar Status
-              </Button>
-            </div>
+             <div className="space-y-2">
+               <p className="text-xs text-center text-red-600 p-2 bg-red-50 rounded-md">
+                  Você bloqueou as notificações. Para reativar, acesse as configurações de permissão do seu navegador para este site.
+               </p>
+               <Button onClick={handleRefreshPermission} variant="outline" className="w-full">
+                 <RefreshCw className="w-4 h-4 mr-2" />
+                 Atualizar Status
+               </Button>
+             </div>
           )}
 
-          {/* Permitido */}
+          {/* Quando permissão foi concedida */}
           {browserPermission === 'granted' && (
             <div className="space-y-2">
-              {pushEnabled ? (
+              {/* Botão para desativar push (só aparece se estiver ativo) */}
+              {isPermissionGranted && (
                 <Button 
                   onClick={handleDisablePushNotifications} 
                   variant="destructive"
                   className="w-full"
                 >
                   <BellOff className="w-4 h-4 mr-2" />
-                  Desativar Alertas
-                </Button>
-              ) : (
-                <Button onClick={handleRequestPermission} className="w-full">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Reativar Alertas
+                  Desativar Alertas no Dispositivo
                 </Button>
               )}
 
+              {/* Botão para reativar push (só aparece se estiver inativo) */}
+              {!isPermissionGranted && (
+                <Button 
+                  onClick={handleRequestPermission} 
+                  className="w-full"
+                >
+                  <Bell className="w-4 h-4 mr-2" />
+                  Reativar Alertas no Dispositivo
+                </Button>
+              )}
+
+              {/* Botão de teste (sempre disponível quando permissão concedida) */}
               <Button onClick={handleTestNotification} variant="outline" className="w-full">
                 Testar Notificação
               </Button>
@@ -170,16 +185,27 @@ export const OneSignalSettings: React.FC = () => {
           )}
         </div>
 
-        {/* Status do Sistema */}
+        {/* Informações do Sistema */}
         {user && (
           <div className="space-y-2">
-            {browserPermission === 'granted' && pushEnabled && (
+            {browserPermission === 'granted' && isPermissionGranted && (
               <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                 <p className="text-xs text-green-700 font-medium">
                   ✅ Configurado para {user.email}
                 </p>
                 <p className="text-xs text-green-600 mt-1">
                   Você receberá notificações push normalmente.
+                </p>
+              </div>
+            )}
+
+            {browserPermission === 'granted' && !isPermissionGranted && (
+              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                <p className="text-xs text-yellow-700 font-medium">
+                  ⚠️ Notificações push desativadas
+                </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  Você não receberá alertas no dispositivo. Clique em "Reativar" para receber novamente.
                 </p>
               </div>
             )}
