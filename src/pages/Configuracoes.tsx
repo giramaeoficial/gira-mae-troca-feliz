@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Bell, User, Shield, Smartphone, TestTube } from 'lucide-react';
+import { Settings, Bell, User, Shield, TestTube } from 'lucide-react';
 import { NotificationPreferences } from '@/components/notifications/NotificationPreferences';
 import { OneSignalSettings } from '@/components/notifications/OneSignalSettings';
 import { useNotificationSystem } from '@/hooks/useNotificationSystem';
@@ -75,7 +76,7 @@ const Configuracoes: React.FC = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
               <TabsTrigger value="perfil" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Perfil</span>
@@ -83,10 +84,6 @@ const Configuracoes: React.FC = () => {
               <TabsTrigger value="notificacoes" className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 <span className="hidden sm:inline">Notificações</span>
-              </TabsTrigger>
-              <TabsTrigger value="push" className="flex items-center gap-2">
-                <Smartphone className="w-4 h-4" />
-                <span className="hidden sm:inline">Push</span>
               </TabsTrigger>
               <TabsTrigger value="privacidade" className="flex items-center gap-2 hidden lg:flex">
                 <Shield className="w-4 h-4" />
@@ -134,8 +131,13 @@ const Configuracoes: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="notificacoes" className="space-y-6">
+              {/* Seção para escolher QUAIS notificações receber */}
               <NotificationPreferences />
+
+              {/* Seção para gerenciar a ENTREGA das notificações (push) */}
+              <OneSignalSettings />
               
+              {/* Seção de teste do sistema */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -145,7 +147,7 @@ const Configuracoes: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-gray-600 mb-4">
-                    Teste se o sistema de notificações in-app está funcionando corretamente.
+                    Teste se o sistema de notificações está funcionando corretamente.
                   </p>
                   <Button onClick={handleTestNotification} variant="outline">
                     <TestTube className="w-4 h-4 mr-2" />
@@ -153,10 +155,6 @@ const Configuracoes: React.FC = () => {
                   </Button>
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="push" className="space-y-6">
-              <OneSignalSettings />
             </TabsContent>
 
             <TabsContent value="privacidade" className="space-y-6">

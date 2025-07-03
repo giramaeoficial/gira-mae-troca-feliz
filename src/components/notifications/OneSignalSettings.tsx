@@ -1,10 +1,10 @@
+
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useNotificationSystem } from '@/hooks/useNotificationSystem';
 import { useAuth } from '@/hooks/useAuth';
-import { Bell, Check, X, TestTube, Smartphone, CheckCircle, Server } from 'lucide-react';
+import { Bell, BellOff, AlertTriangle, CheckCircle, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const OneSignalSettings: React.FC = () => {
@@ -24,13 +24,10 @@ export const OneSignalSettings: React.FC = () => {
       if (!user || !browserPermission || browserPermission !== 'granted') return;
       
       // Aguardar OneSignal carregar se necessário
-      if (typeof window !== 'undefined' && window.OneSignal?.User) {
+      if (typeof window !== 'undefined' && window.OneSignal?.setExternalUserId) {
         try {
-          console.log('🔗 Registrando usuário no OneSignal v16:', user.id);
-          
-          // API v16: usar addTag em vez de setExternalUserId
-          await window.OneSignal.User.addTag('user_id', user.id);
-          
+          console.log('🔗 Registrando usuário no OneSignal:', user.id);
+          await window.OneSignal.setExternalUserId(user.id);
           console.log('✅ Usuário registrado no OneSignal com sucesso');
         } catch (error) {
           console.error('❌ Erro ao registrar usuário no OneSignal:', error);
@@ -51,13 +48,10 @@ export const OneSignalSettings: React.FC = () => {
         
         // Registrar no OneSignal após aceitar permissão
         setTimeout(async () => {
-          if (window.OneSignal?.User) {
+          if (window.OneSignal?.setExternalUserId) {
             try {
               console.log('🔗 Registrando usuário após aceitar permissão:', user.id);
-              
-              // API v16: usar addTag
-              await window.OneSignal.User.addTag('user_id', user.id);
-              
+              await window.OneSignal.setExternalUserId(user.id);
               console.log('✅ Usuário registrado no OneSignal após permissão');
               toast.success('Usuário registrado com sucesso!');
             } catch (error) {
@@ -66,10 +60,10 @@ export const OneSignalSettings: React.FC = () => {
           }
         }, 3000);
       } else {
-        toast.error('Permissão negada. Ative nas configurações do navegador.');
+        toast.error('Permissão negada. Você pode ativá-la manualmente nas configurações do seu navegador.');
       }
     } catch (error) {
-      toast.error('Erro ao solicitar permissão');
+      toast.error('Ocorreu um erro ao solicitar a permissão.');
     }
   };
 
@@ -80,13 +74,10 @@ export const OneSignalSettings: React.FC = () => {
     }
 
     // Garantir que usuário está registrado antes de testar
-    if (window.OneSignal?.User && browserPermission === 'granted') {
+    if (window.OneSignal?.setExternalUserId && browserPermission === 'granted') {
       try {
         console.log('🔗 Verificando registro do usuário antes do teste...');
-        
-        // API v16: usar addTag
-        await window.OneSignal.User.addTag('user_id', user.id);
-        
+        await window.OneSignal.setExternalUserId(user.id);
         console.log('✅ Usuário registrado/verificado antes do teste');
       } catch (error) {
         console.warn('⚠️ Aviso ao verificar registro:', error);
@@ -95,6 +86,9 @@ export const OneSignalSettings: React.FC = () => {
 
     // Enviar notificação de teste
     await sendTestNotification();
+    toast.info('Notificação de teste enviada!', {
+      description: 'Você deve recebê-la em seu dispositivo em alguns instantes.',
+    });
   };
 
   return (
@@ -102,143 +96,60 @@ export const OneSignalSettings: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Smartphone className="w-5 h-5" />
-          Notificações Push
+          Alertas no Dispositivo (Push)
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <p className="text-sm text-gray-600">
+          Receba alertas importantes, como novas mensagens e atualizações de reservas,
+          mesmo quando o aplicativo não estiver aberto.
+        </p>
+
         {/* Status da Configuração */}
-        <div className="grid grid-cols-1 gap-4">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div>
-              <p className="font-medium text-sm">Sistema de Notificações</p>
-              <p className="text-xs text-gray-500">Edge Function (Servidor Seguro)</p>
+        <div className="space-y-3">
+          <div className={`flex items-center justify-between p-3 rounded-lg ${
+            browserPermission === 'granted' ? 'bg-green-50 text-green-800' : 
+            browserPermission === 'denied' ? 'bg-red-50 text-red-800' : 'bg-yellow-50 text-yellow-800'
+          }`}>
+            <div className="flex items-center gap-2">
+              {browserPermission === 'granted' && <CheckCircle className="w-5 h-5" />}
+              {browserPermission === 'denied' && <BellOff className="w-5 h-5" />}
+              {browserPermission === 'default' && <AlertTriangle className="w-5 h-5" />}
+              <span className="font-medium">Permissão do Navegador</span>
             </div>
-            <Badge variant="default">
-              <div className="flex items-center gap-1">
-                <Server className="w-3 h-3" />
-                Ativo
-              </div>
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div>
-              <p className="font-medium text-sm">Permissões do Navegador</p>
-              <p className="text-xs text-gray-500">Autorização para notificações</p>
-            </div>
-            <Badge variant={browserPermission === 'granted' ? "default" : "secondary"}>
-              {browserPermission === 'granted' ? (
-                <div className="flex items-center gap-1">
-                  <Check className="w-3 h-3" />
-                  Concedida
-                </div>
-              ) : browserPermission === 'denied' ? (
-                <div className="flex items-center gap-1">
-                  <X className="w-3 h-3" />
-                  Negada
-                </div>
-              ) : (
-                'Pendente'
-              )}
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <div>
-              <p className="font-medium text-sm">Push Notifications</p>
-              <p className="text-xs text-gray-500">Configuradas nas preferências</p>
-            </div>
-            <Badge variant={isPermissionGranted ? "default" : "secondary"}>
-              {isPermissionGranted ? (
-                <div className="flex items-center gap-1">
-                  <Bell className="w-3 h-3" />
-                  Ativadas
-                </div>
-              ) : (
-                'Desativadas'
-              )}
-            </Badge>
-          </div>
-
-          {/* Status do Registro OneSignal */}
-          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div>
-              <p className="font-medium text-sm text-blue-800">Registro OneSignal v16</p>
-              <p className="text-xs text-blue-600">Usuário taggeado no dispositivo</p>
-            </div>
-            <Badge variant={user && browserPermission === 'granted' ? "default" : "secondary"}>
-              {user && browserPermission === 'granted' ? (
-                <div className="flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" />
-                  Taggeado
-                </div>
-              ) : (
-                'Pendente'
-              )}
-            </Badge>
+            <span className="font-semibold">
+              {browserPermission === 'granted' ? 'Concedida' :
+               browserPermission === 'denied' ? 'Negada' : 'Pendente'}
+            </span>
           </div>
         </div>
 
-        {/* Ações */}
-        <div className="space-y-3">
+        {/* Ações do Usuário */}
+        <div className="space-y-3 pt-4 border-t">
           {browserPermission !== 'granted' && (
-            <Button 
-              onClick={handleRequestPermission}
-              className="w-full"
-            >
+            <Button onClick={handleRequestPermission} className="w-full">
               <Bell className="w-4 h-4 mr-2" />
-              Solicitar Permissão
+              Ativar Alertas no Dispositivo
             </Button>
           )}
 
-          <Button 
-            onClick={handleTestNotification}
-            variant="outline"
-            className="w-full"
-          >
-            <TestTube className="w-4 h-4 mr-2" />
-            Testar Notificação
-          </Button>
-        </div>
-
-        {/* Informações */}
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <h4 className="font-medium text-green-800 mb-2">✅ Sistema Ativo (v16)</h4>
-          <ul className="text-sm text-green-700 space-y-1">
-            <li>• Notificações in-app sempre ativas (sininho no header)</li>
-            <li>• Push notifications via Edge Function (servidor seguro)</li>
-            <li>• Credenciais OneSignal protegidas no servidor</li>
-            <li>• Usuário automaticamente taggeado no OneSignal v16</li>
-            <li>• Sistema otimizado e escalável</li>
-          </ul>
-        </div>
-
-        {/* Alerta sobre mudança de API */}
-        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-          <h4 className="font-medium text-orange-800 mb-2">🔄 API v16 Atualizada</h4>
-          <div className="text-sm text-orange-700 space-y-1">
-            <p>• Usando <code>OneSignal.User.addTag()</code> em vez de <code>setExternalUserId()</code></p>
-            <p>• Backend continua usando <code>include_external_user_ids</code> (compatível)</p>
-            <p>• Sistema funciona com ambas as versões da API</p>
-          </div>
-        </div>
-
-        {browserPermission === 'denied' && (
-          <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <h4 className="font-medium text-yellow-800 mb-2">⚠️ Permissão Negada</h4>
-            <p className="text-sm text-yellow-700">
-              Para receber notificações push, você precisa ativar as permissões nas configurações do seu navegador.
+          {browserPermission === 'denied' && (
+             <p className="text-xs text-center text-red-600 p-2 bg-red-50 rounded-md">
+                Você bloqueou as notificações. Para reativar, acesse as configurações de permissão do seu navegador para este site.
             </p>
-          </div>
-        )}
+          )}
 
-        {user && (
+          {browserPermission === 'granted' && (
+            <Button onClick={handleTestNotification} variant="outline" className="w-full">
+              Testar Notificação
+            </Button>
+          )}
+        </div>
+
+        {user && browserPermission === 'granted' && (
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-600">
-              <strong>Usuário ID:</strong> {user.id}
-            </p>
-            <p className="text-xs text-blue-600 mt-1">
-              <strong>OneSignal API:</strong> v16 (usando tags)
+              <strong>Status:</strong> Configurado e ativo para o usuário {user.id.slice(0, 8)}...
             </p>
           </div>
         )}
