@@ -1,5 +1,4 @@
 
-
 export type TipoTransacaoEnum = 
   // Entrada: Compra
   | 'compra'
@@ -10,6 +9,7 @@ export type TipoTransacaoEnum =
   // Entrada: Bônus de Cadastro/Indicação
   | 'bonus_cadastro'
   | 'bonus_indicacao_cadastro'
+  | 'bonus_indicacao_cadastro_indicado'  // ADICIONADO
   | 'bonus_indicacao_primeiro_item'
   | 'bonus_indicacao_primeira_compra'
   
