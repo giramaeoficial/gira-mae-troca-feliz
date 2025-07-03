@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -289,26 +288,56 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Atualizar preferências
+  // Atualizar preferências - VERSÃO CORRIGIDA
   const updatePreferences = useCallback(async (newPrefs: Partial<NotificationPreferences>) => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Primeiro, tentar atualizar o registro existente
+      const { data: existingPrefs, error: selectError } = await supabase
         .from('user_notification_preferences')
-        .upsert({
-          user_id: user.id,
-          ...preferences,
-          ...newPrefs,
-          updated_at: new Date().toISOString()
-        });
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Erro ao atualizar preferências:', error);
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error('Erro ao buscar preferências:', selectError);
+        throw selectError;
+      }
+
+      let result;
+      if (existingPrefs) {
+        // Atualizar registro existente
+        result = await supabase
+          .from('user_notification_preferences')
+          .update({
+            ...newPrefs,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+      } else {
+        // Criar novo registro
+        result = await supabase
+          .from('user_notification_preferences')
+          .insert({
+            user_id: user.id,
+            mensagens: preferences.mensagens,
+            reservas: preferences.reservas,
+            girinhas: preferences.girinhas,
+            sistema: preferences.sistema,
+            push_enabled: preferences.push_enabled,
+            ...newPrefs,
+            updated_at: new Date().toISOString()
+          });
+      }
+
+      if (result.error) {
+        console.error('Erro ao atualizar preferências:', result.error);
         toast.error('Erro ao atualizar preferências');
         return;
       }
 
+      // Atualizar estado local
       setPreferences(prev => ({ ...prev, ...newPrefs }));
       if (newPrefs.push_enabled !== undefined) {
         setPushEnabled(newPrefs.push_enabled);
