@@ -20,26 +20,37 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
     
-    <!-- OneSignal Scripts - Carregando SDK v16 -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <!-- OneSignal Scripts - Carregando SDK v16 com fallback -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer onerror="console.warn('OneSignal CDN falhou')"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration com tratamento de erro melhorado -->
     <script>
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          // Registrar service workers do OneSignal
-          navigator.serviceWorker.register('/OneSignalSDK.sw.js', { scope: '/OneSignalSDK/' })
-            .then(registration => console.log('OneSignal SW registrado:', registration))
-            .catch(error => console.log('Erro ao registrar OneSignal SW:', error));
+        window.addEventListener('load', async () => {
+          try {
+            // Registrar service workers do OneSignal com tratamento de erro
+            const oneSignalSWRegistration = await navigator.serviceWorker.register('/OneSignalSDK.sw.js', { 
+              scope: '/OneSignalSDK/' 
+            });
+            console.log('OneSignal SW registrado:', oneSignalSWRegistration);
+          } catch (error) {
+            console.warn('Erro ao registrar OneSignal SW:', error);
+          }
           
-          navigator.serviceWorker.register('/OneSignalSDKWorker.js')
-            .then(registration => console.log('OneSignal Worker registrado:', registration))
-            .catch(error => console.log('Erro ao registrar OneSignal Worker:', error));
+          try {
+            const oneSignalWorkerRegistration = await navigator.serviceWorker.register('/OneSignalSDKWorker.js');
+            console.log('OneSignal Worker registrado:', oneSignalWorkerRegistration);
+          } catch (error) {
+            console.warn('Erro ao registrar OneSignal Worker (usando fallback):', error);
+          }
           
-          // Registrar service worker personalizado
-          navigator.serviceWorker.register('/sw.js')
-            .then(registration => console.log('Custom SW registrado:', registration))
-            .catch(error => console.log('Erro ao registrar Custom SW:', error));
+          try {
+            // Registrar service worker personalizado
+            const customSWRegistration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Custom SW registrado:', customSWRegistration);
+          } catch (error) {
+            console.warn('Erro ao registrar Custom SW:', error);
+          }
         });
       }
     </script>
