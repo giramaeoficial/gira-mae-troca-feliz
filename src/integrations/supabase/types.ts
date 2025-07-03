@@ -1734,6 +1734,7 @@ export type Database = {
           descricao_pt: string
           icone: string | null
           ordem_exibicao: number | null
+          prorrogavel: boolean
           sinal: number
           tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
           updated_at: string | null
@@ -1749,6 +1750,7 @@ export type Database = {
           descricao_pt: string
           icone?: string | null
           ordem_exibicao?: number | null
+          prorrogavel?: boolean
           sinal: number
           tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
           updated_at?: string | null
@@ -1764,6 +1766,7 @@ export type Database = {
           descricao_pt?: string
           icone?: string | null
           ordem_exibicao?: number | null
+          prorrogavel?: boolean
           sinal?: number
           tipo?: Database["public"]["Enums"]["tipo_transacao_enum"]
           updated_at?: string | null
@@ -2483,11 +2486,17 @@ export type Database = {
         Returns: Json
       }
       processar_bonus_diario: {
-        Args: { p_user_id: string; p_valor_girinhas: number }
+        Args:
+          | { p_user_id: string }
+          | { p_user_id: string; p_valor_girinhas: number }
         Returns: boolean
       }
       processar_bonus_indicacao: {
         Args: { p_indicado_id: string; p_tipo_bonus: string }
+        Returns: undefined
+      }
+      processar_bonus_indicado: {
+        Args: { p_indicado_id: string }
         Returns: undefined
       }
       processar_compra_girinhas: {
@@ -2738,6 +2747,8 @@ export type Database = {
         | "taxa_marketplace"
         | "queima_expiracao"
         | "queima_administrativa"
+        | "bonus_promocional"
+        | "bonus_indicacao_cadastro_indicado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2877,6 +2888,8 @@ export const Constants = {
         "taxa_marketplace",
         "queima_expiracao",
         "queima_administrativa",
+        "bonus_promocional",
+        "bonus_indicacao_cadastro_indicado",
       ],
     },
   },
