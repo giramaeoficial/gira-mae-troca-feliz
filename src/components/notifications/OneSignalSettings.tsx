@@ -1,3 +1,4 @@
+// 1. Atualizar OneSignalSettings.tsx - Usar External User ID
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ export const OneSignalSettings: React.FC = () => {
   const isPushSupported = typeof window !== 'undefined' && 'Notification' in window;
   const browserPermission = isPushSupported ? Notification.permission : 'denied';
 
-  // Registrar usuário no OneSignal quando já tem permissão (CORRIGIDO PARA API v16)
+  // Registrar usuário no OneSignal quando já tem permissão (USANDO EXTERNAL USER ID)
   useEffect(() => {
     const registerUserInOneSignal = async () => {
       if (!user || !browserPermission || browserPermission !== 'granted') return;
@@ -25,12 +26,16 @@ export const OneSignalSettings: React.FC = () => {
       // Aguardar OneSignal carregar se necessário
       if (typeof window !== 'undefined' && window.OneSignal?.User) {
         try {
-          console.log('🔗 Registrando usuário no OneSignal v16:', user.id);
+          console.log('🔗 Registrando usuário no OneSignal v16 (External User ID):', user.id);
           
-          // CORRIGIDO: Usar API v16
-          await window.OneSignal.User.addTag('user_id', user.id);
+          // ✅ NOVA ABORDAGEM: Usar addAlias em vez de addTag
+          await window.OneSignal.User.addAlias('external_id', user.id);
           
-          console.log('✅ Usuário registrado no OneSignal com sucesso');
+          // Verificar se o registro funcionou
+          const playerId = await window.OneSignal.User.PushSubscription.id;
+          console.log('✅ OneSignal Player ID:', playerId);
+          
+          console.log('✅ Usuário registrado no OneSignal com External User ID');
         } catch (error) {
           console.error('❌ Erro ao registrar usuário no OneSignal:', error);
         }
@@ -48,14 +53,18 @@ export const OneSignalSettings: React.FC = () => {
       if (granted && user) {
         toast.success('Permissão concedida! Notificações ativadas.');
         
-        // Registrar no OneSignal após aceitar permissão (CORRIGIDO PARA API v16)
+        // Registrar no OneSignal após aceitar permissão (USANDO EXTERNAL USER ID)
         setTimeout(async () => {
           if (window.OneSignal?.User) {
             try {
-              console.log('🔗 Registrando usuário após aceitar permissão:', user.id);
+              console.log('🔗 Registrando usuário após aceitar permissão (External User ID):', user.id);
               
-              // CORRIGIDO: Usar API v16
-              await window.OneSignal.User.addTag('user_id', user.id);
+              // ✅ NOVA ABORDAGEM: Usar addAlias
+              await window.OneSignal.User.addAlias('external_id', user.id);
+              
+              // Verificar registro
+              const playerId = await window.OneSignal.User.PushSubscription.id;
+              console.log('✅ OneSignal Player ID após registro:', playerId);
               
               console.log('✅ Usuário registrado no OneSignal após permissão');
               toast.success('Usuário registrado com sucesso!');
@@ -78,13 +87,17 @@ export const OneSignalSettings: React.FC = () => {
       return;
     }
 
-    // Garantir que usuário está registrado antes de testar (CORRIGIDO PARA API v16)
+    // Garantir que usuário está registrado antes de testar (USANDO EXTERNAL USER ID)
     if (window.OneSignal?.User && browserPermission === 'granted') {
       try {
-        console.log('🔗 Verificando registro do usuário antes do teste...');
+        console.log('🔗 Verificando registro do usuário antes do teste (External User ID)...');
         
-        // CORRIGIDO: Usar API v16
-        await window.OneSignal.User.addTag('user_id', user.id);
+        // ✅ NOVA ABORDAGEM: Usar addAlias em vez de addTag
+        await window.OneSignal.User.addAlias('external_id', user.id);
+        
+        // Verificar Player ID
+        const playerId = await window.OneSignal.User.PushSubscription.id;
+        console.log('✅ OneSignal Player ID antes do teste:', playerId);
         
         console.log('✅ Usuário registrado/verificado antes do teste');
       } catch (error) {
@@ -157,7 +170,7 @@ export const OneSignalSettings: React.FC = () => {
         {user && browserPermission === 'granted' && (
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-600">
-              <strong>Status:</strong> Configurado e ativo para o usuário {user.id.slice(0, 8)}... (API v16)
+              <strong>Status:</strong> Configurado e ativo para o usuário {user.id.slice(0, 8)}... (External User ID)
             </p>
           </div>
         )}
