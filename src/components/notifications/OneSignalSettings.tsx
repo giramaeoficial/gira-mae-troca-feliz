@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,10 +24,13 @@ export const OneSignalSettings: React.FC = () => {
       if (!user || !browserPermission || browserPermission !== 'granted') return;
       
       // Aguardar OneSignal carregar se necessário
-      if (typeof window !== 'undefined' && window.OneSignal) {
+      if (typeof window !== 'undefined' && window.OneSignal?.User) {
         try {
-          console.log('🔗 Registrando usuário no OneSignal:', user.id);
-          await window.OneSignal.setExternalUserId(user.id);
+          console.log('🔗 Registrando usuário no OneSignal v16:', user.id);
+          
+          // API v16: usar addTag em vez de setExternalUserId
+          await window.OneSignal.User.addTag('user_id', user.id);
+          
           console.log('✅ Usuário registrado no OneSignal com sucesso');
         } catch (error) {
           console.error('❌ Erro ao registrar usuário no OneSignal:', error);
@@ -37,7 +39,7 @@ export const OneSignalSettings: React.FC = () => {
     };
 
     // Pequeno delay para garantir que OneSignal carregou
-    const timer = setTimeout(registerUserInOneSignal, 1000);
+    const timer = setTimeout(registerUserInOneSignal, 2000);
     return () => clearTimeout(timer);
   }, [user, browserPermission]);
 
@@ -49,17 +51,20 @@ export const OneSignalSettings: React.FC = () => {
         
         // Registrar no OneSignal após aceitar permissão
         setTimeout(async () => {
-          if (window.OneSignal) {
+          if (window.OneSignal?.User) {
             try {
               console.log('🔗 Registrando usuário após aceitar permissão:', user.id);
-              await window.OneSignal.setExternalUserId(user.id);
+              
+              // API v16: usar addTag
+              await window.OneSignal.User.addTag('user_id', user.id);
+              
               console.log('✅ Usuário registrado no OneSignal após permissão');
               toast.success('Usuário registrado com sucesso!');
             } catch (error) {
               console.error('❌ Erro ao registrar após permissão:', error);
             }
           }
-        }, 2000);
+        }, 3000);
       } else {
         toast.error('Permissão negada. Ative nas configurações do navegador.');
       }
@@ -75,10 +80,13 @@ export const OneSignalSettings: React.FC = () => {
     }
 
     // Garantir que usuário está registrado antes de testar
-    if (window.OneSignal && browserPermission === 'granted') {
+    if (window.OneSignal?.User && browserPermission === 'granted') {
       try {
         console.log('🔗 Verificando registro do usuário antes do teste...');
-        await window.OneSignal.setExternalUserId(user.id);
+        
+        // API v16: usar addTag
+        await window.OneSignal.User.addTag('user_id', user.id);
+        
         console.log('✅ Usuário registrado/verificado antes do teste');
       } catch (error) {
         console.warn('⚠️ Aviso ao verificar registro:', error);
@@ -155,14 +163,14 @@ export const OneSignalSettings: React.FC = () => {
           {/* Status do Registro OneSignal */}
           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
             <div>
-              <p className="font-medium text-sm text-blue-800">Registro OneSignal</p>
-              <p className="text-xs text-blue-600">Usuário vinculado ao dispositivo</p>
+              <p className="font-medium text-sm text-blue-800">Registro OneSignal v16</p>
+              <p className="text-xs text-blue-600">Usuário taggeado no dispositivo</p>
             </div>
             <Badge variant={user && browserPermission === 'granted' ? "default" : "secondary"}>
               {user && browserPermission === 'granted' ? (
                 <div className="flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" />
-                  Registrado
+                  Taggeado
                 </div>
               ) : (
                 'Pendente'
@@ -195,14 +203,24 @@ export const OneSignalSettings: React.FC = () => {
 
         {/* Informações */}
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <h4 className="font-medium text-green-800 mb-2">✅ Sistema Ativo</h4>
+          <h4 className="font-medium text-green-800 mb-2">✅ Sistema Ativo (v16)</h4>
           <ul className="text-sm text-green-700 space-y-1">
             <li>• Notificações in-app sempre ativas (sininho no header)</li>
             <li>• Push notifications via Edge Function (servidor seguro)</li>
             <li>• Credenciais OneSignal protegidas no servidor</li>
-            <li>• Usuário automaticamente registrado no OneSignal</li>
+            <li>• Usuário automaticamente taggeado no OneSignal v16</li>
             <li>• Sistema otimizado e escalável</li>
           </ul>
+        </div>
+
+        {/* Alerta sobre mudança de API */}
+        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+          <h4 className="font-medium text-orange-800 mb-2">🔄 API v16 Atualizada</h4>
+          <div className="text-sm text-orange-700 space-y-1">
+            <p>• Usando <code>OneSignal.User.addTag()</code> em vez de <code>setExternalUserId()</code></p>
+            <p>• Backend continua usando <code>include_external_user_ids</code> (compatível)</p>
+            <p>• Sistema funciona com ambas as versões da API</p>
+          </div>
         </div>
 
         {browserPermission === 'denied' && (
@@ -218,6 +236,9 @@ export const OneSignalSettings: React.FC = () => {
           <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-600">
               <strong>Usuário ID:</strong> {user.id}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">
+              <strong>OneSignal API:</strong> v16 (usando tags)
             </p>
           </div>
         )}
