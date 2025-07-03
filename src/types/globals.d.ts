@@ -11,6 +11,7 @@ declare global {
         };
       };
       init: (config: any) => Promise<void>;
+      setExternalUserId: (userId: string) => Promise<void>;
     };
   }
 }
