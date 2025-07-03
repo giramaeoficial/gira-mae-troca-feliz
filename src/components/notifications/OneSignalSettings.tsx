@@ -5,6 +5,7 @@ import { useNotificationSystem } from '@/hooks/useNotificationSystem';
 import { useAuth } from '@/hooks/useAuth';
 import { Bell, BellOff, CheckCircle, Smartphone, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { initializeOneSignal, getOneSignalPlayerId, isUserOptedIn } from '@/lib/onesignal';
 
 export const OneSignalSettings: React.FC = () => {
   const { 
@@ -20,18 +21,14 @@ export const OneSignalSettings: React.FC = () => {
   const isPushSupported = typeof window !== 'undefined' && 'Notification' in window;
   const browserPermission = isPushSupported ? Notification.permission : 'denied';
 
-  // Verificar se OneSignal está carregado
+  // Inicializar OneSignal apenas uma vez
   useEffect(() => {
-    const checkOneSignal = () => {
-      if (window.OneSignal) {
-        setOneSignalReady(true);
-      }
+    const initOneSignal = async () => {
+      const initialized = await initializeOneSignal();
+      setOneSignalReady(initialized);
     };
-
-    checkOneSignal();
-    const interval = setInterval(checkOneSignal, 1000);
     
-    return () => clearInterval(interval);
+    initOneSignal();
   }, []);
 
   const handleRequestPermission = async () => {
@@ -50,7 +47,6 @@ export const OneSignalSettings: React.FC = () => {
       await updatePreferences({ push_enabled: false });
       toast.success('Notificações push desativadas com sucesso!');
     } catch (error) {
-      console.error('Erro ao desativar notificações:', error);
       toast.error('Erro ao desativar notificações push');
     }
   };
