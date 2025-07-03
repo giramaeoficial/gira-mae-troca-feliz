@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Info, X, Camera } from 'lucide-react';
 import SimpleAddressForm from '@/components/address/SimpleAddressForm';
+import NotificationSettings from '@/components/location/NotificationSettings';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,7 +23,7 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
   const { user } = useAuth();
   const { profile, refetch } = useProfile();
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<'basico' | 'endereco'>('basico');
+  const [tab, setTab] = useState<'basico' | 'endereco' | 'notificacoes'>('basico');
   
   const [profileData, setProfileData] = useState({
     nome: '',
@@ -98,7 +99,8 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
 
   const tabs = [
     { id: 'basico', label: 'Básico' },
-    { id: 'endereco', label: 'Endereço' }
+    { id: 'endereco', label: 'Endereço' },
+    { id: 'notificacoes', label: 'Notificações' }
   ] as const;
 
   return (
@@ -254,6 +256,19 @@ const EditarPerfil: React.FC<EditarPerfilProps> = ({ onClose }) => {
                   Nunca compartilhamos seu endereço completo com outras usuárias.
                 </AlertDescription>
               </Alert>
+            </div>
+          )}
+
+          {tab === 'notificacoes' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-lg mb-2">🔔 Notificações</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Configure quando e como você quer ser notificada sobre novos itens próximos.
+                </p>
+              </div>
+
+              <NotificationSettings />
             </div>
           )}
         </div>
