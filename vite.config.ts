@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Garantir que arquivos públicos sejam servidos corretamente
+  publicDir: 'public',
   build: {
     rollupOptions: {
       output: {
@@ -34,13 +36,21 @@ export default defineConfig(({ mode }) => ({
           'page-publicar': ['src/pages/PublicarItem.tsx'],
           'page-feed': ['src/pages/FeedOptimized.tsx']
         }
-      }
+      },
+      // Garantir que service workers sejam copiados
+      external: [
+        '/OneSignalSDK.sw.js',
+        '/OneSignalSDKWorker.js',
+        '/sw.js'
+      ]
     },
     // Otimizações básicas
     target: 'esnext',
     minify: 'esbuild',
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
+    // Copiar arquivos públicos
+    copyPublicDir: true,
   },
   // Otimizações de desenvolvimento
   optimizeDeps: {
