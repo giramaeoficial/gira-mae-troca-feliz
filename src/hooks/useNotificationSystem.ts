@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -67,6 +66,8 @@ export const useNotificationSystem = () => {
   const isLoadingRef = useRef(false);
   const channelManager = useRef(ChannelManager.getInstance());
   const oneSignalInitialized = useRef(false);
+  const initializationAttempts = useRef(0);
+  const maxInitializationAttempts = 3;
 
   // Carregar notificações in-app
   const loadNotifications = useCallback(async () => {
@@ -166,33 +167,62 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Inicializar OneSignal corretamente
+  // Aguardar OneSignal carregar completamente
+  const waitForOneSignalReady = useCallback((): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const checkInterval = setInterval(() => {
+        if (window.OneSignal?.User?.addAlias && window.OneSignal?.User?.PushSubscription) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+
+      // Timeout após 15 segundos
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        reject(new Error('OneSignal não carregou em 15 segundos'));
+      }, 15000);
+    });
+  }, []);
+
+  // Verificar se o usuário está subscrito
+  const checkSubscriptionStatus = useCallback(async (): Promise<boolean> => {
+    try {
+      if (!window.OneSignal?.User?.PushSubscription) {
+        return false;
+      }
+
+      // Aguardar um pouco para o subscription ser criado
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const playerId = await window.OneSignal.User.PushSubscription.id;
+      const isOptedIn = window.OneSignal.User.PushSubscription.optedIn;
+      
+      console.log('🔍 Verificando subscription:', { playerId, isOptedIn });
+      
+      return !!(playerId && isOptedIn);
+    } catch (error) {
+      console.warn('Erro ao verificar subscription:', error);
+      return false;
+    }
+  }, []);
+
+  // Inicializar OneSignal com retry
   const initializeOneSignal = useCallback(async () => {
     if (oneSignalInitialized.current || !user || typeof window === 'undefined') return;
+    
+    if (initializationAttempts.current >= maxInitializationAttempts) {
+      console.warn('❌ Máximo de tentativas de inicialização do OneSignal atingido');
+      return;
+    }
+
+    initializationAttempts.current++;
+    console.log(`🚀 Inicializando OneSignal (tentativa ${initializationAttempts.current}/${maxInitializationAttempts}) para usuário:`, user.id);
 
     try {
-      console.log('🚀 Inicializando OneSignal para usuário:', user.id);
-
       // Aguardar OneSignal carregar
-      const waitForOneSignal = () => {
-        return new Promise<void>((resolve, reject) => {
-          const checkInterval = setInterval(() => {
-            if (window.OneSignal?.User) {
-              clearInterval(checkInterval);
-              resolve();
-            }
-          }, 100);
-
-          // Timeout após 10 segundos
-          setTimeout(() => {
-            clearInterval(checkInterval);
-            reject(new Error('OneSignal não carregou em 10 segundos'));
-          }, 10000);
-        });
-      };
-
-      await waitForOneSignal();
-
+      await waitForOneSignalReady();
+      
       // Verificar se já está inicializado
       if (oneSignalInitialized.current) return;
 
@@ -203,27 +233,40 @@ export const useNotificationSystem = () => {
       await window.OneSignal.User.addAlias('external_id', user.id);
       console.log('✅ External User ID registrado:', user.id);
 
-      // Aguardar um pouco para subscription ser criada
+      // Verificar subscription após um tempo
       setTimeout(async () => {
         try {
+          const isSubscribed = await checkSubscriptionStatus();
           const playerId = await window.OneSignal.User.PushSubscription.id;
-          console.log('🎯 OneSignal Player ID após inicialização:', playerId);
+          
+          console.log('🎯 Status final do OneSignal:', { 
+            playerId, 
+            isSubscribed,
+            browserPermission: Notification.permission 
+          });
 
-          if (playerId) {
-            console.log('✅ Usuário registrado com sucesso no OneSignal');
+          if (isSubscribed) {
+            console.log('✅ Usuário totalmente configurado no OneSignal');
           } else {
-            console.log('⚠️ Player ID ainda não disponível - usuário precisa aceitar permissões');
+            console.log('⚠️ Usuário registrado mas não subscrito - precisa aceitar permissões');
           }
         } catch (error) {
-          console.warn('⚠️ Erro ao obter Player ID:', error);
+          console.warn('⚠️ Erro ao verificar status final:', error);
         }
-      }, 2000);
+      }, 3000);
 
     } catch (error) {
-      console.error('❌ Erro ao inicializar OneSignal:', error);
+      console.error(`❌ Erro ao inicializar OneSignal (tentativa ${initializationAttempts.current}):`, error);
       oneSignalInitialized.current = false;
+      
+      // Retry após um tempo se não atingiu o limite
+      if (initializationAttempts.current < maxInitializationAttempts) {
+        setTimeout(() => {
+          initializeOneSignal();
+        }, 5000);
+      }
     }
-  }, [user]);
+  }, [user, waitForOneSignalReady, checkSubscriptionStatus]);
 
   // Solicitar permissão para push notifications
   const requestPushPermission = async () => {
@@ -234,35 +277,38 @@ export const useNotificationSystem = () => {
           await updatePreferences({ push_enabled: true });
           setPushEnabled(true);
           
-          // Inicializar OneSignal após aceitar permissão
+          // Reinicializar OneSignal após aceitar permissão
+          oneSignalInitialized.current = false;
+          initializationAttempts.current = 0;
+          
           setTimeout(async () => {
             try {
               await initializeOneSignal();
               
-              // Aguardar subscription ser criada
+              // Verificar se ficou subscrito após alguns segundos
               setTimeout(async () => {
-                if (window.OneSignal?.User) {
-                  const playerId = await window.OneSignal.User.PushSubscription.id;
-                  console.log('🎯 Player ID após aceitar permissão:', playerId);
-                  
-                  if (playerId) {
-                    toast.success('Notificações ativadas com sucesso!');
-                  } else {
-                    console.log('⚠️ Player ID ainda não disponível');
-                  }
+                const isSubscribed = await checkSubscriptionStatus();
+                if (isSubscribed) {
+                  toast.success('Notificações ativadas com sucesso!');
+                } else {
+                  toast.info('Permissão concedida! Aguarde alguns segundos para finalizar a configuração...');
                 }
-              }, 3000);
+              }, 5000);
             } catch (error) {
-              console.error('❌ Erro ao inicializar OneSignal após permissão:', error);
+              console.error('❌ Erro ao reinicializar OneSignal após permissão:', error);
+              toast.error('Erro ao configurar notificações');
             }
           }, 1000);
           
           return true;
+        } else {
+          toast.error('Permissão negada. Você pode ativá-la manualmente nas configurações do seu navegador.');
         }
       }
       return false;
     } catch (error) {
       console.error('Erro ao solicitar permissão:', error);
+      toast.error('Erro ao solicitar permissão para notificações');
       return false;
     }
   };
@@ -419,7 +465,7 @@ export const useNotificationSystem = () => {
   useEffect(() => {
     if (user && !oneSignalInitialized.current) {
       // Aguardar um pouco antes de inicializar
-      const timer = setTimeout(initializeOneSignal, 2000);
+      const timer = setTimeout(initializeOneSignal, 3000);
       return () => clearTimeout(timer);
     }
   }, [user, initializeOneSignal]);
