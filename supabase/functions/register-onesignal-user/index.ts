@@ -13,42 +13,31 @@ interface RegisterRequest {
 }
 
 serve(async (req: Request) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('=== REGISTER ONESIGNAL USER STARTED ===');
+    console.log('🚀 Registrando usuário OneSignal...');
     
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get OneSignal credentials
     const oneSignalAppId = Deno.env.get('ONESIGNAL_APP_ID');
     const oneSignalApiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
 
     if (!oneSignalAppId || !oneSignalApiKey) {
-      console.error('OneSignal credentials not configured');
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'OneSignal not configured' 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ success: false, error: 'OneSignal não configurado' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Parse request body
     const body: RegisterRequest = await req.json();
-    console.log('Registration request:', { user_id: body.user_id, has_player_id: !!body.player_id });
+    console.log('📋 Dados recebidos:', { user_id: body.user_id, has_player_id: !!body.player_id });
 
-    // Validate user exists
+    // Verificar se usuário existe
     const { data: user, error: userError } = await supabase
       .from('profiles')
       .select('id, nome')
@@ -56,25 +45,19 @@ serve(async (req: Request) => {
       .single();
 
     if (userError || !user) {
-      console.error('User not found:', userError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'User not found' 
-        }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+        JSON.stringify({ success: false, error: 'Usuário não encontrado' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('User found:', user.nome);
+    console.log('👤 Usuário encontrado:', user.nome);
 
-    // Try to register/update external user ID in OneSignal
-    try {
-      if (body.player_id) {
-        // Method 1: Update existing player with external user ID
+    // Registrar no OneSignal
+    let registrationResult = null;
+    if (body.player_id) {
+      try {
+        // Método 1: Atualizar player existente com external_user_id
         const updateResponse = await fetch(`https://onesignal.com/api/v1/players/${body.player_id}`, {
           method: 'PUT',
           headers: {
@@ -88,88 +71,54 @@ serve(async (req: Request) => {
         });
 
         if (updateResponse.ok) {
-          const updateResult = await updateResponse.json();
-          console.log('OneSignal player updated with external ID:', updateResult);
-        } else {
-          console.warn('Failed to update OneSignal player:', await updateResponse.text());
+          registrationResult = await updateResponse.json();
+          console.log('✅ Player atualizado:', registrationResult);
         }
+      } catch (error) {
+        console.warn('⚠️ Falha ao atualizar player:', error);
       }
-
-      // Method 2: Always try to create/update using external user ID
-      const createResponse = await fetch('https://onesignal.com/api/v1/players', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${oneSignalApiKey}`,
-        },
-        body: JSON.stringify({
-          app_id: oneSignalAppId,
-          device_type: 5, // Web Push
-          external_user_id: body.user_id,
-          identifier: body.user_id, // Use user_id as identifier
-        }),
-      });
-
-      const createResult = await createResponse.json();
-      console.log('OneSignal registration result:', createResult);
-
-      // Update user preferences to mark as registered
-      const { error: prefsError } = await supabase
-        .from('user_notification_preferences')
-        .upsert({
-          user_id: body.user_id,
-          push_enabled: true,
-          push_subscription: {
-            player_id: body.player_id || createResult.id,
-            external_user_id: body.user_id,
-            registered_at: new Date().toISOString()
-          }
-        });
-
-      if (prefsError) {
-        console.warn('Failed to update user preferences:', prefsError);
-      }
-
-      console.log('=== REGISTER ONESIGNAL USER COMPLETED ===');
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'User registered successfully in OneSignal',
-          player_id: body.player_id || createResult.id,
-          external_user_id: body.user_id
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-
-    } catch (oneSignalError) {
-      console.error('OneSignal registration failed:', oneSignalError);
-      
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'OneSignal registration failed',
-          details: oneSignalError.message
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
     }
 
+    // Atualizar preferências do usuário
+    const { error: prefsError } = await supabase
+      .from('user_notification_preferences')
+      .upsert({
+        user_id: body.user_id,
+        push_enabled: true,
+        push_subscription: {
+          player_id: body.player_id,
+          external_user_id: body.user_id,
+          registered_at: new Date().toISOString()
+        },
+        updated_at: new Date().toISOString()
+      });
+
+    if (prefsError) {
+      console.warn('⚠️ Erro ao atualizar preferências:', prefsError);
+    }
+
+    console.log('✅ Registro concluído com sucesso');
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'Usuário registrado com sucesso no OneSignal',
+        player_id: body.player_id,
+        external_user_id: body.user_id
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+
   } catch (error) {
-    console.error('=== REGISTER ONESIGNAL USER ERROR ===');
-    console.error('Error details:', error);
+    console.error('❌ Erro no registro:', error);
     
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Internal server error',
-        details: error.message
+        error: 'Erro interno do servidor'
       }),
       {
         status: 500,
