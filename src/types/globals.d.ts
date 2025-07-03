@@ -9,6 +9,8 @@ declare global {
         removeAlias: (label: string) => Promise<void>;
         PushSubscription?: {
           id: string | null;
+          token: string | null;
+          optedIn: boolean;
           addEventListener: (event: string, callback: (event: any) => void) => void;
         };
       };
