@@ -16,12 +16,6 @@ interface NotificationRequest {
   send_push?: boolean;
 }
 
-interface OneSignalResponse {
-  id?: string;
-  recipients?: number;
-  errors?: any;
-}
-
 serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -126,7 +120,7 @@ serve(async (req: Request) => {
 
     console.log('In-app notification saved:', notification.id);
 
-    let pushResult: OneSignalResponse | null = null;
+    let pushResult: any = null;
 
     // Send push notification if enabled and user has push preferences enabled
     if ((body.send_push !== false) && 
@@ -157,7 +151,7 @@ serve(async (req: Request) => {
           body: JSON.stringify(oneSignalPayload),
         });
 
-        pushResult = await pushResponse.json() as OneSignalResponse;
+        pushResult = await pushResponse.json();
         console.log('OneSignal response:', pushResult);
 
         if (!pushResponse.ok) {

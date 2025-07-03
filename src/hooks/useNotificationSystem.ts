@@ -165,7 +165,7 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Solicitar permissão para push notifications
+  // Solicitar permissão para push notifications e registrar no OneSignal
   const requestPushPermission = async () => {
     try {
       if ('Notification' in window) {
@@ -173,6 +173,23 @@ export const useNotificationSystem = () => {
         if (permission === 'granted') {
           await updatePreferences({ push_enabled: true });
           setPushEnabled(true);
+          
+          // Registrar usuário no OneSignal após aceitar permissão
+          if (user && window.OneSignal?.User) {
+            try {
+              console.log('🔗 Registrando usuário no OneSignal após aceitar permissão:', user.id);
+              await window.OneSignal.User.addAlias('external_id', user.id);
+              
+              // Verificar se o registro funcionou
+              const playerId = await window.OneSignal.User.PushSubscription.id;
+              console.log('✅ OneSignal Player ID após aceitar permissão:', playerId);
+              
+              toast.success('Usuário registrado no OneSignal com sucesso!');
+            } catch (error) {
+              console.error('❌ Erro ao registrar no OneSignal após permissão:', error);
+            }
+          }
+          
           return true;
         }
       }
@@ -330,6 +347,32 @@ export const useNotificationSystem = () => {
       setLoading(false);
     }
   }, [user, loadPreferences, loadNotifications]);
+
+  // Registrar usuário no OneSignal quando necessário
+  useEffect(() => {
+    const registerUserInOneSignal = async () => {
+      if (!user || !window.OneSignal?.User) return;
+      
+      const browserPermission = 'Notification' in window ? Notification.permission : 'denied';
+      if (browserPermission !== 'granted') return;
+      
+      try {
+        console.log('🔗 Registrando usuário no OneSignal (External User ID):', user.id);
+        await window.OneSignal.User.addAlias('external_id', user.id);
+        
+        const playerId = await window.OneSignal.User.PushSubscription.id;
+        console.log('✅ OneSignal Player ID:', playerId);
+        
+        console.log('✅ Usuário registrado no OneSignal com External User ID');
+      } catch (error) {
+        console.error('❌ Erro ao registrar usuário no OneSignal:', error);
+      }
+    };
+
+    // Aguardar OneSignal carregar
+    const timer = setTimeout(registerUserInOneSignal, 2000);
+    return () => clearTimeout(timer);
+  }, [user]);
 
   // Realtime subscription
   useEffect(() => {

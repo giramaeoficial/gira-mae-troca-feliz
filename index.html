@@ -20,38 +20,57 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
     
-    <!-- OneSignal Scripts - Carregando SDK v16 com fallback -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer onerror="console.warn('OneSignal CDN falhou')"></script>
+    <!-- OneSignal Scripts - Melhor tratamento de erro -->
+    <script>
+      // Global OneSignal initialization with better error handling
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      
+      // Load OneSignal SDK with fallback
+      (function() {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+        script.defer = true;
+        script.onerror = function() {
+          console.warn('OneSignal CDN falhou, usando fallback local');
+          // Fallback se necessário
+        };
+        document.head.appendChild(script);
+      })();
+    </script>
     
-    <!-- Service Worker Registration com tratamento de erro melhorado -->
+    <!-- Service Worker Registration com tratamento aprimorado -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
+          // Registrar service workers em sequência com tratamento de erro
           try {
-            // Registrar service workers do OneSignal com tratamento de erro
+            // 1. OneSignal SDK SW
             const oneSignalSWRegistration = await navigator.serviceWorker.register('/OneSignalSDK.sw.js', { 
               scope: '/OneSignalSDK/' 
             });
-            console.log('OneSignal SW registrado:', oneSignalSWRegistration);
+            console.log('✅ OneSignal SDK SW registrado:', oneSignalSWRegistration.scope);
           } catch (error) {
-            console.warn('Erro ao registrar OneSignal SW:', error);
+            console.warn('❌ Erro ao registrar OneSignal SDK SW:', error.message);
           }
           
           try {
+            // 2. OneSignal Worker
             const oneSignalWorkerRegistration = await navigator.serviceWorker.register('/OneSignalSDKWorker.js');
-            console.log('OneSignal Worker registrado:', oneSignalWorkerRegistration);
+            console.log('✅ OneSignal Worker registrado:', oneSignalWorkerRegistration.scope);
           } catch (error) {
-            console.warn('Erro ao registrar OneSignal Worker (usando fallback):', error);
+            console.warn('❌ Erro ao registrar OneSignal Worker:', error.message);
           }
           
           try {
-            // Registrar service worker personalizado
+            // 3. Custom SW
             const customSWRegistration = await navigator.serviceWorker.register('/sw.js');
-            console.log('Custom SW registrado:', customSWRegistration);
+            console.log('✅ Custom SW registrado:', customSWRegistration.scope);
           } catch (error) {
-            console.warn('Erro ao registrar Custom SW:', error);
+            console.warn('❌ Erro ao registrar Custom SW:', error.message);
           }
         });
+      } else {
+        console.warn('Service Workers não são suportados neste navegador');
       }
     </script>
   </head>

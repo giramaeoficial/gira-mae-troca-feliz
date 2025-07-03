@@ -1,4 +1,4 @@
-// 1. Atualizar OneSignalSettings.tsx - Usar External User ID
+
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ export const OneSignalSettings: React.FC = () => {
   const isPushSupported = typeof window !== 'undefined' && 'Notification' in window;
   const browserPermission = isPushSupported ? Notification.permission : 'denied';
 
-  // Registrar usuário no OneSignal quando já tem permissão (USANDO EXTERNAL USER ID)
+  // Registrar usuário no OneSignal quando já tem permissão
   useEffect(() => {
     const registerUserInOneSignal = async () => {
       if (!user || !browserPermission || browserPermission !== 'granted') return;
@@ -28,7 +28,7 @@ export const OneSignalSettings: React.FC = () => {
         try {
           console.log('🔗 Registrando usuário no OneSignal v16 (External User ID):', user.id);
           
-          // ✅ NOVA ABORDAGEM: Usar addAlias em vez de addTag
+          // Usar addAlias em vez de addTag
           await window.OneSignal.User.addAlias('external_id', user.id);
           
           // Verificar se o registro funcionou
@@ -53,13 +53,13 @@ export const OneSignalSettings: React.FC = () => {
       if (granted && user) {
         toast.success('Permissão concedida! Notificações ativadas.');
         
-        // Registrar no OneSignal após aceitar permissão (USANDO EXTERNAL USER ID)
+        // Registrar no OneSignal após aceitar permissão
         setTimeout(async () => {
           if (window.OneSignal?.User) {
             try {
               console.log('🔗 Registrando usuário após aceitar permissão (External User ID):', user.id);
               
-              // ✅ NOVA ABORDAGEM: Usar addAlias
+              // Usar addAlias
               await window.OneSignal.User.addAlias('external_id', user.id);
               
               // Verificar registro
@@ -87,12 +87,12 @@ export const OneSignalSettings: React.FC = () => {
       return;
     }
 
-    // Garantir que usuário está registrado antes de testar (USANDO EXTERNAL USER ID)
+    // Garantir que usuário está registrado antes de testar
     if (window.OneSignal?.User && browserPermission === 'granted') {
       try {
         console.log('🔗 Verificando registro do usuário antes do teste (External User ID)...');
         
-        // ✅ NOVA ABORDAGEM: Usar addAlias em vez de addTag
+        // Usar addAlias em vez de addTag
         await window.OneSignal.User.addAlias('external_id', user.id);
         
         // Verificar Player ID
