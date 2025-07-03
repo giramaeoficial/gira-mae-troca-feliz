@@ -391,8 +391,8 @@ export const useNotificationSystem = () => {
     
     // Push Notifications
     pushEnabled,
-    playerId: null, // OneSignal player ID não é mais necessário no frontend
-    oneSignalInitialized: true, // Sempre true pois agora é gerenciado no backend
+    playerId: null, // Não mais necessário
+    oneSignalInitialized: true, // Sistema agora é gerenciado via edge function
     requestPushPermission,
     sendTestNotification,
     
