@@ -1,9 +1,12 @@
+
 // Declarações globais para OneSignal v16
 declare global {
   interface Window {
     OneSignal?: {
       User?: {
         addTag: (key: string, value: string) => Promise<void>;
+        addAlias: (label: string, id: string) => Promise<void>;
+        removeAlias: (label: string) => Promise<void>;
         PushSubscription?: {
           id: string | null;
           addEventListener: (event: string, callback: (event: any) => void) => void;
