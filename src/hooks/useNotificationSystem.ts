@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { 
+  initializeOneSignal, 
+  getOneSignalPlayerId, 
+  isUserOptedIn,
+  setExternalUserId,
+  waitForOneSignalReady,
+  getOneSignalInfo
+} from '@/lib/onesignal';
 import type { Notification, NotificationPreferences } from '@/types/notifications';
 
 // Singleton para gerenciar channels
@@ -30,7 +38,7 @@ class ChannelManager {
       try {
         supabase.removeChannel(channel);
       } catch (error) {
-        console.warn('Error removing channel:', error);
+        // Silencioso
       }
       this.channels.delete(key);
     }
@@ -41,7 +49,7 @@ class ChannelManager {
       try {
         supabase.removeChannel(channel);
       } catch (error) {
-        console.warn('Error removing channel:', key, error);
+        // Silencioso
       }
     });
     this.channels.clear();
@@ -66,8 +74,74 @@ export const useNotificationSystem = () => {
   const isLoadingRef = useRef(false);
   const channelManager = useRef(ChannelManager.getInstance());
   const registrationInProgress = useRef(false);
+  const oneSignalInitialized = useRef(false);
 
-  // Carregar notificações in-app
+  // ===============================
+  // INICIALIZAÇÃO DO ONESIGNAL
+  // ===============================
+
+  const initializeOneSignalWithUser = useCallback(async () => {
+    if (!user || oneSignalInitialized.current) return;
+
+    try {
+      // Inicializar OneSignal com user_id
+      const initialized = await initializeOneSignal(user.id);
+      
+      if (initialized) {
+        oneSignalInitialized.current = true;
+        
+        // Aguardar OneSignal estar pronto
+        await waitForOneSignalReady();
+        
+        // Configurar external_user_id
+        await setExternalUserId(user.id);
+        
+        // Verificar se precisa sincronizar Player ID
+        await syncPlayerIdIfNeeded();
+      }
+    } catch (error) {
+      // Silencioso - não atrapalhar o usuário
+    }
+  }, [user]);
+
+  // ===============================
+  // SINCRONIZAÇÃO DE PLAYER ID
+  // ===============================
+
+  const syncPlayerIdIfNeeded = useCallback(async () => {
+    if (!user || registrationInProgress.current) return;
+
+    try {
+      // Aguardar OneSignal estar pronto
+      const ready = await waitForOneSignalReady();
+      if (!ready) return;
+
+      // Obter Player ID atual
+      const currentPlayerId = getOneSignalPlayerId();
+      if (!currentPlayerId) return;
+
+      // Buscar Player ID salvo no banco
+      const { data: savedPrefs } = await supabase
+        .from('user_notification_preferences')
+        .select('push_subscription')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const savedPlayerId = savedPrefs?.push_subscription?.player_id;
+
+      // Se Player ID mudou, sincronizar
+      if (savedPlayerId !== currentPlayerId) {
+        await registerUserInOneSignal(currentPlayerId);
+      }
+    } catch (error) {
+      // Silencioso
+    }
+  }, [user]);
+
+  // ===============================
+  // CARREGAR DADOS
+  // ===============================
+
   const loadNotifications = useCallback(async () => {
     if (!user || isLoadingRef.current) return;
     
@@ -80,10 +154,7 @@ export const useNotificationSystem = () => {
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) {
-        console.error('Erro ao carregar notificações:', error);
-        return;
-      }
+      if (error) return;
 
       const convertedNotifications: Notification[] = (data || []).map(item => ({
         id: item.id,
@@ -99,14 +170,13 @@ export const useNotificationSystem = () => {
       setNotifications(convertedNotifications);
       setUnreadCount(convertedNotifications.filter(n => !n.read).length);
     } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
+      // Silencioso
     } finally {
       setLoading(false);
       isLoadingRef.current = false;
     }
   }, [user]);
 
-  // Carregar preferências
   const loadPreferences = useCallback(async () => {
     if (!user) return;
 
@@ -117,10 +187,7 @@ export const useNotificationSystem = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao carregar preferências:', error);
-        return;
-      }
+      if (error && error.code !== 'PGRST116') return;
 
       if (data) {
         setPreferences({
@@ -146,9 +213,7 @@ export const useNotificationSystem = () => {
           .select()
           .single();
 
-        if (insertError) {
-          console.error('Erro ao criar preferências:', insertError);
-        } else if (newPrefs) {
+        if (!insertError && newPrefs) {
           setPreferences({
             mensagens: newPrefs.mensagens,
             reservas: newPrefs.reservas,
@@ -160,86 +225,108 @@ export const useNotificationSystem = () => {
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar preferências:', error);
+      // Silencioso
     }
   }, [user]);
 
-  // Registrar usuário no OneSignal via edge function
+  // ===============================
+  // REGISTRO NO ONESIGNAL
+  // ===============================
+
   const registerUserInOneSignal = useCallback(async (playerId?: string) => {
     if (!user || registrationInProgress.current) return false;
     
     registrationInProgress.current = true;
     
     try {
-      console.log('🚀 Registrando usuário no OneSignal via edge function...');
+      // Usar Player ID atual se não fornecido
+      const playerIdToUse = playerId || getOneSignalPlayerId();
       
       const { data, error } = await supabase.functions.invoke('register-onesignal-user', {
         body: {
           user_id: user.id,
-          player_id: playerId
+          player_id: playerIdToUse
         }
       });
 
       if (error) {
-        console.error('❌ Erro ao registrar usuário:', error);
         return false;
       }
 
-      console.log('✅ Usuário registrado com sucesso:', data);
       return true;
     } catch (error) {
-      console.error('❌ Erro na edge function:', error);
       return false;
     } finally {
       registrationInProgress.current = false;
     }
   }, [user]);
 
-  // Solicitar permissão para push notifications
+  // ===============================
+  // PERMISSÕES PUSH
+  // ===============================
+
   const requestPushPermission = async () => {
     try {
-      if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          await updatePreferences({ push_enabled: true });
-          setPushEnabled(true);
-          
-          // Aguardar OneSignal estar pronto e registrar usuário
-          setTimeout(async () => {
-            try {
-              let playerId: string | undefined;
+      if (!('Notification' in window)) {
+        toast.error('Seu navegador não suporta notificações.');
+        return false;
+      }
+
+      // Garantir que OneSignal esteja inicializado
+      if (!oneSignalInitialized.current) {
+        await initializeOneSignalWithUser();
+      }
+
+      // Aguardar OneSignal estar pronto
+      const ready = await waitForOneSignalReady();
+      if (!ready) {
+        toast.error('Sistema de notificações não está pronto.');
+        return false;
+      }
+
+      // Solicitar permissão do navegador
+      const permission = await Notification.requestPermission();
+      
+      if (permission === 'granted') {
+        // Aguardar OneSignal processar a permissão
+        setTimeout(async () => {
+          try {
+            const info = getOneSignalInfo();
+            
+            if (info.playerId && info.optedIn) {
+              // Registrar no backend
+              const registered = await registerUserInOneSignal(info.playerId);
               
-              // Tentar obter player ID se OneSignal estiver disponível
-              if (window.OneSignal?.User?.PushSubscription?.id) {
-                playerId = window.OneSignal.User.PushSubscription.id || undefined;
-              }
-              
-              const registered = await registerUserInOneSignal(playerId);
               if (registered) {
+                // Atualizar preferências
+                await updatePreferences({ push_enabled: true });
                 toast.success('Notificações ativadas com sucesso!');
               } else {
                 toast.info('Permissão concedida! Finalizando configuração...');
               }
-            } catch (error) {
-              console.error('❌ Erro ao registrar usuário:', error);
-              toast.error('Erro ao configurar notificações');
+            } else {
+              toast.info('Permissão concedida! Aguardando configuração...');
             }
-          }, 2000);
-          
-          return true;
-        } else {
-          toast.error('Permissão negada. Você pode ativá-la manualmente nas configurações do seu navegador.');
-        }
+          } catch (error) {
+            toast.error('Erro ao configurar notificações');
+          }
+        }, 3000);
+        
+        return true;
+      } else {
+        toast.error('Permissão negada. Você pode ativá-la manualmente nas configurações do seu navegador.');
+        return false;
       }
-      return false;
     } catch (error) {
-      console.error('Erro ao solicitar permissão:', error);
       toast.error('Erro ao solicitar permissão para notificações');
       return false;
     }
   };
 
-  // Marcar notificação como lida
+  // ===============================
+  // AÇÕES DE NOTIFICAÇÃO
+  // ===============================
+
   const markAsRead = useCallback(async (notificationId: string) => {
     if (!user) return;
 
@@ -250,21 +337,17 @@ export const useNotificationSystem = () => {
         .eq('id', notificationId)
         .eq('user_id', user.id);
 
-      if (error) {
-        console.error('Erro ao marcar como lida:', error);
-        return;
-      }
+      if (error) return;
 
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Erro ao marcar como lida:', error);
+      // Silencioso
     }
   }, [user]);
 
-  // Marcar todas como lidas
   const markAllAsRead = useCallback(async () => {
     if (!user) return;
 
@@ -275,25 +358,24 @@ export const useNotificationSystem = () => {
         .eq('user_id', user.id)
         .eq('read', false);
 
-      if (error) {
-        console.error('Erro ao marcar todas como lidas:', error);
-        return;
-      }
+      if (error) return;
 
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
       toast.success('Todas as notificações foram marcadas como lidas');
     } catch (error) {
-      console.error('Erro ao marcar todas como lidas:', error);
+      // Silencioso
     }
   }, [user]);
 
-  // Atualizar preferências - VERSÃO CORRIGIDA
+  // ===============================
+  // ATUALIZAR PREFERÊNCIAS
+  // ===============================
+
   const updatePreferences = useCallback(async (newPrefs: Partial<NotificationPreferences>) => {
     if (!user) return;
 
     try {
-      // Primeiro, tentar atualizar o registro existente
       const { data: existingPrefs, error: selectError } = await supabase
         .from('user_notification_preferences')
         .select('*')
@@ -301,13 +383,11 @@ export const useNotificationSystem = () => {
         .maybeSingle();
 
       if (selectError && selectError.code !== 'PGRST116') {
-        console.error('Erro ao buscar preferências:', selectError);
         throw selectError;
       }
 
       let result;
       if (existingPrefs) {
-        // Atualizar registro existente
         result = await supabase
           .from('user_notification_preferences')
           .update({
@@ -316,7 +396,6 @@ export const useNotificationSystem = () => {
           })
           .eq('user_id', user.id);
       } else {
-        // Criar novo registro
         result = await supabase
           .from('user_notification_preferences')
           .insert({
@@ -332,24 +411,24 @@ export const useNotificationSystem = () => {
       }
 
       if (result.error) {
-        console.error('Erro ao atualizar preferências:', result.error);
         toast.error('Erro ao atualizar preferências');
         return;
       }
 
-      // Atualizar estado local
       setPreferences(prev => ({ ...prev, ...newPrefs }));
       if (newPrefs.push_enabled !== undefined) {
         setPushEnabled(newPrefs.push_enabled);
       }
       toast.success('Preferências atualizadas!');
     } catch (error) {
-      console.error('Erro ao atualizar preferências:', error);
       toast.error('Erro ao atualizar preferências');
     }
   }, [user, preferences]);
 
-  // Enviar notificação via edge function
+  // ===============================
+  // ENVIAR NOTIFICAÇÕES
+  // ===============================
+
   const sendNotification = useCallback(async (params: {
     userId: string;
     type: string;
@@ -373,49 +452,52 @@ export const useNotificationSystem = () => {
       });
 
       if (error) {
-        console.error('Erro ao enviar notificação via edge function:', error);
         throw error;
       }
 
-      console.log('Notificação enviada com sucesso:', result);
       return result;
     } catch (error) {
-      console.error('Erro ao enviar notificação:', error);
       throw error;
     }
   }, []);
 
-  // Enviar notificação de teste
   const sendTestNotification = useCallback(async () => {
-    if (user) {
-      try {
-        await sendNotification({
-          userId: user.id,
-          type: 'sistema',
-          title: 'GiraMãe - Teste',
-          message: 'Sistema de notificações funcionando perfeitamente!',
-          data: { test: true }
-        });
-        toast.success('Notificação de teste enviada!');
-      } catch (error) {
-        toast.error('Erro ao enviar notificação de teste');
-      }
-    } else {
+    if (!user) {
       toast.error('Usuário não encontrado');
+      return;
+    }
+
+    try {
+      await sendNotification({
+        userId: user.id,
+        type: 'sistema',
+        title: 'GiraMãe - Teste',
+        message: 'Sistema de notificações funcionando perfeitamente!',
+        data: { test: true }
+      });
+      toast.success('Notificação de teste enviada!');
+    } catch (error) {
+      toast.error('Erro ao enviar notificação de teste');
     }
   }, [user, sendNotification]);
 
-  // Effect para carregar dados do usuário
+  // ===============================
+  // EFFECTS
+  // ===============================
+
+  // Inicializar OneSignal quando usuário fizer login
   useEffect(() => {
     if (user) {
+      initializeOneSignalWithUser();
       loadPreferences();
       loadNotifications();
     } else {
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
+      oneSignalInitialized.current = false;
     }
-  }, [user, loadPreferences, loadNotifications]);
+  }, [user, initializeOneSignalWithUser, loadPreferences, loadNotifications]);
 
   // Realtime subscription
   useEffect(() => {
@@ -447,7 +529,6 @@ export const useNotificationSystem = () => {
           setNotifications(prev => [convertedNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
           
-          // Toast notification
           toast(convertedNotification.title, {
             description: convertedNotification.message,
           });
