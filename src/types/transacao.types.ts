@@ -23,6 +23,9 @@ export type TipoTransacaoEnum =
   | 'bonus_meta_ouro'
   | 'bonus_meta_diamante'
   
+  // Entrada: Bônus Promocional (NOVO)
+  | 'bonus_promocional'
+  
   // Entrada: Missões e Vendas
   | 'missao'
   | 'recebido_item'
@@ -37,7 +40,7 @@ export type TipoTransacaoEnum =
   
   // Saída: Taxas e Queimas
   | 'taxa_transferencia'
-  | 'taxa_extensao_validade'
+  | 'taxa_extensao_validade' // NOVO
   | 'taxa_marketplace'
   | 'queima_expiracao'
   | 'queima_administrativa';
