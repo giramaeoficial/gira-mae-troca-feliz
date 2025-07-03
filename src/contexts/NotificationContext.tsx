@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useNotifications as useNotificationsHook } from '@/hooks/useNotifications';
+import { useNotificationSystem } from '@/hooks/useNotificationSystem';
 import { Notification, NotificationPreferences } from '@/types/notifications';
 
 interface NotificationContextType {
@@ -11,15 +11,16 @@ interface NotificationContextType {
   updatePreferences: (prefs: Partial<NotificationPreferences>) => Promise<void>;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  sendNotification: (params: {
+    userId: string;
+    type: string;
+    title: string;
+    message: string;
+    data?: Record<string, any>;
+    sendPush?: boolean;
+  }) => Promise<any>;
   handleNotificationClick: (notification: Notification) => void;
-  // Métodos legados mantidos para compatibilidade
-  inAppNotifications: any[];
-  permissionGranted: boolean;
-  requestPermission: () => Promise<boolean>;
-  notificarBoasVindas: (nomeUsuario: string) => Promise<void>;
-  notificarReserva: (itemTitulo: string, valor: number, vendedorNome: string, nomeComprador: string) => Promise<void>;
-  notificarNovaMensagem: (destinatarioId: string, remetenteNome: string, itemTitulo: string, previewMensagem: string) => Promise<void>;
-  notificarItemDisponivel: (usuarioId: string, itemTitulo: string, valor: number) => Promise<void>;
+  // Métodos legados removidos - não mais necessários
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -29,22 +30,21 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const notificationHook = useNotificationsHook();
+  const notificationHook = useNotificationSystem();
 
-  // Métodos legados para compatibilidade
-  const legacyMethods = {
-    inAppNotifications: [],
-    permissionGranted: false,
-    requestPermission: async () => false,
-    notificarBoasVindas: async () => {},
-    notificarReserva: async () => {},
-    notificarNovaMensagem: async () => {},
-    notificarItemDisponivel: async () => {}
+  const handleNotificationClick = (notification: Notification) => {
+    // Marcar como lida
+    notificationHook.markAsRead(notification.id);
+    
+    // Navegar se tiver URL de ação
+    if (notification.data?.action_url) {
+      window.location.href = notification.data.action_url;
+    }
   };
 
   const contextValue = {
     ...notificationHook,
-    ...legacyMethods
+    handleNotificationClick
   };
 
   return (

@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import OneSignal from 'react-onesignal';
 import type { Notification, NotificationPreferences } from '@/types/notifications';
 
 // Singleton para gerenciar channels
@@ -55,8 +54,6 @@ export const useNotificationSystem = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pushEnabled, setPushEnabled] = useState(false);
-  const [playerId, setPlayerId] = useState<string | null>(null);
-  const [oneSignalInitialized, setOneSignalInitialized] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     mensagens: true,
     reservas: true,
@@ -69,18 +66,6 @@ export const useNotificationSystem = () => {
   // Refs para controle de estado
   const isLoadingRef = useRef(false);
   const channelManager = useRef(ChannelManager.getInstance());
-  const oneSignalInitRef = useRef(false);
-
-  // Inicializar OneSignal uma única vez (DESABILITADO TEMPORARIAMENTE)
-  const initializeOneSignal = useCallback(async () => {
-    if (oneSignalInitRef.current) return;
-    oneSignalInitRef.current = true;
-
-    // TEMPORARIAMENTE DESABILITADO para resolver problemas de Service Worker
-    console.log('OneSignal temporariamente desabilitado');
-    setOneSignalInitialized(false);
-    return;
-  }, []);
 
   // Carregar notificações in-app
   const loadNotifications = useCallback(async () => {
@@ -122,12 +107,11 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Carregar preferências com query defensiva
+  // Carregar preferências
   const loadPreferences = useCallback(async () => {
     if (!user) return;
 
     try {
-      // Usar maybeSingle() em vez de single() para não falhar se não existir
       const { data, error } = await supabase
         .from('user_notification_preferences')
         .select('*')
@@ -147,9 +131,9 @@ export const useNotificationSystem = () => {
           sistema: data.sistema,
           push_enabled: data.push_enabled
         });
+        setPushEnabled(data.push_enabled);
       } else {
-        // Se não existe, criar com valores padrão
-        console.log('Criando preferências padrão para o usuário');
+        // Criar preferências padrão
         const { data: newPrefs, error: insertError } = await supabase
           .from('user_notification_preferences')
           .insert({
@@ -173,6 +157,7 @@ export const useNotificationSystem = () => {
             sistema: newPrefs.sistema,
             push_enabled: newPrefs.push_enabled
           });
+          setPushEnabled(newPrefs.push_enabled);
         }
       }
     } catch (error) {
@@ -180,11 +165,17 @@ export const useNotificationSystem = () => {
     }
   }, [user]);
 
-  // Solicitar permissão para push notifications (DESABILITADO)
+  // Solicitar permissão para push notifications
   const requestPushPermission = async () => {
     try {
-      // TEMPORARIAMENTE DESABILITADO
-      console.log('Push notifications temporariamente desabilitado');
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          await updatePreferences({ push_enabled: true });
+          setPushEnabled(true);
+          return true;
+        }
+      }
       return false;
     } catch (error) {
       console.error('Erro ao solicitar permissão:', error);
@@ -262,6 +253,9 @@ export const useNotificationSystem = () => {
       }
 
       setPreferences(prev => ({ ...prev, ...newPrefs }));
+      if (newPrefs.push_enabled !== undefined) {
+        setPushEnabled(newPrefs.push_enabled);
+      }
       toast.success('Preferências atualizadas!');
     } catch (error) {
       console.error('Erro ao atualizar preferências:', error);
@@ -269,63 +263,61 @@ export const useNotificationSystem = () => {
     }
   }, [user, preferences]);
 
-  // Enviar notificação (push + in-app)
+  // Enviar notificação via edge function
   const sendNotification = useCallback(async (params: {
     userId: string;
     type: string;
     title: string;
     message: string;
     data?: Record<string, any>;
+    sendPush?: boolean;
   }) => {
-    const { userId, type, title, message, data = {} } = params;
+    const { userId, type, title, message, data = {}, sendPush = true } = params;
 
     try {
-      // 1. Salvar notificação in-app no banco
-      const { error: dbError } = await supabase
-        .from('notifications')
-        .insert({
+      const { data: result, error } = await supabase.functions.invoke('send-notification', {
+        body: {
           user_id: userId,
           type,
           title,
           message,
           data,
-          read: false
-        });
+          send_push: sendPush
+        }
+      });
 
-      if (dbError) {
-        console.error('Erro ao salvar notificação no banco:', dbError);
+      if (error) {
+        console.error('Erro ao enviar notificação via edge function:', error);
+        throw error;
       }
 
-      // 2. Push notification via OneSignal TEMPORARIAMENTE DESABILITADO
-      console.log('Push notification via OneSignal temporariamente desabilitado');
-
-      console.log('Notificação enviada:', { userId, type, title, message });
+      console.log('Notificação enviada com sucesso:', result);
+      return result;
     } catch (error) {
       console.error('Erro ao enviar notificação:', error);
       throw error;
     }
   }, []);
 
-  // Enviar notificação de teste (SIMPLIFICADA)
+  // Enviar notificação de teste
   const sendTestNotification = useCallback(async () => {
-    // Testar apenas notificação in-app por enquanto
     if (user) {
-      await sendNotification({
-        userId: user.id,
-        type: 'sistema',
-        title: 'GiraMãe - Teste',
-        message: 'Sistema de notificações in-app funcionando!'
-      });
-      toast.success('Notificação de teste criada!');
+      try {
+        await sendNotification({
+          userId: user.id,
+          type: 'sistema',
+          title: 'GiraMãe - Teste',
+          message: 'Sistema de notificações funcionando perfeitamente!',
+          data: { test: true }
+        });
+        toast.success('Notificação de teste enviada!');
+      } catch (error) {
+        toast.error('Erro ao enviar notificação de teste');
+      }
     } else {
       toast.error('Usuário não encontrado');
     }
   }, [user, sendNotification]);
-
-  // Effect para inicialização única do OneSignal
-  useEffect(() => {
-    initializeOneSignal();
-  }, [initializeOneSignal]);
 
   // Effect para carregar dados do usuário
   useEffect(() => {
@@ -339,7 +331,7 @@ export const useNotificationSystem = () => {
     }
   }, [user, loadPreferences, loadNotifications]);
 
-  // Realtime subscription com singleton pattern
+  // Realtime subscription
   useEffect(() => {
     if (!user) return;
 
@@ -399,8 +391,8 @@ export const useNotificationSystem = () => {
     
     // Push Notifications
     pushEnabled,
-    playerId,
-    oneSignalInitialized,
+    playerId: null, // OneSignal player ID não é mais necessário no frontend
+    oneSignalInitialized: true, // Sempre true pois agora é gerenciado no backend
     requestPushPermission,
     sendTestNotification,
     
