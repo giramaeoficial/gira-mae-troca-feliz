@@ -1,30 +1,35 @@
+// Configuração de logs
+const DEBUG_MODE = import.meta.env.DEV; // Só em desenvolvimento
+const log = (...args: any[]) => DEBUG_MODE && console.log(...args);
+const warn = (...args: any[]) => DEBUG_MODE && console.warn(...args);
+const error = (...args: any[]) => console.error(...args); // Erros sempre aparecem
+
 // Inicialização robusta do OneSignal com persistência de Player ID
 let initializationPromise: Promise<boolean> | null = null;
+let isInitialized = false; // Flag para evitar múltiplas inicializações
 
 export const initializeOneSignal = async (userId?: string): Promise<boolean> => {
   if (typeof window === 'undefined') {
-    console.log('[OneSignal - Inicialização] Ambiente não é de navegador. Abortando.');
+    log('[OneSignal] Ambiente não é de navegador. Abortando.');
     return false;
   }
   
-  // Retornar a promise existente se já estiver inicializando
-  if (initializationPromise) {
-    console.log('[OneSignal - Inicialização] Já existe uma inicialização em andamento. Retornando promise existente.');
-    return initializationPromise;
-  }
-  
   // Verificar se já está inicializado
-  if (window.OneSignal && window.OneSignal.initialized) {
-    console.log('[OneSignal - Inicialização] SDK do OneSignal já inicializado.');
-    // Se temos userId, configurar external_user_id
+  if (isInitialized && window.OneSignal?.initialized) {
+    log('[OneSignal] SDK já inicializado anteriormente.');
     if (userId) {
-      console.log(`[OneSignal - Inicialização] OneSignal já inicializado. Tentando definir external_user_id: ${userId}`);
       await setExternalUserId(userId);
     }
     return true;
   }
   
-  console.log('[OneSignal - Inicialização] Iniciando processo de inicialização do SDK OneSignal...');
+  // Retornar a promise existente se já estiver inicializando
+  if (initializationPromise) {
+    log('[OneSignal] Inicialização em andamento, aguardando...');
+    return initializationPromise;
+  }
+  
+  log('[OneSignal] Iniciando inicialização...');
   initializationPromise = new Promise(async (resolve) => {
     try {
       // Carregar script do OneSignal
@@ -34,49 +39,45 @@ export const initializeOneSignal = async (userId?: string): Promise<boolean> => 
       document.head.appendChild(script);
       
       script.onload = async () => {
-        console.log('[OneSignal - Inicialização] Script do OneSignal SDK carregado com sucesso.');
         try {
           window.OneSignalDeferred = window.OneSignalDeferred || [];
           
           window.OneSignalDeferred.push(async function(OneSignal) {
-            console.log('[OneSignal - Inicialização] OneSignalDeferred.push executado. Chamando OneSignal.init()...');
             await OneSignal.init({
               appId: "26d188ec-fdd6-41b3-86fe-b571cce6b3a5",
               allowLocalhostAsSecureOrigin: true,
-              autoRegister: false, // Não registrar automaticamente
-              autoResubscribe: true, // Reinscrever automaticamente se possível
+              autoRegister: false,
+              autoResubscribe: true,
               notifyButton: { enable: false },
-              // 🔥 CORREÇÃO: Usar apenas UM service worker
               serviceWorkerPath: "/OneSignalSDKWorker.js",
-              // ❌ Remover serviceWorkerUpdaterPath para evitar conflito
-              // serviceWorkerUpdaterPath: "/OneSignalSDK.sw.js", 
               serviceWorkerParam: { scope: "/" },
               persistNotification: false,
               notificationClickHandlerMatch: "origin",
               notificationClickHandlerAction: "focus",
             });
-            console.log('[OneSignal - Inicialização] OneSignal.init() concluído. SDK inicializado.');
             
-            // Se temos userId, configurar external_user_id imediatamente
+            isInitialized = true;
+            log('[OneSignal] ✅ Inicializado com sucesso');
+            
+            // Configurar external_user_id se fornecido
             if (userId) {
-              console.log(`[OneSignal - Inicialização] Tentando definir external_user_id imediatamente após init: ${userId}`);
               await setExternalUserIdInternal(userId);
             }
             
             resolve(true);
           });
         } catch (error) {
-          console.error('[OneSignal - Inicialização] Erro durante a configuração do OneSignal no callback OneSignalDeferred:', error);
+          error('[OneSignal] Erro na configuração:', error);
           resolve(false);
         }
       };
       
       script.onerror = () => {
-        console.error('[OneSignal - Inicialização] Erro fatal ao carregar o script SDK do OneSignal.');
+        error('[OneSignal] Erro ao carregar script');
         resolve(false);
       };
     } catch (error) {
-      console.error('[OneSignal - Inicialização] Erro geral na promise de inicialização do OneSignal:', error);
+      error('[OneSignal] Erro geral:', error);
       resolve(false);
     }
   });
@@ -84,60 +85,65 @@ export const initializeOneSignal = async (userId?: string): Promise<boolean> => 
   return initializationPromise;
 };
 
+// Cache para evitar múltiplas chamadas
+let externalUserIdCache: string | null = null;
+
 // Função interna para configurar external_user_id
 const setExternalUserIdInternal = async (userId: string): Promise<void> => {
-  if (!window.OneSignal) {
-    console.warn('[OneSignal - setExternalUserIdInternal] OneSignal não está disponível ao tentar definir external_user_id.');
-    return;
+  if (!window.OneSignal || externalUserIdCache === userId) {
+    return; // Já configurado para este usuário
   }
   
   try {
-    console.log(`[OneSignal - setExternalUserIdInternal] Tentando adicionar alias 'external_id' para userId: ${userId}`);
     await window.OneSignal.User.addAlias('external_id', userId);
-    console.log(`[OneSignal - setExternalUserIdInternal] Alias 'external_id' (${userId}) adicionado com sucesso.`);
+    externalUserIdCache = userId;
+    log('[OneSignal] External User ID configurado:', userId);
     
     // Fallback para API legada se disponível
     if (window.OneSignal.setExternalUserId) {
-      console.log(`[OneSignal - setExternalUserIdInternal] Tentando fallback setExternalUserId (legado) para userId: ${userId}`);
       await window.OneSignal.setExternalUserId(userId);
-      console.log(`[OneSignal - setExternalUserIdInternal] Fallback setExternalUserId (legado) para userId ${userId} bem-sucedido.`);
     }
   } catch (error) {
-    console.error(`[OneSignal - setExternalUserIdInternal] Erro ao definir external_user_id para ${userId}:`, error);
+    error('[OneSignal] Erro ao configurar External User ID:', error);
   }
 };
 
 // Configurar external_user_id (função pública)
 export const setExternalUserId = async (userId: string): Promise<boolean> => {
   if (typeof window === 'undefined' || !window.OneSignal) {
-    console.log('[OneSignal - setExternalUserId] Ambiente não é de navegador ou OneSignal não está pronto.');
     return false;
   }
   
   try {
-    console.log(`[OneSignal - setExternalUserId] Chamando setExternalUserIdInternal para userId: ${userId}`);
     await setExternalUserIdInternal(userId);
-    console.log(`[OneSignal - setExternalUserId] setExternalUserId concluído para userId: ${userId}.`);
     return true;
   } catch (error) {
-    console.error(`[OneSignal - setExternalUserId] Erro na função pública setExternalUserId para userId ${userId}:`, error);
+    error('[OneSignal] Erro na função pública setExternalUserId:', error);
     return false;
   }
 };
 
+// Cache para Player ID
+let playerIdCache: string | null = null;
+
 // Obter Player ID do OneSignal
 export const getOneSignalPlayerId = (): string | null => {
   if (typeof window === 'undefined' || !window.OneSignal) {
-    console.log('[OneSignal - getOneSignalPlayerId] Ambiente não é de navegador ou OneSignal não está pronto.');
     return null;
   }
   
   try {
     const playerId = window.OneSignal.User?.PushSubscription?.id || null;
-    console.log(`[OneSignal - getOneSignalPlayerId] Player ID obtido: ${playerId}`);
+    
+    // Só logar se mudou
+    if (playerId !== playerIdCache) {
+      playerIdCache = playerId;
+      log('[OneSignal] Player ID:', playerId);
+    }
+    
     return playerId;
   } catch (error) {
-    console.error('[OneSignal - getOneSignalPlayerId] Erro ao obter Player ID:', error);
+    error('[OneSignal] Erro ao obter Player ID:', error);
     return null;
   }
 };
@@ -145,16 +151,13 @@ export const getOneSignalPlayerId = (): string | null => {
 // Verificar se o usuário está inscrito
 export const isUserOptedIn = (): boolean => {
   if (typeof window === 'undefined' || !window.OneSignal) {
-    console.log('[OneSignal - isUserOptedIn] Ambiente não é de navegador ou OneSignal não está pronto.');
     return false;
   }
   
   try {
-    const optedIn = window.OneSignal.User?.PushSubscription?.optedIn || false;
-    console.log(`[OneSignal - isUserOptedIn] Usuário Opted In para notificações: ${optedIn}`);
-    return optedIn;
+    return window.OneSignal.User?.PushSubscription?.optedIn || false;
   } catch (error) {
-    console.error('[OneSignal - isUserOptedIn] Erro ao verificar se o usuário está inscrito:', error);
+    error('[OneSignal] Erro ao verificar opt-in:', error);
     return false;
   }
 };
@@ -162,63 +165,54 @@ export const isUserOptedIn = (): boolean => {
 // Solicitar permissão para notificações
 export const requestNotificationPermission = async (): Promise<boolean> => {
   if (typeof window === 'undefined' || !window.OneSignal) {
-    console.log('[OneSignal - requestNotificationPermission] Ambiente não é de navegador ou OneSignal não está pronto.');
     return false;
   }
   
   try {
-    console.log('[OneSignal - requestNotificationPermission] Tentando solicitar permissão de notificação (optIn)...');
     await window.OneSignal.User.PushSubscription.optIn();
-    console.log('[OneSignal - requestNotificationPermission] Chamada optIn concluída.');
-    
     const info = getOneSignalInfo();
-    console.log('[OneSignal - requestNotificationPermission] Status atual após optIn:', info);
+    
     if (info.optedIn && info.playerId) {
-      console.log('[OneSignal - requestNotificationPermission] ✅ Permissão concedida e Player ID obtido com sucesso!');
+      log('[OneSignal] ✅ Permissão concedida com sucesso!');
     } else {
-      console.warn('[OneSignal - requestNotificationPermission] ⚠️ Permissão não concedida ou Player ID não obtido após optIn.');
+      warn('[OneSignal] ⚠️ Permissão não concedida completamente');
     }
+    
     return true;
   } catch (error) {
-    console.error('[OneSignal - requestNotificationPermission] Erro ao solicitar permissão de notificação (optIn):', error);
-    if (error instanceof Error && error.message.includes('permission denied')) {
-        console.error('[OneSignal - requestNotificationPermission] Causa provável: Usuário negou a permissão explicitamente.');
-    }
+    error('[OneSignal] Erro ao solicitar permissão:', error);
     return false;
   }
 };
 
-// Aguardar OneSignal estar pronto
-export const waitForOneSignalReady = async (maxWaitTime: number = 10000): Promise<boolean> => {
+// Aguardar OneSignal estar pronto (com timeout e sem logs excessivos)
+export const waitForOneSignalReady = async (maxWaitTime: number = 5000): Promise<boolean> => {
   if (typeof window === 'undefined') {
-    console.log('[OneSignal - waitForOneSignalReady] Ambiente não é de navegador.');
     return false;
   }
   
   const startTime = Date.now();
-  console.log('[OneSignal - waitForOneSignalReady] Aguardando OneSignal estar pronto...');
+  
   while (Date.now() - startTime < maxWaitTime) {
     if (window.OneSignal && window.OneSignal.initialized) {
-      console.log('[OneSignal - waitForOneSignalReady] OneSignal está pronto!');
       return true;
     }
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  console.warn('[OneSignal - waitForOneSignalReady] Tempo limite excedido. OneSignal não ficou pronto.');
+  
+  warn('[OneSignal] Timeout aguardando OneSignal ficar pronto');
   return false;
 };
 
-// Obter informações completas do OneSignal
+// Obter informações completas do OneSignal (sem logs excessivos)
 export const getOneSignalInfo = () => {
   if (typeof window === 'undefined' || !window.OneSignal) {
-    const info = {
+    return {
       initialized: false,
       playerId: null,
       optedIn: false,
       permission: 'default' as NotificationPermission
     };
-    console.log('[OneSignal - getOneSignalInfo] OneSignal não está disponível. Retornando estado padrão:', info);
-    return info;
   }
   
   try {
@@ -228,10 +222,10 @@ export const getOneSignalInfo = () => {
       optedIn: window.OneSignal.User?.PushSubscription?.optedIn || false,
       permission: Notification.permission
     };
-    console.log('[OneSignal - getOneSignalInfo] Informações do OneSignal obtidas:', info);
+    
     return info;
   } catch (error) {
-    console.error('[OneSignal - getOneSignalInfo] Erro ao obter informações completas do OneSignal:', error);
+    error('[OneSignal] Erro ao obter informações:', error);
     return {
       initialized: false,
       playerId: null,
@@ -243,6 +237,9 @@ export const getOneSignalInfo = () => {
 
 // Resetar inicialização (para casos de erro)
 export const resetOneSignalInitialization = () => {
-  console.log('[OneSignal - resetOneSignalInitialization] Resetando promise de inicialização do OneSignal.');
+  log('[OneSignal] Resetando inicialização');
   initializationPromise = null;
+  isInitialized = false;
+  externalUserIdCache = null;
+  playerIdCache = null;
 };
