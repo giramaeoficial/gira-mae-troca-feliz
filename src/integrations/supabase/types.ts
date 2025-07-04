@@ -47,6 +47,38 @@ export type Database = {
           },
         ]
       }
+      admin_actions: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_actions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_notifications: {
         Row: {
           action_text: string | null
@@ -1365,6 +1397,7 @@ export type Database = {
           id: string
           instagram: string | null
           interesses: string[] | null
+          is_admin: boolean | null
           latitude: number | null
           longitude: number | null
           nome: string | null
@@ -1406,6 +1439,7 @@ export type Database = {
           id: string
           instagram?: string | null
           interesses?: string[] | null
+          is_admin?: boolean | null
           latitude?: number | null
           longitude?: number | null
           nome?: string | null
@@ -1447,6 +1481,7 @@ export type Database = {
           id?: string
           instagram?: string | null
           interesses?: string[] | null
+          is_admin?: boolean | null
           latitude?: number | null
           longitude?: number | null
           nome?: string | null
@@ -2699,6 +2734,10 @@ export type Database = {
       }
       validar_valor_item_categoria: {
         Args: { p_categoria: string; p_valor: number }
+        Returns: boolean
+      }
+      verificar_admin: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       verificar_metas_usuario: {

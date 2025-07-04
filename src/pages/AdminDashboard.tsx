@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import AuthGuard from '@/components/auth/AuthGuard';
+import AdminGuard from '@/components/auth/AdminGuard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Shield,
@@ -21,7 +21,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
   return (
-    <AuthGuard>
+    <AdminGuard>
       <div className="min-h-screen bg-gray-50">
         <div className="bg-white shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
           </Tabs>
         </div>
       </div>
-    </AuthGuard>
+    </AdminGuard>
   );
 };
 
