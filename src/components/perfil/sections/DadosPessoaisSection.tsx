@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ImageUpload from '@/components/ui/image-upload';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const INTERESSES_DISPONIVEIS = [
   'Moda Infantil', 'Educação', 'Atividades ao Ar Livre', 'Arte e Criatividade',
@@ -111,33 +111,10 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
 
             <div>
               <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-              <Input
-                id="data_nascimento"
-                type="text"
-                value={formData.data_nascimento_display || ''}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/\D/g, '');
-                  if (value.length >= 2) {
-                    value = value.slice(0, 2) + '/' + value.slice(2);
-                  }
-                  if (value.length >= 5) {
-                    value = value.slice(0, 5) + '/' + value.slice(5, 9);
-                  }
-                  
-                  onInputChange('data_nascimento_display', value);
-                  
-                  if (value.length === 10) {
-                    const [day, month, year] = value.split('/');
-                    if (day && month && year && year.length === 4) {
-                      const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                      onInputChange('data_nascimento', isoDate);
-                    }
-                  } else {
-                    onInputChange('data_nascimento', '');
-                  }
-                }}
-                placeholder="dd/mm/aaaa"
-                maxLength={10}
+              <DatePicker
+                value={formData.data_nascimento}
+                onChange={(date) => onInputChange('data_nascimento', date)}
+                placeholder="Selecione sua data de nascimento"
               />
             </div>
           </div>
