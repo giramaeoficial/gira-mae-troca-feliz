@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, User, MapPin, Baby } from 'lucide-react';
@@ -30,6 +29,7 @@ const EditarPerfil = () => {
     telefone: '',
     numero_whatsapp: '',
     data_nascimento: '',
+    data_nascimento_display: '',
     interesses: [] as string[],
     categorias_favoritas: [] as string[],
     aceita_entrega_domicilio: false,
@@ -105,6 +105,8 @@ const EditarPerfil = () => {
         telefone: profile.telefone || '',
         numero_whatsapp: profile.numero_whatsapp || '',
         data_nascimento: profile.data_nascimento || '',
+        data_nascimento_display: profile.data_nascimento ? 
+          new Date(profile.data_nascimento).toLocaleDateString('pt-BR') : '',
         interesses: profile.interesses || [],
         categorias_favoritas: profile.categorias_favoritas || [],
         aceita_entrega_domicilio: profile.aceita_entrega_domicilio || false,
@@ -132,7 +134,7 @@ const EditarPerfil = () => {
         nome: filho.nome,
         data_nascimento: filho.data_nascimento,
         data_nascimento_display: filho.data_nascimento ? 
-          new Date(filho.data_nascimento).toLocaleDateString('pt-BR') : '', // ADICIONAR ESTA LINHA
+          new Date(filho.data_nascimento).toLocaleDateString('pt-BR') : '',
         sexo: filho.sexo || '',
         tamanho_roupas: filho.tamanho_roupas || '',
         tamanho_calcados: filho.tamanho_calcados || '',
