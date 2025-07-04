@@ -52,6 +52,7 @@ const EditarPerfil = () => {
   const [novoFilho, setNovoFilho] = useState({
     nome: '',
     data_nascimento: '',
+    data_nascimento_display: '',
     sexo: '',
     tamanho_roupas: '',
     tamanho_calcados: '',
@@ -130,6 +131,8 @@ const EditarPerfil = () => {
         id: filho.id,
         nome: filho.nome,
         data_nascimento: filho.data_nascimento,
+        data_nascimento_display: filho.data_nascimento ? 
+          new Date(filho.data_nascimento).toLocaleDateString('pt-BR') : '', // ADICIONAR ESTA LINHA
         sexo: filho.sexo || '',
         tamanho_roupas: filho.tamanho_roupas || '',
         tamanho_calcados: filho.tamanho_calcados || '',
@@ -216,6 +219,7 @@ const EditarPerfil = () => {
       setNovoFilho({
         nome: '',
         data_nascimento: '',
+        data_nascimento_display: '',
         sexo: '',
         tamanho_roupas: '',
         tamanho_calcados: '',
