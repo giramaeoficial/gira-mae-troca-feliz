@@ -85,6 +85,8 @@ export const syncPlayerIdWithDatabase = async (userId: string): Promise<boolean>
   }
 };
 
+import React from 'react';
+
 // Hook para sincronização automática
 export const useSyncPlayerIdOnLoad = (userId?: string) => {
   React.useEffect(() => {
