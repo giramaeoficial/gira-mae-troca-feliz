@@ -25,13 +25,24 @@ export function DatePicker({
   placeholder = "Selecione uma data", 
   disabled = false 
 }: DatePickerProps) {
-  const [date, setDate] = React.useState<Date | undefined>(
-    value ? new Date(value) : undefined
-  );
+  const [date, setDate] = React.useState<Date | undefined>(() => {
+    if (value) {
+      // Inicializar sem problemas de timezone
+      const [year, month, day] = value.split('-');
+      if (year && month && day) {
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
+    }
+    return undefined;
+  });
 
   React.useEffect(() => {
     if (value) {
-      setDate(new Date(value));
+      // Criar data sem problemas de timezone
+      const [year, month, day] = value.split('-');
+      if (year && month && day) {
+        setDate(new Date(parseInt(year), parseInt(month) - 1, parseInt(day)));
+      }
     } else {
       setDate(undefined);
     }
