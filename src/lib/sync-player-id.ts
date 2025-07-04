@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getOneSignalPlayerId } from './onesignal';
@@ -13,6 +14,13 @@ let syncCache = {
   lastSyncTime: 0,
   isRunning: false
 };
+
+interface PushSubscription {
+  player_id?: string;
+  external_user_id?: string;
+  last_sync?: string;
+  registered_at?: string;
+}
 
 export const syncPlayerIdWithDatabase = async (userId: string): Promise<boolean> => {
   // Evitar execução se já está rodando
@@ -65,8 +73,14 @@ export const syncPlayerIdWithDatabase = async (userId: string): Promise<boolean>
       return false;
     }
     
-    // Verificar se precisa atualizar
-    const currentStoredPlayerId = preferences?.push_subscription?.player_id;
+    // Verificar se precisa atualizar - safe type checking
+    let currentStoredPlayerId: string | undefined;
+    
+    if (preferences?.push_subscription) {
+      // Safely handle the Json type
+      const pushSub = preferences.push_subscription as PushSubscription;
+      currentStoredPlayerId = pushSub.player_id;
+    }
     
     if (currentStoredPlayerId === currentPlayerId) {
       log('[Sync Player ID] Player ID já está sincronizado');
@@ -85,8 +99,9 @@ export const syncPlayerIdWithDatabase = async (userId: string): Promise<boolean>
     });
     
     // Atualizar push_subscription com novo Player ID
-    const updatedPushSubscription = {
-      ...preferences.push_subscription,
+    const currentPushSub = (preferences.push_subscription as PushSubscription) || {};
+    const updatedPushSubscription: PushSubscription = {
+      ...currentPushSub,
       player_id: currentPlayerId,
       last_sync: new Date().toISOString(),
       external_user_id: userId

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,6 +55,13 @@ class ChannelManager {
     });
     this.channels.clear();
   }
+}
+
+interface PushSubscription {
+  player_id?: string;
+  external_user_id?: string;
+  last_sync?: string;
+  registered_at?: string;
 }
 
 export const useNotificationSystem = () => {
@@ -127,7 +135,12 @@ export const useNotificationSystem = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const savedPlayerId = savedPrefs?.push_subscription?.player_id;
+      // Safe type checking for push_subscription
+      let savedPlayerId: string | undefined;
+      if (savedPrefs?.push_subscription) {
+        const pushSub = savedPrefs.push_subscription as PushSubscription;
+        savedPlayerId = pushSub.player_id;
+      }
 
       // Se Player ID mudou, sincronizar
       if (savedPlayerId !== currentPlayerId) {

@@ -1,3 +1,4 @@
+
 // Configuração de logs
 const DEBUG_MODE = import.meta.env.DEV; // Só em desenvolvimento
 const log = (...args: any[]) => DEBUG_MODE && console.log(...args);
@@ -40,7 +41,10 @@ export const initializeOneSignal = async (userId?: string): Promise<boolean> => 
       
       script.onload = async () => {
         try {
-          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          // Inicializar OneSignalDeferred se não existir
+          if (!window.OneSignalDeferred) {
+            window.OneSignalDeferred = [];
+          }
           
           window.OneSignalDeferred.push(async function(OneSignal) {
             await OneSignal.init({
