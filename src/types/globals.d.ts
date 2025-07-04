@@ -51,6 +51,7 @@ declare global {
       setExternalUserId?: (userId: string) => Promise<void>;
       getPlayerId?: () => Promise<string | null>;
     };
+    OneSignalDeferred?: Array<(OneSignal: any) => void>;
   }
 }
 

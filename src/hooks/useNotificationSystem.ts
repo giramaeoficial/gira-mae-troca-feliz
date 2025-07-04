@@ -73,7 +73,7 @@ export const useNotificationSystem = () => {
 
   // Refs para controle de estado
   const isLoadingRef = useRef(false);
-  const channelManager = useRef(ChannelManager.getInstance());
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const registrationInProgress = useRef(false);
   const oneSignalInitialized = useRef(false);
 
@@ -128,7 +128,12 @@ export const useNotificationSystem = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const savedPlayerId = savedPrefs?.push_subscription?.player_id;
+      // Type guard para verificar se push_subscription existe e tem a estrutura correta
+      const savedPlayerId = savedPrefs?.push_subscription && 
+        typeof savedPrefs.push_subscription === 'object' && 
+        'player_id' in savedPrefs.push_subscription 
+        ? (savedPrefs.push_subscription as any).player_id 
+        : null;
 
       // Se Player ID mudou, sincronizar
       if (savedPlayerId !== currentPlayerId) {
@@ -544,52 +549,60 @@ export const useNotificationSystem = () => {
 
   // Realtime subscription
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Cleanup se não há usuário
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      return;
+    }
+
+    // Se já tem um channel, não criar outro
+    if (channelRef.current) {
+      return;
+    }
 
     const channelKey = `notifications-${user.id}`;
     
-    const channel = channelManager.current.getOrCreateChannel(channelKey, () => {
-      return supabase
-        .channel(channelKey)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        }, (payload) => {
-          const newNotification = payload.new as any;
-          const convertedNotification: Notification = {
-            id: newNotification.id,
-            user_id: newNotification.user_id,
-            type: newNotification.type,
-            title: newNotification.title,
-            message: newNotification.message,
-            data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
-            read: newNotification.read,
-            created_at: newNotification.created_at
-          };
-          
-          setNotifications(prev => [convertedNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
-          
-          toast(convertedNotification.title, {
-            description: convertedNotification.message,
-          });
-        })
-        .subscribe();
-    });
+    const channel = supabase
+      .channel(channelKey)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        const newNotification = payload.new as any;
+        const convertedNotification: Notification = {
+          id: newNotification.id,
+          user_id: newNotification.user_id,
+          type: newNotification.type,
+          title: newNotification.title,
+          message: newNotification.message,
+          data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
+          read: newNotification.read,
+          created_at: newNotification.created_at
+        };
+        
+        setNotifications(prev => [convertedNotification, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        
+        toast(convertedNotification.title, {
+          description: convertedNotification.message,
+        });
+      })
+      .subscribe();
+
+    channelRef.current = channel;
 
     return () => {
-      channelManager.current.removeChannel(channelKey);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [user]);
-
-  // Cleanup global no unmount
-  useEffect(() => {
-    return () => {
-      channelManager.current.removeAllChannels();
-    };
-  }, []);
 
   return {
     // In-App Notifications
