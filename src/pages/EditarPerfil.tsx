@@ -29,7 +29,6 @@ const EditarPerfil = () => {
     telefone: '',
     numero_whatsapp: '',
     data_nascimento: '',
-    data_nascimento_display: '',
     interesses: [] as string[],
     categorias_favoritas: [] as string[],
     aceita_entrega_domicilio: false,
@@ -52,7 +51,6 @@ const EditarPerfil = () => {
   const [novoFilho, setNovoFilho] = useState({
     nome: '',
     data_nascimento: '',
-    data_nascimento_display: '',
     sexo: '',
     tamanho_roupas: '',
     tamanho_calcados: '',
@@ -67,9 +65,6 @@ const EditarPerfil = () => {
   // Função para processar dados antes de enviar ao Supabase
   const processFormDataForDatabase = (data: any) => {
     const processedData = { ...data };
-    
-    // Remover campos auxiliares que não existem no banco
-    delete processedData.data_nascimento_display;
     
     // Converter strings vazias em null para campos de data
     if (processedData.data_nascimento === '') {
@@ -108,8 +103,6 @@ const EditarPerfil = () => {
         telefone: profile.telefone || '',
         numero_whatsapp: profile.numero_whatsapp || '',
         data_nascimento: profile.data_nascimento || '',
-        data_nascimento_display: profile.data_nascimento ? 
-          new Date(profile.data_nascimento).toLocaleDateString('pt-BR') : '',
         interesses: profile.interesses || [],
         categorias_favoritas: profile.categorias_favoritas || [],
         aceita_entrega_domicilio: profile.aceita_entrega_domicilio || false,
@@ -136,8 +129,6 @@ const EditarPerfil = () => {
         id: filho.id,
         nome: filho.nome,
         data_nascimento: filho.data_nascimento,
-        data_nascimento_display: filho.data_nascimento ? 
-          new Date(filho.data_nascimento).toLocaleDateString('pt-BR') : '',
         sexo: filho.sexo || '',
         tamanho_roupas: filho.tamanho_roupas || '',
         tamanho_calcados: filho.tamanho_calcados || '',
@@ -224,7 +215,6 @@ const EditarPerfil = () => {
       setNovoFilho({
         nome: '',
         data_nascimento: '',
-        data_nascimento_display: '',
         sexo: '',
         tamanho_roupas: '',
         tamanho_calcados: '',
