@@ -168,19 +168,19 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   }
   
   try {
-    console.log('[OneSignal - requestNotificationPermission] Tentando solicitar permissão de notificação (optIn)...');
-    await window.OneSignal.User.PushSubscription.optIn();
-    console.log('[OneSignal - requestNotificationPermission] Chamada optIn concluída.');
+    console.log('[OneSignal - requestNotificationPermission] Tentando solicitar permissão de notificação (optedIn)...');
+    await window.OneSignal.User.PushSubscription.optedIn();
+    console.log('[OneSignal - requestNotificationPermission] Chamada optedIn concluída.');
     const info = getOneSignalInfo(); // Usar a função com logs para mais detalhes
-    console.log('[OneSignal - requestNotificationPermission] Status atual após optIn:', info);
+    console.log('[OneSignal - requestNotificationPermission] Status atual após optedIn:', info);
     if (info.optedIn && info.playerId) {
       console.log('[OneSignal - requestNotificationPermission] ✅ Permissão concedida e Player ID obtido com sucesso!');
     } else {
-      console.warn('[OneSignal - requestNotificationPermission] ⚠️ Permissão não concedida ou Player ID não obtido após optIn.');
+      console.warn('[OneSignal - requestNotificationPermission] ⚠️ Permissão não concedida ou Player ID não obtido após optedIn.');
     }
     return true;
   } catch (error) {
-    console.error('[OneSignal - requestNotificationPermission] Erro ao solicitar permissão de notificação (optIn):', error);
+    console.error('[OneSignal - requestNotificationPermission] Erro ao solicitar permissão de notificação (optedIn):', error);
     // Verifique se o erro é 'permission denied'
     if (error instanceof Error && error.message.includes('permission denied')) {
         console.error('[OneSignal - requestNotificationPermission] Causa provável: Usuário negou a permissão explicitamente.');

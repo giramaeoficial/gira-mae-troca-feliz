@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,6 +11,7 @@ import {
   getOneSignalInfo
 } from '@/lib/onesignal';
 import type { Notification, NotificationPreferences } from '@/types/notifications';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Singleton para gerenciar channels
 class ChannelManager {
