@@ -47,6 +47,11 @@ serve(async (req: Request) => {
     // Parse request body
     const body: RegisterRequest = await req.json();
     console.log('Registration request:', { user_id: body.user_id, has_player_id: !!body.player_id });
+    console.log('Full request details:', {
+      user_id: body.user_id,
+      player_id: body.player_id,
+      timestamp: new Date().toISOString()
+    });
 
     // Validate user exists
     const { data: user, error: userError } = await supabase
@@ -90,6 +95,8 @@ serve(async (req: Request) => {
         if (updateResponse.ok) {
           const updateResult = await updateResponse.json();
           console.log('OneSignal player updated with external ID:', updateResult);
+          // Aguardar propagação no OneSignal
+          await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
           console.warn('Failed to update OneSignal player:', await updateResponse.text());
         }
