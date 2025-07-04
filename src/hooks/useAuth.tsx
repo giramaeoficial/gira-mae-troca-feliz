@@ -30,7 +30,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session (MANTENDO EXATAMENTE IGUAL)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('🔄 useAuth: Sessão inicial carregada:', session?.user?.id || 'nenhuma');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -40,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('🔄 useAuth: Mudança de auth detectada:', _event, session?.user?.id || 'logout');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -57,22 +55,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      try {
-        console.log('[OneSignal - useAuth] 🚀 Inicializando OneSignal para usuário:', user.id);
-        
+      try {  
         // Inicializar OneSignal com o user ID
         const initialized = await initializeOneSignal(user.id);
         
         if (initialized) {
           setOneSignalInitialized(true);
-          console.log('[OneSignal - useAuth] ✅ OneSignal inicializado com sucesso');
           
           // Aguardar 3 segundos e sincronizar Player ID
           setTimeout(async () => {
             try {
               const synced = await syncPlayerIdWithDatabase(user.id);
               if (synced) {
-                console.log('[OneSignal - useAuth] ✅ Player ID sincronizado automaticamente');
               } else {
                 console.log('[OneSignal - useAuth] ⚠️ Player ID não foi sincronizado (pode tentar novamente depois)');
               }
@@ -97,7 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // MANTENDO TODAS AS FUNÇÕES ORIGINAIS EXATAMENTE IGUAIS
 
   const signInWithGoogle = async () => {
-    console.log('🚀 useAuth: Iniciando login direto com Google...');
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -110,12 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('❌ useAuth: Erro no login Google:', error);
       throw error;
     }
-    
-    console.log('✅ useAuth: Redirecionamento para Google OAuth iniciado');
   };
 
   const signInWithGoogleForRegistration = async () => {
-    console.log('🚀 useAuth: Iniciando login para cadastro com Google...');
     
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -130,7 +120,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error };
       }
 
-      console.log('✅ useAuth: Redirecionamento para Google OAuth (cadastro) iniciado');
       return { success: true, error: null };
     } catch (error) {
       console.error('❌ useAuth: Erro inesperado no login para cadastro:', error);
@@ -139,7 +128,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    console.log('🚪 useAuth: Iniciando logout...');
     
     try {
       // 🔥 ADICIONANDO: Reset do estado OneSignal no logout (SEM AFETAR LÓGICA EXISTENTE)
