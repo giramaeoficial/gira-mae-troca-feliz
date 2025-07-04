@@ -1,7 +1,4 @@
-
 // Inicialização robusta do OneSignal com persistência de Player ID
-import { ONESIGNAL_CONFIG } from '@/config/onesignal';
-
 let initializationPromise: Promise<boolean> | null = null;
 
 export const initializeOneSignal = async (userId?: string): Promise<boolean> => {
@@ -44,13 +41,13 @@ export const initializeOneSignal = async (userId?: string): Promise<boolean> => 
           window.OneSignalDeferred.push(async function(OneSignal) {
             console.log('[OneSignal - Inicialização] OneSignalDeferred.push executado. Chamando OneSignal.init()...');
             await OneSignal.init({
-              appId: ONESIGNAL_CONFIG.appId,
+              appId: "26d188ec-fdd6-41b3-86fe-b571cce6b3a5",
               allowLocalhostAsSecureOrigin: true,
               autoRegister: false, // Não registrar automaticamente
               autoResubscribe: true, // Reinscrever automaticamente se possível
               notifyButton: { enable: false },
-              serviceWorkerPath: ONESIGNAL_CONFIG.serviceWorkerPath,
-              serviceWorkerUpdaterPath: ONESIGNAL_CONFIG.serviceWorkerUpdaterPath,
+              serviceWorkerPath: "/OneSignalSDKWorker.js",
+              serviceWorkerUpdaterPath: "/OneSignalSDK.sw.js",
               serviceWorkerParam: { scope: "/" },
               persistNotification: false,
               notificationClickHandlerMatch: "origin",

@@ -11,7 +11,6 @@ declare global {
           id: string | null;
           token: string | null;
           optedIn: boolean;
-          optIn: () => Promise<void>;
           addEventListener: (event: string, callback: (event: any) => void) => void;
         };
       };
@@ -32,7 +31,6 @@ declare global {
           id: string | null;
           token: string | null;
           optedIn: boolean;
-          optIn: () => Promise<void>;
           addEventListener: (event: string, callback: (event: any) => void) => void;
         };
       };
@@ -53,7 +51,6 @@ declare global {
       setExternalUserId?: (userId: string) => Promise<void>;
       getPlayerId?: () => Promise<string | null>;
     };
-    OneSignalDeferred?: Array<(OneSignal: any) => void>;
   }
 }
 

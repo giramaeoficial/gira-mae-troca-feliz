@@ -11,7 +11,6 @@ import {
   getOneSignalInfo
 } from '@/lib/onesignal';
 import type { Notification, NotificationPreferences } from '@/types/notifications';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Singleton para gerenciar channels
 class ChannelManager {
@@ -73,7 +72,7 @@ export const useNotificationSystem = () => {
 
   // Refs para controle de estado
   const isLoadingRef = useRef(false);
-  const channelRef = useRef<RealtimeChannel | null>(null);
+  const channelManager = useRef(ChannelManager.getInstance());
   const registrationInProgress = useRef(false);
   const oneSignalInitialized = useRef(false);
 
@@ -128,12 +127,7 @@ export const useNotificationSystem = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Type guard para verificar se push_subscription existe e tem a estrutura correta
-      const savedPlayerId = savedPrefs?.push_subscription && 
-        typeof savedPrefs.push_subscription === 'object' && 
-        'player_id' in savedPrefs.push_subscription 
-        ? (savedPrefs.push_subscription as any).player_id 
-        : null;
+      const savedPlayerId = savedPrefs?.push_subscription?.player_id;
 
       // Se Player ID mudou, sincronizar
       if (savedPlayerId !== currentPlayerId) {
@@ -236,47 +230,18 @@ export const useNotificationSystem = () => {
   }, [user]);
 
   // ===============================
-  // REGISTRO NO ONESIGNAL COM RETRY
+  // REGISTRO NO ONESIGNAL
   // ===============================
 
-  const registerUserInOneSignal = useCallback(async (playerId?: string, retryCount = 0): Promise<boolean> => {
+  const registerUserInOneSignal = useCallback(async (playerId?: string) => {
     if (!user || registrationInProgress.current) return false;
-    
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 1000 * Math.pow(2, retryCount); // Backoff exponencial: 1s, 2s, 4s
     
     registrationInProgress.current = true;
     
     try {
-      // Aguardar um pouco para garantir que o OneSignal esteja pronto
-      if (retryCount === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      // Usar Player ID atual se não fornecido
+      const playerIdToUse = playerId || getOneSignalPlayerId();
       
-      // Obter informações atuais do OneSignal
-      const info = getOneSignalInfo();
-      console.log('[OneSignal] Registration attempt', { 
-        retryCount, 
-        playerId: info.playerId, 
-        optedIn: info.optedIn,
-        timestamp: new Date().toISOString()
-      });
-      
-      // Verificar se temos um player_id válido
-      const playerIdToUse = playerId || info.playerId;
-      
-      if (!playerIdToUse || !info.optedIn) {
-        if (retryCount < MAX_RETRIES) {
-          console.log(`[OneSignal] No valid player_id yet, retrying in ${RETRY_DELAY}ms...`);
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          registrationInProgress.current = false;
-          return registerUserInOneSignal(playerId, retryCount + 1);
-        }
-        console.error('[OneSignal] Failed to get valid player_id after retries');
-        return false;
-      }
-      
-      // Chamar edge function para registrar
       const { data, error } = await supabase.functions.invoke('register-onesignal-user', {
         body: {
           user_id: user.id,
@@ -285,24 +250,11 @@ export const useNotificationSystem = () => {
       });
 
       if (error) {
-        console.error('[OneSignal] Registration error:', error);
-        if (retryCount < MAX_RETRIES) {
-          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          registrationInProgress.current = false;
-          return registerUserInOneSignal(playerId, retryCount + 1);
-        }
         return false;
       }
 
-      console.log('[OneSignal] Registration successful:', data);
       return true;
     } catch (error) {
-      console.error('[OneSignal] Registration exception:', error);
-      if (retryCount < MAX_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-        registrationInProgress.current = false;
-        return registerUserInOneSignal(playerId, retryCount + 1);
-      }
       return false;
     } finally {
       registrationInProgress.current = false;
@@ -336,7 +288,7 @@ export const useNotificationSystem = () => {
       const permission = await Notification.requestPermission();
       
       if (permission === 'granted') {
-        // Aguardar OneSignal processar a permissão (aumentado para 5 segundos)
+        // Aguardar OneSignal processar a permissão
         setTimeout(async () => {
           try {
             const info = getOneSignalInfo();
@@ -358,7 +310,7 @@ export const useNotificationSystem = () => {
           } catch (error) {
             toast.error('Erro ao configurar notificações');
           }
-        }, 5000);
+        }, 3000);
         
         return true;
       } else {
@@ -549,60 +501,52 @@ export const useNotificationSystem = () => {
 
   // Realtime subscription
   useEffect(() => {
-    if (!user) {
-      // Cleanup se não há usuário
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-      return;
-    }
-
-    // Se já tem um channel, não criar outro
-    if (channelRef.current) {
-      return;
-    }
+    if (!user) return;
 
     const channelKey = `notifications-${user.id}`;
     
-    const channel = supabase
-      .channel(channelKey)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        const newNotification = payload.new as any;
-        const convertedNotification: Notification = {
-          id: newNotification.id,
-          user_id: newNotification.user_id,
-          type: newNotification.type,
-          title: newNotification.title,
-          message: newNotification.message,
-          data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
-          read: newNotification.read,
-          created_at: newNotification.created_at
-        };
-        
-        setNotifications(prev => [convertedNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        
-        toast(convertedNotification.title, {
-          description: convertedNotification.message,
-        });
-      })
-      .subscribe();
-
-    channelRef.current = channel;
+    const channel = channelManager.current.getOrCreateChannel(channelKey, () => {
+      return supabase
+        .channel(channelKey)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          const newNotification = payload.new as any;
+          const convertedNotification: Notification = {
+            id: newNotification.id,
+            user_id: newNotification.user_id,
+            type: newNotification.type,
+            title: newNotification.title,
+            message: newNotification.message,
+            data: (typeof newNotification.data === 'string' ? JSON.parse(newNotification.data) : newNotification.data) || {},
+            read: newNotification.read,
+            created_at: newNotification.created_at
+          };
+          
+          setNotifications(prev => [convertedNotification, ...prev]);
+          setUnreadCount(prev => prev + 1);
+          
+          toast(convertedNotification.title, {
+            description: convertedNotification.message,
+          });
+        })
+        .subscribe();
+    });
 
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      channelManager.current.removeChannel(channelKey);
     };
   }, [user]);
+
+  // Cleanup global no unmount
+  useEffect(() => {
+    return () => {
+      channelManager.current.removeAllChannels();
+    };
+  }, []);
 
   return {
     // In-App Notifications

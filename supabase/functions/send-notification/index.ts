@@ -154,22 +154,6 @@ serve(async (req: Request) => {
         pushResult = await pushResponse.json();
         console.log('OneSignal response:', pushResult);
 
-        // Log detalhado para debugging
-        if (pushResult.recipients === 0) {
-          console.error('❌ Push notification failed - no recipients found', {
-            user_id: body.user_id,
-            external_user_ids_sent: [body.user_id],
-            errors: pushResult.errors,
-            invalid_external_user_ids: pushResult.invalid_external_user_ids,
-            timestamp: new Date().toISOString()
-          });
-        } else {
-          console.log('✅ Push notification sent successfully', {
-            recipients: pushResult.recipients,
-            notification_id: pushResult.id
-          });
-        }
-
         if (!pushResponse.ok) {
           console.error('OneSignal API error:', pushResult);
         }
