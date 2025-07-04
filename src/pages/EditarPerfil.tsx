@@ -68,6 +68,9 @@ const EditarPerfil = () => {
   const processFormDataForDatabase = (data: any) => {
     const processedData = { ...data };
     
+    // Remover campos auxiliares que não existem no banco
+    delete processedData.data_nascimento_display;
+    
     // Converter strings vazias em null para campos de data
     if (processedData.data_nascimento === '') {
       processedData.data_nascimento = null;
