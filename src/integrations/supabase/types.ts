@@ -126,6 +126,38 @@ export type Database = {
           },
         ]
       }
+      admin_users: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analytics_missoes: {
         Row: {
           detalhes: Json | null
@@ -1397,7 +1429,6 @@ export type Database = {
           id: string
           instagram: string | null
           interesses: string[] | null
-          is_admin: boolean | null
           latitude: number | null
           longitude: number | null
           nome: string | null
@@ -1439,7 +1470,6 @@ export type Database = {
           id: string
           instagram?: string | null
           interesses?: string[] | null
-          is_admin?: boolean | null
           latitude?: number | null
           longitude?: number | null
           nome?: string | null
@@ -1481,7 +1511,6 @@ export type Database = {
           id?: string
           instagram?: string | null
           interesses?: string[] | null
-          is_admin?: boolean | null
           latitude?: number | null
           longitude?: number | null
           nome?: string | null

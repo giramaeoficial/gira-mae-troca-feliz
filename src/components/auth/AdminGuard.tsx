@@ -28,21 +28,21 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
       }
 
       try {
-        // Verificar se é admin
+        // Verificar se é admin consultando a nova tabela admin_users
         const { data, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
+          .from('admin_users')
+          .select('user_id')
+          .eq('user_id', user.id)
           .single();
 
-        if (error) {
+        if (error && error.code !== 'PGRST116') {
           console.error('AdminGuard - Erro ao verificar admin:', error);
           navigate('/', { replace: true });
           return;
         }
 
         // Se não é admin, redirecionar para home
-        if (!data?.is_admin) {
+        if (!data) {
           navigate('/', { replace: true });
           return;
         }
