@@ -113,9 +113,24 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
               <Label htmlFor="data_nascimento">Data de Nascimento</Label>
               <Input
                 id="data_nascimento"
-                type="date"
-                value={formData.data_nascimento}
-                onChange={(e) => onInputChange('data_nascimento', e.target.value)}
+                type="text"
+                value={formData.data_nascimento ? new Date(formData.data_nascimento).toLocaleDateString('pt-BR') : ''}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '');
+                  if (value.length >= 2) {
+                    value = value.slice(0, 2) + '/' + value.slice(2);
+                  }
+                  if (value.length >= 5) {
+                    value = value.slice(0, 5) + '/' + value.slice(5, 9);
+                  }
+                  if (value.length === 10) {
+                    const [day, month, year] = value.split('/');
+                    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                    onInputChange('data_nascimento', isoDate);
+                  }
+                }}
+                placeholder="dd/mm/aaaa"
+                maxLength={10}
               />
             </div>
           </div>
