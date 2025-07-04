@@ -3,6 +3,10 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// 🔥 ADICIONANDO: Imports do OneSignal (SEM REMOVER NADA)
+import { initializeOneSignal } from '@/lib/onesignal';
+import { syncPlayerIdWithDatabase } from '@/lib/sync-player-id';
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -20,8 +24,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // 🔥 ADICIONANDO: Estado para controlar OneSignal (SEM AFETAR ESTADOS EXISTENTES)
+  const [oneSignalInitialized, setOneSignalInitialized] = useState(false);
+
   useEffect(() => {
-    // Get initial session
+    // Get initial session (MANTENDO EXATAMENTE IGUAL)
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('🔄 useAuth: Sessão inicial carregada:', session?.user?.id || 'nenhuma');
       setSession(session);
@@ -29,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes (MANTENDO EXATAMENTE IGUAL)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -41,6 +48,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // 🔥 ADICIONANDO: Novo useEffect APENAS para OneSignal (SEM AFETAR O EXISTENTE)
+  useEffect(() => {
+    const setupOneSignal = async () => {
+      // Só executar se há usuário, não está carregando e ainda não foi inicializado
+      if (!user?.id || loading || oneSignalInitialized) {
+        return;
+      }
+
+      try {
+        console.log('[OneSignal - useAuth] 🚀 Inicializando OneSignal para usuário:', user.id);
+        
+        // Inicializar OneSignal com o user ID
+        const initialized = await initializeOneSignal(user.id);
+        
+        if (initialized) {
+          setOneSignalInitialized(true);
+          console.log('[OneSignal - useAuth] ✅ OneSignal inicializado com sucesso');
+          
+          // Aguardar 3 segundos e sincronizar Player ID
+          setTimeout(async () => {
+            try {
+              const synced = await syncPlayerIdWithDatabase(user.id);
+              if (synced) {
+                console.log('[OneSignal - useAuth] ✅ Player ID sincronizado automaticamente');
+              } else {
+                console.log('[OneSignal - useAuth] ⚠️ Player ID não foi sincronizado (pode tentar novamente depois)');
+              }
+            } catch (syncError) {
+              console.warn('[OneSignal - useAuth] ⚠️ Erro na sincronização do Player ID (não crítico):', syncError);
+            }
+          }, 3000);
+          
+        } else {
+          console.warn('[OneSignal - useAuth] ⚠️ OneSignal não foi inicializado (tentará novamente no próximo login)');
+        }
+        
+      } catch (error) {
+        console.error('[OneSignal - useAuth] ❌ Erro na configuração do OneSignal:', error);
+        // Não bloquear a aplicação por erro do OneSignal
+      }
+    };
+
+    setupOneSignal();
+  }, [user?.id, loading, oneSignalInitialized]);
+
+  // MANTENDO TODAS AS FUNÇÕES ORIGINAIS EXATAMENTE IGUAIS
 
   const signInWithGoogle = async () => {
     console.log('🚀 useAuth: Iniciando login direto com Google...');
@@ -88,11 +142,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('🚪 useAuth: Iniciando logout...');
     
     try {
-      // Limpar estado local imediatamente
+      // 🔥 ADICIONANDO: Reset do estado OneSignal no logout (SEM AFETAR LÓGICA EXISTENTE)
+      setOneSignalInitialized(false);
+      
+      // Limpar estado local imediatamente (MANTENDO IGUAL)
       setSession(null);
       setUser(null);
       
-      // Tentar fazer logout no Supabase
+      // Tentar fazer logout no Supabase (MANTENDO IGUAL)
       const { error } = await supabase.auth.signOut();
       
       if (error && error.message !== 'Auth session missing!') {
@@ -119,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // MANTENDO EXATAMENTE IGUAL
   const value = {
     session,
     user,
@@ -131,6 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// MANTENDO EXATAMENTE IGUAL
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
