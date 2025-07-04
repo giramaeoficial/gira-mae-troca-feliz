@@ -29,9 +29,18 @@ export function DatePicker({
     value ? new Date(value) : undefined
   );
 
+  React.useEffect(() => {
+    if (value) {
+      setDate(new Date(value));
+    } else {
+      setDate(undefined);
+    }
+  }, [value]);
+
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
     if (selectedDate && onChange) {
+      // Converter para formato ISO (YYYY-MM-DD) sem problemas de timezone
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
