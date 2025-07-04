@@ -79,7 +79,9 @@ export function DatePicker({
           locale={ptBR}
           toYear={new Date().getFullYear()}
           fromYear={1920}
-          captionLayout="dropdown-buttons"
+          captionLayout="buttons"
+          showOutsideDays={false}
+          numberOfMonths={1}
         />
       </PopoverContent>
     </Popover>
