@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ImageUpload from '@/components/ui/image-upload';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const INTERESSES_DISPONIVEIS = [
   'Moda Infantil', 'Educação', 'Atividades ao Ar Livre', 'Arte e Criatividade',
