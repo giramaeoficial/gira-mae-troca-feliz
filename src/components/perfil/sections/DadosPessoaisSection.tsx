@@ -109,15 +109,14 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
               />
             </div>
 
-            <div>
-              <Label htmlFor="data_nascimento">Data de Nascimento</Label>
-              <Input
-                id="data_nascimento"
-                type="date"
-                value={formData.data_nascimento}
-                onChange={(e) => onInputChange('data_nascimento', e.target.value)}
-              />
-            </div>
+          <div>
+            <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+            <DatePicker
+              value={formData.data_nascimento}
+              onChange={(date) => onInputChange('data_nascimento', date)}
+              placeholder="Selecione sua data de nascimento"
+            />
+          </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
