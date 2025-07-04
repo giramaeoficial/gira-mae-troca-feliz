@@ -5,7 +5,7 @@ import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // 🔥 ADICIONAR ESTE IMPORT
-import { OneSignalSyncWrapper } from '@/components/onesignal/OneSignalSyncWrapper';
+import { OneSignalSyncWrapper } from '@/components/notifications/OneSignalSyncWrapper';
 
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
