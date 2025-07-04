@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,8 +73,9 @@ const FilhosSection: React.FC<FilhosSectionProps> = ({
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="M">Masculino</SelectItem>
-                    <SelectItem value="F">Feminino</SelectItem>
+                    <SelectItem value="masculino">Masculino</SelectItem>
+                    <SelectItem value="feminino">Feminino</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -144,6 +144,7 @@ const FilhosSection: React.FC<FilhosSectionProps> = ({
                 type="date"
                 value={novoFilho.data_nascimento}
                 onChange={(e) => onNovoFilhoChange('data_nascimento', e.target.value)}
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
           </div>
@@ -159,8 +160,9 @@ const FilhosSection: React.FC<FilhosSectionProps> = ({
                   <SelectValue placeholder="Selecionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="M">Masculino</SelectItem>
-                  <SelectItem value="F">Feminino</SelectItem>
+                  <SelectItem value="masculino">Masculino</SelectItem>
+                  <SelectItem value="feminino">Feminino</SelectItem>
+                  <SelectItem value="outro">Outro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
