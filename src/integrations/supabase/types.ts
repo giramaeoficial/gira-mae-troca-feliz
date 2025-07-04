@@ -2123,30 +2123,6 @@ export type Database = {
       }
     }
     Views: {
-      geocoding_queue: {
-        Row: {
-          enqueued_at: string | null
-          message: Json | null
-          msg_id: number | null
-          read_ct: number | null
-          vt: string | null
-        }
-        Insert: {
-          enqueued_at?: string | null
-          message?: Json | null
-          msg_id?: number | null
-          read_ct?: number | null
-          vt?: string | null
-        }
-        Update: {
-          enqueued_at?: string | null
-          message?: Json | null
-          msg_id?: number | null
-          read_ct?: number | null
-          vt?: string | null
-        }
-        Relationships: []
-      }
       itens_completos: {
         Row: {
           aceita_entrega_domicilio: boolean | null
