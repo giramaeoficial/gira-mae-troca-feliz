@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 import SchoolSelect from '@/components/address/SchoolSelect';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface FilhosSectionProps {
   filhosForm: any[];
@@ -54,18 +55,10 @@ const FilhosSection: React.FC<FilhosSectionProps> = ({
               </div>
               <div>
                 <Label>Data de Nascimento</Label>
-                <Input
-                  type="text"
-                  value={filho.data_nascimento ? new Date(filho.data_nascimento).toLocaleDateString('pt-BR') : ''}
-                  onChange={(e) => {
-                    const [day, month, year] = e.target.value.split('/');
-                    if (day && month && year && year.length === 4) {
-                      const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                      onFilhoChange(index, 'data_nascimento', isoDate);
-                    }
-                  }}
-                  placeholder="dd/mm/aaaa"
-                  maxLength={10}
+                <DatePicker
+                  value={filho.data_nascimento}
+                  onChange={(date) => onFilhoChange(index, 'data_nascimento', date)}
+                  placeholder="Selecione a data de nascimento"
                 />
               </div>
             </div>
@@ -148,27 +141,10 @@ const FilhosSection: React.FC<FilhosSectionProps> = ({
             </div>
             <div>
               <Label>Data de Nascimento *</Label>
-              <Input
-                type="text"
-                value={novoFilho.data_nascimento_display || ''}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/\D/g, '');
-                  if (value.length >= 2) {
-                    value = value.slice(0, 2) + '/' + value.slice(2);
-                  }
-                  if (value.length >= 5) {
-                    value = value.slice(0, 5) + '/' + value.slice(5, 9);
-                  }
-                  onNovoFilhoChange('data_nascimento_display', value);
-                  
-                  const [day, month, year] = value.split('/');
-                  if (day && month && year && year.length === 4) {
-                    const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                    onNovoFilhoChange('data_nascimento', isoDate);
-                  }
-                }}
-                placeholder="dd/mm/aaaa"
-                maxLength={10}
+              <DatePicker
+                value={novoFilho.data_nascimento}
+                onChange={(date) => onNovoFilhoChange('data_nascimento', date)}
+                placeholder="Selecione a data de nascimento"
               />
             </div>
           </div>
