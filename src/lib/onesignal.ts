@@ -46,8 +46,10 @@ export const initializeOneSignal = async (userId?: string): Promise<boolean> => 
               autoRegister: false, // Não registrar automaticamente
               autoResubscribe: true, // Reinscrever automaticamente se possível
               notifyButton: { enable: false },
+              // 🔥 CORREÇÃO: Usar apenas UM service worker
               serviceWorkerPath: "/OneSignalSDKWorker.js",
-              serviceWorkerUpdaterPath: "/OneSignalSDK.sw.js",
+              // ❌ Remover serviceWorkerUpdaterPath para evitar conflito
+              // serviceWorkerUpdaterPath: "/OneSignalSDK.sw.js", 
               serviceWorkerParam: { scope: "/" },
               persistNotification: false,
               notificationClickHandlerMatch: "origin",
@@ -168,7 +170,8 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     console.log('[OneSignal - requestNotificationPermission] Tentando solicitar permissão de notificação (optIn)...');
     await window.OneSignal.User.PushSubscription.optIn();
     console.log('[OneSignal - requestNotificationPermission] Chamada optIn concluída.');
-    const info = getOneSignalInfo(); // Usar a função com logs para mais detalhes
+    
+    const info = getOneSignalInfo();
     console.log('[OneSignal - requestNotificationPermission] Status atual após optIn:', info);
     if (info.optedIn && info.playerId) {
       console.log('[OneSignal - requestNotificationPermission] ✅ Permissão concedida e Player ID obtido com sucesso!');
@@ -178,7 +181,6 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('[OneSignal - requestNotificationPermission] Erro ao solicitar permissão de notificação (optIn):', error);
-    // Verifique se o erro é 'permission denied'
     if (error instanceof Error && error.message.includes('permission denied')) {
         console.error('[OneSignal - requestNotificationPermission] Causa provável: Usuário negou a permissão explicitamente.');
     }
@@ -213,7 +215,7 @@ export const getOneSignalInfo = () => {
       initialized: false,
       playerId: null,
       optedIn: false,
-      permission: 'default' // Ou 'denied', se soubermos com certeza
+      permission: 'default' as NotificationPermission
     };
     console.log('[OneSignal - getOneSignalInfo] OneSignal não está disponível. Retornando estado padrão:', info);
     return info;
@@ -224,7 +226,7 @@ export const getOneSignalInfo = () => {
       initialized: window.OneSignal.initialized || false,
       playerId: window.OneSignal.User?.PushSubscription?.id || null,
       optedIn: window.OneSignal.User?.PushSubscription?.optedIn || false,
-      permission: Notification.permission // 'default', 'granted', 'denied'
+      permission: Notification.permission
     };
     console.log('[OneSignal - getOneSignalInfo] Informações do OneSignal obtidas:', info);
     return info;
@@ -234,7 +236,7 @@ export const getOneSignalInfo = () => {
       initialized: false,
       playerId: null,
       optedIn: false,
-      permission: 'denied'
+      permission: 'denied' as NotificationPermission
     };
   }
 };
