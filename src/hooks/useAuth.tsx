@@ -2,8 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-// 🔥 ADICIONANDO: Imports do OneSignal (SEM REMOVER NADA)
+// OneSignal imports
 import { initializeOneSignal } from '@/lib/onesignal';
 import { syncPlayerIdWithDatabase } from '@/lib/sync-player-id';
 
@@ -24,18 +23,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // 🔥 ADICIONANDO: Estado para controlar OneSignal (SEM AFETAR ESTADOS EXISTENTES)
-  const [oneSignalInitialized, setOneSignalInitialized] = useState(false);
+  // OneSignal state - usando useRef para evitar re-renders
+  const oneSignalSetup = React.useRef({
+    initialized: false,
+    currentUserId: null as string | null
+  });
 
   useEffect(() => {
-    // Get initial session (MANTENDO EXATAMENTE IGUAL)
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for auth changes (MANTENDO EXATAMENTE IGUAL)
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -47,115 +49,113 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  // 🔥 ADICIONANDO: Novo useEffect APENAS para OneSignal (SEM AFETAR O EXISTENTE)
+  // OneSignal setup effect - executar apenas uma vez por usuário
   useEffect(() => {
     const setupOneSignal = async () => {
-      // Só executar se há usuário, não está carregando e ainda não foi inicializado
-      if (!user?.id || loading || oneSignalInitialized) {
+      const userId = user?.id;
+      
+      // Não executar se não há usuário ou ainda está carregando
+      if (!userId || loading) {
         return;
       }
 
-      try {  
-        // Inicializar OneSignal com o user ID
-        const initialized = await initializeOneSignal(user.id);
+      // Evitar múltiplas execuções para o mesmo usuário
+      if (oneSignalSetup.current.currentUserId === userId) {
+        return;
+      }
+
+      try {
+        // Marcar como sendo configurado para este usuário
+        oneSignalSetup.current.currentUserId = userId;
+        
+        // Inicializar OneSignal
+        const initialized = await initializeOneSignal(userId);
         
         if (initialized) {
-          setOneSignalInitialized(true);
+          oneSignalSetup.current.initialized = true;
           
-          // Aguardar 3 segundos e sincronizar Player ID
+          // Aguardar e sincronizar Player ID (apenas uma vez)
           setTimeout(async () => {
             try {
-              const synced = await syncPlayerIdWithDatabase(user.id);
-              if (synced) {
-              } else {
-                console.log('[OneSignal - useAuth] ⚠️ Player ID não foi sincronizado (pode tentar novamente depois)');
-              }
+              await syncPlayerIdWithDatabase(userId);
             } catch (syncError) {
-              console.warn('[OneSignal - useAuth] ⚠️ Erro na sincronização do Player ID (não crítico):', syncError);
+              // Erro não crítico, não logar
             }
           }, 3000);
-          
-        } else {
-          console.warn('[OneSignal - useAuth] ⚠️ OneSignal não foi inicializado (tentará novamente no próximo login)');
         }
-        
       } catch (error) {
-        console.error('[OneSignal - useAuth] ❌ Erro na configuração do OneSignal:', error);
-        // Não bloquear a aplicação por erro do OneSignal
+        console.error('[Auth] Erro na configuração do OneSignal:', error);
+        // Reset em caso de erro para tentar novamente
+        oneSignalSetup.current.currentUserId = null;
       }
     };
 
     setupOneSignal();
-  }, [user?.id, loading, oneSignalInitialized]);
-
-  // MANTENDO TODAS AS FUNÇÕES ORIGINAIS EXATAMENTE IGUAIS
+  }, [user?.id, loading]);
 
   const signInWithGoogle = async () => {
-    
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth-callback` // ✅ Login direto vai para auth-callback
+        redirectTo: `${window.location.origin}/auth-callback`
       }
     });
 
     if (error) {
-      console.error('❌ useAuth: Erro no login Google:', error);
+      console.error('Erro no login Google:', error);
       throw error;
     }
   };
 
   const signInWithGoogleForRegistration = async () => {
-    
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth-callback` // ✅ Cadastro também vai para auth-callback
+          redirectTo: `${window.location.origin}/auth-callback`
         }
       });
 
       if (error) {
-        console.error('❌ useAuth: Erro no login para cadastro:', error);
         return { success: false, error };
       }
 
       return { success: true, error: null };
     } catch (error) {
-      console.error('❌ useAuth: Erro inesperado no login para cadastro:', error);
       return { success: false, error };
     }
   };
 
   const signOut = async () => {
-    
     try {
-      // 🔥 ADICIONANDO: Reset do estado OneSignal no logout (SEM AFETAR LÓGICA EXISTENTE)
-      setOneSignalInitialized(false);
+      // Reset OneSignal state
+      oneSignalSetup.current = {
+        initialized: false,
+        currentUserId: null
+      };
       
-      // Limpar estado local imediatamente (MANTENDO IGUAL)
+      // Limpar estado local
       setSession(null);
       setUser(null);
       
-      // Tentar fazer logout no Supabase (MANTENDO IGUAL)
+      // Logout no Supabase
       const { error } = await supabase.auth.signOut();
       
       if (error && error.message !== 'Auth session missing!') {
-        console.error('❌ useAuth: Erro ao fazer logout no Supabase:', error.message);
+        console.error('Erro no logout:', error.message);
         toast({
           title: "Erro no logout",
-          description: "Houve um problema ao fazer logout, mas você foi desconectado localmente.",
+          description: "Houve um problema, mas você foi desconectado localmente.",
           variant: "destructive",
         });
       } else {
-        console.log('✅ useAuth: Logout realizado com sucesso');
         toast({
           title: "Logout realizado",
           description: "Você foi desconectado com sucesso.",
         });
       }
     } catch (error) {
-      console.error('❌ useAuth: Erro inesperado no logout:', error);
+      console.error('Erro inesperado no logout:', error);
       toast({
         title: "Erro no logout", 
         description: "Você foi desconectado localmente.",
@@ -164,7 +164,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // MANTENDO EXATAMENTE IGUAL
   const value = {
     session,
     user,
@@ -177,7 +176,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// MANTENDO EXATAMENTE IGUAL
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
