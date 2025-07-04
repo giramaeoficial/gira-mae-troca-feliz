@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getOneSignalPlayerId } from './onesignal';
@@ -100,11 +101,11 @@ export const syncPlayerIdWithDatabase = async (userId: string): Promise<boolean>
     
     // Atualizar push_subscription com novo Player ID
     const currentPushSub = (preferences.push_subscription as PushSubscription) || {};
-    const updatedPushSubscription: PushSubscription = {
-      ...currentPushSub,
+    const updatedPushSubscription = {
       player_id: currentPlayerId,
       last_sync: new Date().toISOString(),
-      external_user_id: userId
+      external_user_id: userId,
+      ...currentPushSub
     };
     
     const { error: updateError } = await supabase
@@ -183,3 +184,4 @@ export const useSyncPlayerIdOnLoad = (userId?: string) => {
     syncWithDelay();
   }, [userId]);
 };
+
