@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles, Heart, Users, Recycle, Shield, ArrowRight, Gift, Star, Zap } from 'lucide-react';
+import { Sparkles, Heart, Users, Recycle, Shield, ArrowRight, Gift, Star, Zap, Trophy } from 'lucide-react';
+import MissaoPactoEntrada from '@/components/onboarding/MissaoPactoEntrada';
 
 const ConceptoComunidadeOnboarding = () => {
   const navigate = useNavigate();
@@ -88,20 +89,21 @@ const ConceptoComunidadeOnboarding = () => {
       )
     },
     {
-      icon: Zap,
-      title: "Pronta para Começar?",
-      subtitle: "Agora você vai publicar seu primeiro item!",
+      icon: Trophy,
+      title: "Sistema de Missões",
+      subtitle: "Complete desafios e ganhe recompensas!",
       content: (
-        <div className="text-center space-y-4">
-          <p className="text-gray-600">
-            O próximo passo é publicar seu primeiro item na comunidade. 
-            Pode ser uma roupa que não serve mais, um brinquedo que não é usado, 
-            ou qualquer coisa que possa fazer outra família feliz!
+        <div className="space-y-4">
+          <p className="text-gray-600 text-center">
+            Toda mãe da GiraMãe começa cumprindo missões! Cada missão completada 
+            traz recompensas em Girinhas e fortalece nossa comunidade.
           </p>
-          <div className="bg-gradient-to-r from-primary/10 to-pink-500/10 rounded-lg p-4">
-            <h4 className="font-semibold text-gray-800 mb-2">🎁 Bônus de Boas-vindas</h4>
+          <MissaoPactoEntrada />
+          <div className="bg-gradient-to-r from-primary/10 to-pink-500/10 rounded-lg p-4 text-center">
+            <h4 className="font-semibold text-gray-800 mb-2">🚀 Pronta para começar?</h4>
             <p className="text-gray-600 text-sm">
-              Você já recebeu <span className="font-bold text-primary">50 Girinhas</span> para começar suas trocas!
+              Sua primeira missão é publicar 2 itens na comunidade. 
+              Vamos lá!
             </p>
           </div>
         </div>
@@ -121,7 +123,7 @@ const ConceptoComunidadeOnboarding = () => {
   };
 
   const handleSkip = () => {
-    navigate('/feed');
+    navigate('/publicar-primeiro-item');
   };
 
   return (
@@ -164,13 +166,15 @@ const ConceptoComunidadeOnboarding = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
-            <Button
-              variant="ghost"
-              onClick={handleSkip}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              Pular apresentação
-            </Button>
+            {currentStep < steps.length - 1 && (
+              <Button
+                variant="ghost"
+                onClick={handleSkip}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                Pular apresentação
+              </Button>
+            )}
             
             <Button
               onClick={handleNext}
@@ -178,7 +182,7 @@ const ConceptoComunidadeOnboarding = () => {
             >
               {currentStep === steps.length - 1 ? (
                 <>
-                  Publicar Primeiro Item
+                  Começar Primeira Missão
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               ) : (

@@ -29,6 +29,7 @@ import Missoes from '@/pages/Missoes';
 import Configuracoes from '@/pages/Configuracoes';
 import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
 import PublicarPrimeiroItem from '@/pages/PublicarPrimeiroItem';
+import PactoEntradaGuard from '@/components/auth/PactoEntradaGuard';
 
 const queryClient = new QueryClient();
 
@@ -46,19 +47,19 @@ function App() {
           <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/conceito-comunidade" element={<ConceptoComunidadeOnboarding />} />
           <Route path="/publicar-primeiro-item" element={<PublicarPrimeiroItem />} />
-          <Route path="/feed" element={<AuthGuard><FeedOptimized /></AuthGuard>} />
-          <Route path="/buscar-itens" element={<AuthGuard><BuscarItens /></AuthGuard>} />
-          <Route path="/publicar" element={<AuthGuard><PublicarItem /></AuthGuard>} />
+          <Route path="/feed" element={<AuthGuard><PactoEntradaGuard><FeedOptimized /></PactoEntradaGuard></AuthGuard>} />
+          <Route path="/buscar-itens" element={<AuthGuard><PactoEntradaGuard><BuscarItens /></PactoEntradaGuard></AuthGuard>} />
+          <Route path="/publicar" element={<AuthGuard><PactoEntradaGuard><PublicarItem /></PactoEntradaGuard></AuthGuard>} />
           <Route path="/missoes" element={<AuthGuard><Missoes /></AuthGuard>} />
-          <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} />
-          <Route path="/perfil/editar" element={<AuthGuard><EditarPerfil /></AuthGuard>} />
+          <Route path="/perfil" element={<AuthGuard><PactoEntradaGuard><Perfil /></PactoEntradaGuard></AuthGuard>} />
+          <Route path="/perfil/editar" element={<AuthGuard><PactoEntradaGuard><EditarPerfil /></PactoEntradaGuard></AuthGuard>} />
           <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
-          <Route path="/carteira" element={<AuthGuard><Carteira /></AuthGuard>} />
-          <Route path="/comprar-girinhas" element={<AuthGuard><ComprarGirinhas /></AuthGuard>} />
-          <Route path="/indicacoes" element={<AuthGuard><Indicacoes /></AuthGuard>} />
+          <Route path="/carteira" element={<AuthGuard><PactoEntradaGuard><Carteira /></PactoEntradaGuard></AuthGuard>} />
+          <Route path="/comprar-girinhas" element={<AuthGuard><PactoEntradaGuard><ComprarGirinhas /></PactoEntradaGuard></AuthGuard>} />
+          <Route path="/indicacoes" element={<AuthGuard><PactoEntradaGuard><Indicacoes /></PactoEntradaGuard></AuthGuard>} />
           <Route path="/item/:id" element={<DetalhesItem />} />
-          <Route path="/minhas-reservas" element={<AuthGuard><MinhasReservas /></AuthGuard>} />
-          <Route path="/configuracoes" element={<AuthGuard><Configuracoes /></AuthGuard>} />
+          <Route path="/minhas-reservas" element={<AuthGuard><PactoEntradaGuard><MinhasReservas /></PactoEntradaGuard></AuthGuard>} />
+          <Route path="/configuracoes" element={<AuthGuard><PactoEntradaGuard><Configuracoes /></PactoEntradaGuard></AuthGuard>} />
           <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
