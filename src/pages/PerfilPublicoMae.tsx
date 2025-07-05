@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import Header from "@/components/shared/Header";
@@ -11,7 +12,6 @@ import { ArrowLeft, MapPin, Star, Calendar, Users, Package } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import UniversalCard from "@/components/ui/universal-card";
-import PactoEntradaGuard from '@/components/onboarding/PactoEntradaGuard';
 
 type Profile = Tables<'profiles'>;
 type Item = Tables<'itens'>;
@@ -131,158 +131,156 @@ const PerfilPublicoMae = () => {
   };
 
   return (
-    <PactoEntradaGuard requiredForAccess={true}>
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
-        <Header />
-        <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
-          <div className="mb-6">
-            <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
-            </Button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+      <Header />
+      <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
+        <div className="mb-6">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Button>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Perfil da Mãe */}
-            <div className="lg:col-span-1">
-              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-                <CardHeader className="text-center">
-                  <div className="flex flex-col items-center">
-                    <Avatar className="w-24 h-24 mb-4">
-                      <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.nome || 'Avatar'} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                        {profile?.nome?.split(' ').map(n => n[0]).join('') || 'M'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <CardTitle className="text-2xl text-gray-800 mb-2">
-                      {profile?.nome || 'Usuário'}
-                    </CardTitle>
-                    
-                    <div className="flex items-center gap-1 mb-4">
-                      {[1,2,3,4,5].map((star) => (
-                        <Star 
-                          key={star} 
-                          className={`w-4 h-4 ${
-                            star <= Math.floor(profile?.reputacao || 0) 
-                              ? 'fill-current text-yellow-500' 
-                              : 'text-gray-300'
-                          }`} 
-                        />
-                      ))}
-                      <span className="text-sm text-gray-600 ml-1">
-                        ({(profile?.reputacao || 0).toFixed(1)})
-                      </span>
-                    </div>
-
-                    {profile && <BotaoSeguir usuarioId={profile.id} className="w-full mb-4" />}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  {profile?.bio && (
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
-                      <p className="text-gray-600 text-sm">{profile.bio}</p>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin className="w-4 h-4 text-primary" />
-                    <span className="text-sm">
-                      {profile?.bairro && profile?.cidade 
-                        ? `${profile.bairro}, ${profile.cidade}`
-                        : profile?.cidade || 'Localização não informada'
-                      }
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Perfil da Mãe */}
+          <div className="lg:col-span-1">
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader className="text-center">
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-24 h-24 mb-4">
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.nome || 'Avatar'} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                      {profile?.nome?.split(' ').map(n => n[0]).join('') || 'M'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <CardTitle className="text-2xl text-gray-800 mb-2">
+                    {profile?.nome || 'Usuário'}
+                  </CardTitle>
+                  
+                  <div className="flex items-center gap-1 mb-4">
+                    {[1,2,3,4,5].map((star) => (
+                      <Star 
+                        key={star} 
+                        className={`w-4 h-4 ${
+                          star <= Math.floor(profile?.reputacao || 0) 
+                            ? 'fill-current text-yellow-500' 
+                            : 'text-gray-300'
+                        }`} 
+                      />
+                    ))}
+                    <span className="text-sm text-gray-600 ml-1">
+                      ({(profile?.reputacao || 0).toFixed(1)})
                     </span>
                   </div>
 
-                  {profile?.data_nascimento && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Calendar className="w-4 h-4 text-primary" />
-                      <span className="text-sm">{calcularIdade(profile.data_nascimento)} anos</span>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-gray-600">
-                        <Users className="w-4 h-4" />
-                        <span className="font-bold">{estatisticas.total_seguidores}</span>
-                      </div>
-                      <p className="text-xs text-gray-500">Seguidores</p>
-                    </div>
-                    
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-1 text-gray-600">
-                        <Package className="w-4 h-4" />
-                        <span className="font-bold">{itens.length}</span>
-                      </div>
-                      <p className="text-xs text-gray-500">Itens ativos</p>
-                    </div>
+                  {profile && <BotaoSeguir usuarioId={profile.id} className="w-full mb-4" />}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {profile?.bio && (
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
+                    <p className="text-gray-600 text-sm">{profile.bio}</p>
                   </div>
+                )}
 
-                  {profile?.interesses && profile.interesses.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-gray-800 mb-2">Interesses</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.interesses.map((interesse, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {interesse}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="text-sm">
+                    {profile?.bairro && profile?.cidade 
+                      ? `${profile.bairro}, ${profile.cidade}`
+                      : profile?.cidade || 'Localização não informada'
+                    }
+                  </span>
+                </div>
 
-            {/* Itens da Mãe */}
-            <div className="lg:col-span-2">
-              <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
-                    Itens disponíveis ({itens.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {itens.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">Nenhum item disponível no momento</p>
+                {profile?.data_nascimento && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{calcularIdade(profile.data_nascimento)} anos</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-gray-600">
+                      <Users className="w-4 h-4" />
+                      <span className="font-bold">{estatisticas.total_seguidores}</span>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {itens.map((item) => (
-                        <UniversalCard
-                          key={item.id}
-                          variant="item"
-                          data={{
-                            id: item.id,
-                            titulo: item.titulo,
-                            categoria: item.categoria,
-                            tamanho: item.tamanho_valor,
-                            valorGirinhas: item.valor_girinhas,
-                            estadoConservacao: item.estado_conservacao,
-                            fotos: item.fotos,
-                            status: item.status,
-                            descricao: item.descricao
-                          }}
-                          linkTo={`/item/${item.id}`}
-                          showAuthor={false}
-                        />
+                    <p className="text-xs text-gray-500">Seguidores</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-gray-600">
+                      <Package className="w-4 h-4" />
+                      <span className="font-bold">{itens.length}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Itens ativos</p>
+                  </div>
+                </div>
+
+                {profile?.interesses && profile.interesses.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Interesses</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.interesses.map((interesse, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {interesse}
+                        </Badge>
                       ))}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </main>
-        <QuickNav />
-      </div>
-    </PactoEntradaGuard>
+
+          {/* Itens da Mãe */}
+          <div className="lg:col-span-2">
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Itens disponíveis ({itens.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {itens.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhum item disponível no momento</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {itens.map((item) => (
+                      <UniversalCard
+                        key={item.id}
+                        variant="item"
+                        data={{
+                          id: item.id,
+                          titulo: item.titulo,
+                          categoria: item.categoria,
+                          tamanho: item.tamanho_valor,
+                          valorGirinhas: item.valor_girinhas,
+                          estadoConservacao: item.estado_conservacao,
+                          fotos: item.fotos,
+                          status: item.status,
+                          descricao: item.descricao
+                        }}
+                        linkTo={`/item/${item.id}`}
+                        showAuthor={false}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+      <QuickNav />
+    </div>
   );
 };
 

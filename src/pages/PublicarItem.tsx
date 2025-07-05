@@ -2,58 +2,24 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Upload, Star } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { usePublicarItemFormV2 } from '@/hooks/usePublicarItemFormV2';
 import { SimpleItemForm } from '@/components/forms/SimpleItemForm';
 import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
-import { usePactoEntrada } from '@/hooks/usePactoEntrada';
 
 const PublicarItem = () => {
-  const { status: pactoStatus, refetch: refetchPacto } = usePactoEntrada();
-  
   const {
     formData,
     updateFormData,
     errors,
     loading,
-    handleSubmit: originalHandleSubmit
+    handleSubmit
   } = usePublicarItemFormV2();
 
   const handleFieldChange = (field: string, value: any) => {
     updateFormData({ [field]: value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    await originalHandleSubmit(e);
-    // Atualizar status do pacto após publicar
-    await refetchPacto();
-  };
-
-  const getMissaoBanner = () => {
-    if (pactoStatus.isCompleto) return null;
-    
-    return (
-      <div className="bg-gradient-to-r from-yellow-100 to-amber-100 border border-yellow-200 rounded-lg p-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-            <Star className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-yellow-800">
-              Missão: Item {pactoStatus.itensContribuidos + 1} de 2
-            </h3>
-            <p className="text-sm text-yellow-700">
-              {pactoStatus.itensContribuidos === 0 
-                ? 'Seu primeiro item da missão "Primeiros Passos"!'
-                : 'Último item para completar seu pacto de entrada!'
-              }
-            </p>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -69,8 +35,6 @@ const PublicarItem = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {getMissaoBanner()}
-              
               <form onSubmit={handleSubmit} className="space-y-6">
                 <SimpleItemForm
                   formData={formData}

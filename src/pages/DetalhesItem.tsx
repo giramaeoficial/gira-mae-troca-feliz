@@ -1,5 +1,5 @@
-import React from 'react';
-import { useState, useMemo } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
@@ -32,7 +32,6 @@ import { supabase } from '@/integrations/supabase/client';
 import FriendlyError from '@/components/error/FriendlyError';
 import { useReservas } from '@/hooks/useReservas';
 import { useBonificacoes } from '@/hooks/useBonificacoes';
-import PactoEntradaGuard from '@/components/onboarding/PactoEntradaGuard';
 
 interface ItemFeed {
   id: string;
@@ -232,208 +231,206 @@ const DetalhesItem = () => {
   const isItemReserved = item.status === 'reservado';
 
   return (
-    <PactoEntradaGuard requiredForAccess={true}>
-      <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto p-4">
-          <Card className="bg-white shadow-md rounded-md overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-xl font-semibold">{item.titulo}</CardTitle>
-              <div className="flex items-center space-x-2">
-                {isItemAvailable && !isOwner && (
-                  <Button variant="outline" size="sm">
-                    Tenho Interesse
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto p-4">
+        <Card className="bg-white shadow-md rounded-md overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xl font-semibold">{item.titulo}</CardTitle>
+            <div className="flex items-center space-x-2">
+              {isItemAvailable && !isOwner && (
+                <Button variant="outline" size="sm">
+                  Tenho Interesse
+                </Button>
+              )}
+              {isItemAvailable && isOwner && (
+                <Badge variant="secondary">Disponível</Badge>
+              )}
+              {isItemReserved && (
+                <Badge variant="destructive">Reservado</Badge>
+              )}
+              <Dialog open={denunciaDialogOpen} onOpenChange={setDenunciaDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    Reportar
                   </Button>
-                )}
-                {isItemAvailable && isOwner && (
-                  <Badge variant="secondary">Disponível</Badge>
-                )}
-                {isItemReserved && (
-                  <Badge variant="destructive">Reservado</Badge>
-                )}
-                <Dialog open={denunciaDialogOpen} onOpenChange={setDenunciaDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      Reportar
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Reportar Item</DialogTitle>
-                      <DialogDescription>
-                        Por favor, descreva o motivo da denúncia.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <Textarea 
-                        placeholder="Descreva o motivo da denúncia..."
-                        value={motivoDenuncia} 
-                        onChange={(e) => setMotivoDenuncia(e.target.value)} 
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Reportar Item</DialogTitle>
+                    <DialogDescription>
+                      Por favor, descreva o motivo da denúncia.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Textarea 
+                      placeholder="Descreva o motivo da denúncia..."
+                      value={motivoDenuncia} 
+                      onChange={(e) => setMotivoDenuncia(e.target.value)} 
+                    />
+                  </div>
+                  <Button onClick={handleReportarItem}>Reportar</Button>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent className="py-2">
+            <ScrollArea className="h-[400px] w-full">
+              {item.fotos && item.fotos.length > 0 ? (
+                <div className="space-y-4">
+                  {item.fotos.map((foto, index) => (
+                    <div key={index} className="flex justify-center">
+                      <img 
+                        src={foto} 
+                        alt={`Foto do item ${index + 1}`} 
+                        className="max-h-64 object-contain mx-auto rounded-lg" 
                       />
                     </div>
-                    <Button onClick={handleReportarItem}>Reportar</Button>
-                  </DialogContent>
-                </Dialog>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">Nenhuma foto disponível</p>
+                </div>
+              )}
+              <div className="mt-4">
+                <p className="text-gray-600">{item.descricao}</p>
               </div>
+            </ScrollArea>
+          </CardContent>
+          <CardFooter className="flex flex-col md:flex-row items-center justify-between py-4">
+            <div className="flex items-center space-x-4">
+              <Avatar>
+                <AvatarImage src={item.publicado_por_profile?.avatar_url || ''} alt={item.publicado_por_profile?.nome} />
+                <AvatarFallback>{item.publicado_por_profile?.nome?.charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">{item.publicado_por_profile?.nome}</span>
+                <span className="text-xs text-gray-500">
+                  Membro há {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 mt-2 md:mt-0">
+              <div className="flex items-center space-x-1">
+                <span className="text-sm text-gray-600">{item.categoria}</span>
+              </div>
+              <span className="text-lg font-bold">{item.valor_girinhas} Girinhas</span>
+            </div>
+          </CardFooter>
+        </Card>
+
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-white shadow-md rounded-md overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Detalhes da Doação</CardTitle>
             </CardHeader>
             <CardContent className="py-2">
-              <ScrollArea className="h-[400px] w-full">
-                {item.fotos && item.fotos.length > 0 ? (
-                  <div className="space-y-4">
-                    {item.fotos.map((foto, index) => (
-                      <div key={index} className="flex justify-center">
-                        <img 
-                          src={foto} 
-                          alt={`Foto do item ${index + 1}`} 
-                          className="max-h-64 object-contain mx-auto rounded-lg" 
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
-                    <p className="text-gray-500">Nenhuma foto disponível</p>
-                  </div>
-                )}
-                <div className="mt-4">
-                  <p className="text-gray-600">{item.descricao}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-600">
+                    <strong>Categoria:</strong> {item.categoria}
+                  </p>
+                  {item.subcategoria && (
+                    <p className="text-gray-600">
+                      <strong>Subcategoria:</strong> {item.subcategoria}
+                    </p>
+                  )}
+                  {item.genero && (
+                    <p className="text-gray-600">
+                      <strong>Gênero:</strong> {item.genero}
+                    </p>
+                  )}
+                  {item.tamanho_categoria && item.tamanho_valor && (
+                    <p className="text-gray-600">
+                      <strong>Tamanho:</strong> {item.tamanho_valor} ({item.tamanho_categoria})
+                    </p>
+                  )}
                 </div>
-              </ScrollArea>
+                <div>
+                  <p className="text-gray-600">
+                    <strong>Estado de Conservação:</strong> {item.estado_conservacao}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong>Publicado em:</strong> {formatDistanceToNow(new Date(item.updated_at), { addSuffix: true, locale: ptBR })}
+                  </p>
+                </div>
+              </div>
             </CardContent>
-            <CardFooter className="flex flex-col md:flex-row items-center justify-between py-4">
-              <div className="flex items-center space-x-4">
-                <Avatar>
-                  <AvatarImage src={item.publicado_por_profile?.avatar_url || ''} alt={item.publicado_por_profile?.nome} />
-                  <AvatarFallback>{item.publicado_por_profile?.nome?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{item.publicado_por_profile?.nome}</span>
-                  <span className="text-xs text-gray-500">
-                    Membro há {formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ptBR })}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4 mt-2 md:mt-0">
-                <div className="flex items-center space-x-1">
-                  <span className="text-sm text-gray-600">{item.categoria}</span>
-                </div>
-                <span className="text-lg font-bold">{item.valor_girinhas} Girinhas</span>
-              </div>
-            </CardFooter>
           </Card>
 
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-white shadow-md rounded-md overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold">Detalhes da Doação</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-gray-600">
-                      <strong>Categoria:</strong> {item.categoria}
-                    </p>
-                    {item.subcategoria && (
-                      <p className="text-gray-600">
-                        <strong>Subcategoria:</strong> {item.subcategoria}
-                      </p>
-                    )}
-                    {item.genero && (
-                      <p className="text-gray-600">
-                        <strong>Gênero:</strong> {item.genero}
-                      </p>
-                    )}
-                    {item.tamanho_categoria && item.tamanho_valor && (
-                      <p className="text-gray-600">
-                        <strong>Tamanho:</strong> {item.tamanho_valor} ({item.tamanho_categoria})
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-gray-600">
-                      <strong>Estado de Conservação:</strong> {item.estado_conservacao}
-                    </p>
-                    <p className="text-gray-600">
-                      <strong>Publicado em:</strong> {formatDistanceToNow(new Date(item.updated_at), { addSuffix: true, locale: ptBR })}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white shadow-md rounded-md overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold">Ações</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <div className="flex flex-col space-y-2">
-                  {!isOwner && isItemAvailable && (
-                    <>
-                      <Button onClick={handleTrocarMensagens}>
-                        Trocar Mensagens
-                      </Button>
-                      <Button onClick={handleReservarItem}>
-                        Reservar Item
-                      </Button>
-                    </>
-                  )}
-                  {!isOwner && isItemReserved && (
-                    <Button variant="destructive" onClick={handleCancelarReserva}>
-                      Cancelar Reserva
+          <Card className="bg-white shadow-md rounded-md overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Ações</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <div className="flex flex-col space-y-2">
+                {!isOwner && isItemAvailable && (
+                  <>
+                    <Button onClick={handleTrocarMensagens}>
+                      Trocar Mensagens
                     </Button>
-                  )}
-                  {isOwner && isItemAvailable && (
-                    <Button variant="secondary" disabled>
-                      Aguardando Interessados
+                    <Button onClick={handleReservarItem}>
+                      Reservar Item
                     </Button>
-                  )}
-                  {isOwner && isItemReserved && (
-                    <Button onClick={async () => {
-                      if (!id) return;
+                  </>
+                )}
+                {!isOwner && isItemReserved && (
+                  <Button variant="destructive" onClick={handleCancelarReserva}>
+                    Cancelar Reserva
+                  </Button>
+                )}
+                {isOwner && isItemAvailable && (
+                  <Button variant="secondary" disabled>
+                    Aguardando Interessados
+                  </Button>
+                )}
+                {isOwner && isItemReserved && (
+                  <Button onClick={async () => {
+                    if (!id) return;
 
-                      try {
-                        await supabase
-                          .from('itens')
-                          .update({ status: 'trocado' })
-                          .eq('id', id);
+                    try {
+                      await supabase
+                        .from('itens')
+                        .update({ status: 'trocado' })
+                        .eq('id', id);
 
-                        await processarBonusTrocaConcluida(id);
+                      await processarBonusTrocaConcluida(id);
 
-                        toast({
-                          title: "Troca Confirmada!",
-                          description: "O item foi marcado como trocado.",
-                        });
-                        refetch();
-                      } catch (error: any) {
-                        toast({
-                          title: "Erro ao confirmar troca",
-                          description: error.message,
-                          variant: "destructive",
-                        });
-                      }
-                    }}>
-                      Confirmar Troca
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {item.vendedor_bairro && item.vendedor_cidade && (
-            <Card className="mt-6 bg-white shadow-md rounded-md overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold">Localização</CardTitle>
-              </CardHeader>
-              <CardContent className="py-2">
-                <p className="text-sm text-gray-500">
-                  {item.vendedor_bairro}, {item.vendedor_cidade} - {item.vendedor_estado}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                      toast({
+                        title: "Troca Confirmada!",
+                        description: "O item foi marcado como trocado.",
+                      });
+                      refetch();
+                    } catch (error: any) {
+                      toast({
+                        title: "Erro ao confirmar troca",
+                        description: error.message,
+                        variant: "destructive",
+                      });
+                    }
+                  }}>
+                    Confirmar Troca
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {item.vendedor_bairro && item.vendedor_cidade && (
+          <Card className="mt-6 bg-white shadow-md rounded-md overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold">Localização</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <p className="text-sm text-gray-500">
+                {item.vendedor_bairro}, {item.vendedor_cidade} - {item.vendedor_estado}
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </PactoEntradaGuard>
+    </div>
   );
 };
 
