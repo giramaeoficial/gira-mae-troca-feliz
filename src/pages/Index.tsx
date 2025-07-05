@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Sparkles, Heart, Users, Recycle, Shield, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
+import ConceitoComunidade from "@/components/landing/ConceitoComunidade";
 import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
@@ -49,6 +50,9 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      {/* Conceito da Comunidade */}
+      <ConceitoComunidade />
 
       {/* Features Section */}
       <section className="py-20 px-4 bg-white/50">

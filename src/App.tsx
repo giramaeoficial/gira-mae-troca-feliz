@@ -1,4 +1,3 @@
-
 // src/App.tsx - ADICIONAR a rota AuthCallback
 
 import React from 'react';
@@ -28,6 +27,8 @@ import AdminDashboard from '@/pages/AdminDashboard';
 import NotFound from '@/pages/NotFound';
 import Missoes from '@/pages/Missoes';
 import Configuracoes from '@/pages/Configuracoes';
+import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
+import PublicarPrimeiroItem from '@/pages/PublicarPrimeiroItem';
 
 const queryClient = new QueryClient();
 
@@ -43,20 +44,22 @@ function App() {
           <Route path="/auth-callback" element={<AuthCallback />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/feed" element={<AuthGuard><FeedOptimized /></AuthGuard>} /> {/* ✅ PROTEGER COM AUTHGUARD */}
-          <Route path="/buscar-itens" element={<AuthGuard><BuscarItens /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/publicar" element={<AuthGuard><PublicarItem /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/missoes" element={<AuthGuard><Missoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/perfil/editar" element={<AuthGuard><EditarPerfil /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/conceito-comunidade" element={<ConceptoComunidadeOnboarding />} />
+          <Route path="/publicar-primeiro-item" element={<PublicarPrimeiroItem />} />
+          <Route path="/feed" element={<AuthGuard><FeedOptimized /></AuthGuard>} />
+          <Route path="/buscar-itens" element={<AuthGuard><BuscarItens /></AuthGuard>} />
+          <Route path="/publicar" element={<AuthGuard><PublicarItem /></AuthGuard>} />
+          <Route path="/missoes" element={<AuthGuard><Missoes /></AuthGuard>} />
+          <Route path="/perfil" element={<AuthGuard><Perfil /></AuthGuard>} />
+          <Route path="/perfil/editar" element={<AuthGuard><EditarPerfil /></AuthGuard>} />
           <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
-          <Route path="/carteira" element={<AuthGuard><Carteira /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/comprar-girinhas" element={<AuthGuard><ComprarGirinhas /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/indicacoes" element={<AuthGuard><Indicacoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/carteira" element={<AuthGuard><Carteira /></AuthGuard>} />
+          <Route path="/comprar-girinhas" element={<AuthGuard><ComprarGirinhas /></AuthGuard>} />
+          <Route path="/indicacoes" element={<AuthGuard><Indicacoes /></AuthGuard>} />
           <Route path="/item/:id" element={<DetalhesItem />} />
-          <Route path="/minhas-reservas" element={<AuthGuard><MinhasReservas /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/configuracoes" element={<AuthGuard><Configuracoes /></AuthGuard>} /> {/* ✅ PROTEGER */}
-          <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} /> {/* ✅ PROTEGER */}
+          <Route path="/minhas-reservas" element={<AuthGuard><MinhasReservas /></AuthGuard>} />
+          <Route path="/configuracoes" element={<AuthGuard><Configuracoes /></AuthGuard>} />
+          <Route path="/admin" element={<AuthGuard><AdminDashboard /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
