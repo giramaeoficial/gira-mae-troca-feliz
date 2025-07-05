@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, Star } from "lucide-react";
 import { usePublicarItemFormV2 } from '@/hooks/usePublicarItemFormV2';
 import { SimpleItemForm } from '@/components/forms/SimpleItemForm';
 import AuthGuard from '@/components/auth/AuthGuard';

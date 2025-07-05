@@ -7,7 +7,7 @@ import Header from "@/components/shared/Header";
 import { useAuth } from "@/hooks/useAuth";
 import AuthGuard from '@/components/auth/AuthGuard';
 import QuickNav from '@/components/shared/QuickNav';
-import { useItens } from '@/hooks/useItensOptimized';
+import { useItensDisponiveis } from '@/hooks/useItensOptimized';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -17,7 +17,7 @@ import PactoEntradaGuard from '@/components/onboarding/PactoEntradaGuard';
 
 const FeedOptimized = () => {
   const { user } = useAuth();
-  const { itens, isLoading, isError, error } = useItens();
+  const { data: itens, isLoading, isError, error } = useItensDisponiveis();
 
   if (isLoading) {
     return (
@@ -90,11 +90,11 @@ const FeedOptimized = () => {
               <CardContent>
                 <ScrollArea className="h-[500px] w-full rounded-md border">
                   <div className="space-y-4">
-                    {itens.map((item) => (
+                    {itens && itens.map((item) => (
                       <div key={item.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-md transition-colors">
                         <Avatar>
-                          <AvatarImage src={item.profiles?.avatar_url || ""} />
-                          <AvatarFallback>{item.profiles?.nome?.charAt(0)}</AvatarFallback>
+                          <AvatarImage src={item.publicado_por_profile?.avatar_url || ""} />
+                          <AvatarFallback>{item.publicado_por_profile?.nome?.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">{item.titulo}</p>

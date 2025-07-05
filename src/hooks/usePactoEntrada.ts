@@ -74,13 +74,39 @@ export const usePactoEntrada = () => {
     }
 
     try {
-      const { error } = await supabase.rpc('processar_bonus_entrada', {
-        p_user_id: user.id,
-        p_valor: 100,
-        p_descricao: 'Recompensa Pacto de Entrada'
-      });
+      // Criar transação de bônus diretamente na tabela
+      const { error } = await supabase
+        .from('transacoes')
+        .insert({
+          user_id: user.id,
+          tipo: 'bonus_cadastro',
+          valor: 100,
+          descricao: 'Recompensa Pacto de Entrada'
+        });
 
       if (error) throw error;
+
+      // Atualizar carteira do usuário
+      const { error: carteiraError } = await supabase
+        .from('carteiras')
+        .upsert({
+          user_id: user.id,
+          saldo_atual: 100,
+          total_recebido: 100
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (carteiraError) {
+        // Se erro, tentar UPDATE
+        await supabase
+          .from('carteiras')
+          .update({
+            saldo_atual: supabase.raw('saldo_atual + 100'),
+            total_recebido: supabase.raw('total_recebido + 100')
+          })
+          .eq('user_id', user.id);
+      }
 
       toast({
         title: "🎊 Recompensa coletada!",
