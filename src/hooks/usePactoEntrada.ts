@@ -86,26 +86,40 @@ export const usePactoEntrada = () => {
 
       if (error) throw error;
 
-      // Atualizar carteira do usuário
-      const { error: carteiraError } = await supabase
+      // Buscar carteira atual para fazer o incremento
+      const { data: carteiraAtual, error: buscarError } = await supabase
         .from('carteiras')
-        .upsert({
-          user_id: user.id,
-          saldo_atual: 100,
-          total_recebido: 100
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('saldo_atual, total_recebido')
+        .eq('user_id', user.id)
+        .single();
 
-      if (carteiraError) {
-        // Se erro, tentar UPDATE
-        await supabase
+      if (buscarError && buscarError.code !== 'PGRST116') {
+        throw buscarError;
+      }
+
+      if (carteiraAtual) {
+        // Atualizar carteira existente
+        const { error: updateError } = await supabase
           .from('carteiras')
           .update({
-            saldo_atual: supabase.raw('saldo_atual + 100'),
-            total_recebido: supabase.raw('total_recebido + 100')
+            saldo_atual: carteiraAtual.saldo_atual + 100,
+            total_recebido: carteiraAtual.total_recebido + 100
           })
           .eq('user_id', user.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Criar nova carteira
+        const { error: insertError } = await supabase
+          .from('carteiras')
+          .insert({
+            user_id: user.id,
+            saldo_atual: 100,
+            total_recebido: 100,
+            total_gasto: 0
+          });
+
+        if (insertError) throw insertError;
       }
 
       toast({
