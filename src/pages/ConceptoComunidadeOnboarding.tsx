@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, DollarSign, Shield, Trophy, ArrowRight, Zap, Target } from 'lucide-react';
+import { Users, DollarSign, Shield, Trophy, ArrowRight, Zap, Target, Gift, UserPlus, Calendar } from 'lucide-react';
 
 const ConceptoComunidadeOnboarding = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ const ConceptoComunidadeOnboarding = () => {
         <div className="space-y-4">
           <p className="text-gray-600 text-center">
             Aqui você <strong>vende</strong> e <strong>compra</strong> itens infantis usando nossa moeda interna: 
-            as <strong>Girinhas</strong> (1 Girinha = R$ 1,00).
+            as <strong>Girinhas</strong> (1 Girinha = R$ 1,00 de referência).
           </p>
           <div className="bg-blue-50 rounded-lg p-4">
             <h4 className="font-semibold text-blue-800 mb-2">💰 Como funciona:</h4>
@@ -34,12 +34,13 @@ const ConceptoComunidadeOnboarding = () => {
     {
       icon: DollarSign,
       title: "Sistema de Girinhas",
-      subtitle: "Nossa moeda interna vale dinheiro real",
+      subtitle: "Nossa moeda exclusiva da plataforma",
       content: (
         <div className="space-y-4">
           <div className="text-center">
             <div className="text-4xl mb-2">💰</div>
             <p className="text-xl font-bold text-green-600">1 Girinha = R$ 1,00</p>
+            <p className="text-xs text-gray-500 mt-1">(valor de referência)</p>
           </div>
           <div className="space-y-3">
             <div className="bg-green-50 rounded-lg p-3">
@@ -51,8 +52,48 @@ const ConceptoComunidadeOnboarding = () => {
               <p className="text-purple-700 text-sm">Compre itens de outras mães</p>
             </div>
             <div className="bg-orange-50 rounded-lg p-3">
-              <h4 className="font-semibold text-orange-800">🔄 Para Converter:</h4>
-              <p className="text-orange-700 text-sm">Compre mais Girinhas quando precisar</p>
+              <h4 className="font-semibold text-orange-800">🔄 Transferências:</h4>
+              <p className="text-orange-700 text-sm">Transfira Girinhas para outras mães</p>
+            </div>
+          </div>
+          <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+            <p className="text-yellow-800 text-xs text-center">
+              <strong>Importante:</strong> Girinhas têm valor apenas dentro da plataforma GiraMãe
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      icon: Trophy,
+      title: "Missões e Recompensas",
+      subtitle: "Ganhe Girinhas completando desafios",
+      content: (
+        <div className="space-y-4">
+          <p className="text-gray-600 text-center">
+            Complete <strong>missões</strong> e ganhe Girinhas extras!
+          </p>
+          <div className="space-y-3">
+            <div className="bg-purple-50 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="w-4 h-4 text-purple-600" />
+                <h4 className="font-semibold text-purple-800">Missões Especiais</h4>
+              </div>
+              <p className="text-purple-700 text-sm">Desafios que dão Girinhas de bônus</p>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                <h4 className="font-semibold text-blue-800">Bônus Diário</h4>
+              </div>
+              <p className="text-blue-700 text-sm">Entre todos os dias e ganhe Girinhas</p>
+            </div>
+            <div className="bg-green-50 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <UserPlus className="w-4 h-4 text-green-600" />
+                <h4 className="font-semibold text-green-800">Indicações</h4>
+              </div>
+              <p className="text-green-700 text-sm">Convide amigas e ganhe Girinhas por cada uma</p>
             </div>
           </div>
         </div>
@@ -60,12 +101,12 @@ const ConceptoComunidadeOnboarding = () => {
     },
     {
       icon: Shield,
-      title: "Ambiente Seguro",
-      subtitle: "Comunidade verificada e protegida",
+      title: "Comunidade Segura",
+      subtitle: "Ambiente protegido e verificado",
       content: (
         <div className="space-y-4">
           <p className="text-gray-600 text-center">
-            Levamos a segurança a sério. Aqui não é bagunça!
+            Nossa comunidade é <strong>segura e confiável</strong>. Aqui não é bagunça!
           </p>
           <div className="space-y-3">
             <div className="flex items-start gap-3 bg-red-50 rounded-lg p-3">
@@ -91,9 +132,9 @@ const ConceptoComunidadeOnboarding = () => {
       )
     },
     {
-      icon: Trophy,
+      icon: Gift,
       title: "Sua Primeira Missão",
-      subtitle: "TODOS contribuem, inclusive você!",
+      subtitle: "TODOS contribuem na comunidade!",
       content: (
         <div className="space-y-4">
           <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">
@@ -102,9 +143,13 @@ const ConceptoComunidadeOnboarding = () => {
               <h4 className="font-bold text-orange-800">MISSÃO OBRIGATÓRIA #1</h4>
             </div>
             <div className="bg-white/60 rounded-lg p-3 mb-3">
-              <p className="font-semibold text-gray-800 mb-2">🎯 O que você deve fazer:</p>
+              <p className="font-semibold text-gray-800 mb-2">🎯 Por que essa missão existe:</p>
               <p className="text-gray-700 text-sm mb-2">
-                Anuncie <strong>2 itens</strong> para venda na plataforma
+                Para manter nossa comunidade <strong>ativa e justa</strong>, TODAS as mães 
+                precisam contribuir anunciando itens para venda.
+              </p>
+              <p className="text-gray-700 text-sm mb-2">
+                <strong>Sua missão:</strong> Anuncie 2 itens para venda por Girinhas
               </p>
               <p className="text-xs text-gray-600">
                 (Não precisa vender, apenas anunciar com fotos reais)
@@ -113,16 +158,17 @@ const ConceptoComunidadeOnboarding = () => {
             <div className="flex items-center gap-2 bg-green-100 rounded-lg p-2">
               <Zap className="w-4 h-4 text-green-600" />
               <span className="text-green-800 font-semibold text-sm">
-                Recompensa: 100 Girinhas!
+                🎁 Recompensa de Boas-vindas: 100 Girinhas!
               </span>
             </div>
           </div>
           
-          <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-            <h4 className="font-semibold text-yellow-800 mb-2">⚡ Por que essa missão?</h4>
-            <p className="text-yellow-700 text-sm">
-              Para ter acesso completo à plataforma, você precisa contribuir também. 
-              Afinal, <strong>TODOS aqui contribuem</strong> para manter a comunidade ativa!
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <h4 className="font-semibold text-blue-800 mb-2">💡 A importância da comunidade:</h4>
+            <p className="text-blue-700 text-sm">
+              Esta é a <strong>única missão obrigatória</strong> da plataforma. 
+              Após completar, você terá acesso total e poderá focar apenas em 
+              vender e comprar livremente!
             </p>
           </div>
         </div>
@@ -139,10 +185,6 @@ const ConceptoComunidadeOnboarding = () => {
     } else {
       navigate('/publicar-primeiro-item');
     }
-  };
-
-  const handleSkip = () => {
-    navigate('/publicar-primeiro-item');
   };
 
   return (
@@ -202,16 +244,6 @@ const ConceptoComunidadeOnboarding = () => {
                   </>
                 )}
               </Button>
-              
-              {currentStep < steps.length - 1 && (
-                <Button
-                  variant="ghost"
-                  onClick={handleSkip}
-                  className="w-full text-gray-600"
-                >
-                  Pular apresentação
-                </Button>
-              )}
             </div>
           </CardContent>
         </Card>
