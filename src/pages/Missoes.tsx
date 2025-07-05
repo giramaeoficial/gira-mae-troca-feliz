@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
+import MissaoPactoEntrada from '@/components/onboarding/MissaoPactoEntrada';
 
 const MissionCard: React.FC<{ missao: any; onColetar: (id: string) => void; isCollecting: boolean }> = ({ 
   missao, 
@@ -282,6 +283,9 @@ const Missoes: React.FC = () => {
               </CardTitle>
             </CardHeader>
           </Card>
+
+          {/* Missão Especial de Entrada */}
+          <MissaoPactoEntrada />
 
           {/* Lista de missões */}
           <div className="space-y-3">

@@ -1,787 +1,121 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, MapPin, Search, Filter, Truck, Car } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import Header from '@/components/shared/Header';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Heart, Users, Recycle, Shield, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import Header from "@/components/shared/Header";
+import { useAuth } from "@/hooks/useAuth";
+import AuthGuard from '@/components/auth/AuthGuard';
 import QuickNav from '@/components/shared/QuickNav';
-import LoadingSpinner from '@/components/loading/LoadingSpinner';
-import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
-import EmptyState from '@/components/loading/EmptyState';
-import { ItemCard } from '@/components/shared/ItemCard';
-import { useAuth } from '@/hooks/useAuth';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
-import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
-import { useToast } from '@/hooks/use-toast';
-import { useFeedInfinito } from '@/hooks/useFeedInfinito';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
-import { supabase } from '@/integrations/supabase/client';
+import { useItens } from '@/hooks/useItensOptimized';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import PactoEntradaGuard from '@/components/onboarding/PactoEntradaGuard';
 
 const FeedOptimized = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
-  
-  // ✅ Estados de filtros (incluindo novo filtro de logística)
-  const [busca, setBusca] = useState('');
-  const [cidadeManual, setCidadeManual] = useState('');
-  const [categoria, setCategoria] = useState('todas');
-  const [subcategoria, setSubcategoria] = useState('todas');
-  const [genero, setGenero] = useState('todos');
-  const [tamanho, setTamanho] = useState('todos');
-  const [precoRange, setPrecoRange] = useState([0, 200]);
-  const [modalidadeLogistica, setModalidadeLogistica] = useState<'todas' | 'entrega' | 'busca'>('todas'); // ✅ NOVO
-  const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
-  const [filtrosAplicados, setFiltrosAplicados] = useState(true);
-  const [mostrarReservados, setMostrarReservados] = useState(true);
-  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
+  const { itens, isLoading, isError, error } = useItens();
 
-  // ✅ Hooks essenciais mantidos
-  const { location, loading: geoLoading, error: geoError, detectarLocalizacao, limparLocalizacao } = useSimpleGeolocation();
-  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
-  const debouncedBusca = useDebounce(busca, 500);
-  
-  // ✅ Função para calcular location de forma segura
-  const getLocationForSearch = () => {
-    if (location) return location;
-    
-    if (cidadeManual) {
-      return { 
-        cidade: cidadeManual, 
-        estado: '',
-        bairro: undefined 
-      };
-    }
-    
-    return { cidade: '', estado: '', bairro: undefined };
-  };
+  if (isLoading) {
+    return (
+      <AuthGuard>
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-6 pb-32 md:pb-8">
+            <Card className="max-w-4xl mx-auto">
+              <CardHeader>
+                <CardTitle>Carregando Itens...</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-[250px]" />
+                        <Skeleton className="h-4 w-[200px]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </main>
+          <QuickNav />
+        </div>
+      </AuthGuard>
+    );
+  }
 
-  const locationForSearch = getLocationForSearch();
-  
-  // ✅ Objeto com todos os filtros consolidado (incluindo modalidade logística)
-  const filtrosCompletos = useMemo(() => ({
-    busca: debouncedBusca,
-    cidade: locationForSearch.cidade || cidadeManual,
-    categoria: categoria === 'todas' ? undefined : categoria,
-    subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
-    genero: genero === 'todos' ? undefined : genero,
-    tamanho: tamanho === 'todos' ? undefined : tamanho,
-    precoMin: precoRange[0],
-    precoMax: precoRange[1],
-    mostrarReservados,
-    modalidadeLogistica, // ✅ NOVO FILTRO
-    itemId: undefined
-  }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados, modalidadeLogistica]);
-  
-  // ✅ Hook consolidado com TODOS os dados
-  const {
-    data: paginasFeed,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading: loadingFeed,
-    refetch
-  } = useFeedInfinito(user?.id || '', filtrosCompletos);
-  
-  // ✅ Extrair TODOS os dados das páginas
-  const itens = useMemo(() => {
-    return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
-  }, [paginasFeed]);
-  
-  // ✅ DADOS CONSOLIDADOS da primeira página
-  const feedData = useMemo(() => {
-    const primeiraPagina = paginasFeed?.pages?.[0];
-    return {
-      favoritos: primeiraPagina?.favoritos || [],
-      reservas_usuario: primeiraPagina?.reservas_usuario || [],
-      filas_espera: primeiraPagina?.filas_espera || {},
-      configuracoes: primeiraPagina?.configuracoes,
-      profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao: 5
-    };
-  }, [paginasFeed]);
-  
-  const categorias = feedData.configuracoes?.categorias || [];
-  const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
-  
-  // ✅ Lógica de subcategorias filtradas
-  const getSubcategoriasFiltradas = () => {
-    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
-    
-    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
-    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
-      if (!acc.some(item => item.nome === sub.nome)) {
-        acc.push(sub);
-      }
-      return acc;
-    }, [] as typeof filtradas);
-    
-    return subcategoriasUnicas;
-  };
-
-  // ✅ Lógica de tamanhos
-  const getTamanhosDisponiveis = () => {
-    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
-    
-    const tipos = Object.keys(tiposTamanho);
-    const tipoUnico = tipos[0];
-    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
-    
-    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
-      if (!acc.some(item => item.valor === tamanho.valor)) {
-        acc.push(tamanho);
-      }
-      return acc;
-    }, [] as typeof tamanhos);
-    
-    return tamanhosUnicos;
-  };
-
-  const subcategoriasFiltradas = getSubcategoriasFiltradas();
-  const tamanhosDisponiveis = getTamanhosDisponiveis();
-
-  // ✅ Filtrar itens baseado na opção de mostrar reservados
-  const itensFiltrados = mostrarReservados 
-    ? itens 
-    : itens.filter(item => item.status === 'disponivel');
-
-  // ✅ Scroll infinito
-  const { ref: infiniteRef } = useInfiniteScroll({
-    loading: isFetchingNextPage,
-    hasNextPage: hasNextPage || false,
-    onLoadMore: fetchNextPage,
-    disabled: !hasNextPage,
-    rootMargin: '100px',
-  });
-
-  const handleItemClick = useCallback((itemId: string) => {
-    navigate(`/item/${itemId}`);
-  }, [navigate]);
-
-  // ✅ FUNÇÃO entrarNaFila usando RPC direto
-  const entrarNaFila = async (itemId: string) => {
-    if (!user) return;
-    
-    setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
-    
-    try {
-      const { data, error } = await supabase
-        .rpc('entrar_fila_espera', { 
-          p_item_id: itemId, 
-          p_usuario_id: user.id 
-        });
-
-      if (error) {
-        toast({ 
-          title: "Erro ao reservar", 
-          description: error.message, 
-          variant: "destructive" 
-        });
-        setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
-        return false;
-      }
-
-      const result = data as { tipo?: string; posicao?: number } | null;
-      
-      if (result?.tipo === 'reserva_direta') {
-        toast({ 
-          title: "Item reservado! 🎉", 
-          description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega." 
-        });
-      } else if (result?.tipo === 'fila_espera') {
-        toast({ 
-          title: "Entrou na fila! 📝", 
-          description: `Você está na posição ${result.posicao} da fila. As Girinhas NÃO foram bloqueadas ainda.` 
-        });
-      }
-      
-      setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
-      setTimeout(() => {
-        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
-      }, 2000);
-      
-      await refetch();
-      return true;
-    } catch (err) {
-      console.error('Erro ao entrar na fila:', err);
-      toast({ 
-        title: "Erro ao entrar na fila", 
-        description: err instanceof Error ? err.message : "Tente novamente.", 
-        variant: "destructive" 
-      });
-      setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
-      setTimeout(() => {
-        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
-      }, 2000);
-      return false;
-    }
-  };
-
-  // ✅ FUNÇÃO toggleFavorito usando RPC direto
-  const toggleFavorito = async (itemId: string) => {
-    if (!user) return;
-    
-    const isFavorito = feedData.favoritos.includes(itemId);
-    
-    try {
-      if (isFavorito) {
-        // Remover favorito
-        const { error } = await supabase
-          .from('favoritos')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('item_id', itemId);
-
-        if (error) throw error;
-
-        toast({
-          title: "Removido dos favoritos",
-          description: "Item removido da sua lista de desejos.",
-        });
-      } else {
-        // Adicionar favorito
-        const { error } = await supabase
-          .from('favoritos')
-          .insert({
-            user_id: user.id,
-            item_id: itemId
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: "Adicionado aos favoritos! ❤️",
-          description: "Item adicionado à sua lista de desejos.",
-        });
-      }
-      
-      // Atualizar dados
-      await refetch();
-    } catch (error) {
-      console.error('Erro ao toggle favorito:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar os favoritos.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handlers para ações dos itens
-  const handleReservarItem = async (itemId: string) => {
-    try {
-      await entrarNaFila(itemId);
-    } catch (error) {
-      console.error('Erro ao reservar item:', error);
-    }
-  };
-
-  const handleEntrarFila = async (itemId: string) => {
-    try {
-      await entrarNaFila(itemId);
-    } catch (error) {
-      console.error('Erro ao entrar na fila:', error);
-    }
-  };
-
-  const handleToggleFavorito = async (itemId: string) => {
-    try {
-      await toggleFavorito(itemId);
-    } catch (error) {
-      console.error('Erro ao toggle favorito:', error);
-    }
-  };
-
-  const handleAplicarFiltros = () => {
-    setFiltrosAplicados(true);
-    refetch();
-  };
-
-  const handleLimparFiltros = () => {
-    setBusca('');
-    setCidadeManual('');
-    setCategoria('todas');
-    setSubcategoria('todas');
-    setGenero('todos');
-    setTamanho('todos');
-    setPrecoRange([0, 200]);
-    setModalidadeLogistica('todas'); // ✅ RESET NOVO FILTRO
-    setMostrarReservados(true);
-    limparLocalizacao();
-    setMostrarFiltrosAvancados(false);
-    refetch();
-  };
-
-  const handleLocationClick = () => {
-    if (location) {
-      limparLocalizacao();
-    } else {
-      detectarLocalizacao();
-    }
-  };
-
-  const toggleFiltrosAvancados = () => {
-    setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
-  };
-
-  const handleCategoriaChange = (novaCategoria: string) => {
-    setCategoria(novaCategoria);
-    setSubcategoria('todas');
-    setTamanho('todos');
-  };
-
-  const handleTamanhoChange = (valor: string) => {
-    setTamanho(valor);
-  };
-
-  const getLocationText = () => {
-    if (locationForSearch && locationForSearch.cidade) {
-      return `em ${locationForSearch.cidade}`;
-    }
-    return 'próximos';
-  };
-
-  // ✅ Função para obter texto do filtro de logística ativo
-  const getLogisticaFilterText = () => {
-    switch (modalidadeLogistica) {
-      case 'entrega': return ' com entrega';
-      case 'busca': return ' que posso buscar';
-      default: return '';
-    }
-  };
+  if (isError) {
+    return (
+      <AuthGuard>
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-6 pb-32 md:pb-8">
+            <Card className="max-w-4xl mx-auto">
+              <CardHeader>
+                <CardTitle>Erro ao Carregar Itens</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Ocorreu um erro ao carregar os itens. Por favor, tente novamente mais tarde.</p>
+                {error && (
+                  <pre className="mt-4 p-2 bg-gray-100 rounded-md overflow-auto">
+                    {JSON.stringify(error, null, 2)}
+                  </pre>
+                )}
+              </CardContent>
+            </Card>
+          </main>
+          <QuickNav />
+        </div>
+      </AuthGuard>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-6">
-        {/* Hero Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-            Encontre Tesouros {getLocationText()}{getLogisticaFilterText()}
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Descubra itens incríveis na sua região
-          </p>
+    <PactoEntradaGuard requiredForAccess={true}>
+      <AuthGuard>
+        <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-6 pb-32 md:pb-8">
+            <Card className="max-w-4xl mx-auto">
+              <CardHeader>
+                <CardTitle>Itens Disponíveis</CardTitle>
+                <CardDescription>Confira os itens que outras mães estão trocando.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[500px] w-full rounded-md border">
+                  <div className="space-y-4">
+                    {itens.map((item) => (
+                      <div key={item.id} className="flex items-center space-x-4 p-4 hover:bg-gray-50 rounded-md transition-colors">
+                        <Avatar>
+                          <AvatarImage src={item.profiles?.avatar_url || ""} />
+                          <AvatarFallback>{item.profiles?.nome?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium leading-none">{item.titulo}</p>
+                          <p className="text-sm text-muted-foreground">{item.descricao}</p>
+                          <p className="text-sm text-muted-foreground">Valor: {item.valor_girinhas} Girinhas</p>
+                        </div>
+                        <Separator orientation="vertical" className="h-10" />
+                        <Button asChild variant="link">
+                          <Link to={`/item/${item.id}`}>Ver Detalhes</Link>
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </main>
+          <QuickNav />
         </div>
-
-        {/* Header com localização e publicar */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                Buscar Itens
-              </h2>
-              {locationForSearch && locationForSearch.cidade && (
-                <div className="flex items-center text-sm text-gray-500 mt-1">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  <span>
-                    {locationForSearch.cidade}{locationForSearch.bairro ? `, ${locationForSearch.bairro}` : ''}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <Button
-              onClick={() => navigate('/publicar')}
-              size="sm"
-              className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Publicar
-            </Button>
-          </div>
-
-          {/* ✅ FILTRO RÁPIDO DE LOGÍSTICA */}
-          <div className="flex gap-2 mb-4">
-            <Button
-              variant={modalidadeLogistica === 'todas' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setModalidadeLogistica('todas')}
-              className="text-xs"
-            >
-              🔄 Todas
-            </Button>
-            <Button
-              variant={modalidadeLogistica === 'entrega' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setModalidadeLogistica('entrega')}
-              className="text-xs"
-            >
-              <Truck className="w-3 h-3 mr-1" />
-              Só com entrega
-            </Button>
-            <Button
-              variant={modalidadeLogistica === 'busca' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setModalidadeLogistica('busca')}
-              className="text-xs"
-            >
-              <Car className="w-3 h-3 mr-1" />
-              Posso buscar
-            </Button>
-          </div>
-
-          {/* Toggle para mostrar/ocultar itens reservados */}
-          <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-4">
-            <div className="flex items-center gap-3">
-              <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
-                Mostrar itens reservados
-              </Label>
-              <Switch
-                id="mostrar-reservados"
-                checked={mostrarReservados}
-                onCheckedChange={setMostrarReservados}
-              />
-            </div>
-            
-            <div className="text-xs text-gray-500">
-              {itensFiltrados.length} itens
-            </div>
-          </div>
-
-          {/* Campo de busca com ícone de filtro */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              type="text"
-              placeholder="Busque por vestido, carrinho, lego..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="pl-10 pr-12 h-12 text-base"
-            />
-            <button
-              onClick={toggleFiltrosAvancados}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
-            >
-              <Filter className="w-5 h-5 text-gray-400" />
-            </button>
-          </div>
-
-          {/* Filtros Avançados */}
-          {mostrarFiltrosAvancados && (
-            <div className="space-y-6 border-t pt-4">
-              {/* Seção Localização */}
-              <div>
-                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">LOCALIZAÇÃO</h3>
-                
-                <Input
-                  type="text"
-                  placeholder="Digite sua cidade..."
-                  value={cidadeManual}
-                  onChange={(e) => setCidadeManual(e.target.value)}
-                  className="w-full h-12 text-base mb-3"
-                />
-                
-                <Button
-                  onClick={handleLocationClick}
-                  disabled={geoLoading}
-                  variant="outline"
-                  className="w-full h-12 flex items-center justify-start"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {geoLoading ? 'Detectando localização...' : 
-                   location ? `✅ ${location.cidade}, ${location.estado} - Alterar` :
-                   '📍 Usar Minha Localização Atual'}
-                </Button>
-                
-                {geoError && (
-                  <p className="text-red-500 text-sm mt-2">{geoError}</p>
-                )}
-              </div>
-
-              {/* ✅ FILTRO AVANÇADO DE LOGÍSTICA */}
-              <div>
-                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">MODALIDADE DE ENTREGA</h3>
-                <div className="grid grid-cols-1 gap-2">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="modalidade"
-                      value="todas"
-                      checked={modalidadeLogistica === 'todas'}
-                      onChange={(e) => setModalidadeLogistica(e.target.value as 'todas')}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700 flex items-center gap-2">
-                      <span>🔄</span>
-                      Todas as opções
-                    </span>
-                  </label>
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="modalidade"
-                      value="entrega"
-                      checked={modalidadeLogistica === 'entrega'}
-                      onChange={(e) => setModalidadeLogistica(e.target.value as 'entrega')}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700 flex items-center gap-2">
-                      <Truck className="w-4 h-4" />
-                      Só com entrega grátis
-                    </span>
-                  </label>
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="modalidade"
-                      value="busca"
-                      checked={modalidadeLogistica === 'busca'}
-                      onChange={(e) => setModalidadeLogistica(e.target.value as 'busca')}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm text-gray-700 flex items-center gap-2">
-                      <Car className="w-4 h-4" />
-                      Posso buscar
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Categoria e Subcategoria */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
-                  <Select value={categoria} onValueChange={handleCategoriaChange}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
-                      <SelectItem value="todas">Todas</SelectItem>
-                      {categorias.map((cat) => (
-                        <SelectItem key={cat.codigo} value={cat.codigo}>
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm">{cat.icone}</span>
-                            {cat.nome}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
-                  <Select 
-                    value={subcategoria} 
-                    onValueChange={setSubcategoria}
-                    disabled={categoria === 'todas'}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
-                      <SelectItem value="todas">Todas</SelectItem>
-                      {subcategoriasFiltradas.length === 0 ? (
-                        <SelectItem value="none" disabled>Nenhuma subcategoria encontrada</SelectItem>
-                      ) : (
-                        subcategoriasFiltradas.map((sub) => (
-                          <SelectItem key={sub.id} value={sub.nome}>
-                            <span className="flex items-center gap-2">
-                              <span className="text-sm">{sub.icone}</span>
-                              {sub.nome}
-                            </span>
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Gênero e Tamanho */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
-                  <Select value={genero} onValueChange={setGenero}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg z-50">
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="menino">
-                        <span className="flex items-center gap-2">
-                          <span className="text-sm">👦</span>
-                          Menino
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="menina">
-                        <span className="flex items-center gap-2">
-                          <span className="text-sm">👧</span>
-                          Menina
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="unissex">
-                        <span className="flex items-center gap-2">
-                          <span className="text-sm">👶</span>
-                          Unissex
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                    {categoria === 'calcados' ? 'NÚMERO' : 
-                     categoria === 'brinquedos' ? 'IDADE' : 
-                     categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
-                  </h3>
-                  <Select 
-                    value={tamanho} 
-                    onValueChange={handleTamanhoChange}
-                    disabled={categoria === 'todas' || loadingTamanhos}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
-                      <SelectItem value="todos">Todos</SelectItem>
-                      {loadingTamanhos ? (
-                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                      ) : tamanhosDisponiveis.length === 0 ? (
-                        <SelectItem value="none" disabled>Nenhum tamanho encontrado</SelectItem>
-                      ) : (
-                        tamanhosDisponiveis.map((tam) => (
-                          <SelectItem key={tam.id} value={tam.valor}>
-                            {tam.label_display}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Faixa de Preço */}
-              <div>
-                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                  PREÇO: {precoRange[0]} - {precoRange[1]} G
-                </h3>
-                <div className="px-2">
-                  <Slider
-                    value={precoRange}
-                    onValueChange={setPrecoRange}
-                    max={200}
-                    min={0}
-                    step={5}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Botões de ação */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={handleLimparFiltros}
-                  variant="outline"
-                  className="flex-1 h-12"
-                >
-                  Limpar Filtros
-                </Button>
-                <Button
-                  onClick={handleAplicarFiltros}
-                  className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500"
-                >
-                  Aplicar Filtros
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Loading state */}
-        {loadingFeed && itensFiltrados.length === 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <ItemCardSkeleton key={i} />
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loadingFeed && itensFiltrados.length === 0 && (
-          <EmptyState
-            type="search"
-            title={locationForSearch?.cidade ? 
-              `Nenhum item encontrado em ${locationForSearch.cidade}${getLogisticaFilterText()}` : 
-              `Nenhum item encontrado${getLogisticaFilterText()}`
-            }
-            description={
-              !mostrarReservados 
-                ? "Tente incluir itens reservados ou ajustar os filtros"
-                : modalidadeLogistica !== 'todas'
-                ? "Tente mudar a modalidade de entrega ou ajustar outros filtros"
-                : "Tente ajustar os filtros para ver mais opções"
-            }
-            actionLabel="Limpar filtros"
-            onAction={handleLimparFiltros}
-          />
-        )}
-
-        {/* Grid de itens */}
-        {itensFiltrados.length > 0 && (
-          <>
-            <div className="mb-4 text-sm text-gray-600 flex items-center justify-between">
-              <span>
-                {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
-                {locationForSearch && locationForSearch.cidade && ` em ${locationForSearch.cidade}`}
-                {getLogisticaFilterText()}
-              </span>
-              
-              {/* ✅ Indicador visual do filtro ativo */}
-              {modalidadeLogistica !== 'todas' && (
-                <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
-                  {modalidadeLogistica === 'entrega' ? (
-                    <><Truck className="w-3 h-3" /> Só com entrega</>
-                  ) : (
-                    <><Car className="w-3 h-3" /> Posso buscar</>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {itensFiltrados.map((item) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  feedData={feedData}
-                  currentUserId={user?.id || ''}
-                  taxaTransacao={feedData.taxaTransacao}
-                  onItemClick={handleItemClick}
-                  showActions={true}
-                  onToggleFavorito={() => handleToggleFavorito(item.id)}
-                  onReservar={() => handleReservarItem(item.id)}
-                  onEntrarFila={() => handleEntrarFila(item.id)}
-                  actionState={actionStates[item.id]}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Scroll infinito e loading */}
-        <div ref={infiniteRef}>
-          <InfiniteScrollIndicator
-            isFetchingNextPage={isFetchingNextPage}
-            hasNextPage={hasNextPage || false}
-            itemsCount={itens.length}
-            isInitialLoading={loadingFeed}
-            onCreateItem={() => navigate('/publicar')}
-          />
-        </div>
-      </main>
-      
-      <QuickNav />
-    </div>
+      </AuthGuard>
+    </PactoEntradaGuard>
   );
 };
 
