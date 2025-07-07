@@ -61,17 +61,20 @@ const DesktopNav: React.FC = () => {
 
 const Header: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { profile } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cadastroIncompleto, setCadastroIncompleto] = useState(false);
   const [loadingCadastroStatus, setLoadingCadastroStatus] = useState(true);
 
+  // ✅ FIX: Só carregar profile quando não estiver em /cadastro
+  const shouldSkipProfile = location.pathname === '/cadastro';
+  const { profile } = shouldSkipProfile ? { profile: null } : useProfile();
+
   // ✅ NOVA VERIFICAÇÃO ADICIONADA - Verificar se o usuário tem cadastro incompleto
   useEffect(() => {
     const checkCadastroStatus = async () => {
-      if (!user) {
+      if (!user || shouldSkipProfile) {
         setLoadingCadastroStatus(false);
         return;
       }
@@ -95,7 +98,7 @@ const Header: React.FC = () => {
     };
 
     checkCadastroStatus();
-  }, [user]);
+  }, [user, shouldSkipProfile]);
   
   // ✅ ADICIONAR ESTA CONDIÇÃO ANTES DE TUDO:
   const shouldHideHeader = user && cadastroIncompleto && location.pathname === '/cadastro';
@@ -224,6 +227,7 @@ const Header: React.FC = () => {
 
             {/* Mobile menu button and notification */}
             <div className="md:hidden flex items-center space-x-2">
+              {/* ✅ FIX: Só mostrar NotificationBell quando não estiver em /cadastro */}
               {!shouldHideMenus && <NotificationBell />}
               {!shouldHideMenus ? (
                 <Button
