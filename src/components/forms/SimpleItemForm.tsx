@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { ItemBasicInfo } from './ItemBasicInfo';
@@ -34,18 +35,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   isEditing = false
 }) => {
   const { getFaixaValores } = useConfigCategorias();
-  
-  // Verificação de segurança para evitar erros
-  const faixaPrecos = React.useMemo(() => {
-    try {
-      return getFaixaValores && formData.categoria_id 
-        ? getFaixaValores(formData.categoria_id) 
-        : null;
-    } catch (error) {
-      console.warn('Erro ao obter faixa de preços:', error);
-      return null;
-    }
-  }, [getFaixaValores, formData.categoria_id]);
+  const faixaPrecos = getFaixaValores(formData.categoria_id);
 
   return (
     <div className="space-y-6">
