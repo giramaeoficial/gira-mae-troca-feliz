@@ -22,11 +22,18 @@ interface ValidationErrors {
   [key: string]: string;
 }
 
-export const usePublicarItemFormV2 = () => {
+interface UsePublicarItemFormOptions {
+  status?: 'disponivel' | 'inativo';
+  onSuccess?: () => void;
+}
+
+export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { configuracoes, validarValorCategoria } = useConfigCategorias();
   const { mutate: publicarItem, isPending: loading } = usePublicarItem();
+  
+  const { status = 'disponivel', onSuccess } = options;
 
   const [formData, setFormData] = useState<SimpleFormData>({
     titulo: '',
@@ -140,7 +147,7 @@ export const usePublicarItemFormV2 = () => {
         estado_conservacao: formData.estado_conservacao,
         valor_girinhas: parseFloat(formData.preco),
         publicado_por: user?.id,
-        status: 'disponivel'
+        status: status
       };
 
       publicarItem(
@@ -148,7 +155,11 @@ export const usePublicarItemFormV2 = () => {
         {
           onSuccess: () => {
             toast.success("Item publicado com sucesso! 🎉");
-            navigate('/feed');
+            if (onSuccess) {
+              onSuccess();
+            } else {
+              navigate('/feed');
+            }
           },
           onError: (error: any) => {
             console.error('Erro ao publicar item:', error);
