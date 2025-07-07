@@ -1,4 +1,4 @@
-// src/App.tsx - VERSÃO AJUSTADA com proteção total do PactoEntradaGuard
+// src/App.tsx - VERSÃO AJUSTADA com tela unificada
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -28,7 +28,6 @@ import NotFound from '@/pages/NotFound';
 import Missoes from '@/pages/Missoes';
 import Configuracoes from '@/pages/Configuracoes';
 import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
-import PublicarPrimeiroItem from '@/pages/PublicarPrimeiroItem';
 import PactoEntradaGuard from '@/components/auth/PactoEntradaGuard';
 
 const queryClient = new QueryClient();
@@ -62,11 +61,12 @@ function App() {
               </AuthGuard>
             } 
           />
+          {/* ROTA UNIFICADA: Usa o mesmo componente PublicarItem */}
           <Route 
             path="/publicar-primeiro-item" 
             element={
               <AuthGuard>
-                <PublicarPrimeiroItem />
+                <PublicarItem />
               </AuthGuard>
             } 
           />
