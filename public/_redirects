@@ -1,6 +1,0 @@
-# Arquivo: public/_redirects
-# Configuração obrigatória para SPAs React no Lovable
-
-# Redireciona todas as rotas não encontradas para index.html
-# Isso permite que o React Router gerencie as rotas client-side
-/*    /index.html   200

@@ -1,10 +1,10 @@
-// src/App.tsx - VERSÃO CORRIGIDA PARA RESOLVER ERRO 404
+// src/App.tsx - VERSÃO AJUSTADA com proteção total do PactoEntradaGuard
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
-import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
@@ -28,32 +28,12 @@ import NotFound from '@/pages/NotFound';
 import Missoes from '@/pages/Missoes';
 import Configuracoes from '@/pages/Configuracoes';
 import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
+import PublicarPrimeiroItem from '@/pages/PublicarPrimeiroItem';
 import PactoEntradaGuard from '@/components/auth/PactoEntradaGuard';
 
-// Configuração otimizada do QueryClient para evitar promises rejeitadas
-const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: (error) => {
-      console.error('Query failed:', error);
-    },
-  }),
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 1000 * 60 * 5, // 5 minutos
-      refetchOnWindowFocus: false,
-      throwOnError: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function App() {
-  // Debug para ambiente Lovable
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Rota atual:', window.location.pathname);
-    console.log('React Router carregado:', !!React);
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster />
@@ -82,13 +62,11 @@ function App() {
               </AuthGuard>
             } 
           />
-          
-          {/* ORDEM CRÍTICA: Rota específica ANTES da geral */}
           <Route 
             path="/publicar-primeiro-item" 
             element={
               <AuthGuard>
-                <PublicarItem />
+                <PublicarPrimeiroItem />
               </AuthGuard>
             } 
           />
@@ -106,7 +84,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/buscar-itens" 
             element={
@@ -117,8 +94,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
-          {/* ROTA GERAL: Deve vir APÓS rotas específicas */}
           <Route 
             path="/publicar" 
             element={
@@ -129,7 +104,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/perfil" 
             element={
@@ -140,7 +114,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/perfil/editar" 
             element={
@@ -151,7 +124,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/carteira" 
             element={
@@ -162,7 +134,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/comprar-girinhas" 
             element={
@@ -173,7 +144,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/indicacoes" 
             element={
@@ -184,7 +154,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/minhas-reservas" 
             element={
@@ -195,7 +164,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          
           <Route 
             path="/configuracoes" 
             element={
@@ -231,7 +199,7 @@ function App() {
             } 
           />
 
-          {/* 404 - DEVE SER A ÚLTIMA ROTA */}
+          {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
