@@ -81,7 +81,7 @@ export const useCadastroProgress = () => {
           verification_code_expires
         `)
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Erro ao buscar progresso:', error);
