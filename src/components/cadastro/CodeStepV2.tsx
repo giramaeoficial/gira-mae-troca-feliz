@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,17 +27,19 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
       if (!user) return;
       
       try {
+        // ✅ FIX: Usar .maybeSingle() em vez de .single()
         const { data, error } = await supabase
           .from('profiles')
           .select('telefone, telefone_verificado, verification_code_expires')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error('Erro ao carregar dados do perfil:', error);
           return;
         }
 
+        // ✅ FIX: Verificar se data existe
         if (data) {
           setPhoneNumber(data.telefone || '');
           
@@ -60,6 +61,7 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
             setTimeLeft(secondsLeft);
           }
         }
+        // Se data for null, usuário é novo - manter estados padrão
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
       } finally {
@@ -145,12 +147,12 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
     try {
       console.log('🔍 Verificando código:', finalCode);
       
-      // Verificar código diretamente no banco
+      // ✅ FIX: Usar .maybeSingle() em vez de .single()
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('verification_code, verification_code_expires, telefone_verificado')
         .eq('id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('❌ Erro ao buscar perfil:', profileError);
@@ -163,14 +165,25 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
         return;
       }
 
-      if (profile?.telefone_verificado) {
+      // ✅ FIX: Verificar se profile existe
+      if (!profile) {
+        toast({
+          title: "Erro na verificação",
+          description: "Perfil não encontrado.",
+          variant: "destructive",
+        });
+        setCodeInputs(['', '', '', '']);
+        return;
+      }
+
+      if (profile.telefone_verificado) {
         console.log('✅ Telefone já verificado');
         setIsPhoneVerified(true);
         onComplete();
         return;
       }
 
-      if (!profile?.verification_code) {
+      if (!profile.verification_code) {
         toast({
           title: "Código não encontrado",
           description: "Solicite um novo código.",
