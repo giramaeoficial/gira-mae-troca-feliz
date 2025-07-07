@@ -31,6 +31,12 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
       const itensPublicados = itens?.length || 0;
       const missaoCompleta = itensPublicados >= 2;
 
+      console.log('🔍 PactoEntradaGuard - Status da missão:', {
+        userId: user.id,
+        itensPublicados,
+        missaoCompleta
+      });
+
       // Se completou a missão, verificar se existe registro na tabela missoes_usuarios
       if (missaoCompleta) {
         const { data: missaoUsuario, error: missaoError } = await supabase
@@ -67,6 +73,8 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
                 status: 'completa',
                 data_completada: new Date().toISOString()
               });
+            
+            console.log('✅ Registro de missão criado automaticamente');
           }
         }
       }
@@ -92,19 +100,22 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
     );
   }
 
-  // Se a missão não foi completada, redirecionar para o onboarding
-  if (!missaoStatus?.missaoCompleta) {
-    // Se ainda não publicou nenhum item, vai para o conceito
-    if (!missaoStatus?.itensPublicados || missaoStatus.itensPublicados === 0) {
-      return <Navigate to="/conceito-comunidade" replace />;
-    }
-    
-    // Se já publicou pelo menos 1 item, vai direto para publicar o segundo
-    return <Navigate to="/publicar-primeiro-item" replace />;
+  // ✅ CORRIGIDO: Verificar PRIMEIRO se a missão está completa
+  if (missaoStatus?.missaoCompleta) {
+    console.log('✅ Missão completa - permitindo acesso');
+    return <>{children}</>;
   }
 
-  // Missão completa - permitir acesso
-  return <>{children}</>;
+  // ❌ Missão NÃO completa - redirecionar para onboarding
+  console.log('❌ Missão incompleta - redirecionando para onboarding');
+  
+  // Se ainda não publicou nenhum item, vai para o conceito
+  if (!missaoStatus?.itensPublicados || missaoStatus.itensPublicados === 0) {
+    return <Navigate to="/conceito-comunidade" replace />;
+  }
+  
+  // Se já publicou pelo menos 1 item (mas menos de 2), vai direto para publicar o segundo
+  return <Navigate to="/publicar-primeiro-item" replace />;
 };
 
 export default PactoEntradaGuard;
