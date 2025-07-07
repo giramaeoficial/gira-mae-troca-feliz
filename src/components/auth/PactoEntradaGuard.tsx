@@ -17,6 +17,8 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
     queryFn: async () => {
       if (!user?.id) return { missaoCompleta: false, itensPublicados: 0 };
 
+      console.log('🔄 PactoEntradaGuard - Executando verificação...');
+
       // Buscar quantos itens o usuário já publicou
       const { data: itens, error: itensError } = await supabase
         .from('itens')
@@ -24,7 +26,7 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
         .eq('publicado_por', user.id);
 
       if (itensError) {
-        console.error('Erro ao buscar itens publicados:', itensError);
+        console.error('❌ Erro ao buscar itens publicados:', itensError);
         return { missaoCompleta: false, itensPublicados: 0 };
       }
 
@@ -34,7 +36,8 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
       console.log('🔍 PactoEntradaGuard - Status da missão:', {
         userId: user.id,
         itensPublicados,
-        missaoCompleta
+        missaoCompleta,
+        timestamp: new Date().toISOString()
       });
 
       // Se completou a missão, verificar se existe registro na tabela missoes_usuarios
@@ -85,8 +88,10 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
       };
     },
     enabled: !!user?.id,
-    refetchOnWindowFocus: false,
-    staleTime: 30000 // Cache por 30 segundos
+    refetchOnWindowFocus: true, // ✅ FORÇAR atualização ao focar na janela
+    staleTime: 0, // ✅ REMOVER cache para debug
+    cacheTime: 0, // ✅ FORÇAR nova consulta sempre
+    refetchOnMount: true // ✅ SEMPRE buscar ao montar componente
   });
 
   if (isLoading) {
