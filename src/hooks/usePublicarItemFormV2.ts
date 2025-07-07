@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from '@/hooks/useAuth';
 import { usePublicarItem } from '@/hooks/useItensOptimized';
 import { useConfigCategorias } from '@/hooks/useConfigCategorias';
+import { supabase } from '@/lib/supabase';
 
 interface SimpleFormData {
   titulo: string;
@@ -22,7 +23,7 @@ interface ValidationErrors {
   [key: string]: string;
 }
 
-export const usePublicarItemFormV2 = () => {
+export const usePublicarItemFormV2 = (isMissao: boolean = false) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { configuracoes, validarValorCategoria } = useConfigCategorias();
@@ -129,10 +130,22 @@ export const usePublicarItemFormV2 = () => {
     }
 
     try {
+      // Verificar status do cadastro se for missão
+      let itemStatus = 'disponivel';
+      if (isMissao) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('cadastro_status')
+          .eq('id', user?.id)
+          .single();
+        
+        itemStatus = profile?.cadastro_status === 'completo' ? 'disponivel' : 'inativo';
+      }
+
       const itemData = {
         titulo: formData.titulo,
         descricao: formData.descricao,
-        categoria: formData.categoria_id, // Usar o código diretamente
+        categoria: formData.categoria_id,
         subcategoria: formData.subcategoria,
         genero: formData.genero,
         tamanho_categoria: formData.tamanho_categoria,
@@ -140,15 +153,25 @@ export const usePublicarItemFormV2 = () => {
         estado_conservacao: formData.estado_conservacao,
         valor_girinhas: parseFloat(formData.preco),
         publicado_por: user?.id,
-        status: 'disponivel'
+        status: itemStatus
       };
 
       publicarItem(
         { itemData, fotos: formData.imagens },
         {
           onSuccess: () => {
-            toast.success("Item publicado com sucesso! 🎉");
-            navigate('/feed');
+            if (isMissao && itemStatus === 'inativo') {
+              toast.success("Item salvo! Complete seu cadastro para ativá-lo.");
+              navigate('/cadastro/address');
+            } else {
+              toast.success("Item publicado com sucesso! 🎉");
+              // Navegação baseada no contexto
+              if (isMissao) {
+                navigate('/missoes');
+              } else {
+                navigate('/feed');
+              }
+            }
           },
           onError: (error: any) => {
             console.error('Erro ao publicar item:', error);
