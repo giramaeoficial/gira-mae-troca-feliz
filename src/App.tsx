@@ -1,4 +1,4 @@
-// src/App.tsx - VERSÃO AJUSTADA com tela unificada
+// src/App.tsx - VERSÃO CORRIGIDA
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -30,181 +30,198 @@ import Configuracoes from '@/pages/Configuracoes';
 import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
 import PactoEntradaGuard from '@/components/auth/PactoEntradaGuard';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+ defaultOptions: {
+   queries: {
+     retry: 1,
+     refetchOnWindowFocus: false,
+   },
+ },
+});
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <SonnerToaster />
-      <BrowserRouter>
-        <Routes>
-          {/* ================================ */}
-          {/* ROTAS PÚBLICAS (sem AuthGuard)   */}
-          {/* ================================ */}
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth-callback" element={<AuthCallback />} />
-          <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/cadastro" element={<Cadastro />} />
-          <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
-          <Route path="/item/:id" element={<DetalhesItem />} />
+ return (
+   <QueryClientProvider client={queryClient}>
+     <Toaster />
+     <SonnerToaster />
+     <BrowserRouter>
+       <Routes>
+         {/* ================================ */}
+         {/* ROTAS PÚBLICAS (sem AuthGuard)   */}
+         {/* ================================ */}
+         <Route path="/" element={<Index />} />
+         <Route path="/auth" element={<Auth />} />
+         <Route path="/auth-callback" element={<AuthCallback />} />
+         <Route path="/login" element={<Navigate to="/auth" replace />} />
+         <Route path="/cadastro" element={<Cadastro />} />
+         <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
+         <Route path="/item/:id" element={<DetalhesItem />} />
 
-          {/* ========================================== */}
-          {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
-          {/* ========================================== */}
-          <Route 
-            path="/conceito-comunidade" 
-            element={
-              <AuthGuard>
-                <ConceptoComunidadeOnboarding />
-              </AuthGuard>
-            } 
-          />
-          {/* ROTA UNIFICADA: Usa o mesmo componente PublicarItem */}
-          <Route 
-            path="/publicar-primeiro-item" 
-            element={
-              <AuthGuard>
-                <PublicarItem />
-              </AuthGuard>
-            } 
-          />
+         {/* ========================================== */}
+         {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
+         {/* ========================================== */}
+         <Route 
+           path="/conceito-comunidade" 
+           element={
+             <AuthGuard>
+               <ConceptoComunidadeOnboarding />
+             </AuthGuard>
+           } 
+         />
+         
+         {/* ROTA UNIFICADA: Usa o mesmo componente PublicarItem */}
+         <Route 
+           path="/publicar-primeiro-item" 
+           element={
+             <AuthGuard>
+               <PublicarItem />
+             </AuthGuard>
+           } 
+         />
 
-          {/* ================================================ */}
-          {/* ROTAS PROTEGIDAS (AuthGuard + PactoEntradaGuard) */}
-          {/* ================================================ */}
-          <Route 
-            path="/feed" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <FeedOptimized />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/buscar-itens" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <BuscarItens />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/publicar" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <PublicarItem />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/perfil" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <Perfil />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/perfil/editar" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <EditarPerfil />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/carteira" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <Carteira />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/comprar-girinhas" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <ComprarGirinhas />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/indicacoes" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <Indicacoes />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/minhas-reservas" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <MinhasReservas />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/configuracoes" 
-            element={
-              <AuthGuard>
-                <PactoEntradaGuard>
-                  <Configuracoes />
-                </PactoEntradaGuard>
-              </AuthGuard>
-            } 
-          />
+         {/* ================================================ */}
+         {/* ROTAS PROTEGIDAS (AuthGuard + PactoEntradaGuard) */}
+         {/* ================================================ */}
+         <Route 
+           path="/feed" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <FeedOptimized />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/buscar-itens" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <BuscarItens />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/publicar" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <PublicarItem />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/perfil" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <Perfil />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/perfil/editar" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <EditarPerfil />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/carteira" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <Carteira />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/comprar-girinhas" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <ComprarGirinhas />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/indicacoes" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <Indicacoes />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/minhas-reservas" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <MinhasReservas />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
+         
+         <Route 
+           path="/configuracoes" 
+           element={
+             <AuthGuard>
+               <PactoEntradaGuard>
+                 <Configuracoes />
+               </PactoEntradaGuard>
+             </AuthGuard>
+           } 
+         />
 
-          {/* ================================================ */}
-          {/* ROTAS ESPECIAIS (lógica específica)             */}
-          {/* ================================================ */}
-          
-          {/* Missões: AuthGuard apenas (precisa acessar para completar missão) */}
-          <Route 
-            path="/missoes" 
-            element={
-              <AuthGuard>
-                <Missoes />
-              </AuthGuard>
-            } 
-          />
+         {/* ================================================ */}
+         {/* ROTAS ESPECIAIS (lógica específica)             */}
+         {/* ================================================ */}
+         
+         {/* Missões: AuthGuard apenas (precisa acessar para completar missão) */}
+         <Route 
+           path="/missoes" 
+           element={
+             <AuthGuard>
+               <Missoes />
+             </AuthGuard>
+           } 
+         />
 
-          {/* Admin: AuthGuard apenas (admin pode acessar sem missão) */}
-          <Route 
-            path="/admin" 
-            element={
-              <AuthGuard>
-                <AdminDashboard />
-              </AuthGuard>
-            } 
-          />
+         {/* Admin: AuthGuard apenas (admin pode acessar sem missão) */}
+         <Route 
+           path="/admin" 
+           element={
+             <AuthGuard>
+               <AdminDashboard />
+             </AuthGuard>
+           } 
+         />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
-  );
+         {/* 404 - Deve ser a última rota */}
+         <Route path="*" element={<NotFound />} />
+       </Routes>
+     </BrowserRouter>
+   </QueryClientProvider>
+ );
 }
 
 export default App;
