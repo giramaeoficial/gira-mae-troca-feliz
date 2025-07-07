@@ -1408,18 +1408,6 @@ export type Database = {
           },
         ]
       }
-      preserved_user_id: {
-        Row: {
-          id: string | null
-        }
-        Insert: {
-          id?: string | null
-        }
-        Update: {
-          id?: string | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           aceita_entrega_domicilio: boolean | null
