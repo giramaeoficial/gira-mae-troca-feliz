@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,19 +25,17 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
       if (!user) return;
       
       try {
-        // ✅ FIX: Usar .maybeSingle() em vez de .single()
         const { data, error } = await supabase
           .from('profiles')
           .select('telefone, telefone_verificado')
           .eq('id', user.id)
-          .maybeSingle();
+          .single();
 
         if (error) {
           console.error('Erro ao carregar dados do perfil:', error);
           return;
         }
 
-        // ✅ FIX: Verificar se data existe
         if (data) {
           if (data.telefone) {
             setPhone(formatPhoneDisplay(data.telefone.replace('55', '')));
@@ -51,7 +50,6 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
             }, 500);
           }
         }
-        // Se data for null, usuário é novo - manter estados padrão
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
       } finally {
@@ -146,7 +144,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     try {
       console.log('📱 Salvando telefone e gerando código:', cleanPhone);
       
-      // ✅ FIX: Usar .maybeSingle() em vez de .select().single()
+      // Chamar função diretamente via SQL
       const { data, error } = await supabase
         .from('profiles')
         .update({
@@ -157,7 +155,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         })
         .eq('id', user?.id)
         .select('verification_code')
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('❌ Erro ao salvar telefone:', error);

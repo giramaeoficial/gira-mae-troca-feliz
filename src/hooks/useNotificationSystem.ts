@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -157,12 +158,6 @@ export const useNotificationSystem = () => {
   const loadNotifications = useCallback(async () => {
     if (!user || isLoadingRef.current) return;
     
-    // ✅ FIX: Não carregar notificações na tela /cadastro
-    if (window.location.pathname === '/cadastro') {
-      setLoading(false);
-      return;
-    }
-    
     isLoadingRef.current = true;
     try {
       const { data, error } = await supabase
@@ -198,11 +193,6 @@ export const useNotificationSystem = () => {
   const loadPreferences = useCallback(async () => {
     if (!user) return;
 
-    // ✅ FIX: Não carregar preferências na tela /cadastro
-    if (window.location.pathname === '/cadastro') {
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from('user_notification_preferences')
@@ -234,7 +224,7 @@ export const useNotificationSystem = () => {
             push_enabled: false
           })
           .select()
-          .maybeSingle(); // ✅ FIX: Trocar .single() por .maybeSingle()
+          .single();
 
         if (!insertError && newPrefs) {
           setPreferences({
@@ -511,14 +501,9 @@ export const useNotificationSystem = () => {
   // Inicializar OneSignal quando usuário fizer login
   useEffect(() => {
     if (user) {
-      // ✅ FIX: Não inicializar na tela /cadastro
-      if (window.location.pathname !== '/cadastro') {
-        initializeOneSignalWithUser();
-        loadPreferences();
-        loadNotifications();
-      } else {
-        setLoading(false);
-      }
+      initializeOneSignalWithUser();
+      loadPreferences();
+      loadNotifications();
     } else {
       setNotifications([]);
       setUnreadCount(0);
@@ -530,9 +515,6 @@ export const useNotificationSystem = () => {
   // Realtime subscription
   useEffect(() => {
     if (!user) return;
-
-    // ✅ FIX: Não criar subscription na tela /cadastro
-    if (window.location.pathname === '/cadastro') return;
 
     const channelKey = `notifications-${user.id}`;
     
