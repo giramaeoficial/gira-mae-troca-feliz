@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -9,6 +8,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // CONFIGURAÇÃO CRÍTICA: Fallback para SPA routing
+    historyApiFallback: {
+      index: '/index.html',
+      rewrites: [
+        { from: /^\/$/, to: '/index.html' },
+        { from: /^\/[^.]*$/, to: '/index.html' }
+      ]
+    }
   },
   plugins: [
     react(),
@@ -20,8 +27,9 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Garantir que arquivos públicos sejam servidos corretamente
+  // CONFIGURAÇÃO CRÍTICA: Garantir SPA routing em produção
   publicDir: 'public',
+  base: './', // URLs relativas para compatibilidade Lovable
   build: {
     rollupOptions: {
       output: {
@@ -31,26 +39,17 @@ export default defineConfig(({ mode }) => ({
           'vendor-router': ['react-router-dom'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-ui': ['lucide-react'],
-          // Separar páginas pesadas
-          'page-perfil': ['src/pages/Perfil.tsx'],
-          'page-publicar': ['src/pages/PublicarItem.tsx'],
-          'page-feed': ['src/pages/FeedOptimized.tsx']
         }
       },
-      // Garantir que service workers sejam copiados
-      external: [
-        '/OneSignalSDK.sw.js',
-        '/OneSignalSDKWorker.js',
-        '/sw.js'
-      ]
     },
-    // Otimizações básicas
+    // Otimizações para Lovable
     target: 'esnext',
     minify: 'esbuild',
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
-    // Copiar arquivos públicos
     copyPublicDir: true,
+    // IMPORTANTE: Garantir que _redirects seja copiado
+    assetsDir: 'assets',
   },
   // Otimizações de desenvolvimento
   optimizeDeps: {
@@ -61,5 +60,12 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       'lucide-react'
     ],
+  },
+  // CONFIGURAÇÃO CRÍTICA: Preview mode para SPA
+  preview: {
+    port: 8080,
+    host: "::",
+    // Fallback para SPA em preview
+    open: false,
   }
 }));
