@@ -106,7 +106,7 @@ const Header: React.FC = () => {
   }
   
   // ✅ VERIFICAR SE DEVE OCULTAR MENUS (não o header todo)
-  const shouldHideMenus = user && cadastroIncompleto && location.pathname === '/cadastro';
+  const shouldHideMenus = location.pathname === '/cadastro';
 
   const handleSignOut = async () => {
     try {
