@@ -96,7 +96,15 @@ const Header: React.FC = () => {
 
     checkCadastroStatus();
   }, [user]);
-
+  
+  // ✅ ADICIONAR ESTA CONDIÇÃO ANTES DE TUDO:
+  const shouldHideHeader = user && cadastroIncompleto && location.pathname === '/cadastro';
+  
+  // ✅ SE DEVE OCULTAR, RETORNAR NULL:
+  if (shouldHideHeader) {
+    return null;
+  }
+  
   // ✅ VERIFICAR SE DEVE OCULTAR MENUS (não o header todo)
   const shouldHideMenus = user && cadastroIncompleto && location.pathname === '/cadastro';
 
