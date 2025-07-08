@@ -405,17 +405,29 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </div>
           )}
 
-          {/* Preço com breakdown detalhado */}
-          <div className="mb-3">
-            <div className="flex items-center gap-1 mb-1">
-              <Sparkles className="w-4 h-4" style={{ color: 'hsl(var(--primary))' }} />
-              <span className={cn(
-                "font-bold text-primary",
-                compact ? "text-base" : "text-lg"
-              )}>
-                {valores.total} Girinhas
-              </span>
-            </div>
+          {/* Breakdown detalhado quando há taxa - EXPANSÍVEL */}
+          {taxaTransacao > 0 && valores.taxa > 0 && (
+            <details className="text-xs text-gray-500">
+              <summary className="cursor-pointer hover:text-gray-700 transition-colors">
+                Ver detalhes
+              </summary>
+              <div className="mt-1 space-y-0.5 pl-2 border-l-2 border-gray-200">
+                <div className="flex justify-between">
+                  <span>Item:</span>
+                  <span>{valores.valorItem} Girinhas</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Taxa ({taxaTransacao}%):</span>
+                  <span>+{valores.taxa} Girinhas</span>
+                </div>
+                <div className="border-t pt-0.5 flex justify-between font-medium">
+                  <span>Total:</span>
+                  <span>{valores.total} Girinhas</span>
+                </div>
+              </div>
+            </details>
+          )}
+        </div>
             
             {/* Breakdown detalhado quando há taxa */}
             {taxaTransacao > 0 && valores.taxa > 0 && (
