@@ -1,11 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 
 export const usePactoEntrada = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   // Verificar progresso da missão baseado nos itens realmente publicados
   const { data: progressoMissao, isLoading } = useQuery({
@@ -88,56 +86,6 @@ export const usePactoEntrada = () => {
     staleTime: 10000 // Cache por 10 segundos
   });
 
-  // Simular publicação de item (não salva no banco ainda)
-  const publicarItemSimulado = useMutation({
-    mutationFn: async (itemData: any) => {
-      if (!user?.id) throw new Error('Usuário não autenticado');
-
-      // Por enquanto, apenas simula o sucesso
-      // Quando for implementar o salvamento real, usar este código:
-      /*
-      const { data: item, error: itemError } = await supabase
-        .from('itens')
-        .insert({
-          ...itemData,
-          publicado_por: user.id,
-          status: 'disponivel'
-        })
-        .select()
-        .single();
-
-      if (itemError) throw itemError;
-
-      // Verificar e atualizar progresso da missão
-      await supabase.rpc('verificar_progresso_missoes', {
-        p_user_id: user.id
-      });
-
-      return item;
-      */
-
-      // Simulação de delay de rede
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      return {
-        id: 'simulated-' + Date.now(),
-        titulo: itemData.titulo,
-        ...itemData
-      };
-    },
-    onSuccess: (data) => {
-      toast.success('Item publicado com sucesso! 🎉');
-      console.log('📝 Item simulado criado:', data);
-      
-      // Invalidar queries para recarregar o progresso
-      queryClient.invalidateQueries({ queryKey: ['progresso-pacto-entrada'] });
-      queryClient.invalidateQueries({ queryKey: ['pacto-entrada-status'] });
-    },
-    onError: (error: any) => {
-      console.error('Erro ao publicar item:', error);
-      toast.error('Erro ao publicar item. Tente novamente.');
-    }
-  });
 
   // Valores derivados
   const itensPublicados = progressoMissao?.progresso_atual || 0;
@@ -151,10 +99,6 @@ export const usePactoEntrada = () => {
     // Dados brutos
     progressoMissao,
     isLoading,
-    
-    // Função de publicação (simulada por enquanto)
-    publicarItem: publicarItemSimulado,
-    isPublishing: publicarItemSimulado.isPending,
     
     // Valores calculados
     itensPublicados,
