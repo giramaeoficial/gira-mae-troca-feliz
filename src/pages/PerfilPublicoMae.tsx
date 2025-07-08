@@ -82,7 +82,7 @@ const PerfilPublicoMae = () => {
               nome,
               avatar_url,
               reputacao,
-              whatsapp
+              telefone
             )
           `)
           .eq('publicado_por', profileData.id)
