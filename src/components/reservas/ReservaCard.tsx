@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, CheckCircle, X, Users, Star, Key } from "lucide-react";
+import { Clock, CheckCircle, X, Users, Star, Key, Eye } from "lucide-react";
 import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,9 +40,16 @@ interface ReservaCardProps {
   onConfirmarEntrega: (reservaId: string, codigo: string) => Promise<boolean>;
   onCancelarReserva: (reservaId: string) => void;
   onRefresh?: () => void;
+  onVerDetalhes?: (itemId: string) => void; // ✅ NOVA PROP
 }
 
-const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh }: ReservaCardProps) => {
+const ReservaCard = ({ 
+  reserva, 
+  onConfirmarEntrega, 
+  onCancelarReserva, 
+  onRefresh,
+  onVerDetalhes // ✅ NOVA PROP
+}: ReservaCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { confirmarEntrega, loading } = useReservas();
@@ -56,6 +62,13 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
   const isVendedor = reserva.usuario_item === user?.id;
   const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
   const imagemItem = reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
+
+  // ✅ FUNÇÃO PARA ABRIR DETALHES
+  const handleVerDetalhes = () => {
+    if (onVerDetalhes && reserva.item_id) {
+      onVerDetalhes(reserva.item_id);
+    }
+  };
 
   // Função com retry para verificação de avaliação
   const verificarSeJaAvaliouComRetry = async (maxTentativas = 3): Promise<boolean> => {
@@ -174,13 +187,23 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start">
             <div className="flex gap-3">
-              <img 
-                src={imagemItem} 
-                alt={reserva.itens?.titulo || "Item"} 
-                className="w-16 h-16 rounded-lg object-cover"
-              />
+              {/* ✅ IMAGEM CLICÁVEL */}
+              <div 
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={handleVerDetalhes}
+              >
+                <img 
+                  src={imagemItem} 
+                  alt={reserva.itens?.titulo || "Item"} 
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+              </div>
               <div className="flex-grow">
-                <h3 className="font-semibold text-gray-800 line-clamp-1">
+                {/* ✅ TÍTULO CLICÁVEL */}
+                <h3 
+                  className="font-semibold text-gray-800 line-clamp-1 cursor-pointer hover:text-primary transition-colors"
+                  onClick={handleVerDetalhes}
+                >
                   {reserva.itens?.titulo || "Item não encontrado"}
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
@@ -220,6 +243,18 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
 
         <CardFooter className="pt-3 bg-gray-50/50">
           <div className="flex gap-2 w-full">
+            {/* ✅ BOTÃO VER DETALHES SEMPRE PRESENTE */}
+            {onVerDetalhes && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleVerDetalhes}
+                className="shrink-0"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            )}
+
             {reserva.status === 'pendente' && (
               <>
                 <Button 
@@ -235,6 +270,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
                   variant="destructive" 
                   size="sm" 
                   onClick={() => onCancelarReserva(reserva.id)}
+                  className="shrink-0"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -242,7 +278,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
             )}
 
             {reserva.status === 'confirmada' && (
-              <div className="flex gap-2 w-full">
+              <div className="flex gap-2 flex-1">
                 <Button variant="outline" size="sm" className="flex-1" disabled>
                   <CheckCircle className="w-4 h-4 mr-1" />
                   Troca concluída
@@ -252,7 +288,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
                   <Button 
                     size="sm" 
                     onClick={() => setShowAvaliacao(true)}
-                    className="bg-yellow-500 hover:bg-yellow-600"
+                    className="bg-yellow-500 hover:bg-yellow-600 shrink-0"
                   >
                     <Star className="w-4 h-4 mr-1" />
                     Avaliar
@@ -266,7 +302,7 @@ const ReservaCard = ({ reserva, onConfirmarEntrega, onCancelarReserva, onRefresh
                 variant="destructive" 
                 size="sm" 
                 onClick={() => onCancelarReserva(reserva.id)}
-                className="w-full"
+                className="flex-1"
               >
                 <X className="w-4 h-4 mr-1" />
                 Sair da fila
