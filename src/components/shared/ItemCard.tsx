@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
 import ActionFeedback from '@/components/loading/ActionFeedback';
@@ -18,6 +18,7 @@ interface ItemCardProps {
  item: {
    id: string;
    titulo: string;
+   descricao: string;
    valor_girinhas: number;
    categoria: string;
    subcategoria?: string;
@@ -35,6 +36,7 @@ interface ItemCardProps {
    logistica?: LogisticaInfo;
    escola_comum?: boolean;
    publicado_por: string;
+   created_at: string;
    escolas_inep?: {
      escola: string;
    };
@@ -91,7 +93,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
  showAuthor = true,
  compact = false
 }) => {
- const [showPriceDetails, setShowPriceDetails] = useState(false);
+ const [showDetails, setShowDetails] = useState(false);
  
  // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
  const isFavorito = feedData.favoritos.includes(item.id);
@@ -141,9 +143,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
  // Event handlers
  const handleClick = () => {
-   if (onItemClick) {
-     onItemClick(item.id);
-   }
+   // Removido - não navega mais para página separada
  };
 
  const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -159,6 +159,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      onEntrarFila();
    } else if (itemIsDisponivel && onReservar) {
      onReservar();
+   }
+ };
+
+ const handleProfileClick = (e: React.MouseEvent) => {
+   e.stopPropagation();
+   if (item.publicado_por_profile?.nome) {
+     const username = item.publicado_por_profile.nome.toLowerCase().replace(/\s+/g, '-');
+     window.location.href = `/perfil/${username}`;
    }
  };
 
@@ -222,6 +230,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
  const hasLocationData = item.endereco_bairro || item.endereco_cidade;
 
+ const formatDate = (dateString: string) => {
+   const date = new Date(dateString);
+   return date.toLocaleDateString('pt-BR', { 
+     day: '2-digit', 
+     month: '2-digit', 
+     year: 'numeric' 
+   });
+ };
+
  return (
    <Card className={cn(
      "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full",
@@ -276,7 +293,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
        {/* Conteúdo do card */}
        <div className="p-3">
-         {/* Status e badges MOVIDOS PARA BAIXO DA IMAGEM */}
+         {/* Status, estado e tamanho - JUNTOS */}
          <div className="flex flex-wrap gap-2 mb-2">
            {/* Badge de status reservado */}
            {itemIsReservado && (
@@ -289,6 +306,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            <Badge className={getEstadoColor(item.estado_conservacao)}>
              {item.estado_conservacao.charAt(0).toUpperCase() + item.estado_conservacao.slice(1)}
            </Badge>
+
+           {/* Badge de tamanho */}
+           {item.tamanho_valor && (
+             <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+               Tam. {item.tamanho_valor}
+             </Badge>
+           )}
          </div>
 
          {/* ✅ BADGES DE LOGÍSTICA (sem distância) */}
@@ -325,7 +349,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            {item.titulo}
          </h3>
 
-         {/* Localização (cidade/bairro) */}
+         {/* Localização */}
          {hasLocationData && (
            <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
              <MapPin className="w-4 h-4" />
@@ -333,77 +357,101 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </div>
          )}
 
-         {/* Categoria, subcategoria e tamanho */}
-         <div className="space-y-1 mb-2">
-           <div className="flex items-center gap-2 text-sm text-gray-500">
-             <span className="capitalize">{item.categoria}</span>
-             {item.subcategoria && (
-               <>
-                 <span className="mx-1">•</span>
-                 <span>{item.subcategoria}</span>
-               </>
-             )}
-           </div>
-           
-           {item.tamanho_valor && (
-             <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
-               <span className="text-xs font-medium text-blue-700">
-                 Tamanho {item.tamanho_valor}
-               </span>
-             </div>
-           )}
-         </div>
-
-         {/* Preço com breakdown EXPANSÍVEL */}
+         {/* Preço com botão Ver Detalhes */}
          <div className="mb-3">
-           <div className="flex items-center gap-2 mb-1">
-             <Sparkles className="w-4 h-4 text-primary" />
-             <span className="text-lg font-bold text-primary">
-               {valores.total} Girinhas
-             </span>
-             {/* Ícone de informação pequeno para detalhes */}
-             {taxaTransacao > 0 && valores.taxa > 0 && (
-               <button
-                 onClick={(e) => {
-                   e.stopPropagation();
-                   setShowPriceDetails(!showPriceDetails);
-                 }}
-                 className="ml-1 p-1 hover:bg-gray-100 rounded-full transition-colors"
-                 title="Ver detalhes do preço"
-               >
-                 <Info className="w-4 h-4 text-gray-500" />
-               </button>
-             )}
+           <div className="flex items-center justify-between mb-1">
+             <div className="flex items-center gap-2">
+               <Sparkles className="w-4 h-4 text-primary" />
+               <span className="text-lg font-bold text-primary">
+                 {valores.total} Girinhas
+               </span>
+             </div>
+             
+             {/* Botão Ver Detalhes */}
+             <button
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setShowDetails(!showDetails);
+               }}
+               className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+               title="Ver detalhes do item"
+             >
+               <Info className="w-3 h-3" />
+               Ver detalhes
+             </button>
            </div>
            
-           {/* Breakdown detalhado quando expandido */}
-           {showPriceDetails && taxaTransacao > 0 && valores.taxa > 0 && (
-             <div className="border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm">
-               <div className="space-y-1">
-                 <div className="flex justify-between">
-                   <span className="text-gray-600">Item:</span>
-                   <span className="font-medium">{valores.valorItem} Girinhas</span>
+           {/* Detalhes expandidos */}
+           {showDetails && (
+             <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-sm space-y-2">
+               {/* Descrição */}
+               {item.descricao && (
+                 <div>
+                   <span className="font-medium text-gray-700">Descrição:</span>
+                   <p className="text-gray-600 mt-1 text-xs">{item.descricao}</p>
                  </div>
-                 <div className="flex justify-between">
-                   <span className="text-gray-600">Taxa ({taxaTransacao}%):</span>
-                   <span className="font-medium">+{valores.taxa} Girinhas</span>
-                 </div>
-                 <div className="border-t pt-1 flex justify-between font-bold text-primary">
-                   <span>Total:</span>
-                   <span>{valores.total} Girinhas</span>
-                 </div>
+               )}
+               
+               {/* Categoria e subcategoria */}
+               <div className="flex items-center gap-2 text-gray-600">
+                 <span className="font-medium">Categoria:</span>
+                 <span className="capitalize">{item.categoria}</span>
+                 {item.subcategoria && (
+                   <>
+                     <span>•</span>
+                     <span>{item.subcategoria}</span>
+                   </>
+                 )}
                </div>
+
+               {/* Tamanho completo */}
+               {item.tamanho_valor && (
+                 <div className="flex items-center gap-2 text-gray-600">
+                   <span className="font-medium">Tamanho:</span>
+                   <span>{item.tamanho_valor}</span>
+                   {item.tamanho_categoria && (
+                     <span className="text-xs">({item.tamanho_categoria})</span>
+                   )}
+                 </div>
+               )}
+
+               {/* Data de publicação */}
+               <div className="flex items-center gap-2 text-gray-600">
+                 <span className="font-medium">Publicado em:</span>
+                 <span>{formatDate(item.created_at)}</span>
+               </div>
+               
+               {/* Preços se houver taxa */}
+               {taxaTransacao > 0 && valores.taxa > 0 && (
+                 <>
+                   <div className="border-t pt-2">
+                     <div className="flex justify-between">
+                       <span className="text-gray-600">Item:</span>
+                       <span className="font-medium">{valores.valorItem} Girinhas</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-gray-600">Taxa ({taxaTransacao}%):</span>
+                       <span className="font-medium">+{valores.taxa} Girinhas</span>
+                     </div>
+                     <div className="border-t pt-1 flex justify-between font-bold text-primary">
+                       <span>Total:</span>
+                       <span>{valores.total} Girinhas</span>
+                     </div>
+                   </div>
+                 </>
+               )}
              </div>
            )}
          </div>
 
-         {/* Perfil do autor */}
+         {/* Perfil do autor - COM LINK */}
          {showAuthor && item.publicado_por_profile && (
-           <div className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3">
+           <button
+             onClick={handleProfileClick}
+             className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors"
+           >
              <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
-               <span className="text-xs text-white font-semibold">
-                 {item.publicado_por_profile.nome.charAt(0).toUpperCase()}
-               </span>
+               <User className="w-3 h-3 text-white" />
              </div>
              <span className="text-xs text-gray-600 truncate flex-1">
                {item.publicado_por_profile.nome}
@@ -416,7 +464,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                  <span className="text-yellow-500 text-xs">⭐</span>
                </div>
              )}
-           </div>
+           </button>
          )}
 
          {/* WhatsApp */}
