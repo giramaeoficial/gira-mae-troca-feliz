@@ -50,11 +50,6 @@ function App() {
          <Route path="/login" element={<Navigate to="/auth" replace />} />
          <Route path="/cadastro" element={<Cadastro />} />
          <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
-         <Route path="/item/:id" element={
-           <RecompensasProvider>
-             <DetalhesItem />
-           </RecompensasProvider>
-         } />
 
          {/* ========================================== */}
          {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
