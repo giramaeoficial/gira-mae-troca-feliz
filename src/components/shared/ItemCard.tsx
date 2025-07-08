@@ -155,7 +155,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
  // Event handlers
  const handleClick = () => {
-   // Removido - não navega mais para página separada
+   if (onItemClick) {
+     onItemClick(item.id);
+   }
  };
 
  const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -174,6 +176,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    }
  };
 
+ // ✅ NAVEGAÇÃO PARA PERFIL PÚBLICO
  const handleProfileClick = (e: React.MouseEvent) => {
    e.stopPropagation();
    if (item.publicado_por_profile) {
@@ -275,29 +278,31 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      )}
 
      <CardContent className="p-0" onClick={handleClick}>
-       {/* ✅ SEÇÃO DE IMAGEM COM CARROUSEL */}
-       <div className="relative aspect-[4/3]">
+       {/* ✅ CARROUSEL DE IMAGENS OU IMAGEM ÚNICA */}
+       <div className="relative aspect-[4/3] bg-gray-100">
          {hasMultiplePhotos ? (
            <Carousel className="w-full h-full">
              <CarouselContent>
                {item.fotos!.map((foto, index) => (
                  <CarouselItem key={index}>
-                   <LazyImage
-                     src={foto}
-                     alt={`${item.titulo} - Foto ${index + 1}`}
-                     className={cn(
-                       "w-full h-full object-cover",
-                       itemIsReservado && "filter grayscale-[20%]"
-                     )}
-                   />
+                   <div className="relative w-full h-full">
+                     <LazyImage
+                       src={foto}
+                       alt={`${item.titulo} - Foto ${index + 1}`}
+                       className={cn(
+                         "w-full h-full object-cover",
+                         itemIsReservado && "filter grayscale-[20%]"
+                       )}
+                     />
+                   </div>
                  </CarouselItem>
                ))}
              </CarouselContent>
              
-             {/* Controles só aparecem no hover do grupo */}
+             {/* Controles do carrousel - só aparecem no hover */}
              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-               <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
-               <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
+               <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white" />
+               <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white" />
              </div>
 
              {/* Indicador de múltiplas fotos */}
@@ -306,6 +311,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
              </div>
            </Carousel>
          ) : (
+           // Imagem única (fallback)
            <LazyImage
              src={item.fotos?.[0] || '/placeholder-item.jpg'}
              alt={item.titulo}
@@ -489,9 +495,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
          {showAuthor && item.publicado_por_profile && (
            <button
              onClick={handleProfileClick}
-             className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors group/profile"
+             className="flex items-center gap-3 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-2 rounded transition-colors group/profile"
            >
-             <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
+             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0">
                {item.publicado_por_profile.avatar_url ? (
                  <img 
                    src={item.publicado_por_profile.avatar_url} 
@@ -499,16 +505,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                    className="w-full h-full object-cover"
                  />
                ) : (
-                 <User className="w-3 h-3 text-white" />
+                 <User className="w-4 h-4 text-white" />
                )}
              </div>
-             <div className="flex-1 text-left">
-               <div className="text-xs text-gray-600 truncate">
+             <div className="flex-1 min-w-0">
+               <p className="text-sm text-gray-800 truncate font-medium">
                  {item.publicado_por_profile.nome}
-               </div>
-               <div className="text-xs text-blue-600 group-hover/profile:text-blue-700 font-medium">
+               </p>
+               <p className="text-xs text-blue-600 group-hover/profile:text-blue-700 font-medium">
                  Ver perfil →
-               </div>
+               </p>
              </div>
              {item.publicado_por_profile.reputacao && (
                <div className="flex items-center gap-1">
