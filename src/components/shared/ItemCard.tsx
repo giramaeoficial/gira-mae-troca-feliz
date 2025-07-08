@@ -128,7 +128,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    hasActiveReservation && 
    item.publicado_por !== currentUserId;
 
- // ✅ NOVA VERIFICAÇÃO: se tem múltiplas fotos
+ // ✅ VERIFICAR SE TEM MÚLTIPLAS FOTOS
  const hasMultiplePhotos = item.fotos && item.fotos.length > 1;
 
  // ✅ CALCULAR VALORES COM TAXA
@@ -174,7 +174,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    }
  };
 
- // ✅ NOVA FUNÇÃO: Navegação para perfil público
  const handleProfileClick = (e: React.MouseEvent) => {
    e.stopPropagation();
    if (item.publicado_por_profile) {
@@ -276,7 +275,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      )}
 
      <CardContent className="p-0" onClick={handleClick}>
-       {/* ✅ IMAGEM COM CARROUSEL OU SIMPLES */}
+       {/* ✅ SEÇÃO DE IMAGEM COM CARROUSEL */}
        <div className="relative aspect-[4/3]">
          {hasMultiplePhotos ? (
            <Carousel className="w-full h-full">
@@ -295,10 +294,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                ))}
              </CarouselContent>
              
-             {/* Controles do carrousel - só aparecem no hover */}
+             {/* Controles só aparecem no hover do grupo */}
              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-               <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white" />
-               <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white" />
+               <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
+               <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
              </div>
 
              {/* Indicador de múltiplas fotos */}
@@ -490,7 +489,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
          {showAuthor && item.publicado_por_profile && (
            <button
              onClick={handleProfileClick}
-             className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors"
+             className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors group/profile"
            >
              <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
                {item.publicado_por_profile.avatar_url ? (
@@ -504,12 +503,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                )}
              </div>
              <div className="flex-1 text-left">
-               <span className="text-xs text-gray-600 truncate block">
+               <div className="text-xs text-gray-600 truncate">
                  {item.publicado_por_profile.nome}
-               </span>
-               <span className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+               </div>
+               <div className="text-xs text-blue-600 group-hover/profile:text-blue-700 font-medium">
                  Ver perfil →
-               </span>
+               </div>
              </div>
              {item.publicado_por_profile.reputacao && (
                <div className="flex items-center gap-1">
