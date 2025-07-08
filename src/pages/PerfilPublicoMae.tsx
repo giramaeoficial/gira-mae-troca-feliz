@@ -1,17 +1,20 @@
-
-import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import Header from "@/components/shared/Header";
-import QuickNav from "@/components/shared/QuickNav";
-import BotaoSeguir from "@/components/perfil/BotaoSeguir";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, MapPin, Star, Calendar, Users, Package } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import UniversalCard from "@/components/ui/universal-card";
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Header from '@/components/shared/Header';
+import QuickNav from '@/components/shared/QuickNav';
+import { ItemCard } from '@/components/shared/ItemCard';
+import BotaoSeguir from '@/components/perfil/BotaoSeguir';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, MapPin, Star, Calendar, Users, Package } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
+import EmptyState from '@/components/loading/EmptyState';
 
 type Profile = Tables<'profiles'>;
 type Item = Tables<'itens'>;
@@ -19,12 +22,25 @@ type Item = Tables<'itens'>;
 const PerfilPublicoMae = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [itens, setItens] = useState<Item[]>([]);
   const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
+
+  // ✅ Mock feedData similar ao FeedOptimized
+  const feedData = useMemo(() => ({
+    favoritos: [],
+    reservas_usuario: [],
+    filas_espera: {},
+    configuracoes: null,
+    profile_essencial: null,
+    taxaTransacao: 5
+  }), []);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -57,12 +73,20 @@ const PerfilPublicoMae = () => {
         console.log('Perfil encontrado:', profileData);
         setProfile(profileData);
         
-        // Buscar itens do usuário
+        // ✅ Buscar itens com dados completos (igual ao feed)
         const { data: itensData, error: itensError } = await supabase
           .from('itens')
-          .select('*')
+          .select(`
+            *,
+            publicado_por_profile:profiles!itens_publicado_por_fkey(
+              nome,
+              avatar_url,
+              reputacao,
+              whatsapp
+            )
+          `)
           .eq('publicado_por', profileData.id)
-          .eq('status', 'disponivel')
+          .in('status', ['disponivel', 'reservado'])
           .order('created_at', { ascending: false });
 
         if (itensError) {
@@ -84,6 +108,149 @@ const PerfilPublicoMae = () => {
 
     carregarDados();
   }, [id]);
+
+  // ✅ Funções de ação similares ao FeedOptimized
+  const handleItemClick = useCallback((itemId: string) => {
+    navigate(`/item/${itemId}`);
+  }, [navigate]);
+
+  const entrarNaFila = async (itemId: string) => {
+    if (!user) return;
+    
+    setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('entrar_fila_espera', { 
+          p_item_id: itemId, 
+          p_usuario_id: user.id 
+        });
+
+      if (error) {
+        toast({ 
+          title: "Erro ao reservar", 
+          description: error.message, 
+          variant: "destructive" 
+        });
+        setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+        return false;
+      }
+
+      const result = data as { tipo?: string; posicao?: number } | null;
+      
+      if (result?.tipo === 'reserva_direta') {
+        toast({ 
+          title: "Item reservado! 🎉", 
+          description: "As Girinhas foram bloqueadas." 
+        });
+      } else if (result?.tipo === 'fila_espera') {
+        toast({ 
+          title: "Entrou na fila! 📝", 
+          description: `Você está na posição ${result.posicao} da fila.` 
+        });
+      }
+      
+      setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      
+      return true;
+    } catch (err) {
+      console.error('Erro ao entrar na fila:', err);
+      toast({ 
+        title: "Erro ao entrar na fila", 
+        description: err instanceof Error ? err.message : "Tente novamente.", 
+        variant: "destructive" 
+      });
+      setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      return false;
+    }
+  };
+
+  const toggleFavorito = async (itemId: string) => {
+    if (!user) return;
+    
+    const isFavorito = feedData.favoritos.includes(itemId);
+    
+    try {
+      if (isFavorito) {
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', itemId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Removido dos favoritos",
+          description: "Item removido da sua lista de desejos.",
+        });
+      } else {
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({
+            user_id: user.id,
+            item_id: itemId
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Adicionado aos favoritos! ❤️",
+          description: "Item adicionado à sua lista de desejos.",
+        });
+      }
+      
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar os favoritos.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleReservarItem = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+    } catch (error) {
+      console.error('Erro ao reservar item:', error);
+    }
+  };
+
+  const handleEntrarFila = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+    } catch (error) {
+      console.error('Erro ao entrar na fila:', error);
+    }
+  };
+
+  const handleToggleFavorito = async (itemId: string) => {
+    try {
+      await toggleFavorito(itemId);
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+    }
+  };
+
+  const calcularIdade = (dataNascimento: string | null) => {
+    if (!dataNascimento) return null;
+    const hoje = new Date();
+    const nascimento = new Date(dataNascimento);
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const m = hoje.getMonth() - nascimento.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--;
+    }
+    return idade;
+  };
 
   if (loading) {
     return (
@@ -118,22 +285,11 @@ const PerfilPublicoMae = () => {
     );
   }
 
-  const calcularIdade = (dataNascimento: string | null) => {
-    if (!dataNascimento) return null;
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const m = hoje.getMonth() - nascimento.getMonth();
-    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-      idade--;
-    }
-    return idade;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
+        {/* Botão Voltar */}
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -142,7 +298,7 @@ const PerfilPublicoMae = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Perfil da Mãe */}
+          {/* ✅ Perfil da Mãe - Mantido igual */}
           <div className="lg:col-span-1">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader className="text-center">
@@ -188,9 +344,9 @@ const PerfilPublicoMae = () => {
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span className="text-sm">
-                    {profile?.bairro && profile?.cidade 
-                      ? `${profile.bairro}, ${profile.cidade}`
-                      : profile?.cidade || 'Localização não informada'
+                    {profile?.endereco_cidade 
+                      ? `${profile.endereco_cidade}, ${profile.endereco_estado}`
+                      : 'Localização não informada'
                     }
                   </span>
                 </div>
@@ -219,24 +375,11 @@ const PerfilPublicoMae = () => {
                     <p className="text-xs text-gray-500">Itens ativos</p>
                   </div>
                 </div>
-
-                {profile?.interesses && profile.interesses.length > 0 && (
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-2">Interesses</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.interesses.map((interesse, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {interesse}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
 
-          {/* Itens da Mãe */}
+          {/* ✅ Itens da Mãe - USANDO ITEMCARD DO FEED */}
           <div className="lg:col-span-2">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -246,30 +389,35 @@ const PerfilPublicoMae = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {itens.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Nenhum item disponível no momento</p>
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <ItemCardSkeleton key={i} />
+                    ))}
                   </div>
+                ) : itens.length === 0 ? (
+                  <EmptyState
+                    type="search"
+                    title="Nenhum item disponível"
+                    description="Este usuário não tem itens disponíveis no momento"
+                  />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {itens.map((item) => (
-                      <UniversalCard
+                      <ItemCard
                         key={item.id}
-                        variant="item"
-                        data={{
-                          id: item.id,
-                          titulo: item.titulo,
-                          categoria: item.categoria,
-                          tamanho: item.tamanho_valor,
-                          valorGirinhas: item.valor_girinhas,
-                          estadoConservacao: item.estado_conservacao,
-                          fotos: item.fotos,
-                          status: item.status,
-                          descricao: item.descricao
-                        }}
-                        linkTo={`/item/${item.id}`}
+                        item={item}
+                        feedData={feedData}
+                        currentUserId={user?.id || ''}
+                        taxaTransacao={feedData.taxaTransacao}
+                        onItemClick={handleItemClick}
+                        showActions={true}
+                        showLocation={true}
                         showAuthor={false}
+                        onToggleFavorito={() => handleToggleFavorito(item.id)}
+                        onReservar={() => handleReservarItem(item.id)}
+                        onEntrarFila={() => handleEntrarFila(item.id)}
+                        actionState={actionStates[item.id]}
                       />
                     ))}
                   </div>
