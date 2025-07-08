@@ -25,6 +25,7 @@ interface SimpleItemFormProps {
   onRemoverImagemExistente?: (url: string) => void;
   errors: any;
   isEditing?: boolean;
+  isMission?: boolean;
 }
 
 export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
@@ -32,13 +33,14 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   onFieldChange,
   onRemoverImagemExistente,
   errors,
-  isEditing = false
+  isEditing = false,
+  isMission = false
 }) => {
   const { getFaixaValores } = useConfigCategorias();
   const faixaPrecos = getFaixaValores(formData.categoria_id);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isMission ? 'px-0' : ''}`}>
       {/* Fotos do Item */}
       <div className="bg-gradient-to-br from-pink-25 to-purple-25 p-4 rounded-xl border border-pink-100">
         <label className="text-sm font-medium mb-4 block text-gray-700">

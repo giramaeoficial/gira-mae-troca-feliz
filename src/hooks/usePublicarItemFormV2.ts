@@ -25,6 +25,8 @@ interface ValidationErrors {
 interface UsePublicarItemFormOptions {
   status?: 'disponivel' | 'inativo';
   onSuccess?: () => void;
+  isMission?: boolean;
+  currentItem?: number;
 }
 
 export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) => {
@@ -33,7 +35,7 @@ export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) 
   const { configuracoes, validarValorCategoria } = useConfigCategorias();
   const { mutate: publicarItem, isPending: loading } = usePublicarItem();
   
-  const { status = 'disponivel', onSuccess } = options;
+  const { status = 'disponivel', onSuccess, isMission = false, currentItem = 1 } = options;
 
   const [formData, setFormData] = useState<SimpleFormData>({
     titulo: '',
@@ -179,6 +181,8 @@ export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) 
     errors,
     loading,
     handleSubmit,
-    isValid: Object.keys(errors).length === 0
+    isValid: Object.keys(errors).length === 0,
+    isMission,
+    currentItem
   };
 };
