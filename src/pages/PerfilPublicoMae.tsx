@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useFeedInfinito } from '@/hooks/useFeedInfinito'; // ✅ ADICIONAR
 import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 
@@ -32,15 +33,38 @@ const PerfilPublicoMae = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ Mock feedData similar ao FeedOptimized
-  const feedData = useMemo(() => ({
-    favoritos: [],
-    reservas_usuario: [],
-    filas_espera: {},
-    configuracoes: null,
-    profile_essencial: null,
-    taxaTransacao: 5
+  // ✅ USAR DADOS REAIS DO FEED (substituir o mock)
+  const filtrosPerfilItens = useMemo(() => ({
+    busca: '',
+    cidade: '',
+    categoria: 'todas',
+    subcategoria: 'todas',
+    genero: 'todos',
+    tamanho: 'todos',
+    precoMin: 0,
+    precoMax: 200,
+    mostrarReservados: true,
+    modalidadeLogistica: 'todas'
   }), []);
+
+  const {
+    data: paginasFeed,
+    isLoading: loadingFeedData,
+    refetch: refetchItens
+  } = useFeedInfinito(user?.id || '', filtrosPerfilItens);
+
+  // ✅ EXTRAIR DADOS CONSOLIDADOS (substituir o mock)
+  const feedData = useMemo(() => {
+    const primeiraPagina = paginasFeed?.pages?.[0];
+    return {
+      favoritos: primeiraPagina?.favoritos || [],
+      reservas_usuario: primeiraPagina?.reservas_usuario || [],
+      filas_espera: primeiraPagina?.filas_espera || {},
+      configuracoes: primeiraPagina?.configuracoes,
+      profile_essencial: primeiraPagina?.profile_essencial,
+      taxaTransacao: 5
+    };
+  }, [paginasFeed]);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -143,11 +167,13 @@ const PerfilPublicoMae = () => {
           title: "Item reservado! 🎉", 
           description: "As Girinhas foram bloqueadas." 
         });
+        await refetchItens(); // ✅ ATUALIZAR DADOS APÓS AÇÃO
       } else if (result?.tipo === 'fila_espera') {
         toast({ 
           title: "Entrou na fila! 📝", 
           description: `Você está na posição ${result.posicao} da fila.` 
         });
+        await refetchItens(); // ✅ ATUALIZAR DADOS APÓS AÇÃO
       }
       
       setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
@@ -206,6 +232,8 @@ const PerfilPublicoMae = () => {
         });
       }
       
+      await refetchItens(); // ✅ ATUALIZAR DADOS APÓS AÇÃO
+      
     } catch (error) {
       console.error('Erro ao toggle favorito:', error);
       toast({
@@ -252,7 +280,8 @@ const PerfilPublicoMae = () => {
     return idade;
   };
 
-  if (loading) {
+  // ✅ INCLUIR LOADING DO FEED DATA
+  if (loading || loadingFeedData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
@@ -379,7 +408,7 @@ const PerfilPublicoMae = () => {
             </Card>
           </div>
 
-          {/* ✅ Itens da Mãe - USANDO ITEMCARD DO FEED */}
+          {/* ✅ Itens da Mãe - USANDO ITEMCARD DO FEED COM DADOS REAIS */}
           <div className="lg:col-span-2">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -407,7 +436,7 @@ const PerfilPublicoMae = () => {
                       <ItemCard
                         key={item.id}
                         item={item}
-                        feedData={feedData}
+                        feedData={feedData} // ✅ AGORA COM DADOS REAIS
                         currentUserId={user?.id || ''}
                         taxaTransacao={feedData.taxaTransacao}
                         onItemClick={handleItemClick}
