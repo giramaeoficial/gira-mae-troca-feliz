@@ -70,7 +70,7 @@ export const useSeguidores = () => {
         .select('id')
         .eq('seguidor_id', user.id)
         .eq('seguido_id', seguidoId)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
       return !!data;
