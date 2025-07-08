@@ -699,7 +699,7 @@ const FeedOptimized = () => {
 
         {/* Loading state */}
         {loadingFeed && itensFiltrados.length === 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <ItemCardSkeleton key={i} />
             ))}
@@ -748,7 +748,7 @@ const FeedOptimized = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {itensFiltrados.map((item) => (
                 <ItemCard
                   key={item.id}
