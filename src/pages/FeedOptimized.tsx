@@ -36,7 +36,7 @@ const FeedOptimized = () => {
   const [genero, setGenero] = useState('todos');
   const [tamanho, setTamanho] = useState('todos');
   const [precoRange, setPrecoRange] = useState([0, 200]);
-  const [modalidadeLogistica, setModalidadeLogistica] = useState<'todas' | 'entrega' | 'busca'>('todas'); // ✅ NOVO
+  const [modalidadeLogistica, setModalidadeLogistica] = useState<'todas' | 'entrega' | 'busca'>('todas');
   const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
   const [filtrosAplicados, setFiltrosAplicados] = useState(true);
   const [mostrarReservados, setMostrarReservados] = useState(true);
@@ -75,7 +75,7 @@ const FeedOptimized = () => {
     precoMin: precoRange[0],
     precoMax: precoRange[1],
     mostrarReservados,
-    modalidadeLogistica, // ✅ NOVO FILTRO
+    modalidadeLogistica,
     itemId: undefined
   }), [debouncedBusca, locationForSearch.cidade, cidadeManual, categoria, subcategoria, genero, tamanho, precoRange, mostrarReservados, modalidadeLogistica]);
   
@@ -311,7 +311,7 @@ const FeedOptimized = () => {
     setGenero('todos');
     setTamanho('todos');
     setPrecoRange([0, 200]);
-    setModalidadeLogistica('todas'); // ✅ RESET NOVO FILTRO
+    setModalidadeLogistica('todas');
     setMostrarReservados(true);
     limparLocalizacao();
     setMostrarFiltrosAvancados(false);
@@ -361,91 +361,8 @@ const FeedOptimized = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-6">
-        {/* Hero Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
-            Encontre Tesouros {getLocationText()}{getLogisticaFilterText()}
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Descubra itens incríveis na sua região
-          </p>
-        </div>
-
-        {/* Header com localização e publicar */}
+        {/* ✅ FILTROS E BUSCA */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                Buscar Itens
-              </h2>
-              {locationForSearch && locationForSearch.cidade && (
-                <div className="flex items-center text-sm text-gray-500 mt-1">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  <span>
-                    {locationForSearch.cidade}{locationForSearch.bairro ? `, ${locationForSearch.bairro}` : ''}
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <Button
-              onClick={() => navigate('/publicar')}
-              size="sm"
-              className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Publicar
-            </Button>
-          </div>
-
-          {/* ✅ FILTRO RÁPIDO DE LOGÍSTICA */}
-          <div className="flex gap-2 mb-4">
-            <Button
-              variant={modalidadeLogistica === 'todas' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setModalidadeLogistica('todas')}
-              className="text-xs"
-            >
-              🔄 Todas
-            </Button>
-            <Button
-              variant={modalidadeLogistica === 'entrega' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setModalidadeLogistica('entrega')}
-              className="text-xs"
-            >
-              <Truck className="w-3 h-3 mr-1" />
-              Só com entrega
-            </Button>
-            <Button
-              variant={modalidadeLogistica === 'busca' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setModalidadeLogistica('busca')}
-              className="text-xs"
-            >
-              <Car className="w-3 h-3 mr-1" />
-              Posso buscar
-            </Button>
-          </div>
-
-          {/* Toggle para mostrar/ocultar itens reservados */}
-          <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-4">
-            <div className="flex items-center gap-3">
-              <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
-                Mostrar itens reservados
-              </Label>
-              <Switch
-                id="mostrar-reservados"
-                checked={mostrarReservados}
-                onCheckedChange={setMostrarReservados}
-              />
-            </div>
-            
-            <div className="text-xs text-gray-500">
-              {itensFiltrados.length} itens
-            </div>
-          </div>
-
           {/* Campo de busca com ícone de filtro */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -467,6 +384,27 @@ const FeedOptimized = () => {
           {/* Filtros Avançados */}
           {mostrarFiltrosAvancados && (
             <div className="space-y-6 border-t pt-4">
+              {/* ✅ MOSTRAR ITENS RESERVADOS - MOVIDO PARA CÁ */}
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">OPÇÕES DE VISUALIZAÇÃO</h3>
+                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
+                      Mostrar itens reservados
+                    </Label>
+                    <Switch
+                      id="mostrar-reservados"
+                      checked={mostrarReservados}
+                      onCheckedChange={setMostrarReservados}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-gray-500">
+                    {itensFiltrados.length} itens
+                  </div>
+                </div>
+              </div>
+
               {/* Seção Localização */}
               <div>
                 <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">LOCALIZAÇÃO</h3>
