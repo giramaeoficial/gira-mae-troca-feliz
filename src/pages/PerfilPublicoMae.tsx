@@ -1,88 +1,46 @@
-// src/pages/PerfilPublicoMae.tsx - CORRIGIDO
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useFeedInfinito } from '@/hooks/useFeedInfinito'; // ✅ ADICIONAR
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent } from '@/components/ui/card';
+import Header from '@/components/shared/Header';
+import QuickNav from '@/components/shared/QuickNav';
+import { ItemCard } from '@/components/shared/ItemCard';
+import BotaoSeguir from '@/components/perfil/BotaoSeguir';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, MapPin, Calendar, Users, Heart, Star } from 'lucide-react';
-import Header from '@/components/layout/Header';
-import QuickNav from '@/components/navigation/QuickNav';
-import ItemCard from '@/components/shared/ItemCard';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, MapPin, Star, Calendar, Users, Package } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
+import EmptyState from '@/components/loading/EmptyState';
 
-interface Profile {
-  id: string;
-  nome: string;
-  avatar_url?: string;
-  cidade?: string;
-  estado?: string;
-  bairro?: string;
-  data_nascimento?: string;
-  bio?: string;
-  reputacao?: number;
-  created_at: string;
-}
+type Profile = Tables<'profiles'>;
+type Item = Tables<'itens'>;
 
-interface Estatisticas {
-  total_seguindo: number;
-  total_seguidores: number;
-}
-
-const PerfilPublicoMae: React.FC = () => {
+const PerfilPublicoMae = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [itens, setItens] = useState<Item[]>([]);
+  const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [estatisticas, setEstatisticas] = useState<Estatisticas>({ total_seguindo: 0, total_seguidores: 0 });
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ USAR DADOS REAIS DO FEED (em vez de mock)
-  const filtrosPerfilItens = useMemo(() => ({
-    busca: '',
-    cidade: '',
-    categoria: 'todas',
-    subcategoria: 'todas',
-    genero: 'todos',
-    tamanho: 'todos',
-    precoMin: 0,
-    precoMax: 200,
-    mostrarReservados: true,
-    modalidadeLogistica: 'todas'
+  // ✅ Mock feedData similar ao FeedOptimized
+  const feedData = useMemo(() => ({
+    favoritos: [],
+    reservas_usuario: [],
+    filas_espera: {},
+    configuracoes: null,
+    profile_essencial: null,
+    taxaTransacao: 5
   }), []);
-
-  const {
-    data: paginasFeed,
-    isLoading: loadingItens,
-    refetch: refetchItens
-  } = useFeedInfinito(user?.id || '', filtrosPerfilItens);
-
-  // ✅ EXTRAIR DADOS CONSOLIDADOS (igual ao FeedOptimized)
-  const feedData = useMemo(() => {
-    const primeiraPagina = paginasFeed?.pages?.[0];
-    return {
-      favoritos: primeiraPagina?.favoritos || [],
-      reservas_usuario: primeiraPagina?.reservas_usuario || [],
-      filas_espera: primeiraPagina?.filas_espera || {},
-      configuracoes: primeiraPagina?.configuracoes,
-      profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao: 5
-    };
-  }, [paginasFeed]);
-
-  // ✅ FILTRAR ITENS DO PERFIL ESPECÍFICO
-  const itensDoProfile = useMemo(() => {
-    if (!paginasFeed?.pages || !id) return [];
-    
-    const todosItens = paginasFeed.pages.flatMap(page => page?.itens || []);
-    return todosItens.filter(item => item.publicado_por === id);
-  }, [paginasFeed, id]);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -115,6 +73,28 @@ const PerfilPublicoMae: React.FC = () => {
         console.log('Perfil encontrado:', profileData);
         setProfile(profileData);
         
+        // ✅ Buscar itens com dados completos (igual ao feed)
+        const { data: itensData, error: itensError } = await supabase
+          .from('itens')
+          .select(`
+            *,
+            publicado_por_profile:profiles!itens_publicado_por_fkey(
+              nome,
+              avatar_url,
+              reputacao,
+              telefone
+            )
+          `)
+          .eq('publicado_por', profileData.id)
+          .in('status', ['disponivel', 'reservado'])
+          .order('created_at', { ascending: false });
+
+        if (itensError) {
+          console.error('Erro ao buscar itens:', itensError);
+        } else {
+          setItens(itensData || []);
+        }
+        
         // Buscar estatísticas de seguidores (simulado por enquanto)
         setEstatisticas({ total_seguindo: 0, total_seguidores: 0 });
         
@@ -129,7 +109,7 @@ const PerfilPublicoMae: React.FC = () => {
     carregarDados();
   }, [id]);
 
-  // ✅ Funções de ação usando os dados consolidados
+  // ✅ Funções de ação similares ao FeedOptimized
   const handleItemClick = useCallback((itemId: string) => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
@@ -163,13 +143,11 @@ const PerfilPublicoMae: React.FC = () => {
           title: "Item reservado! 🎉", 
           description: "As Girinhas foram bloqueadas." 
         });
-        await refetchItens(); // ✅ Atualizar dados
       } else if (result?.tipo === 'fila_espera') {
         toast({ 
           title: "Entrou na fila! 📝", 
           description: `Você está na posição ${result.posicao} da fila.` 
         });
-        await refetchItens(); // ✅ Atualizar dados
       }
       
       setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
@@ -228,8 +206,6 @@ const PerfilPublicoMae: React.FC = () => {
         });
       }
       
-      await refetchItens(); // ✅ Atualizar dados
-      
     } catch (error) {
       console.error('Erro ao toggle favorito:', error);
       toast({
@@ -276,7 +252,7 @@ const PerfilPublicoMae: React.FC = () => {
     return idade;
   };
 
-  if (loading || loadingItens) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
@@ -300,10 +276,7 @@ const PerfilPublicoMae: React.FC = () => {
             <CardContent className="p-8">
               <h2 className="text-2xl font-bold mb-4">Perfil não encontrado</h2>
               <p className="text-gray-600 mb-6">{error || 'O perfil que você está procurando não existe.'}</p>
-              <Button onClick={() => navigate('/feed')} className="w-full">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar ao Feed
-              </Button>
+              <Button onClick={() => navigate(-1)}>Voltar</Button>
             </CardContent>
           </Card>
         </main>
@@ -312,135 +285,148 @@ const PerfilPublicoMae: React.FC = () => {
     );
   }
 
-  const idade = calcularIdade(profile.data_nascimento);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
       <Header />
-      
-      <main className="flex-grow px-4 py-6 max-w-4xl mx-auto w-full">
-        {/* Header do Perfil */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="p-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
+      <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
+        {/* Botão Voltar */}
+        <div className="mb-6">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
           </Button>
-          <h1 className="text-2xl font-bold">Perfil</h1>
         </div>
 
-        {/* Card do Perfil */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            {/* Avatar e Info Principal */}
-            <div className="flex items-start gap-4 mb-4">
-              <div className="relative">
-                <img
-                  src={profile.avatar_url || '/default-avatar.png'}
-                  alt={profile.nome}
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-              </div>
-              
-              <div className="flex-grow">
-                <h2 className="text-xl font-bold mb-1">{profile.nome}</h2>
-                
-                {/* Localização */}
-                {(profile.cidade || profile.bairro) && (
-                  <div className="flex items-center gap-1 text-gray-600 mb-2">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">
-                      {[profile.bairro, profile.cidade, profile.estado].filter(Boolean).join(', ')}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* ✅ Perfil da Mãe - Mantido igual */}
+          <div className="lg:col-span-1">
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader className="text-center">
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-24 h-24 mb-4">
+                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.nome || 'Avatar'} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                      {profile?.nome?.split(' ').map(n => n[0]).join('') || 'M'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <CardTitle className="text-2xl text-gray-800 mb-2">
+                    {profile?.nome || 'Usuário'}
+                  </CardTitle>
+                  
+                  <div className="flex items-center gap-1 mb-4">
+                    {[1,2,3,4,5].map((star) => (
+                      <Star 
+                        key={star} 
+                        className={`w-4 h-4 ${
+                          star <= Math.floor(profile?.reputacao || 0) 
+                            ? 'fill-current text-yellow-500' 
+                            : 'text-gray-300'
+                        }`} 
+                      />
+                    ))}
+                    <span className="text-sm text-gray-600 ml-1">
+                      ({(profile?.reputacao || 0).toFixed(1)})
                     </span>
                   </div>
-                )}
 
-                {/* Idade */}
-                {idade && (
-                  <div className="flex items-center gap-1 text-gray-600 mb-2">
-                    <Calendar className="w-4 h-4" />
-                    <span className="text-sm">{idade} anos</span>
+                  {profile && <BotaoSeguir usuarioId={profile.id} className="w-full mb-4" />}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {profile?.bio && (
+                  <div>
+                    <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
+                    <p className="text-gray-600 text-sm">{profile.bio}</p>
                   </div>
                 )}
 
-                {/* Reputação */}
-                <div className="flex items-center gap-1 text-gray-600">
-                  <Star className="w-4 h-4 text-yellow-500" />
-                  <span className="text-sm">{profile.reputacao || 0} pontos</span>
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="text-sm">
+                    {profile?.endereco_cidade 
+                      ? `${profile.endereco_cidade}, ${profile.endereco_estado}`
+                      : 'Localização não informada'
+                    }
+                  </span>
                 </div>
-              </div>
-            </div>
 
-            {/* Bio */}
-            {profile.bio && (
-              <p className="text-gray-700 mb-4">{profile.bio}</p>
-            )}
+                {profile?.data_nascimento && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{calcularIdade(profile.data_nascimento)} anos</span>
+                  </div>
+                )}
 
-            {/* Estatísticas */}
-            <div className="flex items-center gap-6 pt-4 border-t">
-              <div className="text-center">
-                <div className="font-bold text-lg">{itensDoProfile.length}</div>
-                <div className="text-sm text-gray-600">Itens</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="font-bold text-lg">{estatisticas.total_seguidores}</div>
-                <div className="text-sm text-gray-600">Seguidores</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="font-bold text-lg">{estatisticas.total_seguindo}</div>
-                <div className="text-sm text-gray-600">Seguindo</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Itens do Usuário */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">
-            Itens publicados ({itensDoProfile.length})
-          </h3>
-
-          {itensDoProfile.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {itensDoProfile.map((item) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  feedData={feedData} // ✅ AGORA COM DADOS REAIS
-                  currentUserId={user?.id || ''}
-                  taxaTransacao={feedData.taxaTransacao}
-                  onToggleFavorito={() => handleToggleFavorito(item.id)}
-                  onEntrarFila={() => handleEntrarFila(item.id)}
-                  onReservar={() => handleReservarItem(item.id)}
-                  onItemClick={handleItemClick}
-                  actionState={actionStates[item.id]}
-                  showActions={item.publicado_por !== user?.id} // Não mostrar ações em seus próprios itens
-                  showLocation={true}
-                  showAuthor={false} // Não mostrar autor pois é o perfil dele
-                />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <div className="text-gray-500 mb-2">
-                  <Users className="w-12 h-12 mx-auto mb-4" />
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-gray-600">
+                      <Users className="w-4 h-4" />
+                      <span className="font-bold">{estatisticas.total_seguidores}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Seguidores</p>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-1 text-gray-600">
+                      <Package className="w-4 h-4" />
+                      <span className="font-bold">{itens.length}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Itens ativos</p>
+                  </div>
                 </div>
-                <h4 className="text-lg font-medium mb-2">Nenhum item publicado</h4>
-                <p className="text-gray-600">
-                  {profile.nome} ainda não publicou nenhum item.
-                </p>
               </CardContent>
             </Card>
-          )}
+          </div>
+
+          {/* ✅ Itens da Mãe - USANDO ITEMCARD DO FEED */}
+          <div className="lg:col-span-2">
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Itens disponíveis ({itens.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <ItemCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : itens.length === 0 ? (
+                  <EmptyState
+                    type="search"
+                    title="Nenhum item disponível"
+                    description="Este usuário não tem itens disponíveis no momento"
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {itens.map((item) => (
+                      <ItemCard
+                        key={item.id}
+                        item={item}
+                        feedData={feedData}
+                        currentUserId={user?.id || ''}
+                        taxaTransacao={feedData.taxaTransacao}
+                        onItemClick={handleItemClick}
+                        showActions={true}
+                        showLocation={true}
+                        showAuthor={false}
+                        onToggleFavorito={() => handleToggleFavorito(item.id)}
+                        onReservar={() => handleReservarItem(item.id)}
+                        onEntrarFila={() => handleEntrarFila(item.id)}
+                        actionState={actionStates[item.id]}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
-
       <QuickNav />
     </div>
   );
