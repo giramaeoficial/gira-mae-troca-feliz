@@ -275,9 +275,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
        </div>
 
        {/* Conteúdo do card */}
-       <div className="p-4">
+       <div className="p-3">
          {/* Status e badges MOVIDOS PARA BAIXO DA IMAGEM */}
-         <div className="flex flex-wrap gap-2 mb-3">
+         <div className="flex flex-wrap gap-2 mb-2">
            {/* Badge de status reservado */}
            {itemIsReservado && (
              <Badge className="bg-red-500 text-white">
@@ -293,7 +293,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
          {/* ✅ BADGES DE LOGÍSTICA (sem distância) */}
          {(hasCommonSchool || item.logistica?.entrega_disponivel || item.logistica?.busca_disponivel) && (
-           <div className="flex flex-wrap gap-1 mb-3">
+           <div className="flex flex-wrap gap-1 mb-2">
              {/* Escola em comum */}
              {hasCommonSchool && (
                <Badge className="text-xs px-2 py-1 flex items-center gap-1 bg-purple-100 text-purple-800 border-purple-200">
@@ -321,20 +321,20 @@ export const ItemCard: React.FC<ItemCardProps> = ({
          )}
 
          {/* Título */}
-         <h3 className="font-medium leading-tight line-clamp-2 mb-2 text-base min-h-[3rem]">
+         <h3 className="font-medium leading-tight line-clamp-2 mb-1 text-base min-h-[2.5rem]">
            {item.titulo}
          </h3>
 
          {/* Localização (cidade/bairro) */}
          {hasLocationData && (
-           <div className="flex items-center gap-1 text-sm text-gray-500 mb-2">
+           <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
              <MapPin className="w-4 h-4" />
              <span>{getLocationText()}</span>
            </div>
          )}
 
          {/* Categoria, subcategoria e tamanho */}
-         <div className="space-y-2 mb-3">
+         <div className="space-y-1 mb-2">
            <div className="flex items-center gap-2 text-sm text-gray-500">
              <span className="capitalize">{item.categoria}</span>
              {item.subcategoria && (
@@ -346,8 +346,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </div>
            
            {item.tamanho_valor && (
-             <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
-               <span className="text-sm font-medium text-blue-700">
+             <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5">
+               <span className="text-xs font-medium text-blue-700">
                  Tamanho {item.tamanho_valor}
                </span>
              </div>
@@ -355,10 +355,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
          </div>
 
          {/* Preço com breakdown EXPANSÍVEL */}
-         <div className="mb-4">
-           <div className="flex items-center gap-2 mb-2">
-             <Sparkles className="w-5 h-5 text-primary" />
-             <span className="text-xl font-bold text-primary">
+         <div className="mb-3">
+           <div className="flex items-center gap-2 mb-1">
+             <Sparkles className="w-4 h-4 text-primary" />
+             <span className="text-lg font-bold text-primary">
                {valores.total} Girinhas
              </span>
              {/* Ícone de informação pequeno para detalhes */}
@@ -378,8 +378,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            
            {/* Breakdown detalhado quando expandido */}
            {showPriceDetails && taxaTransacao > 0 && valores.taxa > 0 && (
-             <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-sm">
-               <div className="space-y-2">
+             <div className="border border-gray-200 rounded-lg p-2 bg-gray-50 text-sm">
+               <div className="space-y-1">
                  <div className="flex justify-between">
                    <span className="text-gray-600">Item:</span>
                    <span className="font-medium">{valores.valorItem} Girinhas</span>
@@ -388,7 +388,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                    <span className="text-gray-600">Taxa ({taxaTransacao}%):</span>
                    <span className="font-medium">+{valores.taxa} Girinhas</span>
                  </div>
-                 <div className="border-t pt-2 flex justify-between font-bold text-primary">
+                 <div className="border-t pt-1 flex justify-between font-bold text-primary">
                    <span>Total:</span>
                    <span>{valores.total} Girinhas</span>
                  </div>
@@ -399,21 +399,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
          {/* Perfil do autor */}
          {showAuthor && item.publicado_por_profile && (
-           <div className="flex items-center gap-3 pt-3 border-t border-gray-100 mb-4">
-             <div className="w-8 h-8 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
-               <span className="text-sm text-white font-semibold">
+           <div className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3">
+             <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
+               <span className="text-xs text-white font-semibold">
                  {item.publicado_por_profile.nome.charAt(0).toUpperCase()}
                </span>
              </div>
-             <span className="text-sm text-gray-600 truncate flex-1">
+             <span className="text-xs text-gray-600 truncate flex-1">
                {item.publicado_por_profile.nome}
              </span>
              {item.publicado_por_profile.reputacao && (
                <div className="flex items-center gap-1">
-                 <span className="text-sm text-yellow-600">
+                 <span className="text-xs text-yellow-600">
                    {item.publicado_por_profile.reputacao.toFixed(1)}
                  </span>
-                 <span className="text-yellow-500">⭐</span>
+                 <span className="text-yellow-500 text-xs">⭐</span>
                </div>
              )}
            </div>
@@ -421,14 +421,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
          {/* WhatsApp */}
          {canShowWhatsApp && (
-           <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-3">
-             <div className="text-xs text-green-800 mb-2 text-center">
+           <div className="bg-green-50 border border-green-200 rounded-lg px-2 py-1.5 mb-2">
+             <div className="text-xs text-green-800 mb-1 text-center">
                Combine a entrega
              </div>
              <div className="flex items-center justify-center">
                <Button 
                  size="sm" 
-                 className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 text-xs h-7"
+                 className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs h-6"
                  onClick={handleWhatsAppClick}
                >
                  <MessageCircle className="w-3 h-3 mr-1" />
@@ -441,9 +441,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
          {/* Botão de ação principal */}
          {shouldShowActionButton && (
            <Button 
-             size="lg"
+             size="default"
              className={cn(
-               "w-full",
+               "w-full h-10",
                itemIsReservado 
                  ? "bg-orange-500 hover:bg-orange-600" 
                  : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
@@ -453,17 +453,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            >
              {actionState === 'loading' ? (
                <div className="flex items-center gap-2">
-                 <Clock className="w-5 h-5 animate-spin" />
+                 <Clock className="w-4 h-4 animate-spin" />
                  {itemIsReservado ? 'Entrando...' : 'Reservando...'}
                </div>
              ) : itemIsReservado ? (
                <div className="flex items-center gap-2">
-                 <Users className="w-5 h-5" />
+                 <Users className="w-4 h-4" />
                  Entrar na Fila
                </div>
              ) : (
                <div className="flex items-center gap-2">
-                 <Sparkles className="w-5 h-5" />
+                 <Sparkles className="w-4 h-4" />
                  Reservar Item
                </div>
              )}
@@ -472,24 +472,24 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
          {/* Status de reserva/fila */}
          {(isUserInQueue || hasActiveReservation) && !canShowWhatsApp && (
-           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
              {hasActiveReservation ? (
                <div>
-                 <div className="flex items-center justify-center gap-2 text-green-600 mb-2">
-                   <CheckCircle className="w-5 h-5" />
-                   <span className="font-medium">Item Reservado</span>
+                 <div className="flex items-center justify-center gap-2 text-green-600 mb-1">
+                   <CheckCircle className="w-4 h-4" />
+                   <span className="text-sm font-medium">Item Reservado</span>
                  </div>
-                 <p className="text-sm text-gray-600">
+                 <p className="text-xs text-gray-600">
                    Você tem uma reserva ativa. Aguarde o vendedor entrar em contato ou combine a entrega.
                  </p>
                </div>
              ) : (
                <div>
-                 <div className="flex items-center justify-center gap-2 text-blue-600 mb-2">
-                   <Users className="w-5 h-5" />
-                   <span className="font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
+                 <div className="flex items-center justify-center gap-2 text-blue-600 mb-1">
+                   <Users className="w-4 h-4" />
+                   <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
                  </div>
-                 <p className="text-sm text-gray-600">
+                 <p className="text-xs text-gray-600">
                    {filaInfo?.total_fila && filaInfo.total_fila > 1 
                      ? `Há ${filaInfo.total_fila - (filaInfo.posicao_usuario || 0)} pessoas na sua frente.`
                      : 'Você será notificado se o item ficar disponível.'
@@ -506,7 +506,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
              state={actionState}
              successMessage={itemIsReservado ? "Adicionado à fila!" : "Item reservado!"}
              errorMessage={itemIsReservado ? "Erro ao entrar na fila" : "Erro ao reservar"}
-             className="mt-3"
+             className="mt-2"
            />
          )}
        </div>
