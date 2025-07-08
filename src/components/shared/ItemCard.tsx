@@ -1,15 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem, 
-  CarouselNext, 
-  CarouselPrevious 
-} from '@/components/ui/carousel';
 import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
@@ -101,7 +93,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
  showAuthor = true,
  compact = false
 }) => {
- const navigate = useNavigate();
  const [showDetails, setShowDetails] = useState(false);
  
  // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
@@ -127,9 +118,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
  const canShowWhatsApp = item.publicado_por_profile?.whatsapp && 
    hasActiveReservation && 
    item.publicado_por !== currentUserId;
-
- // ✅ NOVA VERIFICAÇÃO: se tem múltiplas fotos
- const hasMultiplePhotos = item.fotos && item.fotos.length > 1;
 
  // ✅ CALCULAR VALORES COM TAXA
  const calcularValores = () => {
@@ -174,11 +162,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    }
  };
 
- // ✅ NOVA FUNÇÃO: Navegação para perfil público
  const handleProfileClick = (e: React.MouseEvent) => {
    e.stopPropagation();
-   if (item.publicado_por_profile) {
-     navigate(`/perfil/${item.publicado_por}`);
+   if (item.publicado_por_profile?.nome) {
+     const username = item.publicado_por_profile.nome.toLowerCase().replace(/\s+/g, '-');
+     window.location.href = `/perfil/${username}`;
    }
  };
 
@@ -276,46 +264,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      )}
 
      <CardContent className="p-0" onClick={handleClick}>
-       {/* ✅ IMAGEM COM CARROUSEL OU SIMPLES */}
+       {/* Imagem do item com badges nos cantos */}
        <div className="relative aspect-[4/3]">
-         {hasMultiplePhotos ? (
-           <Carousel className="w-full h-full">
-             <CarouselContent>
-               {item.fotos!.map((foto, index) => (
-                 <CarouselItem key={index}>
-                   <LazyImage
-                     src={foto}
-                     alt={`${item.titulo} - Foto ${index + 1}`}
-                     className={cn(
-                       "w-full h-full object-cover",
-                       itemIsReservado && "filter grayscale-[20%]"
-                     )}
-                   />
-                 </CarouselItem>
-               ))}
-             </CarouselContent>
-             
-             {/* Controles do carrousel - só aparecem no hover */}
-             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-               <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white" />
-               <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white" />
-             </div>
-
-             {/* Indicador de múltiplas fotos */}
-             <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-               {item.fotos!.length} fotos
-             </div>
-           </Carousel>
-         ) : (
-           <LazyImage
-             src={item.fotos?.[0] || '/placeholder-item.jpg'}
-             alt={item.titulo}
-             className={cn(
-               "w-full h-full object-cover",
-               itemIsReservado && "filter grayscale-[20%]"
-             )}
-           />
-         )}
+         <LazyImage
+           src={item.fotos?.[0] || '/placeholder-item.jpg'}
+           alt={item.titulo}
+           className={cn(
+             "w-full h-full object-cover",
+             itemIsReservado && "filter grayscale-[20%]"
+           )}
+         />
          
          {/* Distância no canto esquerdo inferior */}
          {item.logistica?.distancia_km !== null && item.logistica?.distancia_km !== undefined && (
@@ -486,31 +444,18 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            )}
          </div>
 
-         {/* ✅ PERFIL DO AUTOR MELHORADO - COM NAVEGAÇÃO */}
+         {/* Perfil do autor - COM LINK */}
          {showAuthor && item.publicado_por_profile && (
            <button
              onClick={handleProfileClick}
              className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors"
            >
-             <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
-               {item.publicado_por_profile.avatar_url ? (
-                 <img 
-                   src={item.publicado_por_profile.avatar_url} 
-                   alt={item.publicado_por_profile.nome}
-                   className="w-full h-full object-cover"
-                 />
-               ) : (
-                 <User className="w-3 h-3 text-white" />
-               )}
+             <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
+               <User className="w-3 h-3 text-white" />
              </div>
-             <div className="flex-1 text-left">
-               <span className="text-xs text-gray-600 truncate block">
-                 {item.publicado_por_profile.nome}
-               </span>
-               <span className="text-xs text-blue-600 hover:text-blue-700 font-medium">
-                 Ver perfil →
-               </span>
-             </div>
+             <span className="text-xs text-gray-600 truncate flex-1">
+               {item.publicado_por_profile.nome}
+             </span>
              {item.publicado_por_profile.reputacao && (
                <div className="flex items-center gap-1">
                  <span className="text-xs text-yellow-600">
