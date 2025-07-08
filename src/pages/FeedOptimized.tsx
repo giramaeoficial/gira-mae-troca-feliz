@@ -669,7 +669,6 @@ const FeedOptimized = () => {
           <>
             <div className="mb-4 text-sm text-gray-600 flex items-center justify-between">
               <span>
-                {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item encontrado' : 'itens encontrados'}
                 {locationForSearch && locationForSearch.cidade && ` em ${locationForSearch.cidade}`}
                 {getLogisticaFilterText()}
               </span>
