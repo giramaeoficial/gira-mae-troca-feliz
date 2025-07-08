@@ -121,12 +121,14 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="telefone">Telefone</Label>
+              <Label htmlFor="telefone">Whatsapp</Label>
               <Input
                 id="telefone"
                 value={formData.telefone}
+                disabled={true}
                 onChange={(e) => onInputChange('telefone', e.target.value)}
                 placeholder="(11) 99999-9999"
+                className="bg-gray-50"
               />
             </div>
 
