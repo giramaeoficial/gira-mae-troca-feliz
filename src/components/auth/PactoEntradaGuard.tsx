@@ -90,7 +90,7 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
     enabled: !!user?.id,
     refetchOnWindowFocus: true, // ✅ FORÇAR atualização ao focar na janela
     staleTime: 0, // ✅ REMOVER cache para debug
-    cacheTime: 0, // ✅ FORÇAR nova consulta sempre
+    gcTime: 0, // ✅ FORÇAR nova consulta sempre
     refetchOnMount: true // ✅ SEMPRE buscar ao montar componente
   });
 
