@@ -49,7 +49,7 @@ function App() {
          <Route path="/auth-callback" element={<AuthCallback />} />
          <Route path="/login" element={<Navigate to="/auth" replace />} />
          <Route path="/cadastro" element={<Cadastro />} />
-         <Route path="/perfil/:username" element={<PerfilPublicoMae />} />
+         <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
 
          {/* ========================================== */}
          {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
