@@ -18,7 +18,6 @@ import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 
 type Profile = Tables<'profiles'>;
-type Item = Tables<'itens'>;
 
 const PerfilPublicoMae = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,7 +26,6 @@ const PerfilPublicoMae = () => {
   const { toast } = useToast();
   
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [itens, setItens] = useState<Item[]>([]);
   const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +64,14 @@ const PerfilPublicoMae = () => {
     };
   }, [paginasFeed]);
 
+  // ✅ FILTRAR ITENS DO PERFIL ESPECÍFICO DOS DADOS CONSOLIDADOS
+  const itensDoProfile = useMemo(() => {
+    if (!paginasFeed?.pages || !id) return [];
+    
+    const todosItens = paginasFeed.pages.flatMap(page => page?.itens || []);
+    return todosItens.filter(item => item.publicado_por === id);
+  }, [paginasFeed, id]);
+
   useEffect(() => {
     const carregarDados = async () => {
       if (!id) {
@@ -97,27 +103,8 @@ const PerfilPublicoMae = () => {
         console.log('Perfil encontrado:', profileData);
         setProfile(profileData);
         
-        // ✅ Buscar itens com dados completos (igual ao feed)
-        const { data: itensData, error: itensError } = await supabase
-          .from('itens')
-          .select(`
-            *,
-            publicado_por_profile:profiles!itens_publicado_por_fkey(
-              nome,
-              avatar_url,
-              reputacao,
-              telefone
-            )
-          `)
-          .eq('publicado_por', profileData.id)
-          .in('status', ['disponivel', 'reservado'])
-          .order('created_at', { ascending: false });
-
-        if (itensError) {
-          console.error('Erro ao buscar itens:', itensError);
-        } else {
-          setItens(itensData || []);
-        }
+        // ✅ Não precisamos mais buscar itens separadamente - vem do useFeedInfinito
+        // Os itens são filtrados no useMemo itensDoProfile
         
         // Buscar estatísticas de seguidores (simulado por enquanto)
         setEstatisticas({ total_seguindo: 0, total_seguidores: 0 });
@@ -399,7 +386,7 @@ const PerfilPublicoMae = () => {
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-gray-600">
                       <Package className="w-4 h-4" />
-                      <span className="font-bold">{itens.length}</span>
+                      <span className="font-bold">{itensDoProfile.length}</span>
                     </div>
                     <p className="text-xs text-gray-500">Itens ativos</p>
                   </div>
@@ -414,7 +401,7 @@ const PerfilPublicoMae = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  Itens disponíveis ({itens.length})
+                  Itens disponíveis ({itensDoProfile.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -424,7 +411,7 @@ const PerfilPublicoMae = () => {
                       <ItemCardSkeleton key={i} />
                     ))}
                   </div>
-                ) : itens.length === 0 ? (
+                ) : itensDoProfile.length === 0 ? (
                   <EmptyState
                     type="search"
                     title="Nenhum item disponível"
@@ -432,7 +419,7 @@ const PerfilPublicoMae = () => {
                   />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {itens.map((item) => (
+                    {itensDoProfile.map((item) => (
                       <ItemCard
                         key={item.id}
                         item={item}
