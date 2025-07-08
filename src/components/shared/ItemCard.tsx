@@ -128,7 +128,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    hasActiveReservation && 
    item.publicado_por !== currentUserId;
 
- // ✅ VERIFICAR SE TEM MÚLTIPLAS FOTOS
+ // ✅ NOVA VERIFICAÇÃO: se tem múltiplas fotos
  const hasMultiplePhotos = item.fotos && item.fotos.length > 1;
 
  // ✅ CALCULAR VALORES COM TAXA
@@ -155,9 +155,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
  // Event handlers
  const handleClick = () => {
-   if (onItemClick) {
-     onItemClick(item.id);
-   }
+   // Removido - não navega mais para página separada
  };
 
  const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -176,7 +174,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    }
  };
 
- // ✅ NAVEGAÇÃO PARA PERFIL PÚBLICO
+ // ✅ NOVA FUNÇÃO: Navegação para perfil público
  const handleProfileClick = (e: React.MouseEvent) => {
    e.stopPropagation();
    if (item.publicado_por_profile) {
@@ -278,23 +276,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      )}
 
      <CardContent className="p-0" onClick={handleClick}>
-       {/* ✅ CARROUSEL DE IMAGENS OU IMAGEM ÚNICA */}
-       <div className="relative aspect-[4/3] bg-gray-100">
+       {/* ✅ IMAGEM COM CARROUSEL OU SIMPLES */}
+       <div className="relative aspect-[4/3]">
          {hasMultiplePhotos ? (
            <Carousel className="w-full h-full">
              <CarouselContent>
                {item.fotos!.map((foto, index) => (
                  <CarouselItem key={index}>
-                   <div className="relative w-full h-full">
-                     <LazyImage
-                       src={foto}
-                       alt={`${item.titulo} - Foto ${index + 1}`}
-                       className={cn(
-                         "w-full h-full object-cover",
-                         itemIsReservado && "filter grayscale-[20%]"
-                       )}
-                     />
-                   </div>
+                   <LazyImage
+                     src={foto}
+                     alt={`${item.titulo} - Foto ${index + 1}`}
+                     className={cn(
+                       "w-full h-full object-cover",
+                       itemIsReservado && "filter grayscale-[20%]"
+                     )}
+                   />
                  </CarouselItem>
                ))}
              </CarouselContent>
@@ -311,7 +307,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
              </div>
            </Carousel>
          ) : (
-           // Imagem única (fallback)
            <LazyImage
              src={item.fotos?.[0] || '/placeholder-item.jpg'}
              alt={item.titulo}
@@ -495,9 +490,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
          {showAuthor && item.publicado_por_profile && (
            <button
              onClick={handleProfileClick}
-             className="flex items-center gap-3 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-2 rounded transition-colors group/profile"
+             className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors"
            >
-             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+             <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
                {item.publicado_por_profile.avatar_url ? (
                  <img 
                    src={item.publicado_por_profile.avatar_url} 
@@ -505,16 +500,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                    className="w-full h-full object-cover"
                  />
                ) : (
-                 <User className="w-4 h-4 text-white" />
+                 <User className="w-3 h-3 text-white" />
                )}
              </div>
-             <div className="flex-1 min-w-0">
-               <p className="text-sm text-gray-800 truncate font-medium">
+             <div className="flex-1 text-left">
+               <span className="text-xs text-gray-600 truncate block">
                  {item.publicado_por_profile.nome}
-               </p>
-               <p className="text-xs text-blue-600 group-hover/profile:text-blue-700 font-medium">
+               </span>
+               <span className="text-xs text-blue-600 hover:text-blue-700 font-medium">
                  Ver perfil →
-               </p>
+               </span>
              </div>
              {item.publicado_por_profile.reputacao && (
                <div className="flex items-center gap-1">
