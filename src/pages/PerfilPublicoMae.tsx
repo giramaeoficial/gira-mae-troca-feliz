@@ -42,7 +42,7 @@ const PerfilPublicoMae = () => {
     precoMin: 0,
     precoMax: 200,
     mostrarReservados: true,
-    modalidadeLogistica: 'todas'
+    modalidadeLogistica: 'todas' as 'todas' | 'entrega' | 'busca'
   }), []);
 
   const {
@@ -360,8 +360,8 @@ const PerfilPublicoMae = () => {
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span className="text-sm">
-                    {profile?.endereco_cidade 
-                      ? `${profile.endereco_cidade}, ${profile.endereco_estado}`
+                    {profile?.cidade 
+                      ? `${profile.cidade}, ${profile.estado}`
                       : 'Localização não informada'
                     }
                   </span>

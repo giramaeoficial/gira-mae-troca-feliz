@@ -9,7 +9,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
-import Cadastro from '@/pages/Cadastro';
 import AuthCallback from '@/pages/AuthCallback';
 import AuthGuard from '@/components/auth/AuthGuard';
 import FeedOptimized from '@/pages/FeedOptimized';
@@ -30,6 +29,7 @@ import Configuracoes from '@/pages/Configuracoes';
 import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
 import PublicarPrimeiroItem from '@/pages/PublicarPrimeiroItem';
 import PactoEntradaGuard from '@/components/auth/PactoEntradaGuard';
+import { CadastroCompletoGuard } from '@/components/auth/CadastroCompletoGuard';
 import { RecompensasProvider } from '@/components/recompensas/ProviderRecompensas';
 
 const queryClient = new QueryClient();
@@ -46,10 +46,9 @@ function App() {
          {/* ================================ */}
          <Route path="/" element={<Index />} />
          <Route path="/auth" element={<Auth />} />
-         <Route path="/auth-callback" element={<AuthCallback />} />
-         <Route path="/login" element={<Navigate to="/auth" replace />} />
-         <Route path="/cadastro" element={<Cadastro />} />
-         <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
+          <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
 
          {/* ========================================== */}
          {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
@@ -74,16 +73,18 @@ function App() {
          {/* ================================================ */}
          {/* ROTAS PROTEGIDAS (AuthGuard + PactoEntradaGuard) */}
          {/* ================================================ */}
-         <Route 
-           path="/feed" 
-           element={
-             <AuthGuard>
-               <PactoEntradaGuard>
-                 <FeedOptimized />
-               </PactoEntradaGuard>
-             </AuthGuard>
-           } 
-         />
+          <Route 
+            path="/feed" 
+            element={
+              <AuthGuard>
+                <CadastroCompletoGuard>
+                  <PactoEntradaGuard>
+                    <FeedOptimized />
+                  </PactoEntradaGuard>
+                </CadastroCompletoGuard>
+              </AuthGuard>
+            } 
+          />
          <Route 
            path="/buscar-itens" 
            element={
@@ -104,36 +105,42 @@ function App() {
              </AuthGuard>
            } 
          />
-         <Route 
-           path="/perfil" 
-           element={
-             <AuthGuard>
-               <PactoEntradaGuard>
-                 <Perfil />
-               </PactoEntradaGuard>
-             </AuthGuard>
-           } 
-         />
-         <Route 
-           path="/perfil/editar" 
-           element={
-             <AuthGuard>
-               <PactoEntradaGuard>
-                 <EditarPerfil />
-               </PactoEntradaGuard>
-             </AuthGuard>
-           } 
-         />
-         <Route 
-           path="/carteira" 
-           element={
-             <AuthGuard>
-               <PactoEntradaGuard>
-                 <Carteira />
-               </PactoEntradaGuard>
-             </AuthGuard>
-           } 
-         />
+          <Route 
+            path="/perfil" 
+            element={
+              <AuthGuard>
+                <CadastroCompletoGuard>
+                  <PactoEntradaGuard>
+                    <Perfil />
+                  </PactoEntradaGuard>
+                </CadastroCompletoGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/perfil/editar" 
+            element={
+              <AuthGuard>
+                <CadastroCompletoGuard>
+                  <PactoEntradaGuard>
+                    <EditarPerfil />
+                  </PactoEntradaGuard>
+                </CadastroCompletoGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/carteira" 
+            element={
+              <AuthGuard>
+                <CadastroCompletoGuard>
+                  <PactoEntradaGuard>
+                    <Carteira />
+                  </PactoEntradaGuard>
+                </CadastroCompletoGuard>
+              </AuthGuard>
+            } 
+          />
          <Route 
            path="/comprar-girinhas" 
            element={

@@ -79,11 +79,12 @@ interface ItemCardProps {
  onItemClick?: (itemId: string) => void;
  actionState?: 'loading' | 'success' | 'error' | 'idle';
  
- // Display options
- showActions?: boolean;
- showLocation?: boolean;
- showAuthor?: boolean;
- compact?: boolean;
+  // Display options
+  showActions?: boolean;
+  showLocation?: boolean;
+  showAuthor?: boolean;
+  compact?: boolean;
+  isModal?: boolean;
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({ 

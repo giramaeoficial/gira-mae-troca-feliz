@@ -310,33 +310,6 @@ export type Database = {
           },
         ]
       }
-      cadastro_temp_data: {
-        Row: {
-          created_at: string | null
-          form_data: Json
-          id: string
-          step: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          form_data?: Json
-          id?: string
-          step: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          form_data?: Json
-          id?: string
-          step?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       carteiras: {
         Row: {
           created_at: string
@@ -2356,10 +2329,6 @@ export type Database = {
           insert_policy_exists: boolean
         }[]
       }
-      clear_cadastro_temp_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       coletar_recompensa_missao: {
         Args: { p_user_id: string; p_missao_id: string }
         Returns: Json
@@ -2445,17 +2414,9 @@ export type Database = {
         Args: { msg_ids: number[] }
         Returns: undefined
       }
-      get_cadastro_temp_data: {
-        Args: { p_step: string }
-        Returns: Json
-      }
       get_municipios_por_uf: {
         Args: { uf_param: string }
         Returns: string[]
-      }
-      get_step_data: {
-        Args: { p_step: string }
-        Returns: Json
       }
       get_user_form_data: {
         Args: Record<PropertyKey, never>
@@ -2713,14 +2674,6 @@ export type Database = {
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
-      }
-      save_cadastro_temp_data: {
-        Args: { p_step: string; p_form_data: Json }
-        Returns: undefined
-      }
-      save_step_data: {
-        Args: { p_step: string; p_data: Json }
-        Returns: undefined
       }
       save_user_phone: {
         Args: { p_telefone: string }
