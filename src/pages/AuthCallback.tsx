@@ -1,3 +1,4 @@
+// src/pages/AuthCallback.tsx - VERSÃO CORRIGIDA SEM LOOP
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -49,12 +50,12 @@ const AuthCallback: React.FC = () => {
           
           if (error.code === 'PGRST116') {
             // Perfil não encontrado - usuário novo
-            console.log('👤 AuthCallback: Perfil não encontrado, usuário novo - indo para cadastro');
+            console.log('👤 AuthCallback: Perfil não encontrado, usuário novo - indo para feed (CadastroCompletoGuard interceptará)');
             toast({
               title: "Bem-vindo!",
               description: "Vamos completar seu cadastro.",
             });
-            navigate('/cadastro', { replace: true });
+            navigate('/feed', { replace: true });
             return;
           }
           
@@ -63,22 +64,23 @@ const AuthCallback: React.FC = () => {
 
         console.log('📊 AuthCallback: Dados do perfil encontrados:', profile);
 
-        // Determinar destino baseado no status do cadastro
+        // SEMPRE vai para /feed - o CadastroCompletoGuard interceptará se necessário
         if (profile.cadastro_status === 'completo') {
           console.log('✅ AuthCallback: Cadastro completo, indo para feed');
           toast({
             title: "Login realizado!",
             description: "Bem-vinda de volta à GiraMãe!",
           });
-          navigate('/feed', { replace: true });
         } else {
-          console.log('🔄 AuthCallback: Cadastro incompleto, indo para cadastro');
+          console.log('🔄 AuthCallback: Cadastro incompleto, indo para feed (CadastroCompletoGuard interceptará)');
           toast({
             title: "Continuando cadastro...",
             description: "Vamos finalizar seu cadastro.",
           });
-          navigate('/cadastro', { replace: true });
         }
+
+        // Sempre navegar para /feed - o CadastroCompletoGuard cuida do resto
+        navigate('/feed', { replace: true });
 
       } catch (error) {
         console.error('❌ AuthCallback: Erro no processamento:', error);
