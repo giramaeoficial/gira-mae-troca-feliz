@@ -1,4 +1,4 @@
-// src/App.tsx - VERSÃO AJUSTADA com proteção total do PactoEntradaGuard
+// src/App.tsx - VERSÃO CORRIGIDA com rota /cadastro
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -46,9 +46,10 @@ function App() {
          {/* ================================ */}
          <Route path="/" element={<Index />} />
          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth-callback" element={<AuthCallback />} />
-          <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
+         <Route path="/cadastro" element={<Navigate to="/auth" replace />} />
+         <Route path="/auth-callback" element={<AuthCallback />} />
+         <Route path="/login" element={<Navigate to="/auth" replace />} />
+         <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
 
          {/* ========================================== */}
          {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
