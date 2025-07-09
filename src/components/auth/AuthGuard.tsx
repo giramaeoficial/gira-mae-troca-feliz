@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
 interface AuthGuardProps {
@@ -26,43 +25,11 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         return;
       }
 
-      // Se está na página de cadastro, permitir acesso
-      if (location.pathname === '/cadastro') {
-        setChecking(false);
-        return;
-      }
-
-      try {
-        // Verificar status do cadastro
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('cadastro_status')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          if (error.code === 'PGRST116') {
-            // Perfil não encontrado - usuário novo
-            navigate('/cadastro', { replace: true });
-            return;
-          }
-          
-          throw error;
-        }
-
-        // Se cadastro não está completo, redirecionar para cadastro
-        if (data.cadastro_status !== 'completo') {
-          navigate('/cadastro', { replace: true });
-          return;
-        }
-
-        // Cadastro completo, permitir acesso
-        setChecking(false);
-        
-      } catch (error) {
-        console.error('AuthGuard - Erro ao verificar status do usuário:', error);
-        navigate('/auth', { replace: true });
-      }
+      // ✅ CORREÇÃO: Não verificar cadastro_status aqui
+      // O CadastroCompletoGuard cuida disso via modal
+      // AuthGuard só verifica se está logado
+      
+      setChecking(false);
     };
 
     checkUserStatus();
