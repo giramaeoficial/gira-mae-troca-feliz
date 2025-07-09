@@ -1,32 +1,18 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import SimpleAddressForm from '@/components/address/SimpleAddressForm';
 import { useUserAddress } from '@/hooks/useUserAddress';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
-
-// Wrapper component to add onComplete functionality to SimpleAddressForm
-const AddressFormWithCallback: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const { userAddress, isUpdating } = useUserAddress();
-  const [wasUpdating, setWasUpdating] = React.useState(false);
-
-  useEffect(() => {
-    if (wasUpdating && !isUpdating && userAddress) {
-      // Address was just saved successfully
-      onComplete();
-    }
-    setWasUpdating(isUpdating);
-  }, [isUpdating, userAddress, onComplete, wasUpdating]);
-
-  return <SimpleAddressForm />;
-};
+import { Button } from '@/components/ui/button';
 
 const EnderecoOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const { profile, loading, updating, updateStatus, navigateToNext, navigateBack } = useOnboarding();
+  const { userAddress, isLoading: addressLoading } = useUserAddress();
 
-  if (loading) {
+  if (loading || addressLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
         <LoadingSpinner className="w-8 h-8 text-primary" />
@@ -34,7 +20,7 @@ const EnderecoOnboarding: React.FC = () => {
     );
   }
 
-  const handleAddressComplete = async () => {
+  const handleContinue = async () => {
     const success = await updateStatus('itens');
     if (success) {
       navigateToNext('itens');
@@ -55,6 +41,13 @@ const EnderecoOnboarding: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <div className="max-w-md mx-auto px-4 py-6">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="text-4xl font-bold text-primary mb-2">
+            GiraMãe
+          </div>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
@@ -82,8 +75,28 @@ const EnderecoOnboarding: React.FC = () => {
 
         {/* Address Form Component */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <AddressFormWithCallback onComplete={handleAddressComplete} />
+          <SimpleAddressForm />
         </div>
+
+        {/* Continue Button - only show when address is saved */}
+        {userAddress && (
+          <div className="mt-6">
+            <Button
+              onClick={handleContinue}
+              disabled={updating}
+              className="w-full py-3 text-lg font-semibold"
+            >
+              {updating ? (
+                <>
+                  <LoadingSpinner className="w-5 h-5 mr-2" />
+                  Salvando progresso...
+                </>
+              ) : (
+                'Continuar para próxima etapa'
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Loading overlay */}
         {updating && (
