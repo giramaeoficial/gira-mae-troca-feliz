@@ -1424,6 +1424,8 @@ export type Database = {
           nome: string | null
           numero: string | null
           numero_whatsapp: string | null
+          politica_aceita: boolean | null
+          politica_aceita_em: string | null
           ponto_referencia: string | null
           ponto_retirada_preferido: string | null
           profissao: string | null
@@ -1433,6 +1435,8 @@ export type Database = {
           sobrenome: string | null
           telefone: string | null
           telefone_verificado: boolean | null
+          termos_aceitos: boolean | null
+          termos_aceitos_em: string | null
           ultima_atividade: string | null
           ultimo_calculo_cotacao: string | null
           updated_at: string | null
@@ -1465,6 +1469,8 @@ export type Database = {
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
+          politica_aceita?: boolean | null
+          politica_aceita_em?: string | null
           ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null
@@ -1474,6 +1480,8 @@ export type Database = {
           sobrenome?: string | null
           telefone?: string | null
           telefone_verificado?: boolean | null
+          termos_aceitos?: boolean | null
+          termos_aceitos_em?: string | null
           ultima_atividade?: string | null
           ultimo_calculo_cotacao?: string | null
           updated_at?: string | null
@@ -1506,6 +1514,8 @@ export type Database = {
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
+          politica_aceita?: boolean | null
+          politica_aceita_em?: string | null
           ponto_referencia?: string | null
           ponto_retirada_preferido?: string | null
           profissao?: string | null
@@ -1515,6 +1525,8 @@ export type Database = {
           sobrenome?: string | null
           telefone?: string | null
           telefone_verificado?: boolean | null
+          termos_aceitos?: boolean | null
+          termos_aceitos_em?: string | null
           ultima_atividade?: string | null
           ultimo_calculo_cotacao?: string | null
           updated_at?: string | null

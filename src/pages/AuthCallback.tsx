@@ -79,8 +79,8 @@ const AuthCallback: React.FC = () => {
           });
         }
 
-        // Sempre navegar para /feed - o CadastroCompletoGuard cuida do resto
-        navigate('/feed', { replace: true });
+        // Sempre navegar para /onboarding/whatsapp - o OnboardingGuard cuida do redirecionamento
+        navigate('/onboarding/whatsapp', { replace: true });
 
       } catch (error) {
         console.error('❌ AuthCallback: Erro no processamento:', error);

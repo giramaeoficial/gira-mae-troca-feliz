@@ -29,8 +29,14 @@ import Configuracoes from '@/pages/Configuracoes';
 import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
 import PublicarPrimeiroItem from '@/pages/PublicarPrimeiroItem';
 import PactoEntradaGuard from '@/components/auth/PactoEntradaGuard';
+import OnboardingGuard from '@/components/auth/OnboardingGuard';
 import { CadastroCompletoGuard } from '@/components/auth/CadastroCompletoGuard';
 import { RecompensasProvider } from '@/components/recompensas/ProviderRecompensas';
+import WhatsAppOnboarding from '@/pages/onboarding/WhatsAppOnboarding';
+import CodigoOnboarding from '@/pages/onboarding/CodigoOnboarding';
+import TermosOnboarding from '@/pages/onboarding/TermosOnboarding';
+import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
+import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 
 const queryClient = new QueryClient();
 
@@ -45,47 +51,56 @@ function App() {
          {/* ROTAS PÚBLICAS (sem AuthGuard)   */}
          {/* ================================ */}
          <Route path="/" element={<Index />} />
-         <Route path="/auth" element={<Auth />} />
-         <Route path="/cadastro" element={<Navigate to="/auth" replace />} />
-         <Route path="/auth-callback" element={<AuthCallback />} />
-         <Route path="/login" element={<Navigate to="/auth" replace />} />
-         <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/cadastro" element={<Navigate to="/auth" replace />} />
+          <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
+          
+          {/* Onboarding Routes */}
+          <Route path="/onboarding/whatsapp" element={<WhatsAppOnboarding />} />
+          <Route path="/onboarding/codigo" element={<CodigoOnboarding />} />
+          <Route path="/onboarding/termos" element={<TermosOnboarding />} />
+          <Route path="/onboarding/endereco" element={<EnderecoOnboarding />} />
+          <Route path="/aguardando-liberacao" element={<AguardandoLiberacao />} />
 
          {/* ========================================== */}
          {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
          {/* ========================================== */}
-         <Route 
-           path="/conceito-comunidade" 
-           element={
-             <AuthGuard>
-               <ConceptoComunidadeOnboarding />
-             </AuthGuard>
-           } 
-         />
-         <Route 
-           path="/publicar-primeiro-item" 
-           element={
-             <AuthGuard>
-               <PublicarPrimeiroItem />
-             </AuthGuard>
-           } 
-         />
+          <Route 
+            path="/conceito-comunidade" 
+            element={
+              <AuthGuard>
+                <ConceptoComunidadeOnboarding />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/publicar-primeiro-item" 
+            element={
+              <AuthGuard>
+                <PublicarPrimeiroItem />
+              </AuthGuard>
+            } 
+          />
 
          {/* ================================================ */}
          {/* ROTAS PROTEGIDAS (AuthGuard + PactoEntradaGuard) */}
          {/* ================================================ */}
-          <Route 
-            path="/feed" 
-            element={
-              <AuthGuard>
-                <CadastroCompletoGuard>
-                  <PactoEntradaGuard>
-                    <FeedOptimized />
-                  </PactoEntradaGuard>
-                </CadastroCompletoGuard>
-              </AuthGuard>
-            } 
-          />
+           <Route 
+             path="/feed" 
+             element={
+               <AuthGuard>
+                 <OnboardingGuard>
+                   <CadastroCompletoGuard>
+                     <PactoEntradaGuard>
+                       <FeedOptimized />
+                     </PactoEntradaGuard>
+                   </CadastroCompletoGuard>
+                 </OnboardingGuard>
+               </AuthGuard>
+             } 
+           />
          <Route 
            path="/buscar-itens" 
            element={
