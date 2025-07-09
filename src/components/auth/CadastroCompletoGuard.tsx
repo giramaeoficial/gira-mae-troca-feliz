@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,9 @@ export const CadastroCompletoGuard: React.FC<CadastroCompletoGuardProps> = ({ ch
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<'basico' | 'endereco'>('basico');
   
+  // ✅ CORREÇÃO: Usar useRef para evitar múltiplas verificações
+  const hasCheckedStatus = useRef(false);
+  
   const [formData, setFormData] = useState<PersonalData>({
     nome: '',
     bio: '',
@@ -46,13 +49,15 @@ export const CadastroCompletoGuard: React.FC<CadastroCompletoGuardProps> = ({ ch
     interesses: []
   });
 
-  // Verificar se cadastro está completo
+  // ✅ CORREÇÃO: Verificar apenas uma vez e evitar loop
   useEffect(() => {
     const checkCadastroStatus = async () => {
-      if (!user) {
+      if (!user || hasCheckedStatus.current) {
         setLoading(false);
         return;
       }
+
+      hasCheckedStatus.current = true;
 
       try {
         const { data: profile, error } = await supabase
