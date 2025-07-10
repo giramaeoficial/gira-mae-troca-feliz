@@ -429,6 +429,59 @@ export type Database = {
           },
         ]
       }
+      cidades_config: {
+        Row: {
+          cidade: string
+          created_at: string
+          estado: string
+          id: string
+          itens_publicados: number
+          liberada: boolean
+          liberada_em: string | null
+          liberada_por: string | null
+          notas_admin: string | null
+          updated_at: string
+          usuarios_aguardando: number
+          usuarios_liberados: number
+        }
+        Insert: {
+          cidade: string
+          created_at?: string
+          estado: string
+          id?: string
+          itens_publicados?: number
+          liberada?: boolean
+          liberada_em?: string | null
+          liberada_por?: string | null
+          notas_admin?: string | null
+          updated_at?: string
+          usuarios_aguardando?: number
+          usuarios_liberados?: number
+        }
+        Update: {
+          cidade?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          itens_publicados?: number
+          liberada?: boolean
+          liberada_em?: string | null
+          liberada_por?: string | null
+          notas_admin?: string | null
+          updated_at?: string
+          usuarios_aguardando?: number
+          usuarios_liberados?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cidades_config_liberada_por_fkey"
+            columns: ["liberada_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compras_girinhas: {
         Row: {
           created_at: string
@@ -2250,6 +2303,10 @@ export type Database = {
       }
     }
     Functions: {
+      atualizar_contadores_cidade: {
+        Args: { p_cidade: string; p_estado: string }
+        Returns: undefined
+      }
       atualizar_reputacao: {
         Args: { p_usuario_id: string; p_nova_nota: number }
         Returns: undefined
@@ -2445,6 +2502,15 @@ export type Database = {
       is_trigger_context: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      liberar_cidade_manual: {
+        Args: {
+          p_cidade: string
+          p_estado: string
+          p_admin_id: string
+          p_notas?: string
+        }
+        Returns: Json
       }
       log_debug: {
         Args: {
