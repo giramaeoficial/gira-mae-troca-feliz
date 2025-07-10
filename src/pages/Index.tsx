@@ -14,6 +14,76 @@ import {
   Zap,
   DollarSign,
   ChevronDown,
+  Trophy,
+  Target,
+  Gift
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import Header from "@/components/shared/Header";
+import QuickNav from "@/components/shared/QuickNav";
+import { useAuth } from "@/hooks/useAuth";
+import { useConfigSistema } from "@/hooks/useConfigSistema";
+import { useMissoes } from "@/hooks/useMissoes";
+import { useConfigCategorias } from "@/hooks/useConfigCategorias";
+
+const LandingPageOptimized = () => {
+  const [openFaq, setOpenFaq] = useState(null);
+  const { user } = useAuth();
+  const { taxaTransacao } = useConfigSistema();
+  const { missoes } = useMissoes();
+  const { configuracoes } = useConfigCategorias();
+
+  // Calcular valores dinâmicos das missões
+  const totalGirinhasMissoes = missoes?.reduce((total, missao) => total + missao.recompensa_girinhas, 0) || 0;
+  const missaoPactoEntrada = missoes?.find(m => m.tipo_missao === 'basic' && m.categoria === 'pacto_entrada');
+  const recompensaPacto = missaoPactoEntrada?.recompensa_girinhas || 100;
+  const itensNecessarios = missaoPactoEntrada?.condicoes?.quantidade || 2;
+
+  // Categorizar missões por tipo
+  const missoesPorTipo = {
+    basic: missoes?.filter(m => m.tipo_missao === 'basic') || [],
+    engagement: missoes?.filter(m => m.tipo_missao === 'engagement') || [],
+    social: missoes?.filter(m => m.tipo_missao === 'social') || []
+  };
+
+  // Criar resumo de faixas de preços das categorias
+  const faixasPrecos = configuracoes?.map(cat => ({
+    nome: cat.nome,
+    minimo: cat.valor_minimo,
+    maximo: cat.valor_maximo,
+    icone: cat.icone
+  })) || [];
+
+  const problemsData = [
+    { platform: "Brechó físico", promise: "Compro tudo já!", reality: "Paga 20% do valor, escolhe só o que interessa", loss: "-80%", time: "1 ida + 1 volta" },
+    { platform: "Brechó online", promise: "Fotos bonitas", reality: "40% comissão + frete; peças ficam meses no estoque", loss: "-50%", time: "Semanas/meses" },
+    { platform: "Marketplaces", promise: "Alcance nacional", reality: "12%-18% taxa + anúncios; negociação infinita", loss: "-30%", time: "Semanas" },
+    { platform: "Grupos WhatsApp", promise: "É rapidinho", reality: "Lote obrigatório, fotos ruins, pessoa some", loss: "-25%", time: "Horas em chat" }
+  ];
+
+  const painPoints = [
+    "Desvalorização brutal – intermediários ficam com 40-80% do seu dinheiro",
+    "Filas e logística chata – ir ao correio, marcar retirada, pagar embalagem",
+    "Negociação exaustiva – faz por menos?, guarda pra mim?, troca?",
+    "Peças encalhadas – meses até vender (afinal, é dinheiro vivo)",
+    "Qualidade incerta – fotos escuras, descrições vagas, defeitos omitidos",
+    "Taxas e comissões escondidas – está barato? Olhe as letras miúdas",
+    "Falta de proteção – calote, não entrega, peça manchada e… acabimport React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Sparkles, 
+  Heart, 
+  Users, 
+  Recycle, 
+  Shield, 
+  ArrowRight, 
+  CheckCircle,
+  Star,
+  Zap,
+  DollarSign,
+  ChevronDown,
   Gift
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -44,7 +114,7 @@ const LandingPageOptimized = () => {
 
   const painPoints = [
     "Desvalorização brutal – intermediários ficam com 40-80% do seu dinheiro",
-    "Filas e logística chata – ir ao correio, marcar retirada, pagar embalagem",
+    "Filas e logística chata – ir ao correio, marcar retirada, pagar embalagem", 
     "Negociação exaustiva – faz por menos?, guarda pra mim?, troca?",
     "Peças encalhadas – meses até vender (afinal, é dinheiro vivo)",
     "Qualidade incerta – fotos escuras, descrições vagas, defeitos omitidos",
@@ -62,25 +132,44 @@ const LandingPageOptimized = () => {
       exclusive: true
     },
     { 
-      title: "Missões inteligentes", 
-      desc: "Alguma faixa/tipo esgotado? A plataforma lança missão-relâmpago que paga Girinhas bônus para quem publicar exatamente isso."
+      title: "Sistema de bloqueio inteligente", 
+      desc: "Ao reservar um item, suas Girinhas ficam bloqueadas até a confirmação da entrega. Se não rolar, o dinheiro volta automaticamente. Zero risco de calote!"
     },
     { 
-      title: "Reputação visível", 
-      desc: "Fotos reais, peça lavada e sem bolinha. Feedback ruim? Seu anúncio some. A comunidade se autorregula."
+      title: "Fila de espera automática", 
+      desc: "Item esgotado? Entre na fila! Quando alguém desistir ou um item similar aparecer, você é notificada na hora."
+    },
+    { 
+      title: "WhatsApp liberado só quando necessário", 
+      desc: "Após a reserva confirmada, o WhatsApp de ambas as partes é liberado para marcar entrega. Privacidade total até o momento certo!"
+    },
+    { 
+      title: "Bônus diário garantido", 
+      desc: "Todo dia você pode coletar Girinhas grátis! Acesse o app, colete seu bônus e mantenha sua carteira sempre ativa."
+    },
+    { 
+      title: "Transferências P2P", 
+      desc: `Envie Girinhas para outras mães com taxa baixíssima de ${useConfigSistema().taxaTransferencia || 1}%. Ideal para presentes ou ajudar uma amiga!`
+    },
+    { 
+      title: "Sistema de indicações premiado", 
+      desc: "Indique amigas e ganhe Girinhas a cada cadastro, primeira publicação e primeira troca. Todo mundo sai ganhando!"
+    },
+    { 
+      title: "Cards inteligentes no feed", 
+      desc: "Cada item mostra foto, preço, tamanho, distância e até se tem fila de espera. Informações completas de uma só vez!"
+    },
+    { 
+      title: "Gestão completa de reservas", 
+      desc: "Na tela 'Minhas Reservas' você acompanha tudo: itens que reservou, que vendeu, histórico completo e status em tempo real."
+    },
+    { 
+      title: "Cadastro de filhos e escolas", 
+      desc: "Cadastre seus filhos com idades e escola. O sistema destaca automaticamente itens do tamanho deles e facilita entregas entre mães da mesma escola!"
     },
     { 
       title: "Logística hiperlocal", 
-      desc: "Busca e entrega na vizinhança; sem correio, sem atrasos."
-    },
-    { 
-      title: "Zero desperdício de tempo", 
-      desc: "Posta em 2 min, Girinhas caem assim que a outra mãe confirma reserva. Usa os créditos na hora.",
-      exclusive: true
-    },
-    { 
-      title: "100% comunitário", 
-      desc: "Não existe loja tirando margem. Toda Girinha fica girando entre as mães – todo mundo ganha."
+      desc: "Busca e entrega na vizinhança; sem correio, sem atrasos. Conectamos mães da mesma região e escola!"
     }
   ];
 
@@ -93,21 +182,21 @@ const LandingPageOptimized = () => {
     },
     { 
       number: "02", 
-      title: "Receba Girinhas", 
-      desc: "Assim que outra mãe reservar suas peças, suas Girinhas caem na conta instantly.",
-      features: ["1 real = 1 Girinha", "Sem taxas ou comissões", "Crédito liberado na confirmação", "Sem prazo de espera"]
+      title: "Explore o feed inteligente", 
+      desc: "Navegue pelos cards com informações completas: fotos, preços, tamanhos, distância e disponibilidade.",
+      features: ["Cards com informações completas", "Filtros por tamanho dos seus filhos", "Distância da sua localização", "Status de fila de espera visível"]
     },
     { 
       number: "03", 
-      title: "Troque por outras peças", 
-      desc: "Use suas Girinhas para pegar qualquer peça disponível na plataforma.",
-      features: ["Catálogo sempre atualizado", "Busca por tamanho, tipo, marca", "Reserva instantânea", "Entrega na vizinhança"]
+      title: "Reserve com proteção total", 
+      desc: "Ao reservar, suas Girinhas ficam bloqueadas (não perdidas!). Se der problema, o dinheiro volta automaticamente.",
+      features: ["Girinhas bloqueadas, não perdidas", "WhatsApp liberado para contato", "Reembolso automático se necessário", "Fila de espera para itens esgotados"]
     },
     { 
       number: "04", 
-      title: "Receba em casa", 
-      desc: "Logística hiperlocal: outras mães da sua região fazem a entrega.",
-      features: ["Entrega por mães próximas", "Sem custo de frete", "Agende quando quiser", "Avalie a experiência"]
+      title: "Gerencie tudo em um lugar", 
+      desc: "Use 'Minhas Reservas' para acompanhar vendas, compras, histórico e coletar bônus diário.",
+      features: ["Acompanhe todas suas transações", "Colete bônus diário", "Transfira Girinhas para amigas", "Sistema de indicações premiado"]
     }
   ];
 
@@ -115,6 +204,18 @@ const LandingPageOptimized = () => {
     {
       q: `Por que vocês cobram ${taxaTransacao}% em Girinhas?`,
       a: `A taxa de ${taxaTransacao}% em Girinhas nos permite manter a plataforma funcionando, desenvolver novos recursos e garantir a qualidade do serviço. Comparado a outros intermediários que ficam com 40-80% do valor, nossa taxa é muito mais justa e transparente.`
+    },
+    {
+      q: "Como funciona o sistema de bloqueio de Girinhas?",
+      a: "Quando você reserva um item, o valor é bloqueado (não perdido!) na sua carteira. Apenas após a confirmação da entrega as Girinhas são transferidas para o vendedor. Se houver problema, o valor retorna automaticamente para você. É proteção total contra calotes!"
+    },
+    {
+      q: "O que acontece com meu WhatsApp na plataforma?",
+      a: "Seu WhatsApp só é revelado após uma reserva confirmada, exclusivamente para as partes envolvidas marcarem a entrega. Esta é a única forma de contato disponível na plataforma e é uma condição essencial para usar nossa comunidade. Sua privacidade está protegida até ser realmente necessário."
+    },
+    {
+      q: "Como funcionam os valores dos itens? Qualquer preço vale?",
+      a: `Não! Cada categoria tem faixas de valores pré-definidas para manter a economia justa: ${faixasPrecos.slice(0, 3).map(f => `${f.icone} ${f.nome}: ${f.minimo}-${f.maximo} Girinhas`).join(', ')}. Isso evita preços absurdos e orienta valores realistas.`
     },
     {
       q: "Como sei que vou receber uma peça de qualidade?",
@@ -126,7 +227,7 @@ const LandingPageOptimized = () => {
     },
     {
       q: "Como funciona a logística? Tenho que ir buscar longe?",
-      a: "Nossa logística é hiperlocal! As entregas são feitas por outras mães da sua região. Você agenda um horário conveniente e recebe em casa, sem custos de frete. É rápido, prático e você ainda conhece mães da sua vizinhança."
+      a: "Nossa logística é hiperlocal! As entregas são feitas por outras mães da sua região. Você agenda um horário conveniente e recebe em casa, sem custos de frete. É rápido, prático e você ainda conhece mães da sua vizinhança. Se cadastrar a escola do seu filho, priorizamos mães da mesma escola!"
     },
     {
       q: "Posso confiar no sistema de Girinhas?",
@@ -173,22 +274,79 @@ const LandingPageOptimized = () => {
             
             <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 mb-8 max-w-3xl mx-auto">
               <div className="flex items-center justify-center mb-4">
-                <Gift className="h-8 w-8 text-green-600 mr-3" />
-                <h3 className="text-xl font-bold text-green-700">Comece com {recompensaPacto} Girinhas!</h3>
+                <Trophy className="h-8 w-8 text-green-600 mr-3" />
+                <h3 className="text-xl font-bold text-green-700">Sistema de Missões Completo!</h3>
               </div>
-              <p className="text-green-700 text-lg">
+              <p className="text-green-700 text-lg mb-4">
                 Você já inicia podendo obter suas primeiras peças de roupas <strong>sem desembolsar 1 centavo!</strong> 
                 Apenas cumpra nossa única missão obrigatória: publique {itensNecessarios} itens (roupas, calçados, brinquedos ou outros) 
                 e ganhe {recompensaPacto} Girinhas instantaneamente.
               </p>
               
+              {/* Lista de Missões Disponíveis */}
+              <div className="grid md:grid-cols-3 gap-4 mt-6">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-5 w-5 text-blue-600" />
+                    <h4 className="font-semibold text-blue-700">Básicas</h4>
+                  </div>
+                  <p className="text-sm text-blue-600 mb-2">Missões essenciais para começar</p>
+                  {missoesPorTipo.basic.slice(0, 3).map(missao => (
+                    <div key={missao.id} className="flex justify-between text-xs text-blue-700 mb-1">
+                      <span className="truncate">{missao.titulo}</span>
+                      <span className="font-semibold">+{missao.recompensa_girinhas}G</span>
+                    </div>
+                  ))}
+                  {missoesPorTipo.basic.length > 3 && (
+                    <p className="text-xs text-blue-600">+{missoesPorTipo.basic.length - 3} mais...</p>
+                  )}
+                </div>
+
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Heart className="h-5 w-5 text-purple-600" />
+                    <h4 className="font-semibold text-purple-700">Engajamento</h4>
+                  </div>
+                  <p className="text-sm text-purple-600 mb-2">Use a plataforma e ganhe</p>
+                  {missoesPorTipo.engagement.slice(0, 3).map(missao => (
+                    <div key={missao.id} className="flex justify-between text-xs text-purple-700 mb-1">
+                      <span className="truncate">{missao.titulo}</span>
+                      <span className="font-semibold">+{missao.recompensa_girinhas}G</span>
+                    </div>
+                  ))}
+                  {missoesPorTipo.engagement.length > 3 && (
+                    <p className="text-xs text-purple-600">+{missoesPorTipo.engagement.length - 3} mais...</p>
+                  )}
+                </div>
+
+                <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="h-5 w-5 text-pink-600" />
+                    <h4 className="font-semibold text-pink-700">Sociais</h4>
+                  </div>
+                  <p className="text-sm text-pink-600 mb-2">Indique e interaja</p>
+                  {missoesPorTipo.social.slice(0, 3).map(missao => (
+                    <div key={missao.id} className="flex justify-between text-xs text-pink-700 mb-1">
+                      <span className="truncate">{missao.titulo}</span>
+                      <span className="font-semibold">+{missao.recompensa_girinhas}G</span>
+                    </div>
+                  ))}
+                  {missoesPorTipo.social.length > 3 && (
+                    <p className="text-xs text-pink-600">+{missoesPorTipo.social.length - 3} mais...</p>
+                  )}
+                </div>
+              </div>
+              
               {totalGirinhasMissoes > 0 && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-blue-700 font-semibold">
-                    🎯 Total disponível em missões: <span className="text-2xl">{totalGirinhasMissoes} Girinhas</span>
+                <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <p className="text-yellow-700 font-semibold text-center">
+                    🎯 Total disponível em missões: <span className="text-2xl text-yellow-800">{totalGirinhasMissoes} Girinhas</span>
                   </p>
-                  <p className="text-blue-600 text-sm mt-2">
-                    Complete todas as missões e tenha {totalGirinhasMissoes} Girinhas para trocar por itens na plataforma!
+                  <p className="text-yellow-600 text-sm mt-2 text-center">
+                    💰 Equivalente a aproximadamente <strong>R$ {totalGirinhasMissoes.toLocaleString('pt-BR')},00</strong> em poder de compra!
+                  </p>
+                  <p className="text-yellow-600 text-xs mt-1 text-center">
+                    Complete todas as missões e tenha esse valor para trocar por itens na plataforma!
                   </p>
                 </div>
               )}
