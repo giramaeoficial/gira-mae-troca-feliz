@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth';
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { 
   Sparkles, 
   Heart, 
@@ -13,114 +13,17 @@ import {
   Star,
   Zap,
   DollarSign,
-  ChevronDown,
-  Gift,
-  AlertCircle
+  ChevronDown
 } from "lucide-react";
 
-// --- Configuração do Firebase ---
-// Substitua pelas suas credenciais reais em produção.
-const firebaseConfig = {
-  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "your-sender-id",
-  appId: "1:your-app-id:web:your-web-app-id"
-};
-
-// Inicializa o Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
-// --- Hook de Autenticação Local ---
-// Este hook encapsula a lógica do Firebase, assim como o seu `useAuth` original.
-const useAuth = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const signInWithGoogle = useCallback(() => {
-    return signInWithPopup(auth, provider);
-  }, []);
-
-  return { user, loading, signInWithGoogle };
-};
-
-
-// --- Início dos Componentes de UI Locais ---
-// Mantidos para evitar erros de compilação.
-const Button = ({ children, className, ...props }) => (
-  <button 
-    className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background ${className}`} 
-    {...props}
-  >
-    {children}
-  </button>
-);
-const Card = ({ children, className, ...props }) => <div className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className}`} {...props}>{children}</div>;
-const CardHeader = ({ children, className, ...props }) => <div className={`flex flex-col space-y-1.5 p-6 ${className}`} {...props}>{children}</div>;
-const CardTitle = ({ children, className, ...props }) => <h3 className={`font-semibold leading-none tracking-tight ${className}`} {...props}>{children}</h3>;
-const CardDescription = ({ children, className, ...props }) => <p className={`text-sm text-muted-foreground ${className}`} {...props}>{children}</p>;
-const CardContent = ({ children, className, ...props }) => <div className={`p-6 pt-0 ${className}`} {...props}>{children}</div>;
-const Badge = ({ children, className, ...props }) => (
-  <div 
-    className={`inline-flex items-center border rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${className}`} 
-    {...props}
-  >
-    {children}
-  </div>
-);
-// --- Fim dos Componentes de UI Locais ---
-
-// Componente do ícone do Google
-const GoogleIcon = () => (
-  <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
-    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-  </svg>
-);
-
-
 const LandingPageOptimized = () => {
-  const { user, loading, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
-  const [isSigningIn, setIsSigningIn] = useState(false);
-  const [loginError, setLoginError] = useState('');
   const [openFaq, setOpenFaq] = useState(null);
 
-  // Redireciona o usuário se ele já estiver logado
-  useEffect(() => {
-    if (user && !loading) {
-      navigate('/feed');
-    }
-  }, [user, loading, navigate]);
-
-  // Função para lidar com o login via Google
-  const handleGoogleLogin = async () => {
-    if (isSigningIn) return;
-    setIsSigningIn(true);
-    setLoginError(''); // Limpa erros anteriores
-    try {
-      await signInWithGoogle();
-      // O hook useAuth cuidará da atualização do estado e o useEffect acima do redirecionamento
-    } catch (error) {
-      console.error('Erro no login com Google:', error);
-      setLoginError('Erro ao fazer login. Tente novamente.');
-    } finally {
-      setIsSigningIn(false);
-    }
-  };
+  const stats = [
+    { value: "10K+", label: "Mães conectadas" },
+    { value: "50K+", label: "Peças trocadas" },
+    { value: "R$ 2M+", label: "Valor preservado" }
+  ];
 
   const problemsData = [
     { platform: "Brechó físico", promise: "Compro tudo já!", reality: "Paga 20% do valor, escolhe só o que interessa", loss: "-80%", time: "1 ida + 1 volta" },
@@ -209,7 +112,7 @@ const LandingPageOptimized = () => {
     },
     {
       q: "E se eu não gostar da peça que recebi?",
-      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Caso o usuário que forneceu a peça não colaborar a plataforma te garante a devolução e restituição de suas girinhas."
+      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Além disso, o sistema de avaliações previne esse tipo de problema."
     },
     {
       q: "Como funciona a logística? Tenho que ir buscar longe?",
@@ -225,17 +128,6 @@ const LandingPageOptimized = () => {
     }
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <Sparkles className="h-8 w-8 text-primary animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       {/* Navigation */}
@@ -250,8 +142,8 @@ const LandingPageOptimized = () => {
               <a href="#como-funciona" className="text-gray-600 hover:text-primary transition-colors">Como funciona</a>
               <a href="#faq" className="text-gray-600 hover:text-primary transition-colors">FAQ</a>
               <a href="#contato" className="text-gray-600 hover:text-primary transition-colors">Contato</a>
-              <Button onClick={handleGoogleLogin} disabled={isSigningIn} className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white rounded-full px-4 py-2">
-                {isSigningIn ? 'Entrando...' : 'Começar grátis'}
+              <Button className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white rounded-full">
+                Começar grátis
               </Button>
             </div>
           </div>
@@ -261,8 +153,8 @@ const LandingPageOptimized = () => {
       {/* Hero Section */}
       <section className="py-12 md:py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <Badge className="mb-6 bg-green-100 text-green-800 text-sm font-medium px-3 py-1">
-            🎉 100% gratuito para participar!
+          <Badge className="mb-6 bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+            🎉 100% gratuito!
           </Badge>
           
           <div className="flex items-center justify-center mb-6">
@@ -273,7 +165,7 @@ const LandingPageOptimized = () => {
           </div>
           
           <h2 className="text-xl md:text-3xl font-bold text-gray-800 mb-4">
-            A revolução na troca de roupas infantis
+            Revolução na troca de roupas infantis
           </h2>
           
           <h3 className="text-lg md:text-2xl font-semibold text-gray-700 mb-6">
@@ -283,28 +175,31 @@ const LandingPageOptimized = () => {
           <p className="text-base md:text-xl text-gray-700 mb-8 leading-relaxed max-w-3xl mx-auto">
             Com o GiraMãe você transforma cada peça infantil em <strong>crédito integral</strong>, 
             troca na mesma qualidade e mantém o guarda-roupa sempre no ponto —
-            <em> rápido, justo e sustentável</em>.
+            <em>rápido, justo e sustentável</em>.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-4">
-            <Button onClick={handleGoogleLogin} disabled={isSigningIn} size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
-              <GoogleIcon />
-              {isSigningIn ? 'Entrando...' : 'Entrar com Google'}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+            <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
+              Começar Agora
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button onClick={handleGoogleLogin} disabled={isSigningIn} variant="outline" size="lg" className="w-full sm:w-auto px-8 py-4 text-lg rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300">
+            <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-4 text-lg rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300">
               Ver Itens Disponíveis
             </Button>
           </div>
           
-          {loginError && (
-            <div className="mt-4 flex items-center justify-center text-red-600">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              <p className="text-sm">{loginError}</p>
-            </div>
-          )}
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-2xl mx-auto">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-xl md:text-3xl font-bold text-primary mb-1">{stat.value}</div>
+                <div className="text-xs md:text-sm text-gray-600">{stat.label}</div>
+              </div>
+            ))}
+          </div>
           
           <p className="text-center text-gray-600 text-sm mt-4 italic">
-            Mães trocando roupas infantis de forma sustentável e inteligente.
+            Mães trocando roupas infantis de forma sustentável
           </p>
         </div>
       </section>
@@ -324,7 +219,7 @@ const LandingPageOptimized = () => {
           {/* Mobile Cards */}
           <div className="md:hidden space-y-4 mb-8">
             {problemsData.map((row, index) => (
-              <Card key={index} className="border-red-200 bg-red-50 p-0">
+              <Card key={index} className="border-red-200 bg-red-50">
                 <CardContent className="p-4">
                   <h3 className="font-bold text-gray-900 mb-2">{row.platform}</h3>
                   <p className="text-green-600 text-sm mb-2">Promessa: {row.promise}</p>
@@ -374,7 +269,7 @@ const LandingPageOptimized = () => {
             <div className="grid md:grid-cols-2 gap-4">
               {painPoints.map((point, index) => (
                 <div key={index} className="flex gap-3 items-start">
-                  <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 mt-1">
+                  <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                     {index + 1}
                   </div>
                   <p className="text-gray-700 text-sm">{point}</p>
@@ -389,7 +284,7 @@ const LandingPageOptimized = () => {
       <section className="py-12 md:py-20 px-4 bg-gradient-to-br from-pink-50 to-purple-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <Badge className="mb-6 bg-blue-100 text-blue-800 text-lg font-medium px-4 py-2">
+            <Badge className="mb-6 bg-blue-100 text-blue-800 text-lg font-medium px-4 py-2 rounded-full">
               SOMOS NOVOS e queremos MUDAR o jogo
             </Badge>
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
@@ -424,7 +319,7 @@ const LandingPageOptimized = () => {
                   <CardTitle className="text-lg">{benefit.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription>{benefit.desc}</CardDescription>
+                  <CardDescription className="text-gray-600">{benefit.desc}</CardDescription>
                 </CardContent>
               </Card>
             ))}
@@ -466,20 +361,54 @@ const LandingPageOptimized = () => {
             ))}
           </div>
 
-          {/* NEW: First Mission Section */}
-          <div className="mt-16 bg-teal-50 border-2 border-teal-200 rounded-2xl p-6 md:p-8 shadow-lg max-w-4xl mx-auto text-center">
-              <div className="flex justify-center mb-4">
-                  <Gift className="w-12 h-12 text-teal-500" />
+          {/* Example - Exato como na imagem */}
+          <div className="mt-16 bg-white border border-gray-200 rounded-lg p-6 md:p-8 shadow-lg max-w-4xl mx-auto">
+            <h3 className="text-xl md:text-2xl font-bold text-center text-gray-900 mb-8">
+              Exemplo prático: como Ana trocou um macacão por um casaco
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-200 text-blue-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">1</div>
+                <h4 className="font-bold text-gray-900 mb-2">Postou macacão</h4>
+                <p className="text-sm text-gray-600 mb-1">Tamanho 2 anos, R$ 80 orig.</p>
+                <p className="text-sm font-semibold text-teal-600">Ganhou 80 Girinhas</p>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-teal-800 mb-4">
-                  Comece com Poder de Compra!
-              </h3>
-              <p className="text-lg text-teal-700 mb-6">
-                  Você já inicia com a possibilidade de obter suas primeiras peças <strong>sem desembolsar 1 centavo!</strong>
+              
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-200 text-green-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">2</div>
+                <h4 className="font-bold text-gray-900 mb-2">Carla reservou</h4>
+                <p className="text-sm text-gray-600 mb-1">Em 3 horas a peça foi reservada</p>
+                <p className="text-sm font-semibold text-green-600">Girinhas liberadas!</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-200 text-purple-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">3</div>
+                <h4 className="font-bold text-gray-900 mb-2">Ana escolheu casaco</h4>
+                <p className="text-sm text-gray-600 mb-1">Tam 3 anos, perfeito estado</p>
+                <p className="text-sm font-semibold text-purple-600">Gastou 80 Girinhas</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-16 h-16 bg-orange-200 text-orange-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">4</div>
+                <h4 className="font-bold text-gray-900 mb-2">Recebeu em casa</h4>
+                <p className="text-sm text-gray-600 mb-1">Marina entregou no dia seguinte</p>
+                <p className="text-sm font-semibold text-orange-600">Zero frete!</p>
+              </div>
+            </div>
+            
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+              <p className="text-lg font-bold text-green-700">
+                Resultado: Ana trocou uma peça que não serve mais por outra que precisa, sem perder 1 centavo!
               </p>
-              <p className="text-md text-teal-600">
-                  Para isso, basta cumprir sua primeira e única missão obrigatória para fazer parte da comunidade: <strong>publique 2 itens</strong> que seu filho não usa mais (roupas, calçados, brinquedos, etc.). Suas Girinhas são liberadas na hora!
-              </p>
+            </div>
+            
+            <div className="text-center mt-6">
+              <Button size="lg" className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 rounded-full">
+                Quero fazer minha primeira troca
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -498,7 +427,7 @@ const LandingPageOptimized = () => {
             {faqs.map((faq, index) => (
               <Card key={index} className="border border-gray-200 bg-white">
                 <CardHeader 
-                  className="cursor-pointer hover:bg-gray-50 transition-colors p-4"
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => setOpenFaq(openFaq === index ? null : index)}
                 >
                   <div className="flex justify-between items-center">
@@ -507,7 +436,7 @@ const LandingPageOptimized = () => {
                   </div>
                 </CardHeader>
                 {openFaq === index && (
-                  <CardContent className="pt-0 p-4">
+                  <CardContent className="pt-0">
                     <p className="text-gray-600">{faq.a}</p>
                   </CardContent>
                 )}
@@ -533,19 +462,23 @@ const LandingPageOptimized = () => {
       {/* Final CTA */}
       <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-primary to-pink-500 text-white">
         <div className="max-w-4xl mx-auto text-center">
+          <Badge className="mb-6 bg-white/20 text-white text-lg font-medium px-4 py-2 rounded-full">
+            Oferta de lançamento - 100% gratuito para sempre
+          </Badge>
+          
           <h2 className="text-2xl md:text-5xl font-bold mb-6">
             Pronta para a <span className="text-yellow-300">revolução?</span>
           </h2>
           
           <p className="text-lg md:text-xl mb-8 opacity-90 max-w-3xl mx-auto">
-            Junte-se a milhares de mães inteligentes que já descobriram como preservar o valor das roupas infantis, 
+            Junte-se a mais de 10.000 mães inteligentes que já descobriram como preservar o valor das roupas infantis, 
             economizar tempo e ainda ajudar outras famílias.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <div className="flex flex-col md:flex-row items-center justify-center gap-3">
               <CheckCircle className="w-6 h-6 text-green-300 flex-shrink-0" />
-              <span className="font-semibold text-center md:text-left">⚖️ Troca Justa<br />Sem perda de valor</span>
+              <span className="font-semibold text-center md:text-left">⚖️ Troca 1:1<br />Sem perda de valor</span>
             </div>
             <div className="flex flex-col md:flex-row items-center justify-center gap-3">
               <Zap className="w-6 h-6 text-yellow-300 flex-shrink-0" />
@@ -557,15 +490,43 @@ const LandingPageOptimized = () => {
             </div>
           </div>
           
-          <Button onClick={handleGoogleLogin} disabled={isSigningIn} size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full font-semibold">
-            <GoogleIcon />
-            {isSigningIn ? 'Entrando...' : 'Criar minha conta grátis'}
-          </Button>
+          <div className="bg-white/10 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg font-semibold mb-2">Últimas vagas para o programa Beta</p>
+            <p className="opacity-90">Estamos limitando o número de usuárias para garantir a melhor experiência. Apenas 500 vagas restantes!</p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full font-semibold">
+              Garantir minha vaga gratuita
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary px-8 py-4 text-lg rounded-full">
+              Baixar o app agora
+            </Button>
+          </div>
+          
+          <div className="text-center opacity-90 mb-8">
+            <p className="text-sm mb-4">✅ Sem cartão de crédito • ✅ Sem taxa de inscrição • ✅ Cancele quando quiser</p>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-5 h-5 text-yellow-300 fill-current" />
+              ))}
+              <span className="font-semibold ml-2">4.9/5 nas lojas de app</span>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-400 text-gray-900 rounded-lg p-6 max-w-4xl mx-auto">
+            <p className="font-semibold text-base md:text-lg">
+              <strong>Garantimos:</strong> Se você não economizar pelo menos R$ 200 nos primeiros 3 meses usando o GiraMãe, 
+              nós devolvemos todo o valor que você teria perdido em outras plataformas. 
+              É isso mesmo - <em>seu sucesso é garantido ou seu dinheiro de volta!</em>
+            </p>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer id="contato" className="bg-gray-900 text-white py-12 px-4">
+      <footer className="bg-gray-900 text-white py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
@@ -605,7 +566,11 @@ const LandingPageOptimized = () => {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p className="mb-4">© {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
+            <div className="flex items-center justify-center mb-4">
+              <Sparkles className="h-6 w-6 text-primary mr-2" />
+              <span className="text-xl font-bold text-primary">GiraMãe</span>
+            </div>
+            <p className="mb-4">© 2024 GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
             <div className="flex flex-wrap justify-center gap-6 mt-4 text-sm">
               <a href="#" className="hover:text-white transition-colors">Termos de Uso</a>
               <a href="#" className="hover:text-white transition-colors">Política de Privacidade</a>
