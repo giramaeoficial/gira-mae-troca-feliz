@@ -1,4 +1,4 @@
-// src/pages/AuthCallback.tsx - VERSÃO CORRIGIDA SEM LOOP
+// src/pages/AuthCallback.tsx - VERSÃO CORRIGIDA
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -41,7 +41,7 @@ const AuthCallback: React.FC = () => {
         // Buscar dados do perfil
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('cadastro_status, cadastro_step, telefone_verificado, nome, endereco')
+          .select('cadastro_status, cadastro_step, telefone_verificado, nome, endereco, cidade, estado')
           .eq('id', user.id)
           .single();
 
@@ -50,12 +50,12 @@ const AuthCallback: React.FC = () => {
           
           if (error.code === 'PGRST116') {
             // Perfil não encontrado - usuário novo
-            console.log('👤 AuthCallback: Perfil não encontrado, usuário novo - indo para feed (CadastroCompletoGuard interceptará)');
+            console.log('👤 AuthCallback: Perfil não encontrado, usuário novo - indo para onboarding');
             toast({
               title: "Bem-vindo!",
               description: "Vamos completar seu cadastro.",
             });
-            navigate('/feed', { replace: true });
+            navigate('/onboarding/whatsapp', { replace: true });
             return;
           }
           
@@ -64,23 +64,47 @@ const AuthCallback: React.FC = () => {
 
         console.log('📊 AuthCallback: Dados do perfil encontrados:', profile);
 
-        // SEMPRE vai para /feed - o CadastroCompletoGuard interceptará se necessário
+        // ✅ CORREÇÃO: Verificar status e redirecionar adequadamente
         if (profile.cadastro_status === 'completo') {
           console.log('✅ AuthCallback: Cadastro completo, indo para feed');
           toast({
             title: "Login realizado!",
             description: "Bem-vinda de volta à GiraMãe!",
           });
+          navigate('/feed', { replace: true });
+        } else if (profile.cadastro_status === 'liberado') {
+          console.log('✅ AuthCallback: Usuário liberado, indo para feed');
+          toast({
+            title: "Login realizado!",
+            description: "Bem-vinda de volta à GiraMãe!",
+          });
+          navigate('/feed', { replace: true });
+        } else if (profile.cadastro_status === 'aguardando') {
+          console.log('⏳ AuthCallback: Aguardando liberação da cidade');
+          toast({
+            title: "Aguardando liberação",
+            description: "Sua cidade ainda não foi liberada.",
+          });
+          navigate('/aguardando-liberacao', { replace: true });
         } else {
-          console.log('🔄 AuthCallback: Cadastro incompleto, indo para feed (CadastroCompletoGuard interceptará)');
+          // Cadastro incompleto - ir para onboarding baseado no step
+          console.log('🔄 AuthCallback: Cadastro incompleto, indo para onboarding');
           toast({
             title: "Continuando cadastro...",
             description: "Vamos finalizar seu cadastro.",
           });
+          
+          // Redirecionar baseado no cadastro_step ou status
+          if (profile.cadastro_status === 'incompleto') {
+            if (profile.telefone_verificado) {
+              navigate('/onboarding/termos', { replace: true });
+            } else {
+              navigate('/onboarding/whatsapp', { replace: true });
+            }
+          } else {
+            navigate('/onboarding/whatsapp', { replace: true });
+          }
         }
-
-        // Sempre navegar para /onboarding/whatsapp - o OnboardingGuard cuida do redirecionamento
-        navigate('/onboarding/whatsapp', { replace: true });
 
       } catch (error) {
         console.error('❌ AuthCallback: Erro no processamento:', error);
