@@ -3,13 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { useRegiao } from '@/hooks/useRegiao';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
 const AguardandoLiberacao: React.FC = () => {
   const { user } = useAuth();
   const { profile, loading } = useOnboarding();
+  const { cidade, estado, usuariosAguardando, loading: loadingRegiao } = useRegiao();
 
-  if (loading) {
+  if (loading || loadingRegiao) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
         <LoadingSpinner className="w-8 h-8 text-primary" />
@@ -54,7 +56,11 @@ const AguardandoLiberacao: React.FC = () => {
             Cadastro completo!
           </p>
           <h2 className="text-lg font-semibold text-gray-800">
-            🏘️ Aguardando liberação para seu bairro
+            {cidade && estado ? (
+              `🏘️ Aguardando liberação para ${cidade}/${estado}`
+            ) : (
+              '🏘️ Aguardando liberação para sua região'
+            )}
           </h2>
         </div>
 
@@ -62,7 +68,19 @@ const AguardandoLiberacao: React.FC = () => {
         <Card className="mb-6">
           <CardContent className="p-6">
             <p className="text-gray-700 mb-6">
-              Para que a troca de itens funcione bem, precisamos de uma comunidade ativa em cada região.
+              {cidade && estado ? (
+                usuariosAguardando > 0 ? (
+                  <>
+                    Sua região tem <span className="font-semibold text-orange-600">{usuariosAguardando} usuárias</span> aguardando liberação.
+                    <br />
+                    Você será notificada assim que {cidade} for ativada!
+                  </>
+                ) : (
+                  `Você é a primeira usuária cadastrada em ${cidade}! Convide suas amigas para acelerar a liberação da região.`
+                )
+              ) : (
+                'Para que a troca de itens funcione bem, precisamos de uma comunidade ativa em cada região.'
+              )}
             </p>
 
             {/* Completed Tasks */}

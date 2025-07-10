@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useRegiao } from '@/hooks/useRegiao';
 import { Navigate } from 'react-router-dom';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
@@ -11,6 +12,7 @@ interface PactoEntradaGuardProps {
 
 const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
   const { user } = useAuth();
+  const { liberada: cidadeLiberada, loading: loadingRegiao } = useRegiao();
 
   const { data: missaoStatus, isLoading } = useQuery({
     queryKey: ['pacto-entrada-status', user?.id],
@@ -94,7 +96,7 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
     refetchOnMount: true // ✅ SEMPRE buscar ao montar componente
   });
 
-  if (isLoading) {
+  if (isLoading || loadingRegiao) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
         <div className="text-center space-y-4">
@@ -103,6 +105,12 @@ const PactoEntradaGuard: React.FC<PactoEntradaGuardProps> = ({ children }) => {
         </div>
       </div>
     );
+  }
+
+  // Se cidade foi liberada, dar acesso total
+  if (cidadeLiberada) {
+    console.log('✅ Cidade liberada - acesso total liberado');
+    return <>{children}</>;
   }
 
   // ✅ CORRIGIDO: Verificar PRIMEIRO se a missão está completa
