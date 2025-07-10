@@ -13,17 +13,12 @@ import {
   Star,
   Zap,
   DollarSign,
-  ChevronDown
+  ChevronDown,
+  Gift
 } from "lucide-react";
 
 const LandingPageOptimized = () => {
   const [openFaq, setOpenFaq] = useState(null);
-
-  const stats = [
-    { value: "10K+", label: "Mães conectadas" },
-    { value: "50K+", label: "Peças trocadas" },
-    { value: "R$ 2M+", label: "Valor preservado" }
-  ];
 
   const problemsData = [
     { platform: "Brechó físico", promise: "Compro tudo já!", reality: "Paga 20% do valor, escolhe só o que interessa", loss: "-80%", time: "1 ida + 1 volta" },
@@ -77,14 +72,14 @@ const LandingPageOptimized = () => {
   const steps = [
     { 
       number: "01", 
-      title: "Poste sua peça", 
-      desc: "Tire uma foto, descreva o estado e publique. Leva menos de 2 minutos!",
-      features: ["Foto com boa iluminação", "Estado da peça (novo, seminovo, etc.)", "Tamanho e marca", "Valor justo automaticamente calculado"]
+      title: "Cumpra a missão de entrada", 
+      desc: "Publique 2 itens (roupas, calçados, brinquedos ou outros) e ganhe poder de compra inicial!",
+      features: ["Foto com boa iluminação", "Estado da peça (novo, seminovo, etc.)", "Tamanho e marca", "Poder de compra liberado instantaneamente"]
     },
     { 
       number: "02", 
       title: "Receba Girinhas", 
-      desc: "Assim que outra mãe reservar, suas Girinhas caem na conta instantly.",
+      desc: "Assim que outra mãe reservar suas peças, suas Girinhas caem na conta instantly.",
       features: ["1 real = 1 Girinha", "Sem taxas ou comissões", "Crédito liberado na confirmação", "Sem prazo de espera"]
     },
     { 
@@ -112,7 +107,7 @@ const LandingPageOptimized = () => {
     },
     {
       q: "E se eu não gostar da peça que recebi?",
-      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Além disso, o sistema de avaliações previne esse tipo de problema."
+      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Caso o usuário que forneceu a peça não colaborar, a plataforma te garante a devolução e restituição de suas Girinhas."
     },
     {
       q: "Como funciona a logística? Tenho que ir buscar longe?",
@@ -178,6 +173,18 @@ const LandingPageOptimized = () => {
             <em>rápido, justo e sustentável</em>.
           </p>
           
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 mb-8 max-w-3xl mx-auto">
+            <div className="flex items-center justify-center mb-4">
+              <Gift className="h-8 w-8 text-green-600 mr-3" />
+              <h3 className="text-xl font-bold text-green-700">Comece com poder de compra!</h3>
+            </div>
+            <p className="text-green-700 text-lg">
+              Você já inicia podendo obter suas primeiras peças de roupas <strong>sem desembolsar 1 centavo!</strong> 
+              Apenas cumpra nossa única missão obrigatória: publique 2 itens (roupas, calçados, brinquedos ou outros) 
+              e ganhe poder de compra instantâneo na comunidade.
+            </p>
+          </div>
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
             <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
               Começar Agora
@@ -186,16 +193,6 @@ const LandingPageOptimized = () => {
             <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-4 text-lg rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300">
               Ver Itens Disponíveis
             </Button>
-          </div>
-          
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-2xl mx-auto">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-xl md:text-3xl font-bold text-primary mb-1">{stat.value}</div>
-                <div className="text-xs md:text-sm text-gray-600">{stat.label}</div>
-              </div>
-            ))}
           </div>
           
           <p className="text-center text-gray-600 text-sm mt-4 italic">
@@ -361,7 +358,7 @@ const LandingPageOptimized = () => {
             ))}
           </div>
 
-          {/* Example - Exato como na imagem */}
+          {/* Example */}
           <div className="mt-16 bg-white border border-gray-200 rounded-lg p-6 md:p-8 shadow-lg max-w-4xl mx-auto">
             <h3 className="text-xl md:text-2xl font-bold text-center text-gray-900 mb-8">
               Exemplo prático: como Ana trocou um macacão por um casaco
@@ -401,13 +398,6 @@ const LandingPageOptimized = () => {
               <p className="text-lg font-bold text-green-700">
                 Resultado: Ana trocou uma peça que não serve mais por outra que precisa, sem perder 1 centavo!
               </p>
-            </div>
-            
-            <div className="text-center mt-6">
-              <Button size="lg" className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 rounded-full">
-                Quero fazer minha primeira troca
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
             </div>
           </div>
         </div>
@@ -463,7 +453,7 @@ const LandingPageOptimized = () => {
       <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-primary to-pink-500 text-white">
         <div className="max-w-4xl mx-auto text-center">
           <Badge className="mb-6 bg-white/20 text-white text-lg font-medium px-4 py-2 rounded-full">
-            Oferta de lançamento - 100% gratuito para sempre
+            Plataforma 100% gratuita
           </Badge>
           
           <h2 className="text-2xl md:text-5xl font-bold mb-6">
@@ -471,7 +461,7 @@ const LandingPageOptimized = () => {
           </h2>
           
           <p className="text-lg md:text-xl mb-8 opacity-90 max-w-3xl mx-auto">
-            Junte-se a mais de 10.000 mães inteligentes que já descobriram como preservar o valor das roupas infantis, 
+            Junte-se às mães inteligentes que já descobriram como preservar o valor das roupas infantis, 
             economizar tempo e ainda ajudar outras famílias.
           </p>
           
@@ -490,37 +480,14 @@ const LandingPageOptimized = () => {
             </div>
           </div>
           
-          <div className="bg-white/10 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
-            <p className="text-lg font-semibold mb-2">Últimas vagas para o programa Beta</p>
-            <p className="opacity-90">Estamos limitando o número de usuárias para garantir a melhor experiência. Apenas 500 vagas restantes!</p>
-          </div>
-          
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
             <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full font-semibold">
-              Garantir minha vaga gratuita
+              Começar agora
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary px-8 py-4 text-lg rounded-full">
-              Baixar o app agora
+              Explorar comunidade
             </Button>
-          </div>
-          
-          <div className="text-center opacity-90 mb-8">
-            <p className="text-sm mb-4">✅ Sem cartão de crédito • ✅ Sem taxa de inscrição • ✅ Cancele quando quiser</p>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 text-yellow-300 fill-current" />
-              ))}
-              <span className="font-semibold ml-2">4.9/5 nas lojas de app</span>
-            </div>
-          </div>
-          
-          <div className="bg-yellow-400 text-gray-900 rounded-lg p-6 max-w-4xl mx-auto">
-            <p className="font-semibold text-base md:text-lg">
-              <strong>Garantimos:</strong> Se você não economizar pelo menos R$ 200 nos primeiros 3 meses usando o GiraMãe, 
-              nós devolvemos todo o valor que você teria perdido em outras plataformas. 
-              É isso mesmo - <em>seu sucesso é garantido ou seu dinheiro de volta!</em>
-            </p>
           </div>
         </div>
       </section>
