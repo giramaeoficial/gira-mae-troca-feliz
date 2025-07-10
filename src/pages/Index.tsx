@@ -14,7 +14,16 @@ import {
   Zap,
   DollarSign,
   ChevronDown,
-  Gift
+  Gift,
+  Clock,
+  MessageCircle,
+  Baby,
+  GraduationCap,
+  Search,
+  Lock,
+  CreditCard,
+  UserPlus,
+  Smartphone
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -36,14 +45,14 @@ const LandingPageOptimized = () => {
   const itensNecessarios = missaoPactoEntrada?.condicoes?.quantidade || 2;
 
   const problemsData = [
-    { platform: "Brechó físico", promise: "Compro tudo já!", reality: "Paga 20% do valor, escolhe só o que interessa", loss: "-80%", time: "1 ida + 1 volta" },
-    { platform: "Brechó online", promise: "Fotos bonitas", reality: "40% comissão + frete; peças ficam meses no estoque", loss: "-50%", time: "Semanas/meses" },
-    { platform: "Marketplaces", promise: "Alcance nacional", reality: "12%-18% taxa + anúncios; negociação infinita", loss: "-30%", time: "Semanas" },
-    { platform: "Grupos WhatsApp", promise: "É rapidinho", reality: "Lote obrigatório, fotos ruins, pessoa some", loss: "-25%", time: "Horas em chat" }
+    { platform: "Brechó físico", promise: "Compro tudo já!", reality: "Paga apenas uma fração do valor, escolhe só o que interessa", loss: "Perda massiva", time: "1 ida + 1 volta" },
+    { platform: "Brechó online", promise: "Fotos bonitas", reality: "Comissão alta + frete; peças ficam meses no estoque", loss: "Perda significativa", time: "Semanas/meses" },
+    { platform: "Marketplaces", promise: "Alcance nacional", reality: "Taxas altas + anúncios; negociação infinita", loss: "Perda moderada", time: "Semanas" },
+    { platform: "Grupos WhatsApp", promise: "É rapidinho", reality: "Lote obrigatório, fotos ruins, pessoa some", loss: "Perda variável", time: "Horas em chat" }
   ];
 
   const painPoints = [
-    "Desvalorização brutal – intermediários ficam com 40-80% do seu dinheiro",
+    "Desvalorização brutal – intermediários ficam com grande parte do seu dinheiro",
     "Filas e logística chata – ir ao correio, marcar retirada, pagar embalagem",
     "Negociação exaustiva – faz por menos?, guarda pra mim?, troca?",
     "Peças encalhadas – meses até vender (afinal, é dinheiro vivo)",
@@ -51,14 +60,14 @@ const LandingPageOptimized = () => {
     "Taxas e comissões escondidas – está barato? Olhe as letras miúdas",
     "Falta de proteção – calote, não entrega, peça manchada e… acabou",
     "Sustentabilidade zero – fast-fashion e brechó empurram volume, não reutilização",
-    "Oferta desbalanceada – muita body RN, zero casaco 5-6 anos quando você precisa",
+    "Oferta desbalanceada – muita body RN, zero casaco quando você precisa",
     "Comunidade? Nenhuma – é cada um por si"
   ];
 
   const benefits = [
     { 
       title: "Girinha = crédito quase 1:1", 
-      desc: `Taxa justa de apenas ${taxaTransacao}%: você recebe ${100 - taxaTransacao}% do valor em Girinhas, muito melhor que outros intermediários que ficam com 40-80%.`,
+      desc: `Taxa justa de apenas ${taxaTransacao}%: você mantém a maior parte do valor em Girinhas, muito melhor que outros intermediários.`,
       exclusive: true
     },
     { 
@@ -81,6 +90,24 @@ const LandingPageOptimized = () => {
     { 
       title: "100% comunitário", 
       desc: "Não existe loja tirando margem. Toda Girinha fica girando entre as mães – todo mundo ganha."
+    },
+    {
+      title: "Sistema de reservas inteligente",
+      desc: "Reservou? Suas Girinhas ficam bloqueadas até a entrega. Não conseguiu reservar? Entre na fila de espera sem bloquear nada.",
+      exclusive: true
+    },
+    {
+      title: "Bônus diário garantido",
+      desc: "Acesse a plataforma diariamente e ganhe Girinhas de bônus. Constância é recompensada!",
+      exclusive: true
+    },
+    {
+      title: "Transferências entre mães",
+      desc: "Precisa enviar Girinhas para outra mãe? Sistema P2P com taxa mínima para manter a economia girando."
+    },
+    {
+      title: "Programa de indicações",
+      desc: "Traga suas amigas e ganhe recompensas! Cada nova mãe ativa na comunidade gera bônus para você."
     }
   ];
 
@@ -93,28 +120,108 @@ const LandingPageOptimized = () => {
     },
     { 
       number: "02", 
-      title: "Receba Girinhas", 
-      desc: "Assim que outra mãe reservar suas peças, suas Girinhas caem na conta instantly.",
-      features: ["1 real = 1 Girinha", "Sem taxas ou comissões", "Crédito liberado na confirmação", "Sem prazo de espera"]
+      title: "Receba Girinhas ou entre na fila", 
+      desc: "Item disponível? Suas Girinhas são bloqueadas e a reserva é imediata. Item ocupado? Entre na fila de espera sem custo!",
+      features: ["Bloqueio automático para reservas", "Fila de espera sem taxa", "Acompanhe sua posição", "WhatsApp liberado após reserva"]
     },
     { 
       number: "03", 
       title: "Troque por outras peças", 
-      desc: "Use suas Girinhas para pegar qualquer peça disponível na plataforma.",
-      features: ["Catálogo sempre atualizado", "Busca por tamanho, tipo, marca", "Reserva instantânea", "Entrega na vizinhança"]
+      desc: "Use suas Girinhas para pegar qualquer peça disponível na plataforma. Sistema inteligente destaca itens do tamanho do seu filho.",
+      features: ["Catálogo sempre atualizado", "Busca por tamanho, tipo, marca", "Destaque para tamanhos do seu filho", "Preferência para mesma escola"]
     },
     { 
       number: "04", 
-      title: "Receba em casa", 
-      desc: "Logística hiperlocal: outras mães da sua região fazem a entrega.",
-      features: ["Entrega por mães próximas", "Sem custo de frete", "Agende quando quiser", "Avalie a experiência"]
+      title: "Receba em casa com segurança", 
+      desc: "Após a reserva, WhatsApps são liberados para coordenar entrega. Apenas neste momento há contato direto entre as partes.",
+      features: ["Contato liberado apenas pós-reserva", "Entrega por mães próximas", "Prioridade para mesma escola", "Avalie a experiência"]
+    }
+  ];
+
+  const features = [
+    {
+      icon: <Lock className="w-8 h-8" />,
+      title: "Sistema de Reservas Seguro",
+      desc: "Girinhas bloqueadas na reserva garantem segurança. Fila de espera sem custo para itens ocupados."
+    },
+    {
+      icon: <Clock className="w-8 h-8" />,
+      title: "Minhas Reservas",
+      desc: "Acompanhe todas suas reservas ativas, posição na fila e histórico completo em uma tela dedicada."
+    },
+    {
+      icon: <Gift className="w-8 h-8" />,
+      title: "Bônus Diário",
+      desc: "Entre todo dia e ganhe Girinhas extras! Recompensamos a participação ativa na comunidade."
+    },
+    {
+      icon: <CreditCard className="w-8 h-8" />,
+      title: "Transferências P2P",
+      desc: "Envie Girinhas para outras mães com taxa mínima. Perfeito para presentes ou ajuda mútua."
+    },
+    {
+      icon: <UserPlus className="w-8 h-8" />,
+      title: "Programa de Indicações",
+      desc: "Convide amigas e ganhe recompensas quando elas se tornarem ativas na plataforma."
+    },
+    {
+      icon: <MessageCircle className="w-8 h-8" />,
+      title: "Contato Seguro",
+      desc: "WhatsApp liberado apenas após reserva confirmada. Zero spam, máxima segurança."
+    },
+    {
+      icon: <Baby className="w-8 h-8" />,
+      title: "Perfil dos Filhos",
+      desc: "Cadastre idade e tamanhos dos seus filhos para receber destaques personalizados no feed."
+    },
+    {
+      icon: <GraduationCap className="w-8 h-8" />,
+      title: "Conexão Escolar",
+      desc: "Informe a escola do seu filho para priorizar entregas entre mães da mesma instituição."
+    },
+    {
+      icon: <Search className="w-8 h-8" />,
+      title: "Feed Inteligente",
+      desc: "ItemCard com todas as informações importantes e destaque automático para peças do tamanho do seu filho."
     }
   ];
 
   const faqs = [
     {
       q: `Por que vocês cobram ${taxaTransacao}% em Girinhas?`,
-      a: `A taxa de ${taxaTransacao}% em Girinhas nos permite manter a plataforma funcionando, desenvolver novos recursos e garantir a qualidade do serviço. Comparado a outros intermediários que ficam com 40-80% do valor, nossa taxa é muito mais justa e transparente.`
+      a: `A taxa de ${taxaTransacao}% em Girinhas nos permite manter a plataforma funcionando, desenvolver novos recursos e garantir a qualidade do serviço. Comparado a outros intermediários que ficam com grandes porcentagens do valor, nossa taxa é muito mais justa e transparente.`
+    },
+    {
+      q: "Como funciona o sistema de reservas e bloqueio de Girinhas?",
+      a: "Quando você reserva um item disponível, suas Girinhas são bloqueadas automaticamente, garantindo a transação. Se o item já está reservado, você entra na fila de espera SEM bloquear Girinhas. Quando chegar sua vez, você é notificada e pode escolher se quer prosseguir."
+    },
+    {
+      q: "O que é a fila de espera e como funciona?",
+      a: "Se um item que você quer já foi reservado, você pode entrar na fila de espera gratuitamente. Suas Girinhas não são bloqueadas. Se a pessoa da frente desistir ou não confirmar a entrega, você sobe na fila. Quando chegar sua vez, você decide se quer reservar."
+    },
+    {
+      q: "Como funciona o contato entre comprador e vendedor?",
+      a: "Os WhatsApps de ambas as partes são liberados APENAS após a confirmação da reserva (quando as Girinhas são bloqueadas). Este é o único meio de contato disponível na plataforma, garantindo privacidade e evitando spam. Use este contato para combinar local e horário de entrega."
+    },
+    {
+      q: "Para que serve a tela 'Minhas Reservas'?",
+      a: "Na tela 'Minhas Reservas' você vê todos os itens que reservou, sua posição nas filas de espera, histórico de transações e pode acompanhar o status de cada negociação. É seu painel de controle completo."
+    },
+    {
+      q: "Como funciona o bônus diário?",
+      a: "Entre na plataforma todos os dias e ganhe Girinhas de bônus! É nossa forma de recompensar mães ativas na comunidade. Quanto mais você participa, mais você ganha."
+    },
+    {
+      q: "Posso transferir Girinhas para outras mães?",
+      a: "Sim! O sistema P2P permite transferir Girinhas para qualquer mãe da plataforma. Há uma pequena taxa para manter o sistema funcionando, mas é muito menor que bancos tradicionais."
+    },
+    {
+      q: "Como funciona o programa de indicações?",
+      a: "Convide suas amigas através do seu link único. Quando elas se tornarem ativas na plataforma (completando a primeira missão), você ganha Girinhas de bônus! É um ganha-ganha: elas começam com créditos, você ganha por ajudar a comunidade crescer."
+    },
+    {
+      q: "Para que serve cadastrar os dados do meu filho e escola?",
+      a: "Ao cadastrar idade, tamanhos e escola do seu filho, o sistema destaca automaticamente no feed os itens que servem para ele. Além disso, priorizamos entregas entre mães da mesma escola, facilitando a logística e criando conexões locais."
     },
     {
       q: "Como sei que vou receber uma peça de qualidade?",
@@ -122,19 +229,7 @@ const LandingPageOptimized = () => {
     },
     {
       q: "E se eu não gostar da peça que recebi?",
-      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Caso o usuário que forneceu a peça não colaborar, a plataforma te garante a devolução e restituição de suas Girinhas."
-    },
-    {
-      q: "Como funciona a logística? Tenho que ir buscar longe?",
-      a: "Nossa logística é hiperlocal! As entregas são feitas por outras mães da sua região. Você agenda um horário conveniente e recebe em casa, sem custos de frete. É rápido, prático e você ainda conhece mães da sua vizinhança."
-    },
-    {
-      q: "Posso confiar no sistema de Girinhas?",
-      a: `As Girinhas têm valor real. Diferente de outros apps que desvalorizam seus itens, no GiraMãe você mantém ${100 - taxaTransacao}% do poder de compra (descontando apenas nossa taxa de ${taxaTransacao}%). É como ter uma conta corrente, mas sem taxas bancárias abusivas.`
-    },
-    {
-      q: "E se ninguém quiser a minha peça?",
-      a: "Nosso algoritmo inteligente promove suas peças para usuárias que procuram exatamente aquilo. Além disso, temos as Missões - quando algum tipo de peça está escasso, oferecemos bônus em Girinhas para quem publicar. Isso mantém o marketplace sempre equilibrado."
+      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Caso a usuária que forneceu a peça não colaborar, a plataforma garante a devolução e restituição."
     }
   ];
 
@@ -232,131 +327,6 @@ const LandingPageOptimized = () => {
                 <Card key={index} className="border-red-200 bg-red-50">
                   <CardContent className="p-4">
                     <h3 className="font-bold text-gray-900 mb-2">{row.platform}</h3>
-                    <p className="text-green-600 text-sm mb-2">Promessa: {row.promise}</p>
-                    <p className="text-gray-600 text-sm mb-3">Realidade: {row.reality}</p>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-red-600 font-bold">💸 {row.loss}</span>
-                      <span className="text-red-600">⏱️ {row.time}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto mb-8">
-              <table className="w-full bg-white rounded-lg shadow-lg">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Onde você tenta</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">O que prometem</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">O que acontece de fato</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-red-600">💸 Dinheiro perdido</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-red-600">⏱️ Tempo perdido</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {problemsData.map((row, index) => (
-                    <tr key={index} className="border-t border-gray-200">
-                      <td className="px-6 py-4 font-medium text-gray-900">{row.platform}</td>
-                      <td className="px-6 py-4 text-green-600">{row.promise}</td>
-                      <td className="px-6 py-4 text-gray-600">{row.reality}</td>
-                      <td className="px-6 py-4 text-red-600 font-bold">{row.loss}</td>
-                      <td className="px-6 py-4 text-red-600">{row.time}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pain Points */}
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <h3 className="text-xl md:text-2xl font-bold text-center text-red-600 mb-6">
-                <span className="text-red-500">10 dores</span> que TODAS essas opções provocam
-              </h3>
-              <p className="text-center text-gray-600 mb-8">(e o GiraMãe corta pela raiz)</p>
-              
-              <div className="grid md:grid-cols-2 gap-4">
-                {painPoints.map((point, index) => (
-                  <div key={index} className="flex gap-3 items-start">
-                    <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
-                      {index + 1}
-                    </div>
-                    <p className="text-gray-700 text-sm">{point}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Solution Section */}
-        <section className="py-12 md:py-20 px-4 bg-gradient-to-br from-pink-50 to-purple-50">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <Badge className="mb-6 bg-blue-100 text-blue-800 text-lg font-medium px-4 py-2 rounded-full">
-                SOMOS NOVOS e queremos MUDAR o jogo
-              </Badge>
-              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
-                O que <span className="text-primary">só o GiraMãe</span> faz
-              </h2>
-              <div className="bg-white rounded-lg p-6 md:p-8 shadow-lg max-w-4xl mx-auto">
-                <blockquote className="text-lg md:text-xl text-gray-700 italic mb-4">
-                  Outras plataformas desvalorizam suas peças, cobram taxas altas e fazem você esperar.
-                </blockquote>
-                <p className="text-lg md:text-xl font-semibold text-primary">
-                  O GiraMãe cobra apenas {taxaTransacao}% em Girinhas, acelera a troca e beneficia toda a comunidade.
-                </p>
-              </div>
-            </div>
-            
-            <h3 className="text-xl md:text-2xl font-bold text-center text-gray-900 mb-8">
-              Recursos que só existem aqui
-            </h3>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {benefits.map((benefit, index) => (
-                <Card key={index} className={`border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 ${benefit.exclusive ? 'border-2 border-green-400' : ''}`}>
-                  <CardHeader>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <DollarSign className="w-6 h-6 text-primary" />
-                      </div>
-                      {benefit.exclusive && (
-                        <Badge className="bg-green-100 text-green-800 text-xs">Exclusivo</Badge>
-                      )}
-                    </div>
-                    <CardTitle className="text-lg">{benefit.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-gray-600">{benefit.desc}</CardDescription>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* How it Works */}
-        <section id="como-funciona" className="py-12 md:py-20 px-4 bg-white">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
-                Como funciona o <span className="text-primary">GiraMãe</span>
-              </h2>
-              <p className="text-lg md:text-xl text-gray-600">
-                Simples, rápido e sem complicação. Veja como transformar suas peças em créditos:
-              </p>
-            </div>
-            
-            <div className="space-y-8 md:space-y-12">
-              {steps.map((step, index) => (
-                <div key={index} className="flex flex-col md:flex-row gap-6 items-start">
-                  <div className="w-16 h-16 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0 mx-auto md:mx-0">
-                    {step.number}
-                  </div>
-                  <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{step.title}</h3>
                     <p className="text-gray-600 mb-4 text-lg">{step.desc}</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {step.features.map((feature, i) => (
@@ -381,22 +351,22 @@ const LandingPageOptimized = () => {
                 <div className="text-center">
                   <div className="w-16 h-16 bg-blue-200 text-blue-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">1</div>
                   <h4 className="font-bold text-gray-900 mb-2">Postou macacão</h4>
-                  <p className="text-sm text-gray-600 mb-1">Tamanho 2 anos, R$ 80 orig.</p>
-                  <p className="text-sm font-semibold text-teal-600">Ganhou 80 Girinhas</p>
+                  <p className="text-sm text-gray-600 mb-1">Tamanho 2 anos, seminovo</p>
+                  <p className="text-sm font-semibold text-teal-600">Ganhou Girinhas</p>
                 </div>
                 
                 <div className="text-center">
                   <div className="w-16 h-16 bg-green-200 text-green-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">2</div>
                   <h4 className="font-bold text-gray-900 mb-2">Carla reservou</h4>
                   <p className="text-sm text-gray-600 mb-1">Em 3 horas a peça foi reservada</p>
-                  <p className="text-sm font-semibold text-green-600">Girinhas liberadas!</p>
+                  <p className="text-sm font-semibold text-green-600">WhatsApps liberados!</p>
                 </div>
                 
                 <div className="text-center">
                   <div className="w-16 h-16 bg-purple-200 text-purple-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">3</div>
                   <h4 className="font-bold text-gray-900 mb-2">Ana escolheu casaco</h4>
                   <p className="text-sm text-gray-600 mb-1">Tam 3 anos, perfeito estado</p>
-                  <p className="text-sm font-semibold text-purple-600">Gastou 80 Girinhas</p>
+                  <p className="text-sm font-semibold text-purple-600">Gastou Girinhas</p>
                 </div>
                 
                 <div className="text-center">
@@ -409,8 +379,97 @@ const LandingPageOptimized = () => {
               
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                 <p className="text-lg font-bold text-green-700">
-                  Resultado: Ana trocou uma peça que não serve mais por outra que precisa, sem perder 1 centavo!
+                  Resultado: Ana trocou uma peça que não serve mais por outra que precisa, mantendo o valor integral!
                 </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Security & Privacy Section */}
+        <section className="py-12 md:py-20 px-4 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
+                <Shield className="inline w-10 h-10 text-primary mr-3" />
+                Segurança e <span className="text-primary">Privacidade</span>
+              </h2>
+              <p className="text-lg md:text-xl text-gray-600">
+                Sua segurança e privacidade são nossa prioridade absoluta
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8">
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Smartphone className="w-8 h-8 text-primary" />
+                    <CardTitle className="text-xl">Contato Protegido</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 mb-4">
+                    <strong>WhatsApp é liberado APENAS após reserva confirmada</strong> com Girinhas bloqueadas. 
+                    Este é o único meio de contato entre comprador e vendedor na plataforma.
+                  </p>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Zero spam ou contatos indesejados
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Apenas negócios sérios e confirmados
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Proteção total da sua privacidade
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20 bg-primary/5">
+                <CardHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Lock className="w-8 h-8 text-primary" />
+                    <CardTitle className="text-xl">Sistema Antifraude</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-700 mb-4">
+                    Girinhas bloqueadas garantem compromisso real. Reputação visível e avaliações 
+                    criam um ambiente de confiança mútua.
+                  </p>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Bloqueio automático de Girinhas
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Sistema de reputação transparente
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      Política de devolução garantida
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="mt-8 bg-amber-50 border border-amber-200 rounded-lg p-6">
+              <div className="flex items-start gap-3">
+                <Shield className="w-6 h-6 text-amber-600 mt-1 flex-shrink-0" />
+                <div>
+                  <h3 className="font-bold text-amber-800 mb-2">Condição Importante</h3>
+                  <p className="text-amber-700">
+                    <strong>O WhatsApp é o ÚNICO meio de contato disponível entre as partes.</strong> 
+                    Não há chat interno, comentários públicos ou outras formas de comunicação. 
+                    Esta é uma condição fundamental para usar nossa comunidade, garantindo organização e segurança para todos.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -481,7 +540,7 @@ const LandingPageOptimized = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
               <div className="flex flex-col md:flex-row items-center justify-center gap-3">
                 <CheckCircle className="w-6 h-6 text-green-300 flex-shrink-0" />
-                <span className="font-semibold text-center md:text-left">⚖️ Troca 1:1<br />Sem perda de valor</span>
+                <span className="font-semibold text-center md:text-left">⚖️ Troca justa<br />Valor preservado</span>
               </div>
               <div className="flex flex-col md:flex-row items-center justify-center gap-3">
                 <Zap className="w-6 h-6 text-yellow-300 flex-shrink-0" />
@@ -570,4 +629,155 @@ const LandingPageOptimized = () => {
   );
 };
 
-export default LandingPageOptimized;
+export default LandingPageOptimized;text-green-600 text-sm mb-2">Promessa: {row.promise}</p>
+                    <p className="text-gray-600 text-sm mb-3">Realidade: {row.reality}</p>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-red-600 font-bold">💸 {row.loss}</span>
+                      <span className="text-red-600">⏱️ {row.time}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto mb-8">
+              <table className="w-full bg-white rounded-lg shadow-lg">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Onde você tenta</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">O que prometem</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">O que acontece de fato</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-red-600">💸 Resultado</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-red-600">⏱️ Tempo perdido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {problemsData.map((row, index) => (
+                    <tr key={index} className="border-t border-gray-200">
+                      <td className="px-6 py-4 font-medium text-gray-900">{row.platform}</td>
+                      <td className="px-6 py-4 text-green-600">{row.promise}</td>
+                      <td className="px-6 py-4 text-gray-600">{row.reality}</td>
+                      <td className="px-6 py-4 text-red-600 font-bold">{row.loss}</td>
+                      <td className="px-6 py-4 text-red-600">{row.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pain Points */}
+            <div className="bg-white rounded-lg p-6 shadow-lg">
+              <h3 className="text-xl md:text-2xl font-bold text-center text-red-600 mb-6">
+                <span className="text-red-500">10 dores</span> que TODAS essas opções provocam
+              </h3>
+              <p className="text-center text-gray-600 mb-8">(e o GiraMãe corta pela raiz)</p>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                {painPoints.map((point, index) => (
+                  <div key={index} className="flex gap-3 items-start">
+                    <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                      {index + 1}
+                    </div>
+                    <p className="text-gray-700 text-sm">{point}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Solution Section */}
+        <section className="py-12 md:py-20 px-4 bg-gradient-to-br from-pink-50 to-purple-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <Badge className="mb-6 bg-blue-100 text-blue-800 text-lg font-medium px-4 py-2 rounded-full">
+                SOMOS NOVOS e queremos MUDAR o jogo
+              </Badge>
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
+                O que <span className="text-primary">só o GiraMãe</span> faz
+              </h2>
+              <div className="bg-white rounded-lg p-6 md:p-8 shadow-lg max-w-4xl mx-auto">
+                <blockquote className="text-lg md:text-xl text-gray-700 italic mb-4">
+                  Outras plataformas desvalorizam suas peças, cobram taxas altas e fazem você esperar.
+                </blockquote>
+                <p className="text-lg md:text-xl font-semibold text-primary">
+                  O GiraMãe cobra apenas {taxaTransacao}% em Girinhas, acelera a troca e beneficia toda a comunidade.
+                </p>
+              </div>
+            </div>
+            
+            <h3 className="text-xl md:text-2xl font-bold text-center text-gray-900 mb-8">
+              Recursos que só existem aqui
+            </h3>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {benefits.map((benefit, index) => (
+                <Card key={index} className={`border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 ${benefit.exclusive ? 'border-2 border-green-400' : ''}`}>
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-6 h-6 text-primary" />
+                      </div>
+                      {benefit.exclusive && (
+                        <Badge className="bg-green-100 text-green-800 text-xs">Exclusivo</Badge>
+                      )}
+                    </div>
+                    <CardTitle className="text-lg">{benefit.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <CardDescription className="text-gray-600">{benefit.desc}</CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-12 md:py-20 px-4 bg-white">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
+                Funcionalidades <span className="text-primary">inteligentes</span>
+              </h2>
+              <p className="text-lg md:text-xl text-gray-600">
+                Tecnologia que facilita sua vida e potencializa sua experiência na comunidade
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {features.map((feature, index) => (
+                <div key={index} className="text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4 text-primary">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How it Works */}
+        <section id="como-funciona" className="py-12 md:py-20 px-4 bg-gradient-to-br from-pink-50 to-purple-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
+                Como funciona o <span className="text-primary">GiraMãe</span>
+              </h2>
+              <p className="text-lg md:text-xl text-gray-600">
+                Simples, rápido e sem complicação. Veja como transformar suas peças em créditos:
+              </p>
+            </div>
+            
+            <div className="space-y-8 md:space-y-12">
+              {steps.map((step, index) => (
+                <div key={index} className="flex flex-col md:flex-row gap-6 items-start">
+                  <div className="w-16 h-16 bg-gradient-to-r from-primary to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0 mx-auto md:mx-0">
+                    {step.number}
+                  </div>
+                  <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{step.title}</h3>
+                    <p className="
