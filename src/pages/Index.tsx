@@ -15,26 +15,15 @@ import {
   DollarSign,
   ChevronDown
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
 
 const LandingPageOptimized = () => {
-  const { user, signInWithGoogle } = useAuth();
   const [openFaq, setOpenFaq] = useState(null);
-  const [isSigningIn, setIsSigningIn] = useState(false);
 
-  const handleGoogleLogin = async () => {
-    if (isSigningIn) return;
-    
-    try {
-      setIsSigningIn(true);
-      await signInWithGoogle();
-    } catch (error) {
-      console.error('Erro no login:', error);
-    } finally {
-      setIsSigningIn(false);
-    }
-  };
+  const stats = [
+    { value: "10K+", label: "Mães conectadas" },
+    { value: "50K+", label: "Peças trocadas" },
+    { value: "R$ 2M+", label: "Valor preservado" }
+  ];
 
   const problemsData = [
     { platform: "Brechó físico", promise: "Compro tudo já!", reality: "Paga 20% do valor, escolhe só o que interessa", loss: "-80%", time: "1 ida + 1 volta" },
@@ -123,7 +112,7 @@ const LandingPageOptimized = () => {
     },
     {
       q: "E se eu não gostar da peça que recebi?",
-      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Caso o usuário que forneceu a peça não colaborar, a plataforma te garante a devolução e restituição de suas Girinhas."
+      a: "Temos uma política de satisfação garantida. Se a peça não estiver conforme descrito, você pode devolver em até 7 dias e suas Girinhas são restituídas integralmente. Além disso, o sistema de avaliações previne esse tipo de problema."
     },
     {
       q: "Como funciona a logística? Tenho que ir buscar longe?",
@@ -136,10 +125,6 @@ const LandingPageOptimized = () => {
     {
       q: "E se ninguém quiser a minha peça?",
       a: "Nosso algoritmo inteligente promove suas peças para usuárias que procuram exatamente aquilo. Além disso, temos as Missões - quando algum tipo de peça está escasso, oferecemos bônus em Girinhas para quem publicar. Isso mantém o marketplace sempre equilibrado."
-    },
-    {
-      q: "Como começar sem dinheiro?",
-      a: "Você já inicia com poder de compra podendo obter as primeiras peças de roupas sem desembolsar 1 centavo! Apenas deve cumprir a primeira missão que é a única missão obrigatória para fazer parte da comunidade: publicar 2 itens, podendo ser roupas, calçados, brinquedos ou outros."
     }
   ];
 
@@ -149,27 +134,17 @@ const LandingPageOptimized = () => {
       <nav className="bg-white/80 backdrop-blur-sm border-b border-pink-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center">
+            <div className="flex items-center">
               <Sparkles className="h-8 w-8 text-primary mr-2" />
               <span className="text-2xl font-bold text-primary">GiraMãe</span>
-            </Link>
+            </div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#como-funciona" className="text-gray-600 hover:text-primary transition-colors">Como funciona</a>
               <a href="#faq" className="text-gray-600 hover:text-primary transition-colors">FAQ</a>
               <a href="#contato" className="text-gray-600 hover:text-primary transition-colors">Contato</a>
-              {user ? (
-                <Button asChild className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white rounded-full">
-                  <Link to="/feed">Explorar Itens</Link>
-                </Button>
-              ) : (
-                <Button 
-                  onClick={handleGoogleLogin}
-                  disabled={isSigningIn}
-                  className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white rounded-full"
-                >
-                  {isSigningIn ? 'Entrando...' : 'Começar grátis'}
-                </Button>
-              )}
+              <Button className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white rounded-full">
+                Começar grátis
+              </Button>
             </div>
           </div>
         </div>
@@ -190,7 +165,7 @@ const LandingPageOptimized = () => {
           </div>
           
           <h2 className="text-xl md:text-3xl font-bold text-gray-800 mb-4">
-            A plataforma onde mães trocam roupas, brinquedos e acessórios infantis de forma segura e solidária
+            Revolução na troca de roupas infantis
           </h2>
           
           <h3 className="text-lg md:text-2xl font-semibold text-gray-700 mb-6">
@@ -204,38 +179,28 @@ const LandingPageOptimized = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-            {user ? (
-              <Button asChild size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
-                <Link to="/feed">
-                  Explorar Itens
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleGoogleLogin}
-                disabled={isSigningIn}
-                size="lg" 
-                className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300"
-              >
-                {isSigningIn ? 'Entrando...' : 'Começar Agora'}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            )}
-            <Button asChild variant="outline" size="lg" className="w-full sm:w-auto px-8 py-4 text-lg rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300">
-              <Link to="/feed">Ver Itens Disponíveis</Link>
+            <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
+              Começar Agora
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button variant="outline" size="lg" className="w-full sm:w-auto px-8 py-4 text-lg rounded-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300">
+              Ver Itens Disponíveis
             </Button>
           </div>
           
-          <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-lg p-6 max-w-3xl mx-auto">
-            <p className="text-lg font-semibold text-gray-800 mb-2">
-              🎁 Comece sem desembolsar 1 centavo!
-            </p>
-            <p className="text-gray-700">
-              Você já inicia com poder de compra podendo obter as primeiras peças de roupas gratuitamente! 
-              Apenas deve cumprir a primeira missão: <strong>publicar 2 itens</strong> (roupas, calçados, brinquedos ou outros).
-            </p>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 md:gap-8 max-w-2xl mx-auto">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-xl md:text-3xl font-bold text-primary mb-1">{stat.value}</div>
+                <div className="text-xs md:text-sm text-gray-600">{stat.label}</div>
+              </div>
+            ))}
           </div>
+          
+          <p className="text-center text-gray-600 text-sm mt-4 italic">
+            Mães trocando roupas infantis de forma sustentável
+          </p>
         </div>
       </section>
 
@@ -437,6 +402,13 @@ const LandingPageOptimized = () => {
                 Resultado: Ana trocou uma peça que não serve mais por outra que precisa, sem perder 1 centavo!
               </p>
             </div>
+            
+            <div className="text-center mt-6">
+              <Button size="lg" className="bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 rounded-full">
+                Quero fazer minha primeira troca
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -477,6 +449,9 @@ const LandingPageOptimized = () => {
             <p className="text-gray-600 mb-6">Nossa equipe está pronta para ajudar você a começar sua jornada no GiraMãe</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white">
+                Falar com nossa equipe
+              </Button>
+              <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white">
                 Ver tutorial completo
               </Button>
             </div>
@@ -487,13 +462,17 @@ const LandingPageOptimized = () => {
       {/* Final CTA */}
       <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-primary to-pink-500 text-white">
         <div className="max-w-4xl mx-auto text-center">
+          <Badge className="mb-6 bg-white/20 text-white text-lg font-medium px-4 py-2 rounded-full">
+            Oferta de lançamento - 100% gratuito para sempre
+          </Badge>
+          
           <h2 className="text-2xl md:text-5xl font-bold mb-6">
-            Pronta para começar?
+            Pronta para a <span className="text-yellow-300">revolução?</span>
           </h2>
           
           <p className="text-lg md:text-xl mb-8 opacity-90 max-w-3xl mx-auto">
-            Junte-se à nossa comunidade e descubra como é fácil e gratificante trocar itens infantis 
-            de forma segura e solidária.
+            Junte-se a mais de 10.000 mães inteligentes que já descobriram como preservar o valor das roupas infantis, 
+            economizar tempo e ainda ajudar outras famílias.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -511,29 +490,37 @@ const LandingPageOptimized = () => {
             </div>
           </div>
           
+          <div className="bg-white/10 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg font-semibold mb-2">Últimas vagas para o programa Beta</p>
+            <p className="opacity-90">Estamos limitando o número de usuárias para garantir a melhor experiência. Apenas 500 vagas restantes!</p>
+          </div>
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            {user ? (
-              <Button asChild size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full font-semibold">
-                <Link to="/feed">
-                  Explorar Itens
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleGoogleLogin}
-                disabled={isSigningIn}
-                size="lg" 
-                variant="secondary" 
-                className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full font-semibold"
-              >
-                {isSigningIn ? 'Entrando...' : 'Criar Conta Grátis'}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            )}
-            <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary px-8 py-4 text-lg rounded-full">
-              <Link to="/feed">Ver Itens Disponíveis</Link>
+            <Button size="lg" variant="secondary" className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full font-semibold">
+              Garantir minha vaga gratuita
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
+            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary px-8 py-4 text-lg rounded-full">
+              Baixar o app agora
+            </Button>
+          </div>
+          
+          <div className="text-center opacity-90 mb-8">
+            <p className="text-sm mb-4">✅ Sem cartão de crédito • ✅ Sem taxa de inscrição • ✅ Cancele quando quiser</p>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-5 h-5 text-yellow-300 fill-current" />
+              ))}
+              <span className="font-semibold ml-2">4.9/5 nas lojas de app</span>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-400 text-gray-900 rounded-lg p-6 max-w-4xl mx-auto">
+            <p className="font-semibold text-base md:text-lg">
+              <strong>Garantimos:</strong> Se você não economizar pelo menos R$ 200 nos primeiros 3 meses usando o GiraMãe, 
+              nós devolvemos todo o valor que você teria perdido em outras plataformas. 
+              É isso mesmo - <em>seu sucesso é garantido ou seu dinheiro de volta!</em>
+            </p>
           </div>
         </div>
       </section>
@@ -596,7 +583,4 @@ const LandingPageOptimized = () => {
   );
 };
 
-export default LandingPageOptimized; hover:text-white">
-                Falar com nossa equipe
-              </Button>
-              <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary
+export default LandingPageOptimized;
