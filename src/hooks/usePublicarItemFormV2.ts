@@ -175,7 +175,7 @@ export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) 
           onSuccess: () => {
             toast.success("Item publicado com sucesso! 🎉");
             
-            // Reset completo do formulário após sucesso
+            // ✅ CORRIGIDO: Reset automático do formulário após sucesso
             resetForm();
             
             if (onSuccess) {
