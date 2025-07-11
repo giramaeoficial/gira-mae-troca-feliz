@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useRegiao } from '@/hooks/useRegiao';
+import { useCidadeLiberada } from '@/hooks/useCidadeLiberada';
 import { supabase } from '@/integrations/supabase/client';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
@@ -11,7 +11,7 @@ interface OnboardingGuardProps {
 
 const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children }) => {
   const { user, loading: authLoading } = useAuth();
-  const { liberada: cidadeLiberada, loading: loadingRegiao } = useRegiao();
+  const { liberada: cidadeLiberada, loading: loadingCidade } = useCidadeLiberada();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
 
@@ -108,7 +108,7 @@ const OnboardingGuard: React.FC<OnboardingGuardProps> = ({ children }) => {
     checkOnboardingStatus();
   }, [user, authLoading, navigate]);
 
-  if (authLoading || checking || loadingRegiao) {
+  if (authLoading || checking || loadingCidade) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">

@@ -52,6 +52,23 @@ export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) 
 
   const [errors, setErrors] = useState<ValidationErrors>({});
 
+  // Função para resetar o formulário completamente
+  const resetForm = () => {
+    setFormData({
+      titulo: '',
+      descricao: '',
+      categoria_id: '',
+      subcategoria: '',
+      genero: 'unissex',
+      tamanho_categoria: '',
+      tamanho_valor: '',
+      estado_conservacao: 'usado',
+      preco: '',
+      imagens: []
+    });
+    setErrors({});
+  };
+
   const updateFormData = (updates: Partial<SimpleFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
     // Limpar erros dos campos que foram atualizados
@@ -157,6 +174,10 @@ export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) 
         {
           onSuccess: () => {
             toast.success("Item publicado com sucesso! 🎉");
+            
+            // Reset completo do formulário após sucesso
+            resetForm();
+            
             if (onSuccess) {
               onSuccess();
             } else {
@@ -181,6 +202,7 @@ export const usePublicarItemFormV2 = (options: UsePublicarItemFormOptions = {}) 
     errors,
     loading,
     handleSubmit,
+    resetForm,
     isValid: Object.keys(errors).length === 0,
     isMission,
     currentItem

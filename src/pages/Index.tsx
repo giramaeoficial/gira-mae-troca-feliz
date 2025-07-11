@@ -253,13 +253,13 @@ const LandingPageOptimized = () => {
             </h2>
             
             <h3 className="text-lg md:text-2xl font-semibold text-gray-700 mb-6">
-              Pare de deixar <span className="text-red-500">dinheiro na mesa!</span>
+              Juntas, construímos uma <span className="text-primary">comunidade mais forte!</span>
             </h3>
             
             <p className="text-base md:text-xl text-gray-700 mb-8 leading-relaxed max-w-3xl mx-auto">
-              Com o GiraMãe você transforma cada peça infantil em <strong>crédito integral</strong>, 
-              troca na mesma qualidade e mantém o guarda-roupa sempre no ponto —
-              <em>rápido, justo e sustentável</em>.
+              No GiraMãe, cada peça infantil vira <strong>crédito integral</strong> para trocar por outras. 
+              Missões especiais recompensam sua participação, criando uma <em>rede de apoio entre mães</em> 
+              que compartilham os mesmos desafios da maternidade.
             </p>
             
             <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 mb-8 max-w-3xl mx-auto">
@@ -310,10 +310,10 @@ const LandingPageOptimized = () => {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-6">
-                Por que quase toda forma tradicional de vender/comprar itens infantis <span className="text-red-600">falha</span>
+                Por que as alternativas atuais para trocas infantis <span className="text-amber-600">não funcionam</span>
               </h2>
               <p className="text-lg md:text-xl text-gray-600">
-                E só o GiraMãe resolve de verdade. Veja onde você está <strong>perdendo dinheiro e tempo</strong>:
+                Entenda os <strong>desafios comuns</strong> que toda mãe enfrenta:
               </p>
             </div>
             
@@ -362,15 +362,15 @@ const LandingPageOptimized = () => {
 
             {/* Pain Points */}
             <div className="bg-white rounded-lg p-6 shadow-lg">
-              <h3 className="text-xl md:text-2xl font-bold text-center text-red-600 mb-6">
-                <span className="text-red-500">10 dores</span> que TODAS essas opções provocam
+              <h3 className="text-xl md:text-2xl font-bold text-center text-amber-600 mb-6">
+                <span className="text-amber-500">10 desafios</span> que toda mãe enfrenta
               </h3>
-              <p className="text-center text-gray-600 mb-8">(e o GiraMãe corta pela raiz)</p>
+              <p className="text-center text-gray-600 mb-8">(e como o GiraMãe resolve cada um)</p>
               
               <div className="grid md:grid-cols-2 gap-4">
                 {painPoints.map((point, index) => (
                   <div key={index} className="flex gap-3 items-start">
-                    <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    <div className="w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                       {index + 1}
                     </div>
                     <p className="text-gray-700 text-sm">{point}</p>
@@ -393,10 +393,10 @@ const LandingPageOptimized = () => {
               </h2>
               <div className="bg-white rounded-lg p-6 md:p-8 shadow-lg max-w-4xl mx-auto">
                 <blockquote className="text-lg md:text-xl text-gray-700 italic mb-4">
-                  Outras plataformas desvalorizam suas peças, cobram taxas altas e fazem você esperar.
+                  "Juntas somos mais fortes. No GiraMãe, cada troca fortalece toda a comunidade."
                 </blockquote>
                 <p className="text-lg md:text-xl font-semibold text-primary">
-                  O GiraMãe cobra apenas {taxaTransacao}% em Girinhas, acelera a troca e beneficia toda a comunidade.
+                  Taxa justa de {taxaTransacao}%, missões que recompensam e uma rede de apoio entre mães.
                 </p>
               </div>
             </div>

@@ -2436,6 +2436,10 @@ export type Database = {
         }
         Returns: string
       }
+      delete_user_by_email: {
+        Args: { p_email: string }
+        Returns: string
+      }
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2812,6 +2816,10 @@ export type Database = {
       verify_phone_code: {
         Args: { p_code: string } | { p_code: string }
         Returns: boolean
+      }
+      verify_user_deletion: {
+        Args: { p_email: string }
+        Returns: string
       }
     }
     Enums: {
