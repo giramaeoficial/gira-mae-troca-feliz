@@ -85,16 +85,6 @@ function App() {
               </AuthGuard>
             } 
           />
-          <Route 
-            path="/missoes" 
-            element={
-              <AuthGuard>
-                <SmartGuard protectionLevel="mission_only">
-                  <Missoes />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
 
          {/* ================================================ */}
          {/* ROTAS PROTEGIDAS (proteção completa)            */}
@@ -105,6 +95,16 @@ function App() {
                <AuthGuard>
                  <SmartGuard protectionLevel="full">
                    <FeedOptimized />
+                 </SmartGuard>
+               </AuthGuard>
+             } 
+           />
+           <Route 
+             path="/missoes" 
+             element={
+               <AuthGuard>
+                 <SmartGuard protectionLevel="full">
+                   <Missoes />
                  </SmartGuard>
                </AuthGuard>
              } 
