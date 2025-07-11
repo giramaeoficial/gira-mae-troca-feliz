@@ -1,4 +1,4 @@
-// src/App.tsx - VERSÃO CORRIGIDA com rota /cadastro
+// src/App.tsx - VERSÃO ATUALIZADA com SmartGuard
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
 import AuthCallback from '@/pages/AuthCallback';
 import AuthGuard from '@/components/auth/AuthGuard';
+import SmartGuard from '@/components/auth/SmartGuard';
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
@@ -28,9 +29,6 @@ import Missoes from '@/pages/Missoes';
 import Configuracoes from '@/pages/Configuracoes';
 import ConceptoComunidadeOnboarding from '@/pages/ConceptoComunidadeOnboarding';
 import PublicarPrimeiroItem from '@/pages/PublicarPrimeiroItem';
-import PactoEntradaGuard from '@/components/auth/PactoEntradaGuard';
-import OnboardingGuard from '@/components/auth/OnboardingGuard';
-import { CadastroCompletoGuard } from '@/components/auth/CadastroCompletoGuard';
 import { RecompensasProvider } from '@/components/recompensas/ProviderRecompensas';
 import WhatsAppOnboarding from '@/pages/onboarding/WhatsAppOnboarding';
 import CodigoOnboarding from '@/pages/onboarding/CodigoOnboarding';
@@ -57,7 +55,7 @@ function App() {
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
           
-          {/* Onboarding Routes */}
+          {/* Onboarding Routes - Sempre permitidas */}
           <Route path="/onboarding/whatsapp" element={<WhatsAppOnboarding />} />
           <Route path="/onboarding/codigo" element={<CodigoOnboarding />} />
           <Route path="/onboarding/termos" element={<TermosOnboarding />} />
@@ -65,13 +63,15 @@ function App() {
           <Route path="/aguardando-liberacao" element={<AguardandoLiberacao />} />
 
          {/* ========================================== */}
-         {/* ROTAS DE ONBOARDING (AuthGuard apenas)     */}
+         {/* ROTAS DE MISSÃO (mission_only protection)  */}
          {/* ========================================== */}
           <Route 
             path="/conceito-comunidade" 
             element={
               <AuthGuard>
-                <ConceptoComunidadeOnboarding />
+                <SmartGuard protectionLevel="mission_only">
+                  <ConceptoComunidadeOnboarding />
+                </SmartGuard>
               </AuthGuard>
             } 
           />
@@ -79,25 +79,33 @@ function App() {
             path="/publicar-primeiro-item" 
             element={
               <AuthGuard>
-                <PublicarPrimeiroItem />
+                <SmartGuard protectionLevel="mission_only">
+                  <PublicarPrimeiroItem />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/missoes" 
+            element={
+              <AuthGuard>
+                <SmartGuard protectionLevel="mission_only">
+                  <Missoes />
+                </SmartGuard>
               </AuthGuard>
             } 
           />
 
          {/* ================================================ */}
-         {/* ROTAS PROTEGIDAS (AuthGuard + PactoEntradaGuard) */}
+         {/* ROTAS PROTEGIDAS (proteção completa)            */}
          {/* ================================================ */}
            <Route 
              path="/feed" 
              element={
                <AuthGuard>
-                 <OnboardingGuard>
-                   <CadastroCompletoGuard>
-                     <PactoEntradaGuard>
-                       <FeedOptimized />
-                     </PactoEntradaGuard>
-                   </CadastroCompletoGuard>
-                 </OnboardingGuard>
+                 <SmartGuard protectionLevel="full">
+                   <FeedOptimized />
+                 </SmartGuard>
                </AuthGuard>
              } 
            />
@@ -105,9 +113,9 @@ function App() {
            path="/buscar-itens" 
            element={
              <AuthGuard>
-               <PactoEntradaGuard>
+               <SmartGuard protectionLevel="full">
                  <BuscarItens />
-               </PactoEntradaGuard>
+               </SmartGuard>
              </AuthGuard>
            } 
          />
@@ -115,9 +123,9 @@ function App() {
            path="/publicar" 
            element={
              <AuthGuard>
-               <PactoEntradaGuard>
+               <SmartGuard protectionLevel="full">
                  <PublicarItem />
-               </PactoEntradaGuard>
+               </SmartGuard>
              </AuthGuard>
            } 
          />
@@ -125,11 +133,9 @@ function App() {
             path="/perfil" 
             element={
               <AuthGuard>
-                <CadastroCompletoGuard>
-                  <PactoEntradaGuard>
-                    <Perfil />
-                  </PactoEntradaGuard>
-                </CadastroCompletoGuard>
+                <SmartGuard protectionLevel="full">
+                  <Perfil />
+                </SmartGuard>
               </AuthGuard>
             } 
           />
@@ -137,11 +143,9 @@ function App() {
             path="/perfil/editar" 
             element={
               <AuthGuard>
-                <CadastroCompletoGuard>
-                  <PactoEntradaGuard>
-                    <EditarPerfil />
-                  </PactoEntradaGuard>
-                </CadastroCompletoGuard>
+                <SmartGuard protectionLevel="full">
+                  <EditarPerfil />
+                </SmartGuard>
               </AuthGuard>
             } 
           />
@@ -149,11 +153,9 @@ function App() {
             path="/carteira" 
             element={
               <AuthGuard>
-                <CadastroCompletoGuard>
-                  <PactoEntradaGuard>
-                    <Carteira />
-                  </PactoEntradaGuard>
-                </CadastroCompletoGuard>
+                <SmartGuard protectionLevel="full">
+                  <Carteira />
+                </SmartGuard>
               </AuthGuard>
             } 
           />
@@ -161,9 +163,9 @@ function App() {
            path="/comprar-girinhas" 
            element={
              <AuthGuard>
-               <PactoEntradaGuard>
+               <SmartGuard protectionLevel="full">
                  <ComprarGirinhas />
-               </PactoEntradaGuard>
+               </SmartGuard>
              </AuthGuard>
            } 
          />
@@ -171,9 +173,9 @@ function App() {
            path="/indicacoes" 
            element={
              <AuthGuard>
-               <PactoEntradaGuard>
+               <SmartGuard protectionLevel="full">
                  <Indicacoes />
-               </PactoEntradaGuard>
+               </SmartGuard>
              </AuthGuard>
            } 
          />
@@ -181,11 +183,11 @@ function App() {
            path="/minhas-reservas" 
            element={
              <AuthGuard>
-               <PactoEntradaGuard>
+               <SmartGuard protectionLevel="full">
                  <RecompensasProvider>
                    <MinhasReservas />
                  </RecompensasProvider>
-               </PactoEntradaGuard>
+               </SmartGuard>
              </AuthGuard>
            } 
          />
@@ -193,36 +195,31 @@ function App() {
            path="/configuracoes" 
            element={
              <AuthGuard>
-               <PactoEntradaGuard>
+               <SmartGuard protectionLevel="full">
                  <Configuracoes />
-               </PactoEntradaGuard>
+               </SmartGuard>
              </AuthGuard>
            } 
          />
 
          {/* ================================================ */}
-         {/* ROTAS ESPECIAIS (lógica específica)             */}
+         {/* ROTAS ADMINISTRATIVAS (admin_bypass)            */}
          {/* ================================================ */}
-         
-         {/* Missões: AuthGuard apenas (precisa acessar para completar missão) */}
-         <Route 
-           path="/missoes" 
-           element={
-             <AuthGuard>
-               <Missoes />
-             </AuthGuard>
-           } 
-         />
-
-         {/* Admin: AuthGuard apenas (admin pode acessar sem missão) */}
          <Route 
            path="/admin" 
            element={
              <AuthGuard>
-               <AdminDashboard />
+               <SmartGuard protectionLevel="admin_bypass">
+                 <AdminDashboard />
+               </SmartGuard>
              </AuthGuard>
            } 
          />
+
+         {/* ================================================ */}
+         {/* ROTAS ESPECÍFICAS (sem proteção extra)          */}
+         {/* ================================================ */}
+         <Route path="/item/:id" element={<DetalhesItem />} />
 
          {/* 404 */}
          <Route path="*" element={<NotFound />} />
