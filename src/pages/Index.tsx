@@ -8,7 +8,6 @@ import {
   ArrowRight,
   CheckCircle,
   ChevronDown,
-  Home,
   Users, // Used for community icon
   Handshake, // Used for a soft "solution" icon
   Shield, // Used for security
@@ -44,17 +43,17 @@ const LandingPageOptimized = () => {
   // Dados para a seção de diferenciais (ajustado para o novo tom)
   const differentials = [
     {
-      title: "Comunidade de verdade",
+      title: "Comunidade real",
       description: "Não somos uma empresa querendo lucrar em cima de você. Somos mães que criaram uma solução para todas nós.",
       icon: <Users className="w-6 h-6 text-primary" />
     },
     {
-      title: "Transparência de mãe para mãe",
+      title: "Transparência clara",
       description: `Cobramos apenas ${taxaTransacao}% para manter tudo funcionando. Sem pegadinhas, sem letras miúdas.`,
       icon: <CheckCircle className="w-6 h-6 text-primary" />
     },
     {
-      title: "Segurança pensada em você",
+      title: "Segurança garantida",
       description: "Só liberamos contato após confirmar a troca. Avaliações entre mães para manter a qualidade. Suas peças sempre protegidas.",
       icon: <Shield className="w-6 h-6 text-primary" />
     }
@@ -63,23 +62,23 @@ const LandingPageOptimized = () => {
   // Dados para a seção de benefícios reais
   const realBenefits = [
     {
-      title: "Economia que faz diferença",
-      description: "Aquele conjunto de R$80 que seu filho usou 2 meses? Aqui ele continua valendo para trocar por outro conjunto, não vira R$5 no brechó."
+      title: "Economia real",
+      description: "Peças infantis usadas valem muito mais aqui do que em brechós."
     },
     {
-      title: "Tempo para o que importa",
-      description: "Poste em 2 minutos, troque quando puder. Sem ficar horas negociando em grupos."
+      title: "Mais praticidade",
+      description: "Postagens rápidas e trocas simples, sem complicação."
     },
     {
-      title: "Conexão com quem entende",
-      description: "Mães da mesma escola, do mesmo bairro. Entregas na saída da escola, no parquinho."
+      title: "Conexões locais",
+      description: "Trocas fáceis com mães próximas a você."
     }
   ];
 
   const faqs = [
     {
-      q: "Mas e se vocês sumirem?",
-      a: "Olha, somos mães também e sabemos essa preocupação. Por isso somos transparentes: CNPJ, endereço, tudo certinho. E as roupas sempre são suas, não nossas."
+      q: "Quais as garantias da plataforma?",
+      a: "Somos transparentes: CNPJ, endereço, tudo certinho. E as roupas sempre são suas, não nossas. Nosso sistema de avaliações garante a qualidade das trocas."
     },
     {
       q: `Por que cobram ${taxaTransacao}%?`,
@@ -122,7 +121,7 @@ const LandingPageOptimized = () => {
       a: "Ao cadastrar idade, tamanhos e escola do seu filho, o sistema destaca automaticamente no feed os itens que servem para ele. Além disso, priorizamos entregas entre mães da mesma escola, facilitando a logística e criando conexões locais."
     },
     {
-      q: "Como sei que vou receber uma peça de qualidade?",
+      q: "As peças têm garantia de qualidade?",
       a: "Nosso sistema de reputação é rigoroso. Cada usuária tem uma avaliação visível baseada em trocas anteriores. Fotos devem ser reais e detalhadas. Se alguém enviar peças em mau estado, a reputação cai e os anúncios são removidos. A própria comunidade se autorregula para manter a qualidade alta."
     },
     {
@@ -163,9 +162,9 @@ const LandingPageOptimized = () => {
             </p>
 
             <div className="flex justify-center">
-              <Button size="lg" asChild className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transform hover:scale-105 transition-all duration-300">
+              <Button size="lg" asChild className="w-full sm:w-auto bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white px-8 py-4 text-lg rounded-full transition-all duration-300">
                 <Link to="/auth">
-                  Quero conhecer a comunidade
+                  Conheça a comunidade
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -177,7 +176,7 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4 bg-white/50">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">
-              A gente sabe como é...
+              Você provavelmente já passou por isso
             </h2>
 
             <div className="space-y-6 mb-10">
@@ -189,7 +188,7 @@ const LandingPageOptimized = () => {
             </div>
 
             <p className="text-xl md:text-2xl font-semibold text-gray-800 italic">
-              "Não seria lindo se existisse um jeito mais fácil?"
+              Por isso decidimos criar algo diferente
             </p>
           </div>
         </section>
@@ -198,16 +197,16 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4 bg-gradient-to-br from-pink-50 to-purple-50">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">
-              Criamos um espaço especial para nós
+              Um jeito simples de trocar roupas infantis
             </h2>
 
             <div className="bg-white rounded-lg p-6 md:p-8 shadow-lg max-w-3xl mx-auto">
               <Handshake className="h-12 w-12 text-primary mx-auto mb-4" />
               <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-4">
-                No GiraMãe, cada roupinha tem seu valor preservado através das <strong>Girinhas</strong> - nossa moedinha de troca. É como aquela amiga que sempre tem o tamanho que você precisa, só que para todas nós.
+                No GiraMãe, as roupinhas mantêm seu valor através das <strong>Girinhas</strong>.
               </p>
               <p className="text-base md:text-lg font-semibold text-gray-600 italic">
-                "As Girinhas são como vales-troca entre amigas. Não é dinheiro, não dá para sacar - é só nossa forma de organizar as trocas com justiça. Assim ninguém sai perdendo."
+                "As Girinhas são créditos internos que facilitam trocas justas dentro da comunidade."
               </p>
             </div>
           </div>
@@ -217,7 +216,7 @@ const LandingPageOptimized = () => {
         <section id="como-funciona" className="py-12 md:py-20 px-4 bg-white">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-12">
-              Simples como deveria ser
+              Como funciona
             </h2>
 
             <div className="space-y-10">
@@ -228,10 +227,10 @@ const LandingPageOptimized = () => {
                 </div>
                 <div className="flex-1 text-center md:text-left">
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-                    Comece com calma
+                    Cadastre seus primeiros itens
                   </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
-                    Poste {itensNecessarios} pecinhas que não usa mais e ganhe {recompensaPacto} Girinhas de boas-vindas para começar a girar!
+                    Poste {itensNecessarios} pecinhas que não usa mais e ganhe {recompensaPacto} Girinhas para iniciar suas trocas.
                   </p>
                 </div>
               </div>
@@ -243,7 +242,7 @@ const LandingPageOptimized = () => {
                 </div>
                 <div className="flex-1 text-center md:text-left">
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-                    Troque com tranquilidade
+                    Escolha o que precisa
                   </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
                     Escolha o que seu filho precisa usando suas Girinhas. Nosso sistema destaca itens do tamanho certo para o seu pequeno.
@@ -258,7 +257,7 @@ const LandingPageOptimized = () => {
                 </div>
                 <div className="flex-1 text-center md:text-left">
                   <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-                    Receba com segurança
+                    Combine e receba
                   </h3>
                   <p className="text-lg text-gray-700 leading-relaxed">
                     Combine a entrega direto com a outra mamãe, do jeitinho que preferir. Apenas após a reserva, os contatos são liberados.
@@ -274,11 +273,11 @@ const LandingPageOptimized = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">
               <Lightbulb className="inline w-10 h-10 text-primary mr-3" />
-              Nossa missão de mãe para mãe
+              Nosso propósito
             </h2>
 
             <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6">
-              Somos mães que se cansaram de ver valor sendo desperdiçado. Não só o valor das roupinhas, mas o valor do nosso tempo, do nosso esforço, da nossa comunidade.
+              Criamos um espaço onde roupas infantis mantêm seu valor real, simplificando a rotina das mães.
             </p>
 
             <div className="bg-white rounded-lg p-6 md:p-8 shadow-lg max-w-3xl mx-auto mb-8">
@@ -325,11 +324,8 @@ const LandingPageOptimized = () => {
               </div>
             </div>
 
-            <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6 italic">
-              "Que nenhuma mãe precise escolher entre economizar e vestir bem seu filho. Que toda peça em bom estado continue sua jornada. Que ser mãe fique um pouquinho mais leve."
-            </p>
             <p className="text-lg md:text-xl font-semibold text-gray-800 leading-relaxed">
-              Nosso compromisso: "Cada decisão que tomamos passa por este filtro: isso ajuda ou atrapalha a vida das mães? Se complica, a gente não faz. Simples assim."
+              Simplificamos a maternidade, valorizando cada peça de roupa e cada mãe.
             </p>
             <p className="text-lg md:text-xl font-bold text-primary mt-4">
               "Porque no final do dia, somos mães cuidando de mães. E é nisso que acreditamos."
@@ -341,7 +337,7 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4 bg-white">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-12">
-              Por que somos diferentes
+              O que nos torna diferentes
             </h2>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -366,7 +362,7 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4 bg-gradient-to-br from-pink-50 to-purple-50">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-12">
-              O que você ganha de verdade
+              Benefícios práticos
             </h2>
 
             <div className="space-y-8">
@@ -387,10 +383,10 @@ const LandingPageOptimized = () => {
           <section className="py-12 md:py-20 px-4 bg-white">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">
-                Nossas Missões e Recompensas
+                Missões que premiam você
               </h2>
               <p className="text-lg md:text-xl text-gray-700 mb-10">
-                Participe da comunidade e ganhe Girinhas extras!
+                Realize missões simples e ganhe créditos para trocas.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {missoes.map((missao) => (
@@ -419,39 +415,39 @@ const LandingPageOptimized = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">
               <Shield className="inline w-10 h-10 text-primary mr-3" />
-              Sua tranquilidade é nossa prioridade
+              Segurança acima de tudo
             </h2>
 
             <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-8 italic">
-              "Sabemos que confiar é difícil. Por isso construímos tudo pensando em você:"
+              "Criamos tudo pensando na sua segurança:"
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-8">
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">WhatsApp só após confirmação (sem spam!)</h3>
+                  <h3 className="font-semibold text-gray-900">Contato liberado só após reserva</h3>
                   <p className="text-gray-700 text-sm">Seu contato é privado até a troca ser confirmada.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Avaliações transparentes entre mães</h3>
+                  <h3 className="font-semibold text-gray-900">Avaliações claras e honestas</h3>
                   <p className="text-gray-700 text-sm">Construa sua reputação e confie nas outras mães.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Devolução garantida se não ficar satisfeita</h3>
+                  <h3 className="font-semibold text-gray-900">Garantia de devolução em 7 dias</h3>
                   <p className="text-gray-700 text-sm">Sua satisfação é importante para nós.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Seus dados sempre protegidos</h3>
+                  <h3 className="font-semibold text-gray-900">Dados pessoais protegidos</h3>
                   <p className="text-gray-700 text-sm">Privacidade e segurança em primeiro lugar.</p>
                 </div>
               </div>
@@ -459,7 +455,7 @@ const LandingPageOptimized = () => {
 
             <div className="bg-white rounded-lg p-6 shadow-md border border-gray-200">
               <p className="text-lg md:text-xl text-gray-700 italic">
-                "As Girinhas são só para trocar dentro da comunidade - não dá para converter em dinheiro. É assim que mantemos tudo justo e funcionando."
+                "Girinhas são créditos internos não conversíveis em dinheiro. Simples, justo e funcional."
               </p>
             </div>
           </div>
@@ -497,14 +493,13 @@ const LandingPageOptimized = () => {
             </div>
 
             <div className="text-center mt-12">
-              <p className="text-lg text-gray-600 mb-6">Ainda tem dúvidas?</p>
-              <p className="text-gray-600 mb-6">Nossa equipe está pronta para ajudar você a começar sua jornada no GiraMãe</p>
+              <p className="text-lg text-gray-600 mb-6">Nossa equipe está pronta para ajudar você a começar sua jornada no GiraMãe</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white px-6 py-3 rounded-full">
-                  Falar com nossa equipe
+                  Falar com a equipe
                 </Button>
                 <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white px-6 py-3 rounded-full">
-                  Ver tutorial completo
+                  Ver tutorial
                 </Button>
               </div>
             </div>
@@ -515,20 +510,20 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4 bg-gradient-to-r from-primary to-pink-500 text-white">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-5xl font-bold mb-6">
-              Vem fazer parte
+              Faça parte da comunidade
             </h2>
 
             <p className="text-lg md:text-xl mb-8 opacity-90 max-w-3xl mx-auto leading-relaxed">
-              Comece aos pouquinhos. Poste só {itensNecessarios} peças para conhecer. Se não gostar, tudo bem. Se gostar, você encontrou sua comunidade.
+              Cadastre seus primeiros itens sem compromisso.
             </p>
 
             <p className="text-lg md:text-xl mb-8 opacity-90 max-w-3xl mx-auto leading-relaxed italic">
               "Afinal, criar nossos filhos já é desafio suficiente. Que tal facilitar pelo menos a parte das roupinhas?"
             </p>
 
-            <Button size="lg" variant="secondary" asChild className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full font-semibold transform hover:scale-105 transition-all duration-300">
+            <Button size="lg" variant="secondary" asChild className="bg-white text-primary hover:bg-gray-100 px-8 py-4 text-lg rounded-full transition-all duration-300">
               <Link to="/auth">
-                Quero experimentar com calma
+                Começar agora
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -548,13 +543,13 @@ const LandingPageOptimized = () => {
                 <span className="text-2xl font-bold">GiraMãe</span>
               </div>
               <p className="text-gray-400 mb-4">
-                A plataforma que revoluciona a troca de roupas infantis.
+                Trocas sustentáveis de roupas infantis entre mães.
                 Economia circular, sustentabilidade e comunidade em um só lugar.
               </p>
               <div className="text-gray-400 space-y-1">
-                <p>📧 contato@giramae.com.br</p>
-                <p>📱 (11) 99999-9999</p>
-                <p>📍 São Paulo, SP</p>
+                <p>contato@giramae.com.br</p>
+                <p>(11) 99999-9999</p>
+                <p>São Paulo, SP</p>
               </div>
             </div>
 
