@@ -77,6 +77,11 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
   if (error) {
     console.error('❌ SmartGuard - Erro no hook useRotaUsuario:', error);
     
+    // Se estamos em /auth e há erro, permitir acesso para quebrar loop
+    if (location.pathname === '/auth') {
+      return <>{children}</>;
+    }
+    
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
         <div className="text-center space-y-4 max-w-md mx-auto p-6">
