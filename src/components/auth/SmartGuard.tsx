@@ -92,7 +92,7 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
 
   // ====================================================================
   // LÓGICA SUPER SIMPLIFICADA: CONFIAR 100% NA FUNÇÃO DO BANCO
-  // MAS PERMITIR TRANSIÇÕES DENTRO DO FLUXO DA MISSÃO
+  // MAS PERMITIR NAVEGAÇÃO LIVRE QUANDO TEM ACESSO TOTAL
   // ====================================================================
 
   console.log(`🛡️ SmartGuard - Verificando acesso para ${location.pathname}`, {
@@ -101,6 +101,46 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
     motivo,
     currentPath: location.pathname
   });
+
+  // ====================================================================
+  // LÓGICA SUPER SIMPLIFICADA: CONFIAR 100% NA FUNÇÃO DO BANCO
+  // MAS PERMITIR NAVEGAÇÃO LIVRE QUANDO TEM ACESSO TOTAL (COM RESTRIÇÕES)
+  // ====================================================================
+
+  console.log(`🛡️ SmartGuard - Verificando acesso para ${location.pathname}`, {
+    rotaDestino,
+    podeAcessar,
+    motivo,
+    currentPath: location.pathname
+  });
+
+  // ✅ CASO ESPECIAL: Se tem acesso total, permitir navegação livre
+  // MAS bloquear rotas que não fazem mais sentido
+  if (podeAcessar) {
+    // Admin pode acessar /admin mesmo com acesso total
+    if (location.pathname === '/admin' && !dadosDebug.is_admin) {
+      console.log('❌ Tentativa de acesso a /admin sem ser admin');
+      return <Navigate to="/feed" replace />;
+    }
+
+    const rotasProibidasComAcessoTotal = [
+      '/onboarding/whatsapp',
+      '/onboarding/codigo', 
+      '/onboarding/termos',
+      '/onboarding/endereco',
+      '/conceito-comunidade',
+      '/publicar-primeiro-item',
+      '/aguardando-liberacao'
+    ];
+
+    if (rotasProibidasComAcessoTotal.includes(location.pathname)) {
+      console.log('❌ Rota de cadastro/missão não permitida após completar - redirecionando para feed');
+      return <Navigate to="/feed" replace />;
+    }
+
+    console.log('✅ Usuário tem acesso total - permitindo navegação livre');
+    return <>{children}</>;
+  }
 
   // ✅ CASO ESPECIAL: Transições dentro do fluxo da missão
   const missaoFlowRoutes = ['/conceito-comunidade', '/publicar-primeiro-item'];
@@ -113,30 +153,28 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
     return <>{children}</>;
   }
 
-  // ✅ CASO 1: Função disse que pode acessar e está na rota certa
-  if (podeAcessar && location.pathname === rotaDestino) {
-    console.log('✅ Function liberou acesso e usuário está na rota correta');
+  // ✅ CASO 1: Está na rota correta determinada pelo sistema
+  if (location.pathname === rotaDestino) {
+    console.log('✅ Usuário está na rota correta determinada pelo sistema');
     return <>{children}</>;
   }
 
-  // ✅ CASO 2: Está tentando acessar uma rota diferente da determinada pela função
-  if (location.pathname !== rotaDestino) {
-    const redirectTo = fallbackRoute || rotaDestino;
-    
-    console.log(`🔄 SmartGuard - Redirecionando para rota correta: ${redirectTo}`, {
-      from: location.pathname,
-      reason: motivo,
-      podeAcessar,
-      dadosDebug: {
-        cadastro_status: dadosDebug.cadastro_status,
-        cidade_liberada: dadosDebug.cidade_liberada,
-        itens_publicados: dadosDebug.itens_publicados,
-        is_admin: dadosDebug.is_admin
-      }
-    });
+  // ❌ CASO 2: Precisa ser redirecionado
+  const redirectTo = fallbackRoute || rotaDestino;
+  
+  console.log(`🔄 SmartGuard - Redirecionando para rota correta: ${redirectTo}`, {
+    from: location.pathname,
+    reason: motivo,
+    podeAcessar,
+    dadosDebug: {
+      cadastro_status: dadosDebug.cadastro_status,
+      cidade_liberada: dadosDebug.cidade_liberada,
+      itens_publicados: dadosDebug.itens_publicados,
+      is_admin: dadosDebug.is_admin
+    }
+  });
 
-    return <Navigate to={redirectTo} replace />;
-  }
+  return <Navigate to={redirectTo} replace />;
 
   // ✅ CASO 3: Está na rota correta mas função disse que não pode acessar
   // (ex: está em /aguardando-liberacao porque cidade não foi liberada)
