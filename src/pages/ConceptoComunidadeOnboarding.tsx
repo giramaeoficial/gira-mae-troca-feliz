@@ -82,7 +82,7 @@ const ConceptoComunidadeOnboarding = () => {
                 onClick={handleStartMission}
                 className="w-full h-12 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 text-white font-medium text-lg rounded-full"
               >
-                Começar Minha Primeira Missão
+                Começar
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
