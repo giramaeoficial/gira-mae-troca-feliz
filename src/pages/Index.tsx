@@ -103,7 +103,7 @@ const LandingPageOptimized = () => {
       a: "Se um item que você quer já foi reservado, você pode entrar na fila de espera gratuitamente. Suas Girinhas não são bloqueadas. Se a pessoa da frente desistir ou não confirmar a entrega, você sobe na fila. Quando chegar sua vez, você decide se quer reservar."
     },
     {
-      q: "Como funciona o contato entre comprador e vendedor?",
+      q: "Como funciona o contato entre as mães?", // Changed from "comprador e vendedor"
       a: "Os WhatsApps de ambas as partes são liberados APENAS após a confirmação da reserva (quando as Girinhas são bloqueadas). Este é o único meio de contato disponível na plataforma, garantindo privacidade e evitando spam. Use este contato para combinar local e horário de entrega."
     },
     {
@@ -408,7 +408,7 @@ const LandingPageOptimized = () => {
                     <CardContent>
                       <p className="text-gray-700 text-sm mb-2">{missao.descricao}</p>
                       {/* Melhoria de contraste para o valor da Girinha */}
-                      <Badge className="bg-yellow-400 text-yellow-900 text-xs font-medium px-2 py-1 rounded-full">
+                      <Badge className="bg-yellow-300 text-yellow-800 text-xs font-medium px-2 py-1 rounded-full">
                         Recompensa: {missao.recompensa_girinhas} Girinhas
                       </Badge>
                       <p className="text-gray-600 text-xs mt-2">
@@ -503,18 +503,7 @@ const LandingPageOptimized = () => {
                 </Card>
               ))}
             </div>
-
-            <div className="text-center mt-12">
-              <p className="text-lg text-gray-600 mb-6">Nossa equipe está pronta para ajudar você a começar sua jornada no GiraMãe</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white px-6 py-3 rounded-full">
-                  Falar com a equipe
-                </Button>
-                <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-white px-6 py-3 rounded-full">
-                  Ver tutorial
-                </Button>
-              </div>
-            </div>
+            {/* Seção removida conforme solicitado */}
           </div>
         </section>
 
