@@ -39,8 +39,7 @@ const PublicarPrimeiroItem = () => {
           imagens: []
         });
       } else {
-        // Redirect to missions page after completing both items
-        navigate('/missoes');
+        window.location.reload();
       }
     }
   });
