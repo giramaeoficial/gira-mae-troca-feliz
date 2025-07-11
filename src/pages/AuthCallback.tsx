@@ -1,4 +1,4 @@
-// src/pages/AuthCallback.tsx - VERSÃO CORRIGIDA
+// src/pages/AuthCallback.tsx - VERSÃO CORRIGIDA COM FUNÇÃO DO BANCO
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -38,73 +38,94 @@ const AuthCallback: React.FC = () => {
       console.log('🔄 AuthCallback: Iniciando processamento para usuário:', user.id);
 
       try {
-        // Buscar dados do perfil
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('cadastro_status, cadastro_step, telefone_verificado, nome, endereco, cidade, estado')
-          .eq('id', user.id)
-          .single();
+        // ✅ NOVA LÓGICA: Usar a função do banco para determinar rota
+        console.log('🎯 AuthCallback: Chamando função determinar_rota_usuario...');
+        
+        const { data: resultado, error: rpcError } = await supabase
+          .rpc('determinar_rota_usuario');
 
-        if (error) {
-          console.error('❌ AuthCallback: Erro ao buscar perfil:', error);
-          
-          if (error.code === 'PGRST116') {
-            // Perfil não encontrado - usuário novo
-            console.log('👤 AuthCallback: Perfil não encontrado, usuário novo - indo para onboarding');
-            toast({
-              title: "Bem-vindo!",
-              description: "Vamos completar seu cadastro.",
-            });
-            navigate('/onboarding/whatsapp', { replace: true });
-            return;
-          }
-          
-          throw error;
+        if (rpcError) {
+          console.error('❌ AuthCallback: Erro na RPC:', rpcError);
+          throw new Error(`Erro ao determinar rota: ${rpcError.message}`);
         }
 
-        console.log('📊 AuthCallback: Dados do perfil encontrados:', profile);
-
-        // ✅ CORREÇÃO: Verificar status e redirecionar adequadamente
-        if (profile.cadastro_status === 'completo') {
-          console.log('✅ AuthCallback: Cadastro completo, indo para feed');
-          toast({
-            title: "Login realizado!",
-            description: "Bem-vinda de volta à GiraMãe!",
-          });
-          navigate('/feed', { replace: true });
-        } else if (profile.cadastro_status === 'liberado') {
-          console.log('✅ AuthCallback: Usuário liberado, indo para feed');
-          toast({
-            title: "Login realizado!",
-            description: "Bem-vinda de volta à GiraMãe!",
-          });
-          navigate('/feed', { replace: true });
-        } else if (profile.cadastro_status === 'aguardando') {
-          console.log('⏳ AuthCallback: Aguardando liberação da cidade');
-          toast({
-            title: "Aguardando liberação",
-            description: "Sua cidade ainda não foi liberada.",
-          });
-          navigate('/aguardando-liberacao', { replace: true });
-        } else {
-          // Cadastro incompleto - ir para onboarding baseado no step
-          console.log('🔄 AuthCallback: Cadastro incompleto, indo para onboarding');
-          toast({
-            title: "Continuando cadastro...",
-            description: "Vamos finalizar seu cadastro.",
-          });
-          
-          // Redirecionar baseado no cadastro_step ou status
-          if (profile.cadastro_status === 'incompleto') {
-            if (profile.telefone_verificado) {
-              navigate('/onboarding/termos', { replace: true });
-            } else {
-              navigate('/onboarding/whatsapp', { replace: true });
-            }
-          } else {
-            navigate('/onboarding/whatsapp', { replace: true });
-          }
+        if (!resultado || resultado.length === 0) {
+          console.error('❌ AuthCallback: Function não retornou dados');
+          throw new Error('Function não retornou dados válidos');
         }
+
+        const rotaData = resultado[0];
+        console.log('✅ AuthCallback: Rota determinada:', {
+          rota: rotaData.rota_destino,
+          pode_acessar: rotaData.pode_acessar,
+          motivo: rotaData.motivo
+        });
+
+        // Decidir mensagem e navegação baseado na resposta da função
+        let toastTitle = "Login realizado!";
+        let toastDescription = "Bem-vinda à GiraMãe!";
+
+        switch (rotaData.motivo) {
+          case 'cidade_liberada_ritual_completo':
+          case 'cidade_liberada_acesso_total':
+            toastTitle = "Login realizado!";
+            toastDescription = "Bem-vinda de volta à GiraMãe!";
+            break;
+
+          case 'ritual_completo_aguardando_cidade':
+          case 'missao_completa_aguardando_cidade':
+            toastTitle = "Aguardando liberação";
+            toastDescription = "Sua cidade ainda não foi liberada.";
+            break;
+
+          case 'ritual_mae_novata_primeiro_item':
+          case 'nenhum_item_publicado':
+            toastTitle = "Continuando cadastro...";
+            toastDescription = "Vamos finalizar seu ritual de mãe novata!";
+            break;
+
+          case 'ritual_mae_novata_segundo_item':
+          case 'um_item_publicado':
+            toastTitle = "Quase lá!";
+            toastDescription = "Falta apenas mais um item para completar!";
+            break;
+
+          case 'whatsapp_nao_verificado':
+            toastTitle = "Continuando cadastro...";
+            toastDescription = "Vamos verificar seu WhatsApp.";
+            break;
+
+          case 'termos_nao_aceitos':
+          case 'politica_nao_aceita':
+            toastTitle = "Continuando cadastro...";
+            toastDescription = "Vamos finalizar os termos.";
+            break;
+
+          case 'endereco_incompleto':
+          case 'cidade_estado_nao_preenchidos':
+            toastTitle = "Continuando cadastro...";
+            toastDescription = "Vamos completar seu endereço.";
+            break;
+
+          case 'admin_acesso_liberado':
+            toastTitle = "Login Admin";
+            toastDescription = "Acesso administrativo liberado!";
+            break;
+
+          default:
+            toastTitle = "Login realizado!";
+            toastDescription = "Redirecionando você...";
+        }
+
+        // Mostrar toast
+        toast({
+          title: toastTitle,
+          description: toastDescription,
+        });
+
+        // Navegar para a rota determinada pela função
+        console.log(`🚀 AuthCallback: Navegando para ${rotaData.rota_destino}`);
+        navigate(rotaData.rota_destino, { replace: true });
 
       } catch (error) {
         console.error('❌ AuthCallback: Erro no processamento:', error);
