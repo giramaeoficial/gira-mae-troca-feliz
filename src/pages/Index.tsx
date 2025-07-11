@@ -32,14 +32,6 @@ const LandingPageOptimized = () => {
   const recompensaPacto = missaoPactoEntrada?.recompensa_girinhas || 100;
   const itensNecessarios = missaoPactoEntrada?.condicoes?.quantidade || 2;
 
-  // Dados para a seção de problemas (simplificado e com tom de conversa)
-  const painPointsConversational = [
-    "Comprar roupa nova toda hora e ver seu filho usar 3 vezes?",
-    "Tentar vender no brechó e receber uma mixaria?",
-    "Postar em grupo de WhatsApp e ninguém responder?",
-    "Guardar 'para o próximo filho' e nunca mais usar?"
-  ];
-
   // Dados para a seção de diferenciais (ajustado para o novo tom)
   const differentials = [
     {
@@ -73,6 +65,20 @@ const LandingPageOptimized = () => {
       title: "Conexões locais",
       description: "Trocas fáceis com mães próximas a você."
     }
+  ];
+
+  // Nova lista de pontos positivos para substituir a seção de problemas
+  const newChallengesResolved = [
+    "Valorização justa – você mantém o valor das suas peças.",
+    "Logística simples – troque com mães próximas de você.",
+    "Trocas rápidas – sem necessidade de negociações longas.",
+    "Agilidade nas trocas – suas peças circulam rapidamente.",
+    "Qualidade garantida – avaliações claras e detalhadas.",
+    "Transparência total – sem taxas escondidas.",
+    "Segurança – proteção garantida para suas trocas.",
+    "Economia circular – incentivo real ao reuso de peças.",
+    "Itens sempre úteis – missões que equilibram oferta e demanda.",
+    "Comunidade real – rede ativa de apoio entre mães."
   ];
 
   const faqs = [
@@ -172,24 +178,26 @@ const LandingPageOptimized = () => {
           </div>
         </section>
 
-        {/* SEÇÃO 2 - PROBLEMA COMPARTILHADO */}
+        {/* SEÇÃO 2 - O QUE O GIRAMÃE FAZ DIFERENTE */}
         <section className="py-12 md:py-20 px-4 bg-white/50">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">
-              Você provavelmente já passou por isso
+              O que o GiraMãe faz diferente para facilitar as trocas infantis
             </h2>
+            <p className="text-lg md:text-xl text-gray-600 mb-10">
+              Entenda como facilitamos a vida das mães na hora das trocas:
+            </p>
 
-            <div className="space-y-6 mb-10">
-              {painPointsConversational.map((point, index) => (
-                <p key={index} className="text-lg md:text-xl text-gray-700 leading-relaxed">
-                  <span className="font-semibold text-primary/80 mr-2">•</span> {point}
-                </p>
+            <div className="grid md:grid-cols-2 gap-4">
+              {newChallengesResolved.map((point, index) => (
+                <div key={index} className="flex gap-3 items-start text-left">
+                  <div className="w-6 h-6 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                    <CheckCircle className="w-4 h-4" />
+                  </div>
+                  <p className="text-gray-700 text-base">{point}</p>
+                </div>
               ))}
             </div>
-
-            <p className="text-xl md:text-2xl font-semibold text-gray-800 italic">
-              Por isso decidimos criar algo diferente
-            </p>
           </div>
         </section>
 
@@ -285,7 +293,7 @@ const LandingPageOptimized = () => {
                 Nossa missão é simples e poderosa:
               </h3>
               <p className="text-lg md:text-xl text-gray-800 italic">
-                "Transformar a forma como mães lidam com roupas infantis, criando uma rede de apoio mútuo onde cada peça mantém seu valor real e cada mãe encontra suporte na sua jornada."
+                "Nossa missão é conectar mães em uma comunidade real e acolhedora, facilitando trocas justas, sustentáveis e seguras de roupas infantis, valorizando cada peça e simplificando a maternidade."
               </p>
             </div>
 
