@@ -91,8 +91,7 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
   }
 
   // ====================================================================
-  // LÓGICA SUPER SIMPLIFICADA: CONFIAR 100% NA FUNÇÃO DO BANCO
-  // MAS PERMITIR NAVEGAÇÃO LIVRE QUANDO TEM ACESSO TOTAL (COM RESTRIÇÕES)
+  // LÓGICA DE ACESSO (AJUSTE DE GRUPOS)
   // ====================================================================
 
   console.log(`🛡️ SmartGuard - Verificando acesso para ${location.pathname}`, {
@@ -103,7 +102,7 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
   });
 
   // ✅ CASO ESPECIAL: Se tem acesso total, permitir navegação livre
-  // MAS bloquear rotas que não fazem mais sentido
+  // MAS impedir saltos de etapa ou retorno a estágios anteriores
   if (podeAcessar) {
     // Admin pode acessar /admin mesmo com acesso total
     if (location.pathname === '/admin' && !dadosDebug.is_admin) {
@@ -111,24 +110,41 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
       return <Navigate to="/feed" replace />;
     }
 
-    const rotasProibidasComAcessoTotal = [
-      '/onboarding/whatsapp',
-      '/onboarding/codigo', 
-      '/onboarding/termos',
-      '/onboarding/endereco',
-      '/conceito-comunidade',
-      '/publicar-primeiro-item',
-      '/aguardando-liberacao'
+    // ===== Lógica de grupos =====
+    const grupos: string[][] = [
+      ['/onboarding/whatsapp', '/onboarding/codigo'],              // Grupo 0
+      ['/onboarding/termos', '/onboarding/endereco'],              // Grupo 1
+      ['/conceito-comunidade', '/publicar-primeiro-item'],         // Grupo 2
+      ['/aguardando-liberacao'],                                   // Grupo 3
     ];
 
-    if (rotasProibidasComAcessoTotal.includes(location.pathname)) {
-      console.log('❌ Rota de cadastro/missão não permitida após completar - redirecionando para feed');
-      return <Navigate to="/feed" replace />;
+    // Helper para saber em qual grupo está cada rota
+    const rotaParaIndice = (rota: string) =>
+      grupos.findIndex(g => g.includes(rota));
+
+    const idxAtual = rotaParaIndice(location.pathname);
+    const idxDestino = rotaParaIndice(rotaDestino);
+
+    const emMesmoGrupo = idxAtual !== -1 && idxDestino !== -1 && idxAtual === idxDestino;
+    const avancandoCorreto = idxAtual !== -1 && idxDestino !== -1 && idxAtual < idxDestino && idxDestino === idxAtual + 1;
+
+    // Se o usuário tentou acessar grupo anterior ou saltar etapas, bloqueia
+    if (
+      idxAtual !== -1 && idxDestino !== -1 &&
+      !emMesmoGrupo && !avancandoCorreto
+    ) {
+      console.log('❌ Tentativa de pular etapas ou retroceder fluxo - redirecionando para rotaDestino');
+      return <Navigate to={rotaDestino} replace />;
     }
 
+    // Fora do fluxo sensível? Navegação livre.
     console.log('✅ Usuário tem acesso total - permitindo navegação livre');
     return <>{children}</>;
   }
+
+  // ====================================================================
+  // FLUXO ORIGINAL: ONBOARDING/MISSÃO (QUANDO NÃO TEM ACESSO TOTAL)
+  // ====================================================================
 
   // ✅ CASO ESPECIAL: Transições dentro do fluxo de onboarding
   const onboardingFlowRoutes = [
