@@ -10,34 +10,31 @@ import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
 interface SmartGuardProps {
   children: React.ReactNode;
-  /**
-   * Rota de fallback customizada (opcional)
-   * Se não fornecida, usa a rota determinada pela function do banco
-   */
   fallbackRoute?: string;
 }
+
+// ====================================================================
+// GRUPOS DE FLUXO
+// ====================================================================
+
+const grupos: string[][] = [
+  ['/onboarding/whatsapp', '/onboarding/codigo'],
+  ['/onboarding/termos', '/onboarding/endereco'],
+  ['/conceito-comunidade', '/publicar-primeiro-item'],
+  ['/aguardando-liberacao'],
+];
+const telasSensiveis = grupos.flat();
+const idxGrupo = (rota: string) => grupos.findIndex(g => g.includes(rota));
 
 // ====================================================================
 // COMPONENT PRINCIPAL
 // ====================================================================
 
-const SmartGuard: React.FC<SmartGuardProps> = ({ 
-  children, 
-  fallbackRoute
-}) => {
+const SmartGuard: React.FC<SmartGuardProps> = ({ children, fallbackRoute }) => {
   const location = useLocation();
-  const { 
-    rotaDestino, 
-    podeAcessar, 
-    motivo, 
-    dadosDebug, 
-    loading, 
-    error 
-  } = useRotaUsuario();
+  const { rotaDestino, podeAcessar, motivo, dadosDebug, loading, error } = useRotaUsuario();
 
-  // ====================================================================
   // LOADING STATE
-  // ====================================================================
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50">
@@ -56,17 +53,15 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
     );
   }
 
-  // ====================================================================
   // ERROR STATE
-  // ====================================================================
   if (error) {
     console.error('❌ SmartGuard - Erro no hook useRotaUsuario:', error);
-    
+
     // Se estamos em /auth e há erro, permitir acesso para quebrar loop
     if (location.pathname === '/auth') {
       return <>{children}</>;
     }
-    
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
         <div className="text-center space-y-4 max-w-md mx-auto p-6">
@@ -79,8 +74,8 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
           <p className="text-red-600 text-sm">
             Ocorreu um erro ao verificar suas permissões. Tente recarregar a página.
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             Recarregar Página
@@ -91,109 +86,30 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
   }
 
   // ====================================================================
-  // LÓGICA DE ACESSO (AJUSTE DE GRUPOS)
+  // LÓGICA DE ACESSO FLUXO SENSÍVEL / NORMAL
   // ====================================================================
 
-  console.log(`🛡️ SmartGuard - Verificando acesso para ${location.pathname}`, {
-    rotaDestino,
-    podeAcessar,
-    motivo,
-    currentPath: location.pathname
-  });
-
-  // ✅ CASO ESPECIAL: Se tem acesso total, permitir navegação livre
-  // MAS impedir saltos de etapa ou retorno a estágios anteriores
+  // 1. Cadastro completo (podeAcessar = true): só bloqueia se tentar acessar tela sensível
   if (podeAcessar) {
-    // Admin pode acessar /admin mesmo com acesso total
     if (location.pathname === '/admin' && !dadosDebug.is_admin) {
-      console.log('❌ Tentativa de acesso a /admin sem ser admin');
       return <Navigate to="/feed" replace />;
     }
-
-    // ===== Lógica de grupos =====
-    const grupos: string[][] = [
-      ['/onboarding/whatsapp', '/onboarding/codigo'],              // Grupo 0
-      ['/onboarding/termos', '/onboarding/endereco'],              // Grupo 1
-      ['/conceito-comunidade', '/publicar-primeiro-item'],         // Grupo 2
-      ['/aguardando-liberacao'],                                   // Grupo 3
-    ];
-
-    // Helper para saber em qual grupo está cada rota
-    const rotaParaIndice = (rota: string) =>
-      grupos.findIndex(g => g.includes(rota));
-
-    const idxAtual = rotaParaIndice(location.pathname);
-    const idxDestino = rotaParaIndice(rotaDestino);
-
-    const emMesmoGrupo = idxAtual !== -1 && idxDestino !== -1 && idxAtual === idxDestino;
-    const avancandoCorreto = idxAtual !== -1 && idxDestino !== -1 && idxAtual < idxDestino && idxDestino === idxAtual + 1;
-
-    // Se o usuário tentou acessar grupo anterior ou saltar etapas, bloqueia
-    if (
-      idxAtual !== -1 && idxDestino !== -1 &&
-      !emMesmoGrupo && !avancandoCorreto
-    ) {
-      console.log('❌ Tentativa de pular etapas ou retroceder fluxo - redirecionando para rotaDestino');
-      return <Navigate to={rotaDestino} replace />;
+    if (telasSensiveis.includes(location.pathname)) {
+      return <Navigate to="/feed" replace />;
     }
-
-    // Fora do fluxo sensível? Navegação livre.
-    console.log('✅ Usuário tem acesso total - permitindo navegação livre');
     return <>{children}</>;
   }
 
-  // ====================================================================
-  // FLUXO ORIGINAL: ONBOARDING/MISSÃO (QUANDO NÃO TEM ACESSO TOTAL)
-  // ====================================================================
+  // 2. Cadastro INCOMPLETO: pode alternar entre rotas do mesmo grupo, mas não pode saltar grupos
+  if (location.pathname === rotaDestino) return <>{children}</>;
 
-  // ✅ CASO ESPECIAL: Transições dentro do fluxo de onboarding
-  const onboardingFlowRoutes = [
-    '/onboarding/whatsapp', 
-    '/onboarding/codigo', 
-    '/onboarding/termos', 
-    '/onboarding/endereco'
-  ];
-  const isOnboardingFlow = onboardingFlowRoutes.includes(location.pathname) && 
-                          onboardingFlowRoutes.includes(rotaDestino);
+  const idxDestino = idxGrupo(rotaDestino);
+  const idxAtual = idxGrupo(location.pathname);
+  const emMesmoGrupo = idxDestino !== -1 && idxAtual !== -1 && idxDestino === idxAtual;
 
-  if (isOnboardingFlow) {
-    // Se está dentro do fluxo de onboarding, permitir navegação
-    console.log('✅ Navegação dentro do fluxo de onboarding - permitindo acesso');
-    return <>{children}</>;
-  }
+  if (emMesmoGrupo) return <>{children}</>;
 
-  // ✅ CASO ESPECIAL: Transições dentro do fluxo da missão
-  const missaoFlowRoutes = ['/conceito-comunidade', '/publicar-primeiro-item'];
-  const isMissionFlow = missaoFlowRoutes.includes(location.pathname) && 
-                       missaoFlowRoutes.includes(rotaDestino);
-
-  if (isMissionFlow) {
-    // Se está dentro do fluxo da missão, permitir navegação
-    console.log('✅ Navegação dentro do fluxo da missão - permitindo acesso');
-    return <>{children}</>;
-  }
-
-  // ✅ CASO 1: Está na rota correta determinada pelo sistema
-  if (location.pathname === rotaDestino) {
-    console.log('✅ Usuário está na rota correta determinada pelo sistema');
-    return <>{children}</>;
-  }
-
-  // ❌ CASO 2: Precisa ser redirecionado
   const redirectTo = fallbackRoute || rotaDestino;
-  
-  console.log(`🔄 SmartGuard - Redirecionando para rota correta: ${redirectTo}`, {
-    from: location.pathname,
-    reason: motivo,
-    podeAcessar,
-    dadosDebug: {
-      cadastro_status: dadosDebug.cadastro_status,
-      cidade_liberada: dadosDebug.cidade_liberada,
-      itens_publicados: dadosDebug.itens_publicados,
-      is_admin: dadosDebug.is_admin
-    }
-  });
-
   return <Navigate to={redirectTo} replace />;
 };
 
@@ -201,25 +117,13 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
 // COMPONENTES AUXILIARES SIMPLIFICADOS
 // ====================================================================
 
-/**
- * Guard padrão que simplesmente obedece à função do banco
- */
 export const SimpleGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <SmartGuard>
-    {children}
-  </SmartGuard>
+  <SmartGuard>{children}</SmartGuard>
 );
 
-// ====================================================================
-// HOOK AUXILIAR PARA VERIFICAR PERMISSÕES
-// ====================================================================
-
-/**
- * Hook para verificar se usuário pode acessar determinado nível
- */
 export const useCanAccess = () => {
   const { podeAcessar, motivo, dadosDebug } = useRotaUsuario();
-  
+
   return {
     canAccessFull: podeAcessar,
     isAdmin: dadosDebug.is_admin,
@@ -228,22 +132,21 @@ export const useCanAccess = () => {
       isAdmin: dadosDebug.is_admin,
       cityReleased: dadosDebug.cidade_liberada,
       itemsPublished: dadosDebug.itens_publicados,
-      onboardingComplete: dadosDebug.telefone_verificado && dadosDebug.termos_aceitos && dadosDebug.politica_aceita && dadosDebug.endereco_completo
-    }
+      onboardingComplete:
+        dadosDebug.telefone_verificado &&
+        dadosDebug.termos_aceitos &&
+        dadosDebug.politica_aceita &&
+        dadosDebug.endereco_completo,
+    },
   };
 };
 
-// ====================================================================
-// COMPONENTE PARA DEBUG (apenas em desenvolvimento)
-// ====================================================================
-
 export const SmartGuardDebugInfo: React.FC = () => {
   const { rotaDestino, podeAcessar, motivo, dadosDebug, loading } = useRotaUsuario();
-  
+
   if (process.env.NODE_ENV !== 'development') {
     return null;
   }
-
   if (loading) {
     return <div className="fixed bottom-4 right-4 bg-yellow-100 p-2 rounded text-xs">Loading...</div>;
   }
