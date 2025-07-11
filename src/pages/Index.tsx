@@ -103,7 +103,7 @@ const LandingPageOptimized = () => {
       a: "Se um item que você quer já foi reservado, você pode entrar na fila de espera gratuitamente. Suas Girinhas não são bloqueadas. Se a pessoa da frente desistir ou não confirmar a entrega, você sobe na fila. Quando chegar sua vez, você decide se quer reservar."
     },
     {
-      q: "Como funciona o contato entre as mães?", // Changed from "comprador e vendedor"
+      q: "Como funciona o contato entre as mães?",
       a: "Os WhatsApps de ambas as partes são liberados APENAS após a confirmação da reserva (quando as Girinhas são bloqueadas). Este é o único meio de contato disponível na plataforma, garantindo privacidade e evitando spam. Use este contato para combinar local e horário de entrega."
     },
     {
@@ -503,7 +503,6 @@ const LandingPageOptimized = () => {
                 </Card>
               ))}
             </div>
-            {/* Seção removida conforme solicitado */}
           </div>
         </section>
 
