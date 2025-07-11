@@ -92,18 +92,6 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
 
   // ====================================================================
   // LÓGICA SUPER SIMPLIFICADA: CONFIAR 100% NA FUNÇÃO DO BANCO
-  // MAS PERMITIR NAVEGAÇÃO LIVRE QUANDO TEM ACESSO TOTAL
-  // ====================================================================
-
-  console.log(`🛡️ SmartGuard - Verificando acesso para ${location.pathname}`, {
-    rotaDestino,
-    podeAcessar,
-    motivo,
-    currentPath: location.pathname
-  });
-
-  // ====================================================================
-  // LÓGICA SUPER SIMPLIFICADA: CONFIAR 100% NA FUNÇÃO DO BANCO
   // MAS PERMITIR NAVEGAÇÃO LIVRE QUANDO TEM ACESSO TOTAL (COM RESTRIÇÕES)
   // ====================================================================
 
@@ -142,6 +130,22 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
     return <>{children}</>;
   }
 
+  // ✅ CASO ESPECIAL: Transições dentro do fluxo de onboarding
+  const onboardingFlowRoutes = [
+    '/onboarding/whatsapp', 
+    '/onboarding/codigo', 
+    '/onboarding/termos', 
+    '/onboarding/endereco'
+  ];
+  const isOnboardingFlow = onboardingFlowRoutes.includes(location.pathname) && 
+                          onboardingFlowRoutes.includes(rotaDestino);
+
+  if (isOnboardingFlow) {
+    // Se está dentro do fluxo de onboarding, permitir navegação
+    console.log('✅ Navegação dentro do fluxo de onboarding - permitindo acesso');
+    return <>{children}</>;
+  }
+
   // ✅ CASO ESPECIAL: Transições dentro do fluxo da missão
   const missaoFlowRoutes = ['/conceito-comunidade', '/publicar-primeiro-item'];
   const isMissionFlow = missaoFlowRoutes.includes(location.pathname) && 
@@ -175,17 +179,6 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
   });
 
   return <Navigate to={redirectTo} replace />;
-
-  // ✅ CASO 3: Está na rota correta mas função disse que não pode acessar
-  // (ex: está em /aguardando-liberacao porque cidade não foi liberada)
-  if (location.pathname === rotaDestino && !podeAcessar) {
-    console.log('✅ Usuário está na rota correta aguardando liberação');
-    return <>{children}</>;
-  }
-
-  // ❌ FALLBACK: Não deveria chegar aqui
-  console.warn('⚠️ SmartGuard - Situação não mapeada, permitindo acesso');
-  return <>{children}</>;
 };
 
 // ====================================================================
