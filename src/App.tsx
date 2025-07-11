@@ -55,12 +55,59 @@ function App() {
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
           
-          {/* Onboarding Routes - Sempre permitidas */}
-          <Route path="/onboarding/whatsapp" element={<WhatsAppOnboarding />} />
-          <Route path="/onboarding/codigo" element={<CodigoOnboarding />} />
-          <Route path="/onboarding/termos" element={<TermosOnboarding />} />
-          <Route path="/onboarding/endereco" element={<EnderecoOnboarding />} />
-          <Route path="/aguardando-liberacao" element={<AguardandoLiberacao />} />
+          {/* ========================================== */}
+          {/* ROTAS DE ONBOARDING (protegidas)          */}
+          {/* ========================================== */}
+          <Route 
+            path="/onboarding/whatsapp" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <WhatsAppOnboarding />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/onboarding/codigo" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <CodigoOnboarding />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/onboarding/termos" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <TermosOnboarding />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/onboarding/endereco" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <EnderecoOnboarding />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/aguardando-liberacao" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <AguardandoLiberacao />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
 
          {/* ========================================== */}
          {/* ROTAS DE MISSÃO (mission_only protection)  */}
