@@ -92,6 +92,7 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
 
   // ====================================================================
   // LÓGICA SUPER SIMPLIFICADA: CONFIAR 100% NA FUNÇÃO DO BANCO
+  // MAS PERMITIR TRANSIÇÕES DENTRO DO FLUXO DA MISSÃO
   // ====================================================================
 
   console.log(`🛡️ SmartGuard - Verificando acesso para ${location.pathname}`, {
@@ -100,6 +101,17 @@ const SmartGuard: React.FC<SmartGuardProps> = ({
     motivo,
     currentPath: location.pathname
   });
+
+  // ✅ CASO ESPECIAL: Transições dentro do fluxo da missão
+  const missaoFlowRoutes = ['/conceito-comunidade', '/publicar-primeiro-item'];
+  const isMissionFlow = missaoFlowRoutes.includes(location.pathname) && 
+                       missaoFlowRoutes.includes(rotaDestino);
+
+  if (isMissionFlow) {
+    // Se está dentro do fluxo da missão, permitir navegação
+    console.log('✅ Navegação dentro do fluxo da missão - permitindo acesso');
+    return <>{children}</>;
+  }
 
   // ✅ CASO 1: Função disse que pode acessar e está na rota certa
   if (podeAcessar && location.pathname === rotaDestino) {
