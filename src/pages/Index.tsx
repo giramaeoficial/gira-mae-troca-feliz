@@ -164,7 +164,7 @@ const LandingPageOptimized = () => {
             </p>
 
             <p className="text-sm md:text-base text-gray-500 mb-8 max-w-3xl mx-auto">
-              A ideia nasceu aqui em Canoas, RS, e hoje conecta mães por todo o Brasil.
+              A ideia nasceu aqui em <span className="font-bold text-primary">Canoas, RS</span>, e hoje conecta mães por todo o Brasil.
             </p>
 
             <div className="flex justify-center">
@@ -211,10 +211,13 @@ const LandingPageOptimized = () => {
             <div className="bg-white rounded-lg p-6 md:p-8 shadow-lg max-w-3xl mx-auto">
               <Handshake className="h-12 w-12 text-primary mx-auto mb-4" />
               <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-4">
-                No GiraMãe, as roupinhas mantêm seu valor através das <strong>Girinhas</strong>.
+                No GiraMãe, cada Girinha equivale a um Real, e as roupinhas mantêm seu valor através delas.
               </p>
-              <p className="text-base md:text-lg font-semibold text-gray-600 italic">
-                "As Girinhas são créditos internos que facilitam trocas justas dentro da comunidade."
+              <p className="text-base md:text-lg font-semibold text-gray-600 italic mb-4">
+                "As Girinhas são créditos internos que facilitam trocas justas dentro da comunidade. Temos um controle por categoria com preço mínimo e máximo, evitando preços abusivos e garantindo que todas as mães tenham acesso a peças de qualidade por um valor justo."
+              </p>
+              <p className="text-base md:text-lg text-gray-700 leading-relaxed">
+                Pense em nós como um grupo de WhatsApp, mas de forma organizada! Aqui você pode filtrar por tamanhos, categorias e muito mais, encontrando exatamente o que precisa de forma rápida e eficiente.
               </p>
             </div>
           </div>
@@ -404,7 +407,8 @@ const LandingPageOptimized = () => {
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-700 text-sm mb-2">{missao.descricao}</p>
-                      <Badge className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full">
+                      {/* Melhoria de contraste para o valor da Girinha */}
+                      <Badge className="bg-yellow-400 text-yellow-900 text-xs font-medium px-2 py-1 rounded-full">
                         Recompensa: {missao.recompensa_girinhas} Girinhas
                       </Badge>
                       <p className="text-gray-600 text-xs mt-2">
