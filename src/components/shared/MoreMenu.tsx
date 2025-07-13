@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Wallet, Package, Users, User } from 'lucide-react';
+import { Wallet, Package, Users, User, Heart, UserCheck } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -19,6 +19,8 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ children }) => {
   const moreItems = [
     { icon: Wallet, label: "Carteira", path: "/carteira" },
     { icon: Package, label: "Reservas", path: "/minhas-reservas" },
+    { icon: Heart, label: "Favoritos", path: "/favoritos" },
+    { icon: UserCheck, label: "Mães Seguidas", path: "/maes-seguidas" },
     { icon: Users, label: "Indicações", path: "/indicacoes" },
     { icon: User, label: "Perfil", path: "/perfil" }
   ];
@@ -32,7 +34,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ children }) => {
         <SheetHeader>
           <SheetTitle>Menu</SheetTitle>
         </SheetHeader>
-        <div className="grid grid-cols-2 gap-4 py-6">
+        <div className="grid grid-cols-2 gap-3 py-6">
           {moreItems.map((item) => {
             const Icon = item.icon;
             

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, MessageCircle } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, MessageCircle, Heart, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -47,6 +47,8 @@ const DesktopNav: React.FC = () => {
         
         {/* Bloco de Funcionalidades */}
         <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
+        <NavLink to="/favoritos" icon={Heart}>Favoritos</NavLink>
+        <NavLink to="/maes-seguidas" icon={UserCheck}>Mães Seguidas</NavLink>
         
         {/* Separador Vertical */}
         <div className="border-l h-6 border-gray-300 mx-3"></div>
@@ -125,6 +127,8 @@ const Header: React.FC = () => {
     { label: 'Feed', path: '/feed', icon: Home },
     { label: 'Publicar', path: '/publicar', icon: Plus },
     { label: 'Carteira', path: '/carteira', icon: Wallet },
+    { label: 'Favoritos', path: '/favoritos', icon: Heart },
+    { label: 'Mães Seguidas', path: '/maes-seguidas', icon: UserCheck },
     { label: 'Missões', path: '/missoes', icon: Trophy },
     { label: 'Reservas', path: '/minhas-reservas', icon: Package }
   ];

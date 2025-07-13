@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, Package, Trophy, Users } from 'lucide-react';
+import { Home, Plus, Package, Trophy, Users, Wallet, Heart, UserCheck } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 const NavLink: React.FC<{ to: string; icon: React.ElementType; children: React.ReactNode }> = ({ to, icon: Icon, children }) => {
@@ -29,6 +29,14 @@ const DesktopNav: React.FC = () => {
       <NavLink to="/feed" icon={Home}>Feed</NavLink>
       <NavLink to="/publicar" icon={Plus}>Publicar</NavLink>
       <NavLink to="/minhas-reservas" icon={Package}>Reservas</NavLink>
+
+      {/* Separador Vertical */}
+      <div className="border-l h-6 border-gray-300 mx-2"></div>
+
+      {/* Bloco de Funcionalidades */}
+      <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
+      <NavLink to="/favoritos" icon={Heart}>Favoritos</NavLink>
+      <NavLink to="/maes-seguidas" icon={UserCheck}>Mães Seguidas</NavLink>
 
       {/* Separador Vertical */}
       <div className="border-l h-6 border-gray-300 mx-2"></div>
