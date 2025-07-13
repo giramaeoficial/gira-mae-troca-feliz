@@ -111,159 +111,159 @@ function App() {
             } 
           />
 
-         {/* ========================================== */}
-         {/* ROTAS DE MISSÃO (mission_only protection)  */}
-         {/* ========================================== */}
-          <Route 
-            path="/conceito-comunidade" 
-            element={
-              <AuthGuard>
-                <SmartGuard protectionLevel="mission_only">
-                  <ConceptoComunidadeOnboarding />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/publicar-primeiro-item" 
-            element={
-              <AuthGuard>
-                <SmartGuard protectionLevel="mission_only">
-                  <PublicarPrimeiroItem />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
-
-         {/* ================================================ */}
-         {/* ROTAS PROTEGIDAS (proteção completa)            */}
-         {/* ================================================ */}
+          {/* ========================================== */}
+          {/* ROTAS DE MISSÃO (mission_only protection)  */}
+          {/* ========================================== */}
            <Route 
-             path="/feed" 
+             path="/conceito-comunidade" 
              element={
                <AuthGuard>
-                 <SmartGuard protectionLevel="full">
-                   <FeedOptimized />
+                 <SmartGuard>
+                   <ConceptoComunidadeOnboarding />
                  </SmartGuard>
                </AuthGuard>
              } 
            />
            <Route 
-             path="/missoes" 
+             path="/publicar-primeiro-item" 
              element={
                <AuthGuard>
-                 <SmartGuard protectionLevel="full">
-                   <Missoes />
+                 <SmartGuard>
+                   <PublicarPrimeiroItem />
                  </SmartGuard>
                </AuthGuard>
              } 
            />
-         <Route 
-           path="/buscar-itens" 
-           element={
-             <AuthGuard>
-               <SmartGuard protectionLevel="full">
-                 <BuscarItens />
-               </SmartGuard>
-             </AuthGuard>
-           } 
-         />
-         <Route 
-           path="/publicar" 
-           element={
-             <AuthGuard>
-               <SmartGuard protectionLevel="full">
-                 <PublicarItem />
-               </SmartGuard>
-             </AuthGuard>
-           } 
-         />
-          <Route 
-            path="/perfil" 
-            element={
-              <AuthGuard>
-                <SmartGuard protectionLevel="full">
-                  <Perfil />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/perfil/editar" 
-            element={
-              <AuthGuard>
-                <SmartGuard protectionLevel="full">
-                  <EditarPerfil />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/carteira" 
-            element={
-              <AuthGuard>
-                <SmartGuard protectionLevel="full">
-                  <Carteira />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
-         <Route 
-           path="/comprar-girinhas" 
-           element={
-             <AuthGuard>
-               <SmartGuard protectionLevel="full">
-                 <ComprarGirinhas />
-               </SmartGuard>
-             </AuthGuard>
-           } 
-         />
-         <Route 
-           path="/indicacoes" 
-           element={
-             <AuthGuard>
-               <SmartGuard protectionLevel="full">
-                 <Indicacoes />
-               </SmartGuard>
-             </AuthGuard>
-           } 
-         />
-         <Route 
-           path="/minhas-reservas" 
-           element={
-             <AuthGuard>
-               <SmartGuard protectionLevel="full">
-                 <RecompensasProvider>
-                   <MinhasReservas />
-                 </RecompensasProvider>
-               </SmartGuard>
-             </AuthGuard>
-           } 
-         />
-         <Route 
-           path="/configuracoes" 
-           element={
-             <AuthGuard>
-               <SmartGuard protectionLevel="full">
-                 <Configuracoes />
-               </SmartGuard>
-             </AuthGuard>
-           } 
-         />
 
-         {/* ================================================ */}
-         {/* ROTAS ADMINISTRATIVAS (admin_bypass)            */}
-         {/* ================================================ */}
-         <Route 
-           path="/admin" 
-           element={
-             <AuthGuard>
-               <SmartGuard protectionLevel="admin_bypass">
-                 <AdminDashboard />
-               </SmartGuard>
-             </AuthGuard>
-           } 
-         />
+          {/* ================================================ */}
+          {/* ROTAS PROTEGIDAS (proteção completa)            */}
+          {/* ================================================ */}
+            <Route 
+              path="/feed" 
+              element={
+                <AuthGuard>
+                  <SmartGuard>
+                    <FeedOptimized />
+                  </SmartGuard>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/missoes" 
+              element={
+                <AuthGuard>
+                  <SmartGuard>
+                    <Missoes />
+                  </SmartGuard>
+                </AuthGuard>
+              } 
+            />
+          <Route 
+            path="/buscar-itens" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <BuscarItens />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/publicar" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <PublicarItem />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+           <Route 
+             path="/perfil" 
+             element={
+               <AuthGuard>
+                 <SmartGuard>
+                   <Perfil />
+                 </SmartGuard>
+               </AuthGuard>
+             } 
+           />
+           <Route 
+             path="/perfil/editar" 
+             element={
+               <AuthGuard>
+                 <SmartGuard>
+                   <EditarPerfil />
+                 </SmartGuard>
+               </AuthGuard>
+             } 
+           />
+           <Route 
+             path="/carteira" 
+             element={
+               <AuthGuard>
+                 <SmartGuard>
+                   <Carteira />
+                 </SmartGuard>
+               </AuthGuard>
+             } 
+           />
+          <Route 
+            path="/comprar-girinhas" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <ComprarGirinhas />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/indicacoes" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <Indicacoes />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/minhas-reservas" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <RecompensasProvider>
+                    <MinhasReservas />
+                  </RecompensasProvider>
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/configuracoes" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <Configuracoes />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+
+          {/* ================================================ */}
+          {/* ROTAS ADMINISTRATIVAS (admin_bypass)            */}
+          {/* ================================================ */}
+          <Route 
+            path="/admin" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <AdminDashboard />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
 
          {/* ================================================ */}
          {/* ROTAS ESPECÍFICAS (sem proteção extra)          */}

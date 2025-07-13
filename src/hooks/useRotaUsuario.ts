@@ -85,9 +85,9 @@ export const useRotaUsuario = (): UseRotaUsuarioReturn => {
       }
 
       try {
-        // Chamar function do banco (especificar schema)
+        // Chamar function do banco
         const { data: resultado, error: rpcError } = await supabase
-          .rpc('determinar_rota_usuario', {}, { schema: 'routing_system' });
+          .rpc('determinar_rota_usuario');
 
         if (rpcError) {
           console.error('❌ Erro na RPC determinar_rota_usuario:', rpcError);
