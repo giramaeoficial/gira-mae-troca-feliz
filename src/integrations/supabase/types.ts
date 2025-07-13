@@ -2440,6 +2440,16 @@ export type Database = {
         Args: { p_email: string }
         Returns: string
       }
+      determinar_rota_usuario: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          rota_destino: string
+          pode_acessar: boolean
+          motivo: string
+          dados_debug: Json
+          timestamp_decisao: string
+        }[]
+      }
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2580,6 +2590,14 @@ export type Database = {
       obter_valor_bonus: {
         Args: { p_tipo_bonus: string }
         Returns: number
+      }
+      pode_acessar_rota: {
+        Args: { p_rota_tentativa: string }
+        Returns: {
+          pode_acessar: boolean
+          rota_correta: string
+          motivo: string
+        }[]
       }
       pode_estender_transacao: {
         Args: { p_user_id: string; p_transacao_id: string }

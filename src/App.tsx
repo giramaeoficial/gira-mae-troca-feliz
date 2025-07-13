@@ -35,6 +35,8 @@ import CodigoOnboarding from '@/pages/onboarding/CodigoOnboarding';
 import TermosOnboarding from '@/pages/onboarding/TermosOnboarding';
 import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
+import MaesSeguidas from '@/pages/MaesSeguidas';
+import ItensFavoritos from '@/pages/ItensFavoritos';
 
 const queryClient = new QueryClient();
 
@@ -268,8 +270,28 @@ function App() {
          {/* ================================================ */}
          <Route path="/item/:id" element={<DetalhesItem />} />
 
-         {/* 404 */}
-         <Route path="*" element={<NotFound />} />
+          {/* ================================================ */}
+          {/* NOVAS TELAS - SEM PROTEÇÃO EXTRA                */}
+          {/* ================================================ */}
+          <Route 
+            path="/maes-seguidas" 
+            element={
+              <AuthGuard>
+                <MaesSeguidas />
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/favoritos" 
+            element={
+              <AuthGuard>
+                <ItensFavoritos />
+              </AuthGuard>
+            } 
+          />
+
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
        </Routes>
      </BrowserRouter>
    </QueryClientProvider>
