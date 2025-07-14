@@ -1,4 +1,3 @@
-// src/components/cadastro/PhoneStepV2.tsx - VERSÃO CORRIGIDA
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -10,10 +9,9 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface PhoneStepV2Props {
   onComplete: () => void;
-  disabled?: boolean;
 }
 
-const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false }) => {
+const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
   const { user } = useAuth();
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,8 +43,11 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
           
           if (data.telefone_verificado) {
             setIsPhoneVerified(true);
-            console.log('✅ Telefone já verificado!');
-            // REMOVIDO: auto-redirect que causava problemas
+            console.log('✅ Telefone já verificado, avançando automaticamente...');
+            // Se telefone já foi verificado, avançar imediatamente
+            setTimeout(() => {
+              onComplete();
+            }, 500);
           }
         }
       } catch (error) {
@@ -57,17 +58,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
     };
 
     loadProfileData();
-  }, [user]); // Removido onComplete da dependência
-
-  const formatPhoneDisplay = (phoneNumber: string) => {
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    if (cleaned.length >= 11) {
-      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
-    } else if (cleaned.length >= 10) {
-      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
-    }
-    return phoneNumber;
-  };
+  }, [user, onComplete]);
 
   const cleanPhoneNumber = (phoneNumber: string) => {
     // Remove tudo que não é número
@@ -83,23 +74,54 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
       cleaned = cleaned.substring(2);
     }
     
-    return cleaned;
+    // Adiciona o 55 automaticamente
+    return '55' + cleaned;
+  };
+
+  const formatPhoneDisplay = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length >= 11) {
+      // Formato: (XX) XXXXX-XXXX (celular 9 dígitos)
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 7)}-${cleaned.substring(7)}`;
+    } else if (cleaned.length >= 10) {
+      // Formato: (XX) XXXX-XXXX (fixo 8 dígitos)
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
+    } else if (cleaned.length >= 6) {
+      // Formato parcial: (XX) XXXXX
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2)}`;
+    } else if (cleaned.length >= 2) {
+      // Formato parcial: (XX)
+      return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2)}`;
+    }
+    return phone;
   };
 
   const handlePhoneChange = (value: string) => {
-    // Limitar a 15 caracteres para evitar números muito longos
-    if (value.length > 15) return;
-    
-    const cleaned = cleanPhoneNumber(value);
-    const formatted = formatPhoneDisplay(cleaned);
-    setPhone(formatted);
+    // Se telefone já foi verificado, não permitir alteração
+    if (isPhoneVerified) {
+      toast({
+        title: "Telefone já verificado",
+        description: "Seu número já foi confirmado e não pode ser alterado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const formatted = value.replace(/[^\d\s()\-]/g, '');
+    setPhone(formatPhoneDisplay(formatted));
   };
 
   const handleSubmit = async () => {
-    if (!user) {
+    // Se já foi verificado, apenas avançar
+    if (isPhoneVerified) {
+      onComplete();
+      return;
+    }
+
+    if (!phone.trim()) {
       toast({
-        title: "Erro",
-        description: "Usuário não autenticado.",
+        title: "Campo obrigatório",
+        description: "Por favor, insira seu número de telefone.",
         variant: "destructive",
       });
       return;
@@ -107,42 +129,50 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
 
     const cleanPhone = cleanPhoneNumber(phone);
     
-    // Validação básica
-    if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+    // Validação: deve ter pelo menos 10 dígitos (55 + DDD + número)
+    if (cleanPhone.length < 12 || cleanPhone.length > 13) {
       toast({
-        title: "Número inválido",
-        description: "Digite um número válido com DDD (10 ou 11 dígitos).",
+        title: "Telefone inválido",
+        description: "Por favor, insira um número válido com DDD.",
         variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
-
+    
     try {
-      // Adicionar código Brasil se necessário
-      const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
-
-      console.log('📞 Salvando telefone:', fullPhone);
-
-      // Salvar telefone e gerar código diretamente no banco
-      const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-      const { error } = await supabase
+      console.log('📱 Salvando telefone e gerando código:', cleanPhone);
+      
+      // Chamar função diretamente via SQL
+      const { data, error } = await supabase
         .from('profiles')
         .update({
-          telefone: fullPhone,
-          verification_code: verificationCode,
-          verification_code_expires: expiresAt
+          telefone: cleanPhone,
+          verification_code: Math.floor(1000 + Math.random() * 9000).toString(),
+          verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          cadastro_step: 'code'
         })
-        .eq('id', user.id);
+        .eq('id', user?.id)
+        .select('verification_code')
+        .single();
 
       if (error) {
         console.error('❌ Erro ao salvar telefone:', error);
         toast({
           title: "Erro ao salvar telefone",
-          description: error.message || "Falha na operação.",
+          description: error.message || "Não foi possível salvar o telefone.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const verificationCode = data?.verification_code;
+      
+      if (!verificationCode) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível gerar o código de verificação.",
           variant: "destructive",
         });
         return;
@@ -153,7 +183,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
       // Enviar WhatsApp com o código gerado
       const { data: whatsappData, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
         body: { 
-          telefone: fullPhone,
+          telefone: cleanPhone,
           codigo: verificationCode,
           nome: 'usuário'
         }
@@ -176,9 +206,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
         description: `Código enviado para +55 ${formatPhoneDisplay(phone)} via WhatsApp.`,
       });
       
-      // Chamar onComplete apenas quando código for enviado com sucesso
       onComplete();
-      
     } catch (error: any) {
       console.error('❌ Erro no processo:', error);
       toast({
@@ -203,7 +231,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
     );
   }
 
-  // Se telefone já foi verificado, mostrar status com botão manual
+  // Se telefone já foi verificado, mostrar status
   if (isPhoneVerified) {
     return (
       <div className="px-6 pb-5 pt-1">
@@ -220,7 +248,6 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
           <Button 
             onClick={onComplete}
             className="w-full bg-green-600 hover:bg-green-700 text-white"
-            disabled={disabled}
           >
             Continuar
           </Button>
@@ -253,13 +280,13 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete, disabled = false 
             value={phone}
             onChange={(e) => handlePhoneChange(e.target.value)}
             className="pl-12"
-            disabled={isLoading || isPhoneVerified || disabled}
+            disabled={isLoading || isPhoneVerified}
           />
         </div>
         
         <Button 
           onClick={handleSubmit} 
-                      disabled={isLoading || !phone.trim() || disabled}
+          disabled={isLoading || !phone.trim()}
           className="w-full bg-green-600 hover:bg-green-700 text-white"
         >
           {isLoading ? (

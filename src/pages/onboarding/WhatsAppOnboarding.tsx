@@ -1,80 +1,23 @@
-// src/pages/onboarding/WhatsAppOnboarding.tsx - VERSÃO CORRIGIDA
-
-import React, { useState } from 'react';
+import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useOnboardingStep } from '@/hooks/useOnboardingStep';
 import PhoneStepV2 from '@/components/cadastro/PhoneStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
 const WhatsAppOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isCompleting, setIsCompleting] = useState(false);
+  const { completeWhatsAppStep, isCompletingWhatsApp } = useOnboardingStep();
 
   const handlePhoneComplete = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Erro",
-        description: "Usuário não autenticado",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsCompleting(true);
-
-    try {
-      // Atualizar telefone como verificado diretamente no profiles
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          telefone_verificado: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (error) {
-        console.error('Erro ao atualizar telefone:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível verificar o telefone. Tente novamente.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('✅ Telefone verificado com sucesso!');
-      
-      toast({
-        title: "Sucesso!",
-        description: "WhatsApp verificado! Agora aceite os termos.",
-      });
-
-      // Aguardar um pouco para o guard processar a mudança
-      setTimeout(() => {
-        // O OnboardingGuard automaticamente redirecionará para próximo passo
-        window.location.reload();
-      }, 1000);
-
-    } catch (error: any) {
-      console.error('Erro inesperado:', error);
-      toast({
-        title: "Erro",
-        description: "Erro inesperado. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCompleting(false);
-    }
+    // ✅ NAVEGAÇÃO CONTROLADA: Só avança pelo botão apropriado
+    completeWhatsAppStep();
   };
 
   const ProgressDots = () => (
     <div className="flex justify-center gap-2 mb-6">
       <div className="w-3 h-3 bg-primary rounded-full"></div>
+      <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
       <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
       <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
       <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
@@ -97,7 +40,6 @@ const WhatsAppOnboarding: React.FC = () => {
           <button
             onClick={() => navigate('/auth')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-            disabled={isCompleting}
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Voltar</span>
@@ -122,16 +64,15 @@ const WhatsAppOnboarding: React.FC = () => {
         <div className="space-y-6">
           <PhoneStepV2 
             onComplete={handlePhoneComplete}
-            disabled={isCompleting}
           />
         </div>
 
         {/* Loading overlay */}
-        {isCompleting && (
+        {isCompletingWhatsApp && (
           <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 flex items-center gap-3">
               <LoadingSpinner className="w-5 h-5 text-primary" />
-              <span className="text-gray-600">Verificando WhatsApp...</span>
+              <span className="text-gray-600">Avançando para próximo step...</span>
             </div>
           </div>
         )}
