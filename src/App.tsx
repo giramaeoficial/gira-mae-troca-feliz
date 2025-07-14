@@ -55,7 +55,7 @@ function App() {
           {/* ================================================ */}
            <Route path="/" element={<Index />} />
            <Route path="/auth" element={<Auth />} />
-           <Route path="/auth/callback" element={<AuthCallback />} />
+           <Route path="/auth-callback" element={<AuthCallback />} />
            <Route path="/login" element={<Login />} />
           {/* ✅ NOVAS ROTAS PÚBLICAS - Termos e Política */}
           <Route path="/onboarding/termos" element={<TermosOnboarding />} />
