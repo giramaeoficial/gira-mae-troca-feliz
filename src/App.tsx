@@ -39,6 +39,7 @@ import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
 import ItensFavoritos from '@/pages/ItensFavoritos';
+import { SmartGuardDebugInfo } from '@/components/auth/SmartGuard';
 
 const queryClient = new QueryClient();
 
@@ -52,10 +53,10 @@ function App() {
           {/* ================================================ */}
           {/* ROTAS PÚBLICAS (sem proteção)                   */}
           {/* ================================================ */}
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          
+           <Route path="/" element={<Index />} />
+           <Route path="/auth" element={<Auth />} />
+           <Route path="/auth/callback" element={<AuthCallback />} />
+           <Route path="/login" element={<Login />} />
           {/* ✅ NOVAS ROTAS PÚBLICAS - Termos e Política */}
           <Route path="/onboarding/termos" element={<TermosOnboarding />} />
           <Route path="/termos" element={<TermosUso />} />
@@ -313,9 +314,12 @@ function App() {
           />
 
           {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-       </Routes>
-     </BrowserRouter>
+           <Route path="*" element={<NotFound />} />
+        </Routes>
+        
+        {/* Debug Info (só em desenvolvimento) */}
+        <SmartGuardDebugInfo />
+      </BrowserRouter>
    </QueryClientProvider>
  );
 }

@@ -14,17 +14,12 @@ interface RotaUsuarioResult {
   motivo: string;
   dados_debug: {
     user_id: string;
-    cadastro_status: string;
-    telefone_verificado: boolean;
-    termos_aceitos: boolean;
-    politica_aceita: boolean;
-    endereco_completo: boolean;
+    onboarding_step: number;
+    cidade_liberada: boolean;
+    is_admin: boolean;
+    itens_publicados: number;
     cidade: string;
     estado: string;
-    cidade_liberada: boolean;
-    cidade_liberada_em?: string;
-    itens_publicados: number;
-    is_admin: boolean;
     timestamp_decisao: string;
     decisao?: string;
   };
@@ -67,16 +62,12 @@ export const useRotaUsuario = (): UseRotaUsuarioReturn => {
           motivo: 'nao_autenticado',
           dados_debug: {
             user_id: '',
-            cadastro_status: '',
-            telefone_verificado: false,
-            termos_aceitos: false,
-            politica_aceita: false,
-            endereco_completo: false,
+            onboarding_step: 1,
+            cidade_liberada: false,
+            is_admin: false,
+            itens_publicados: 0,
             cidade: '',
             estado: '',
-            cidade_liberada: false,
-            itens_publicados: 0,
-            is_admin: false,
             timestamp_decisao: new Date().toISOString(),
             decisao: 'Usuário não autenticado'
           },
@@ -123,16 +114,12 @@ export const useRotaUsuario = (): UseRotaUsuarioReturn => {
           motivo: 'erro_sistema',
           dados_debug: {
             user_id: user.id,
-            cadastro_status: 'erro',
-            telefone_verificado: false,
-            termos_aceitos: false,
-            politica_aceita: false,
-            endereco_completo: false,
+            onboarding_step: 1,
+            cidade_liberada: false,
+            is_admin: false,
+            itens_publicados: 0,
             cidade: '',
             estado: '',
-            cidade_liberada: false,
-            itens_publicados: 0,
-            is_admin: false,
             timestamp_decisao: new Date().toISOString(),
             decisao: `Erro no sistema: ${error.message}`
           },
@@ -216,16 +203,12 @@ export const useRotaUsuario = (): UseRotaUsuarioReturn => {
   const motivo = data?.motivo || 'loading';
   const dadosDebug = data?.dados_debug || {
     user_id: user?.id || '',
-    cadastro_status: '',
-    telefone_verificado: false,
-    termos_aceitos: false,
-    politica_aceita: false,
-    endereco_completo: false,
+    onboarding_step: 1,
+    cidade_liberada: false,
+    is_admin: false,
+    itens_publicados: 0,
     cidade: '',
     estado: '',
-    cidade_liberada: false,
-    itens_publicados: 0,
-    is_admin: false,
     timestamp_decisao: new Date().toISOString()
   };
 
@@ -344,7 +327,7 @@ export const useRoutingReason = () => {
     isAdmin: dadosDebug.is_admin,
     isCityReleased: dadosDebug.cidade_liberada,
     isMissionComplete: dadosDebug.itens_publicados >= 2,
-    isOnboardingComplete: dadosDebug.telefone_verificado && dadosDebug.termos_aceitos && dadosDebug.politica_aceita && dadosDebug.endereco_completo,
+    onboardingStep: dadosDebug.onboarding_step,
     currentReason: motivo,
     debugData: dadosDebug
   };

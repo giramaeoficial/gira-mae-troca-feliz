@@ -1,34 +1,26 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import CodeStepV2 from '@/components/cadastro/CodeStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
+// ====================================================================
+// STEP 2: CÓDIGO DE VERIFICAÇÃO - PODE VOLTAR PARA WHATSAPP
+// ====================================================================
+
 const CodigoOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, loading, updating, updateStatus, navigateToNext, navigateBack } = useOnboarding();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <LoadingSpinner className="w-8 h-8 text-primary" />
-      </div>
-    );
-  }
 
   const handleCodeComplete = async () => {
-    const success = await updateStatus('termos');
-    if (success) {
-      navigateToNext('termos');
-    }
+    // ✅ Código completo, pode avançar automaticamente via SQL function
+    // O sistema detectará telefone_verificado = true e avançará para step 3
+    console.log('✅ Código verificado com sucesso!');
   };
 
   const ProgressDots = () => (
     <div className="flex justify-center gap-2 mb-6">
       <div className="w-3 h-3 bg-primary rounded-full"></div>
       <div className="w-3 h-3 bg-primary rounded-full"></div>
-      <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
       <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
       <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
       <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
@@ -48,13 +40,13 @@ const CodigoOnboarding: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
-            onClick={navigateBack}
+            onClick={() => navigate('/onboarding/whatsapp')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Voltar</span>
           </button>
-          <span className="text-sm text-gray-500">Etapa 2 de 6</span>
+          <span className="text-sm text-gray-500">Etapa 2 de 5</span>
         </div>
 
         {/* Progress */}
@@ -63,27 +55,17 @@ const CodigoOnboarding: React.FC = () => {
         {/* Title */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            💬 Código do WhatsApp
+            📱 Verificar WhatsApp
           </h1>
           <p className="text-gray-600">
-            Digite o código de 4 dígitos que enviamos
+            Digite o código que enviamos para seu WhatsApp
           </p>
         </div>
 
-        {/* Code Step Component */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+        {/* Form */}
+        <div className="space-y-6">
           <CodeStepV2 onComplete={handleCodeComplete} />
         </div>
-
-        {/* Loading overlay */}
-        {updating && (
-          <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-              <LoadingSpinner className="w-5 h-5 text-primary" />
-              <span className="text-gray-600">Salvando progresso...</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

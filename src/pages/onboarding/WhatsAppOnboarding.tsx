@@ -1,27 +1,17 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { useOnboardingStep } from '@/hooks/useOnboardingStep';
 import PhoneStepV2 from '@/components/cadastro/PhoneStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
 const WhatsAppOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, loading, updating, updateStatus, navigateToNext } = useOnboarding();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <LoadingSpinner className="w-8 h-8 text-primary" />
-      </div>
-    );
-  }
+  const { completeWhatsAppStep, isCompletingWhatsApp } = useOnboardingStep();
 
   const handlePhoneComplete = async () => {
-    const success = await updateStatus('codigo');
-    if (success) {
-      navigateToNext('codigo');
-    }
+    // ✅ NAVEGAÇÃO CONTROLADA: Só avança pelo botão apropriado
+    completeWhatsAppStep();
   };
 
   const ProgressDots = () => (
@@ -54,7 +44,7 @@ const WhatsAppOnboarding: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
             <span>Voltar</span>
           </button>
-          <span className="text-sm text-gray-500">Etapa 1 de 6</span>
+          <span className="text-sm text-gray-500">Etapa 1 de 5</span>
         </div>
 
         {/* Progress */}
@@ -70,17 +60,19 @@ const WhatsAppOnboarding: React.FC = () => {
           </p>
         </div>
 
-        {/* Phone Step Component */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <PhoneStepV2 onComplete={handlePhoneComplete} />
+        {/* Form */}
+        <div className="space-y-6">
+          <PhoneStepV2 
+            onComplete={handlePhoneComplete}
+          />
         </div>
 
         {/* Loading overlay */}
-        {updating && (
+        {isCompletingWhatsApp && (
           <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 flex items-center gap-3">
               <LoadingSpinner className="w-5 h-5 text-primary" />
-              <span className="text-gray-600">Salvando progresso...</span>
+              <span className="text-gray-600">Avançando para próximo step...</span>
             </div>
           </div>
         )}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { useOnboardingStep } from '@/hooks/useOnboardingStep';
 import SimpleAddressForm from '@/components/address/SimpleAddressForm';
 import { useUserAddress } from '@/hooks/useUserAddress';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 
 const EnderecoOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, loading, updating, updateStatus, navigateToNext, navigateBack } = useOnboarding();
+  const { completeEnderecoStep, isCompletingEndereco } = useOnboardingStep();
   const { userAddress, isLoading: addressLoading } = useUserAddress();
 
-  if (loading || addressLoading) {
+  if (addressLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
         <LoadingSpinner className="w-8 h-8 text-primary" />
@@ -21,15 +21,12 @@ const EnderecoOnboarding: React.FC = () => {
   }
 
   const handleContinue = async () => {
-    const success = await updateStatus('itens');
-    if (success) {
-      navigateToNext('itens');
-    }
+    // ✅ NAVEGAÇÃO CONTROLADA: Só avança pelo botão apropriado
+    completeEnderecoStep();
   };
 
   const ProgressDots = () => (
     <div className="flex justify-center gap-2 mb-6">
-      <div className="w-3 h-3 bg-primary rounded-full"></div>
       <div className="w-3 h-3 bg-primary rounded-full"></div>
       <div className="w-3 h-3 bg-primary rounded-full"></div>
       <div className="w-3 h-3 bg-primary rounded-full"></div>
@@ -51,13 +48,13 @@ const EnderecoOnboarding: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
-            onClick={navigateBack}
+            onClick={() => navigate('/onboarding/codigo')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Voltar</span>
           </button>
-          <span className="text-sm text-gray-500">Etapa 4 de 6</span>
+          <span className="text-sm text-gray-500">Etapa 3 de 5</span>
         </div>
 
         {/* Progress */}
@@ -83,10 +80,10 @@ const EnderecoOnboarding: React.FC = () => {
           <div className="mt-6">
             <Button
               onClick={handleContinue}
-              disabled={updating}
+              disabled={isCompletingEndereco}
               className="w-full py-3 text-lg font-semibold"
             >
-              {updating ? (
+              {isCompletingEndereco ? (
                 <>
                   <LoadingSpinner className="w-5 h-5 mr-2" />
                   Salvando progresso...
@@ -99,11 +96,11 @@ const EnderecoOnboarding: React.FC = () => {
         )}
 
         {/* Loading overlay */}
-        {updating && (
+        {isCompletingEndereco && (
           <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 flex items-center gap-3">
               <LoadingSpinner className="w-5 h-5 text-primary" />
-              <span className="text-gray-600">Salvando progresso...</span>
+              <span className="text-gray-600">Avançando para próximo step...</span>
             </div>
           </div>
         )}
