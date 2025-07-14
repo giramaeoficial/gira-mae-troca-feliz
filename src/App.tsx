@@ -39,7 +39,7 @@ import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
 import ItensFavoritos from '@/pages/ItensFavoritos';
-import { SmartGuardDebugInfo } from '@/components/auth/SmartGuard';
+import SmartGuardDebugInfo from '@/components/auth/SmartGuardDebugInfo';
 
 const queryClient = new QueryClient();
 
