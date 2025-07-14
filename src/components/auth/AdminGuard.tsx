@@ -1,85 +1,42 @@
+// ================================================================
+// 1. AuthGuard.tsx - GUARD BASE (só verifica login)
+// ================================================================
 
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 
-interface AdminGuardProps {
+interface AuthGuardProps {
   children: React.ReactNode;
 }
 
-const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checking, setChecking] = useState(true);
+const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (authLoading) {
-        return;
-      }
-
-      // Se não está logado, redirecionar para auth
-      if (!user) {
-        navigate('/auth', { replace: true });
-        return;
-      }
-
-      try {
-        // Verificar se é admin consultando a nova tabela admin_users
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('user_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('AdminGuard - Erro ao verificar admin:', error);
-          navigate('/', { replace: true });
-          return;
-        }
-
-        // Se não é admin, redirecionar para home
-        if (!data) {
-          navigate('/', { replace: true });
-          return;
-        }
-
-        // É admin, permitir acesso
-        setIsAdmin(true);
-        
-      } catch (error) {
-        console.error('AdminGuard - Erro inesperado:', error);
-        navigate('/', { replace: true });
-      } finally {
-        setChecking(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, [user, authLoading, navigate]);
-
-  if (authLoading || checking) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner />
-          <p className="mt-4 text-gray-600">Verificando permissões administrativas...</p>
+          <p className="mt-4 text-gray-600">Verificando autenticação...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAdmin) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Acesso Negado</h2>
-            <p className="text-gray-600">Você não tem permissões administrativas.</p>
-          </div>
+        <div className="text-center space-y-4 max-w-md mx-auto p-6">
+          <div className="text-4xl font-bold text-primary mb-4">GiraMãe</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Acesso Necessário</h2>
+          <p className="text-gray-600 mb-6">Você precisa fazer login para acessar esta área.</p>
+          <button
+            onClick={() => window.location.href = '/auth'}
+            className="w-full bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Fazer Login
+          </button>
         </div>
       </div>
     );
@@ -88,4 +45,4 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
   return <>{children}</>;
 };
 
-export default AdminGuard;
+export default AuthGuard;
