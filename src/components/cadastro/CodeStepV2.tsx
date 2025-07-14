@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -191,11 +190,11 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
       }
 
       if (profile.verification_code === finalCode) {
-        // Marcar como verificado
+        // ✅ ÚNICO LOCAL ONDE telefone_verificado = true DEVE SER DEFINIDO
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            telefone_verificado: true,
+            telefone_verificado: true, // ✅ SÓ AQUI, após verificar código correto
             verification_code: null,
             verification_code_expires: null,
             cadastro_step: 'personal'
@@ -212,7 +211,7 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
           return;
         }
 
-        console.log('✅ Código verificado com sucesso');
+        console.log('✅ Código verificado com sucesso - telefone_verificado = true');
         toast({
           title: "Código verificado!",
           description: "Seu telefone foi confirmado com sucesso.",
@@ -261,9 +260,11 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
       const newCode = Math.floor(1000 + Math.random() * 9000).toString();
       const newExpiry = new Date(Date.now() + 10 * 60 * 1000).toISOString();
       
+      // ✅ MANTER telefone_verificado = false ao reenviar código
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
+          telefone_verificado: false, // ✅ GARANTIR que continua false até verificar
           verification_code: newCode,
           verification_code_expires: newExpiry
         })
@@ -298,6 +299,7 @@ const CodeStepV2: React.FC<CodeStepV2Props> = ({ onComplete }) => {
         return;
       }
 
+      console.log('✅ Código reenviado - telefone_verificado mantido como false');
       toast({
         title: "Código reenviado!",
         description: "Um novo código foi enviado para seu WhatsApp.",
