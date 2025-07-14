@@ -1477,6 +1477,7 @@ export type Database = {
           nome: string | null
           numero: string | null
           numero_whatsapp: string | null
+          onboarding_step: number | null
           politica_aceita: boolean | null
           politica_aceita_em: string | null
           ponto_referencia: string | null
@@ -1522,6 +1523,7 @@ export type Database = {
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
+          onboarding_step?: number | null
           politica_aceita?: boolean | null
           politica_aceita_em?: string | null
           ponto_referencia?: string | null
@@ -1567,6 +1569,7 @@ export type Database = {
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
+          onboarding_step?: number | null
           politica_aceita?: boolean | null
           politica_aceita_em?: string | null
           ponto_referencia?: string | null
@@ -2401,6 +2404,14 @@ export type Database = {
       coletar_recompensa_missao: {
         Args: { p_user_id: string; p_missao_id: string }
         Returns: Json
+      }
+      complete_endereco_step: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
+      complete_whatsapp_step: {
+        Args: { p_user_id: string }
+        Returns: boolean
       }
       create_notification: {
         Args: {
