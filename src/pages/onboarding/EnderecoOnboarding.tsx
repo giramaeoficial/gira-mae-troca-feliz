@@ -1,7 +1,10 @@
-import React from 'react';
+// src/pages/onboarding/EnderecoOnboarding.tsx - VERSÃO CORRIGIDA
+
+import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useOnboardingStep } from '@/hooks/useOnboardingStep';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import SimpleAddressForm from '@/components/address/SimpleAddressForm';
 import { useUserAddress } from '@/hooks/useUserAddress';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
@@ -9,8 +12,10 @@ import { Button } from '@/components/ui/button';
 
 const EnderecoOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { completeEnderecoStep, isCompletingEndereco } = useOnboardingStep();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const { userAddress, isLoading: addressLoading } = useUserAddress();
+  const [isCompleting, setIsCompleting] = useState(false);
 
   if (addressLoading) {
     return (
@@ -21,8 +26,53 @@ const EnderecoOnboarding: React.FC = () => {
   }
 
   const handleContinue = async () => {
-    // ✅ NAVEGAÇÃO CONTROLADA: Só avança pelo botão apropriado
-    completeEnderecoStep();
+    if (!user?.id) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!userAddress) {
+      toast({
+        title: "Endereço necessário",
+        description: "Por favor, preencha seu endereço antes de continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCompleting(true);
+
+    try {
+      // Não precisa atualizar nada - o endereço já foi salvo pelo SimpleAddressForm
+      // Apenas mostrar feedback e aguardar os guards redirecionarem
+      
+      console.log('✅ Endereço já completo, aguardando redirecionamento...');
+      
+      toast({
+        title: "Sucesso!",
+        description: "Dados completos! Agora complete o ritual de mãe novata.",
+      });
+
+      // Aguardar um pouco para o guard processar a mudança
+      setTimeout(() => {
+        // O OnboardingGuard automaticamente redirecionará para próximo passo
+        window.location.reload();
+      }, 1000);
+
+    } catch (error: any) {
+      console.error('Erro inesperado:', error);
+      toast({
+        title: "Erro",
+        description: "Erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCompleting(false);
+    }
   };
 
   const ProgressDots = () => (
@@ -50,6 +100,7 @@ const EnderecoOnboarding: React.FC = () => {
           <button
             onClick={() => navigate('/onboarding/codigo')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+            disabled={isCompleting}
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Voltar</span>
@@ -80,13 +131,13 @@ const EnderecoOnboarding: React.FC = () => {
           <div className="mt-6">
             <Button
               onClick={handleContinue}
-              disabled={isCompletingEndereco}
+              disabled={isCompleting}
               className="w-full py-3 text-lg font-semibold"
             >
-              {isCompletingEndereco ? (
+              {isCompleting ? (
                 <>
                   <LoadingSpinner className="w-5 h-5 mr-2" />
-                  Salvando progresso...
+                  Finalizando dados...
                 </>
               ) : (
                 'Continuar para próxima etapa'
@@ -96,11 +147,11 @@ const EnderecoOnboarding: React.FC = () => {
         )}
 
         {/* Loading overlay */}
-        {isCompletingEndereco && (
+        {isCompleting && (
           <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 flex items-center gap-3">
               <LoadingSpinner className="w-5 h-5 text-primary" />
-              <span className="text-gray-600">Avançando para próximo step...</span>
+              <span className="text-gray-600">Finalizando cadastro...</span>
             </div>
           </div>
         )}
