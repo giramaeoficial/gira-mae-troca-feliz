@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import PhoneStepV2 from '@/components/cadastro/PhoneStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
@@ -28,36 +27,20 @@ const WhatsAppOnboarding: React.FC = () => {
     setIsCompleting(true);
 
     try {
-      // Atualizar telefone como verificado diretamente no profiles
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          telefone_verificado: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-
-      if (error) {
-        console.error('Erro ao atualizar telefone:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível verificar o telefone. Tente novamente.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('✅ Telefone verificado com sucesso!');
+      // ✅ CORREÇÃO: Não mais atualizar telefone_verificado aqui!
+      // O campo só deve ser definido como true após verificar código no CodeStepV2
+      
+      console.log('✅ Telefone salvo, redirecionando para verificação de código...');
       
       toast({
-        title: "Sucesso!",
-        description: "WhatsApp verificado! Agora aceite os termos.",
+        title: "Código enviado!",
+        description: "Verifique seu WhatsApp e digite o código recebido.",
       });
 
-      // Aguardar um pouco para o guard processar a mudança
+      // Aguardar um pouco para processar a mudança
       setTimeout(() => {
-        // O OnboardingGuard automaticamente redirecionará para próximo passo
-        window.location.reload();
+        // Redirecionar para página de verificação de código
+        navigate('/onboarding/codigo');
       }, 1000);
 
     } catch (error: any) {
@@ -131,7 +114,7 @@ const WhatsAppOnboarding: React.FC = () => {
           <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 flex items-center gap-3">
               <LoadingSpinner className="w-5 h-5 text-primary" />
-              <span className="text-gray-600">Verificando WhatsApp...</span>
+              <span className="text-gray-600">Enviando código via WhatsApp...</span>
             </div>
           </div>
         )}
