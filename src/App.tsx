@@ -1,4 +1,4 @@
-// src/App.tsx - VERSÃO ATUALIZADA com SmartGuard
+// src/App.tsx - VERSÃO SEM SMARTGUARD
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -11,7 +11,6 @@ import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
 import AuthCallback from '@/pages/AuthCallback';
 import AuthGuard from '@/components/auth/AuthGuard';
-import SmartGuard from '@/components/auth/SmartGuard';
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
@@ -39,7 +38,6 @@ import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
 import ItensFavoritos from '@/pages/ItensFavoritos';
-import SmartGuardDebugInfo from '@/components/auth/SmartGuardDebugInfo';
 
 const queryClient = new QueryClient();
 
@@ -64,15 +62,13 @@ function App() {
           <Route path="/privacidade" element={<PoliticaPrivacidade />} />
           
           {/* ================================================ */}
-          {/* ROTAS DE ONBOARDING (onboarding protection)     */}
+          {/* ROTAS DE ONBOARDING (apenas AuthGuard)          */}
           {/* ================================================ */}
           <Route 
             path="/onboarding/whatsapp" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <WhatsAppOnboarding />
-                </SmartGuard>
+                <WhatsAppOnboarding />
               </AuthGuard>
             } 
           />
@@ -80,9 +76,7 @@ function App() {
             path="/onboarding/codigo" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <CodigoOnboarding />
-                </SmartGuard>
+                <CodigoOnboarding />
               </AuthGuard>
             } 
           />
@@ -90,9 +84,7 @@ function App() {
             path="/onboarding/endereco" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <EnderecoOnboarding />
-                </SmartGuard>
+                <EnderecoOnboarding />
               </AuthGuard>
             } 
           />
@@ -100,23 +92,19 @@ function App() {
             path="/aguardando-liberacao" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <AguardandoLiberacao />
-                </SmartGuard>
+                <AguardandoLiberacao />
               </AuthGuard>
             } 
           />
 
           {/* ========================================== */}
-          {/* ROTAS DE MISSÃO (mission_only protection)  */}
+          {/* ROTAS DE MISSÃO (apenas AuthGuard)        */}
           {/* ========================================== */}
            <Route 
              path="/conceito-comunidade" 
              element={
                <AuthGuard>
-                 <SmartGuard>
-                   <ConceptoComunidadeOnboarding />
-                 </SmartGuard>
+                 <ConceptoComunidadeOnboarding />
                </AuthGuard>
              } 
            />
@@ -124,23 +112,19 @@ function App() {
              path="/publicar-primeiro-item" 
              element={
                <AuthGuard>
-                 <SmartGuard>
-                   <PublicarPrimeiroItem />
-                 </SmartGuard>
+                 <PublicarPrimeiroItem />
                </AuthGuard>
              } 
            />
 
           {/* ================================================ */}
-          {/* ROTAS PROTEGIDAS (proteção completa)            */}
+          {/* ROTAS PROTEGIDAS (apenas AuthGuard)             */}
           {/* ================================================ */}
             <Route 
               path="/feed" 
               element={
                 <AuthGuard>
-                  <SmartGuard>
-                    <FeedOptimized />
-                  </SmartGuard>
+                  <FeedOptimized />
                 </AuthGuard>
               } 
             />
@@ -148,9 +132,7 @@ function App() {
               path="/missoes" 
               element={
                 <AuthGuard>
-                  <SmartGuard>
-                    <Missoes />
-                  </SmartGuard>
+                  <Missoes />
                 </AuthGuard>
               } 
             />
@@ -158,9 +140,7 @@ function App() {
             path="/buscar-itens" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <BuscarItens />
-                </SmartGuard>
+                <BuscarItens />
               </AuthGuard>
             } 
           />
@@ -168,9 +148,7 @@ function App() {
             path="/publicar" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <PublicarItem />
-                </SmartGuard>
+                <PublicarItem />
               </AuthGuard>
             } 
           />
@@ -178,9 +156,7 @@ function App() {
              path="/perfil" 
              element={
                <AuthGuard>
-                 <SmartGuard>
-                   <Perfil />
-                 </SmartGuard>
+                 <Perfil />
                </AuthGuard>
              } 
            />
@@ -188,9 +164,7 @@ function App() {
              path="/perfil/editar" 
              element={
                <AuthGuard>
-                 <SmartGuard>
-                   <EditarPerfil />
-                 </SmartGuard>
+                 <EditarPerfil />
                </AuthGuard>
              } 
            />
@@ -198,9 +172,7 @@ function App() {
              path="/carteira" 
              element={
                <AuthGuard>
-                 <SmartGuard>
-                   <Carteira />
-                 </SmartGuard>
+                 <Carteira />
                </AuthGuard>
              } 
            />
@@ -208,9 +180,7 @@ function App() {
             path="/comprar-girinhas" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <ComprarGirinhas />
-                </SmartGuard>
+                <ComprarGirinhas />
               </AuthGuard>
             } 
           />
@@ -218,9 +188,7 @@ function App() {
             path="/indicacoes" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <Indicacoes />
-                </SmartGuard>
+                <Indicacoes />
               </AuthGuard>
             } 
           />
@@ -228,11 +196,9 @@ function App() {
             path="/minhas-reservas" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <RecompensasProvider>
-                    <MinhasReservas />
-                  </RecompensasProvider>
-                </SmartGuard>
+                <RecompensasProvider>
+                  <MinhasReservas />
+                </RecompensasProvider>
               </AuthGuard>
             } 
           />
@@ -240,65 +206,53 @@ function App() {
             path="/configuracoes" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <Configuracoes />
-                </SmartGuard>
+                <Configuracoes />
               </AuthGuard>
             } 
           />
 
           {/* ================================================ */}
-          {/* ROTAS ADMINISTRATIVAS (admin_bypass)            */}
+          {/* ROTAS ADMINISTRATIVAS (apenas AuthGuard)        */}
           {/* ================================================ */}
           <Route 
             path="/admin" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <AdminDashboard />
-                </SmartGuard>
+                <AdminDashboard />
               </AuthGuard>
             } 
           />
 
           {/* ================================================ */}
-          {/* ROTAS ESPECÍFICAS (AGORA PROTEGIDAS)            */}
+          {/* ROTAS ESPECÍFICAS (apenas AuthGuard)            */}
           {/* ================================================ */}
           
-          {/* ✅ ITEM DETAILS - AGORA PROTEGIDO COM SMARTGUARD */}
           <Route 
             path="/item/:id" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <DetalhesItem />
-                </SmartGuard>
+                <DetalhesItem />
               </AuthGuard>
             } 
           />
           
-          {/* ✅ PERFIL PÚBLICO - AGORA PROTEGIDO COM SMARTGUARD */}
           <Route 
             path="/perfil/:id" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <PerfilPublicoMae />
-                </SmartGuard>
+                <PerfilPublicoMae />
               </AuthGuard>
             } 
           />
 
           {/* ================================================ */}
-          {/* NOVAS TELAS - AGORA COM SMARTGUARD              */}
+          {/* NOVAS TELAS (apenas AuthGuard)                  */}
           {/* ================================================ */}
           <Route 
             path="/maes-seguidas" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <MaesSeguidas />
-                </SmartGuard>
+                <MaesSeguidas />
               </AuthGuard>
             } 
           />
@@ -306,9 +260,7 @@ function App() {
             path="/favoritos" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <ItensFavoritos />
-                </SmartGuard>
+                <ItensFavoritos />
               </AuthGuard>
             } 
           />
@@ -316,9 +268,6 @@ function App() {
           {/* 404 */}
            <Route path="*" element={<NotFound />} />
         </Routes>
-        
-        {/* Debug Info (só em desenvolvimento) */}
-        <SmartGuardDebugInfo />
       </BrowserRouter>
    </QueryClientProvider>
  );
