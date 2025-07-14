@@ -11,11 +11,13 @@ import LoadingSpinner from '@/components/loading/LoadingSpinner';
 const CodigoOnboarding: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleCodeComplete = async () => {
-    // ✅ Código completo, pode avançar automaticamente via SQL function
-    // O sistema detectará telefone_verificado = true e avançará para step 3
-    console.log('✅ Código verificado com sucesso!');
-  };
+    const handleCodeComplete = async () => {
+      console.log('✅ Código verificado com sucesso! Redirecionando para termos...');
+      
+      setTimeout(() => {
+        navigate('/onboarding/termos'); // ✅ AGORA NAVEGA PARA PRÓXIMA ETAPA
+      }, 1000);
+    };
 
   const ProgressDots = () => (
     <div className="flex justify-center gap-2 mb-6">
