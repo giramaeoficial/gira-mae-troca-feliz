@@ -1,4 +1,4 @@
-// src/App.tsx - VERSÃO SEM SMARTGUARD
+// src/App.tsx - VERSÃO COM NOVO SISTEMA DE GUARDS
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -10,7 +10,16 @@ import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
 import AuthCallback from '@/pages/AuthCallback';
+
+// Guards
 import AuthGuard from '@/components/auth/AuthGuard';
+import OnboardingGuard from '@/components/auth/OnboardingGuard';
+import MissaoGuard from '@/components/auth/MissaoGuard';
+import AguardandoCidadeGuard from '@/components/auth/AguardandoCidadeGuard';
+import AcessoTotalGuard from '@/components/auth/AcessoTotalGuard';
+import AdminGuard from '@/components/auth/AdminGuard';
+
+// Pages
 import FeedOptimized from '@/pages/FeedOptimized';
 import BuscarItens from '@/pages/BuscarItens';
 import PublicarItem from '@/pages/PublicarItem';
@@ -55,20 +64,23 @@ function App() {
            <Route path="/auth" element={<Auth />} />
            <Route path="/auth-callback" element={<AuthCallback />} />
            <Route path="/login" element={<Login />} />
-          {/* ✅ NOVAS ROTAS PÚBLICAS - Termos e Política */}
+          {/* ✅ ROTAS PÚBLICAS - Termos e Política */}
           <Route path="/onboarding/termos" element={<TermosOnboarding />} />
           <Route path="/termos" element={<TermosUso />} />
           <Route path="/onboarding/privacidade" element={<PoliticaPrivacidade />} />
           <Route path="/privacidade" element={<PoliticaPrivacidade />} />
           
           {/* ================================================ */}
-          {/* ROTAS DE ONBOARDING (apenas AuthGuard)          */}
+          {/* NÍVEL 1: ROTAS DE ONBOARDING                    */}
+          {/* Require: AuthGuard + OnboardingGuard            */}
           {/* ================================================ */}
           <Route 
             path="/onboarding/whatsapp" 
             element={
               <AuthGuard>
-                <WhatsAppOnboarding />
+                <OnboardingGuard>
+                  <WhatsAppOnboarding />
+                </OnboardingGuard>
               </AuthGuard>
             } 
           />
@@ -76,7 +88,9 @@ function App() {
             path="/onboarding/codigo" 
             element={
               <AuthGuard>
-                <CodigoOnboarding />
+                <OnboardingGuard>
+                  <CodigoOnboarding />
+                </OnboardingGuard>
               </AuthGuard>
             } 
           />
@@ -84,27 +98,24 @@ function App() {
             path="/onboarding/endereco" 
             element={
               <AuthGuard>
-                <EnderecoOnboarding />
-              </AuthGuard>
-            } 
-          />
-          <Route 
-            path="/aguardando-liberacao" 
-            element={
-              <AuthGuard>
-                <AguardandoLiberacao />
+                <OnboardingGuard>
+                  <EnderecoOnboarding />
+                </OnboardingGuard>
               </AuthGuard>
             } 
           />
 
-          {/* ========================================== */}
-          {/* ROTAS DE MISSÃO (apenas AuthGuard)        */}
-          {/* ========================================== */}
+          {/* ================================================ */}
+          {/* NÍVEL 2: ROTAS DE MISSÃO                        */}
+          {/* Require: AuthGuard + MissaoGuard                */}
+          {/* ================================================ */}
            <Route 
              path="/conceito-comunidade" 
              element={
                <AuthGuard>
-                 <ConceptoComunidadeOnboarding />
+                 <MissaoGuard>
+                   <ConceptoComunidadeOnboarding />
+                 </MissaoGuard>
                </AuthGuard>
              } 
            />
@@ -112,19 +123,39 @@ function App() {
              path="/publicar-primeiro-item" 
              element={
                <AuthGuard>
-                 <PublicarPrimeiroItem />
+                 <MissaoGuard>
+                   <PublicarPrimeiroItem />
+                 </MissaoGuard>
                </AuthGuard>
              } 
            />
 
           {/* ================================================ */}
-          {/* ROTAS PROTEGIDAS (apenas AuthGuard)             */}
+          {/* NÍVEL 3: AGUARDANDO CIDADE                      */}
+          {/* Require: AuthGuard + AguardandoCidadeGuard      */}
+          {/* ================================================ */}
+          <Route 
+            path="/aguardando-liberacao" 
+            element={
+              <AuthGuard>
+                <AguardandoCidadeGuard>
+                  <AguardandoLiberacao />
+                </AguardandoCidadeGuard>
+              </AuthGuard>
+            } 
+          />
+
+          {/* ================================================ */}
+          {/* NÍVEL 4: ACESSO TOTAL                           */}
+          {/* Require: AuthGuard + AcessoTotalGuard           */}
           {/* ================================================ */}
             <Route 
               path="/feed" 
               element={
                 <AuthGuard>
-                  <FeedOptimized />
+                  <AcessoTotalGuard>
+                    <FeedOptimized />
+                  </AcessoTotalGuard>
                 </AuthGuard>
               } 
             />
@@ -132,7 +163,9 @@ function App() {
               path="/missoes" 
               element={
                 <AuthGuard>
-                  <Missoes />
+                  <AcessoTotalGuard>
+                    <Missoes />
+                  </AcessoTotalGuard>
                 </AuthGuard>
               } 
             />
@@ -140,7 +173,9 @@ function App() {
             path="/buscar-itens" 
             element={
               <AuthGuard>
-                <BuscarItens />
+                <AcessoTotalGuard>
+                  <BuscarItens />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
@@ -148,7 +183,9 @@ function App() {
             path="/publicar" 
             element={
               <AuthGuard>
-                <PublicarItem />
+                <AcessoTotalGuard>
+                  <PublicarItem />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
@@ -156,7 +193,9 @@ function App() {
              path="/perfil" 
              element={
                <AuthGuard>
-                 <Perfil />
+                 <AcessoTotalGuard>
+                   <Perfil />
+                 </AcessoTotalGuard>
                </AuthGuard>
              } 
            />
@@ -164,7 +203,9 @@ function App() {
              path="/perfil/editar" 
              element={
                <AuthGuard>
-                 <EditarPerfil />
+                 <AcessoTotalGuard>
+                   <EditarPerfil />
+                 </AcessoTotalGuard>
                </AuthGuard>
              } 
            />
@@ -172,7 +213,9 @@ function App() {
              path="/carteira" 
              element={
                <AuthGuard>
-                 <Carteira />
+                 <AcessoTotalGuard>
+                   <Carteira />
+                 </AcessoTotalGuard>
                </AuthGuard>
              } 
            />
@@ -180,7 +223,9 @@ function App() {
             path="/comprar-girinhas" 
             element={
               <AuthGuard>
-                <ComprarGirinhas />
+                <AcessoTotalGuard>
+                  <ComprarGirinhas />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
@@ -188,7 +233,9 @@ function App() {
             path="/indicacoes" 
             element={
               <AuthGuard>
-                <Indicacoes />
+                <AcessoTotalGuard>
+                  <Indicacoes />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
@@ -196,9 +243,11 @@ function App() {
             path="/minhas-reservas" 
             element={
               <AuthGuard>
-                <RecompensasProvider>
-                  <MinhasReservas />
-                </RecompensasProvider>
+                <AcessoTotalGuard>
+                  <RecompensasProvider>
+                    <MinhasReservas />
+                  </RecompensasProvider>
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
@@ -206,32 +255,23 @@ function App() {
             path="/configuracoes" 
             element={
               <AuthGuard>
-                <Configuracoes />
+                <AcessoTotalGuard>
+                  <Configuracoes />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
-
-          {/* ================================================ */}
-          {/* ROTAS ADMINISTRATIVAS (apenas AuthGuard)        */}
-          {/* ================================================ */}
-          <Route 
-            path="/admin" 
-            element={
-              <AuthGuard>
-                <AdminDashboard />
-              </AuthGuard>
-            } 
-          />
-
-          {/* ================================================ */}
-          {/* ROTAS ESPECÍFICAS (apenas AuthGuard)            */}
-          {/* ================================================ */}
           
+          {/* ================================================ */}
+          {/* ROTAS ESPECÍFICAS - ACESSO TOTAL                */}
+          {/* ================================================ */}
           <Route 
             path="/item/:id" 
             element={
               <AuthGuard>
-                <DetalhesItem />
+                <AcessoTotalGuard>
+                  <DetalhesItem />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
@@ -240,19 +280,20 @@ function App() {
             path="/perfil/:id" 
             element={
               <AuthGuard>
-                <PerfilPublicoMae />
+                <AcessoTotalGuard>
+                  <PerfilPublicoMae />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
 
-          {/* ================================================ */}
-          {/* NOVAS TELAS (apenas AuthGuard)                  */}
-          {/* ================================================ */}
           <Route 
             path="/maes-seguidas" 
             element={
               <AuthGuard>
-                <MaesSeguidas />
+                <AcessoTotalGuard>
+                  <MaesSeguidas />
+                </AcessoTotalGuard>
               </AuthGuard>
             } 
           />
@@ -260,7 +301,24 @@ function App() {
             path="/favoritos" 
             element={
               <AuthGuard>
-                <ItensFavoritos />
+                <AcessoTotalGuard>
+                  <ItensFavoritos />
+                </AcessoTotalGuard>
+              </AuthGuard>
+            } 
+          />
+
+          {/* ================================================ */}
+          {/* NÍVEL 5: ADMINISTRATIVO                         */}
+          {/* Require: AuthGuard + AdminGuard                 */}
+          {/* ================================================ */}
+          <Route 
+            path="/admin" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <AdminDashboard />
+                </AdminGuard>
               </AuthGuard>
             } 
           />
