@@ -33,8 +33,6 @@ import { RecompensasProvider } from '@/components/recompensas/ProviderRecompensa
 import WhatsAppOnboarding from '@/pages/onboarding/WhatsAppOnboarding';
 import CodigoOnboarding from '@/pages/onboarding/CodigoOnboarding';
 import TermosOnboarding from '@/pages/onboarding/TermosOnboarding';
-import TermosUso from '@/pages/TermosUso';
-import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
 import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
@@ -49,22 +47,19 @@ function App() {
      <SonnerToaster />
      <BrowserRouter>
        <Routes>
-          {/* ================================================ */}
-          {/* ROTAS PÚBLICAS (sem proteção)                   */}
-          {/* ================================================ */}
-          <Route path="/" element={<Index />} />
+         {/* ================================ */}
+         {/* ROTAS PÚBLICAS (sem AuthGuard)   */}
+         {/* ================================ */}
+         <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/cadastro" element={<Navigate to="/auth" replace />} />
+          <Route path="/auth-callback" element={<AuthCallback />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/perfil/:id" element={<PerfilPublicoMae />} />
           
-          {/* ✅ NOVAS ROTAS PÚBLICAS - Termos e Política */}
-          <Route path="/onboarding/termos" element={<TermosOnboarding />} />
-          <Route path="/termos" element={<TermosUso />} />
-          <Route path="/onboarding/privacidade" element={<PoliticaPrivacidade />} />
-          <Route path="/privacidade" element={<PoliticaPrivacidade />} />
-          
-          {/* ================================================ */}
-          {/* ROTAS DE ONBOARDING (onboarding protection)     */}
-          {/* ================================================ */}
+          {/* ========================================== */}
+          {/* ROTAS DE ONBOARDING (protegidas)          */}
+          {/* ========================================== */}
           <Route 
             path="/onboarding/whatsapp" 
             element={
@@ -81,6 +76,16 @@ function App() {
               <AuthGuard>
                 <SmartGuard>
                   <CodigoOnboarding />
+                </SmartGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/onboarding/termos" 
+            element={
+              <AuthGuard>
+                <SmartGuard>
+                  <TermosOnboarding />
                 </SmartGuard>
               </AuthGuard>
             } 
@@ -260,44 +265,19 @@ function App() {
             } 
           />
 
-          {/* ================================================ */}
-          {/* ROTAS ESPECÍFICAS (AGORA PROTEGIDAS)            */}
-          {/* ================================================ */}
-          
-          {/* ✅ ITEM DETAILS - AGORA PROTEGIDO COM SMARTGUARD */}
-          <Route 
-            path="/item/:id" 
-            element={
-              <AuthGuard>
-                <SmartGuard>
-                  <DetalhesItem />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
-          
-          {/* ✅ PERFIL PÚBLICO - AGORA PROTEGIDO COM SMARTGUARD */}
-          <Route 
-            path="/perfil/:id" 
-            element={
-              <AuthGuard>
-                <SmartGuard>
-                  <PerfilPublicoMae />
-                </SmartGuard>
-              </AuthGuard>
-            } 
-          />
+         {/* ================================================ */}
+         {/* ROTAS ESPECÍFICAS (sem proteção extra)          */}
+         {/* ================================================ */}
+         <Route path="/item/:id" element={<DetalhesItem />} />
 
           {/* ================================================ */}
-          {/* NOVAS TELAS - AGORA COM SMARTGUARD              */}
+          {/* NOVAS TELAS - SEM PROTEÇÃO EXTRA                */}
           {/* ================================================ */}
           <Route 
             path="/maes-seguidas" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <MaesSeguidas />
-                </SmartGuard>
+                <MaesSeguidas />
               </AuthGuard>
             } 
           />
@@ -305,9 +285,7 @@ function App() {
             path="/favoritos" 
             element={
               <AuthGuard>
-                <SmartGuard>
-                  <ItensFavoritos />
-                </SmartGuard>
+                <ItensFavoritos />
               </AuthGuard>
             } 
           />

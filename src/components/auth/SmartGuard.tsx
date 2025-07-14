@@ -14,10 +14,17 @@ interface SmartGuardProps {
 }
 
 // ====================================================================
-// SISTEMA SIMPLIFICADO - 100% CONTROLADO PELA FUNCTION SQL
+// GRUPOS DE FLUXO
 // ====================================================================
-// ✅ REMOÇÃO COMPLETA do sistema de grupos
-// ✅ Controle total pela function determinar_rota_usuario()
+
+const grupos: string[][] = [
+  ['/onboarding/whatsapp', '/onboarding/codigo'],
+  ['/onboarding/termos', '/onboarding/endereco'],
+  ['/conceito-comunidade', '/publicar-primeiro-item'],
+  ['/aguardando-liberacao'],
+];
+const telasSensiveis = grupos.flat();
+const idxGrupo = (rota: string) => grupos.findIndex(g => g.includes(rota));
 
 // ====================================================================
 // COMPONENT PRINCIPAL
@@ -79,24 +86,29 @@ const SmartGuard: React.FC<SmartGuardProps> = ({ children, fallbackRoute }) => {
   }
 
   // ====================================================================
-  // LÓGICA ULTRA-SIMPLIFICADA: A FUNCTION DECIDE TUDO!
+  // LÓGICA DE ACESSO FLUXO SENSÍVEL / NORMAL
   // ====================================================================
 
-  // ✅ Se tem acesso total, liberar (só verificar admin)
+  // 1. Cadastro completo (podeAcessar = true): só bloqueia se tentar acessar tela sensível
   if (podeAcessar) {
-    // Verificação especial para admin
     if (location.pathname === '/admin' && !dadosDebug.is_admin) {
+      return <Navigate to="/feed" replace />;
+    }
+    if (telasSensiveis.includes(location.pathname)) {
       return <Navigate to="/feed" replace />;
     }
     return <>{children}</>;
   }
 
-  // ✅ Se não tem acesso, mas está na rota que a function determinou, permitir
-  if (location.pathname === rotaDestino) {
-    return <>{children}</>;
-  }
+  // 2. Cadastro INCOMPLETO: pode alternar entre rotas do mesmo grupo, mas não pode saltar grupos
+  if (location.pathname === rotaDestino) return <>{children}</>;
 
-  // ✅ Qualquer outra tentativa: redirecionar para onde a function mandou
+  const idxDestino = idxGrupo(rotaDestino);
+  const idxAtual = idxGrupo(location.pathname);
+  const emMesmoGrupo = idxDestino !== -1 && idxAtual !== -1 && idxDestino === idxAtual;
+
+  if (emMesmoGrupo) return <>{children}</>;
+
   const redirectTo = fallbackRoute || rotaDestino;
   return <Navigate to={redirectTo} replace />;
 };
