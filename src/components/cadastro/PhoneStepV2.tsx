@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -144,11 +143,12 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     try {
       console.log('📱 Salvando telefone e gerando código:', cleanPhone);
       
-      // Chamar função diretamente via SQL
+      // ✅ CORREÇÃO: Forçar telefone_verificado = false ao salvar telefone
       const { data, error } = await supabase
         .from('profiles')
         .update({
           telefone: cleanPhone,
+          telefone_verificado: false, // ✅ GARANTIR que está FALSE até verificar código
           verification_code: Math.floor(1000 + Math.random() * 9000).toString(),
           verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
           cadastro_step: 'code'
@@ -178,7 +178,7 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
         return;
       }
 
-      console.log('✅ Telefone salvo, código gerado:', verificationCode);
+      console.log('✅ Telefone salvo com telefone_verificado = false, código gerado:', verificationCode);
       
       // Enviar WhatsApp com o código gerado
       const { data: whatsappData, error: whatsappError } = await supabase.functions.invoke('send-whatsapp', {
