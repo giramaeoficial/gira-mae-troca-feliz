@@ -41,8 +41,8 @@ const ItensFavoritos = () => {
           .from('itens_completos')
           .select('*')
           .in('id', itemIds)
-          .eq('status', 'disponivel'); // Só itens disponíveis
-
+          .eq('status', 'disponivel'); 
+        
         if (error) {
           console.error('Erro ao carregar itens favoritos:', error);
           throw error;
