@@ -38,8 +38,8 @@ export const useConfigSistema = () => {
     refetchInterval: 300000, // 5 minutos
   });
 
-  const taxaTransferencia = config?.taxa_transferencia?.percentual || 1.0;
-  const taxaTransacao = config?.taxa_transacao?.percentual || 5.0;
+  const taxaTransferencia = config?.taxa_transferencia?.percentual ?? 1.0;
+  const taxaTransacao = config?.taxa_transacao?.percentual ?? 5.0;
   const precoManual = config?.preco_manual_girinhas?.valor || 1.00;
 
   return {
