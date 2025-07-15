@@ -13,6 +13,7 @@ import FriendlyError from '@/components/error/FriendlyError';
 import { useSeguidores } from '@/hooks/useSeguidores';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client'; // ✅ CORREÇÃO: Importar supabase
 import { 
   MapPin, 
   Package, 
@@ -30,13 +31,65 @@ import {
 const MaesSeguidas = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { buscarSeguindo, deixarDeSeguir, buscarEstatisticas } = useSeguidores();
+  const { buscarSeguindo, deixarDeSeguir } = useSeguidores(); // ✅ Removido buscarEstatisticas
   const isMobile = useIsMobile();
   
   const [seguindo, setSeguindo] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+
+  // ✅ CORREÇÃO: Função para buscar estatísticas completas
+  const buscarEstatisticasCompletas = async (maeId: string) => {
+    try {
+      // Buscar itens ativos
+      const { data: itens, error: itensError } = await supabase
+        .from('itens')
+        .select('*')
+        .eq('publicado_por', maeId) // ✅ CORREÇÃO: usar 'publicado_por' em vez de 'autor_id'
+        .in('status', ['disponivel', 'reservado']);
+
+      if (itensError) throw itensError;
+
+      // Buscar total de seguidores
+      const { data: seguidores, error: seguidoresError } = await supabase
+        .from('seguidores')
+        .select('id')
+        .eq('seguido_id', maeId);
+
+      if (seguidoresError) throw seguidoresError;
+
+      // Buscar informações do perfil
+      const { data: perfil, error: perfilError } = await supabase
+        .from('profiles')
+        .select('reputacao, last_seen_at, created_at')
+        .eq('id', maeId)
+        .single();
+
+      if (perfilError) throw perfilError;
+
+      return {
+        total_itens: itens?.length || 0,
+        itens_ativos: itens?.filter(item => item.status === 'disponivel').length || 0,
+        total_seguidores: seguidores?.length || 0,
+        ultima_atividade: perfil?.last_seen_at,
+        media_avaliacao: perfil?.reputacao ? perfil.reputacao / 20 : 0,
+        avaliacoes_recebidas: 0, // Implementar se tiver tabela de avaliações
+        membro_desde: perfil?.created_at
+      };
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas:', error);
+      return {
+        total_itens: 0,
+        itens_ativos: 0,
+        total_seguidores: 0,
+        ultima_atividade: null,
+        media_avaliacao: 0,
+        avaliacoes_recebidas: 0,
+        membro_desde: null
+      };
+    }
+  };
 
   React.useEffect(() => {
     const carregarSeguindo = async () => {
@@ -47,41 +100,22 @@ const MaesSeguidas = () => {
         setError(null);
         const dados = await buscarSeguindo();
         
-        // Enriquecer dados com informações adicionais REAIS
+        // ✅ CORREÇÃO: Enriquecer dados com informações REAIS corrigidas
         const dadosEnriquecidos = await Promise.all(
           dados.map(async (item) => {
             const mae = item.profiles;
             if (!mae) return item;
             
             try {
-              // Buscar estatísticas reais do perfil
-              const [itensResult, estatisticasResult] = await Promise.all([
-                // Buscar itens ativos reais
-                supabase
-                  .from('itens')
-                  .select('*')
-                  .eq('autor_id', mae.id)
-                  .in('status', ['disponivel', 'reservado']),
-                buscarEstatisticas?.(mae.id)
-              ]);
-
-              const itensAtivos = itensResult.data || [];
-              const stats = estatisticasResult || {};
+              // ✅ CORREÇÃO: Buscar estatísticas reais usando função corrigida
+              const estatisticas = await buscarEstatisticasCompletas(mae.id);
 
               return {
                 ...item,
                 profiles: {
                   ...mae,
-                  itens_ativos: itensAtivos.length,
-                  estatisticas: {
-                    total_itens: stats.total_itens || itensAtivos.length,
-                    itens_ativos: itensAtivos.length,
-                    ultima_atividade: stats.ultima_atividade || mae.last_seen_at,
-                    avaliacoes_recebidas: stats.avaliacoes_recebidas || 0,
-                    media_avaliacao: stats.media_avaliacao || mae.reputacao / 20 || 0,
-                    total_seguidores: stats.total_seguidores || 0,
-                    membro_desde: mae.created_at
-                  }
+                  itens_ativos: estatisticas.itens_ativos,
+                  estatisticas: estatisticas
                 }
               };
             } catch (err) {
@@ -96,7 +130,7 @@ const MaesSeguidas = () => {
                     itens_ativos: 0,
                     ultima_atividade: mae.last_seen_at,
                     avaliacoes_recebidas: 0,
-                    media_avaliacao: mae.reputacao / 20 || 0,
+                    media_avaliacao: mae.reputacao ? mae.reputacao / 20 : 0,
                     total_seguidores: 0,
                     membro_desde: mae.created_at
                   }
@@ -116,7 +150,7 @@ const MaesSeguidas = () => {
     };
 
     carregarSeguindo();
-  }, [user?.id, buscarEstatisticas]);
+  }, [user?.id]); // ✅ CORREÇÃO: Removido buscarEstatisticas das dependências
 
   const handleUnfollow = async (maeId: string) => {
     try {
@@ -139,7 +173,27 @@ const MaesSeguidas = () => {
     
     try {
       const dados = await buscarSeguindo();
-      setSeguindo(dados);
+      
+      // ✅ Reaplicar enriquecimento na atualização
+      const dadosEnriquecidos = await Promise.all(
+        dados.map(async (item) => {
+          const mae = item.profiles;
+          if (!mae) return item;
+          
+          const estatisticas = await buscarEstatisticasCompletas(mae.id);
+          
+          return {
+            ...item,
+            profiles: {
+              ...mae,
+              itens_ativos: estatisticas.itens_ativos,
+              estatisticas: estatisticas
+            }
+          };
+        })
+      );
+      
+      setSeguindo(dadosEnriquecidos);
     } catch (err) {
       console.error('Erro ao recarregar:', err);
       setError('Não foi possível recarregar as mães seguidas');
@@ -278,7 +332,7 @@ const MaesSeguidas = () => {
             }
           />
         ) : (
-          /* Grid responsivo para desktop - Seguindo padrão do PerfilPublicoMae */
+          /* Grid responsivo para desktop */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {seguindo.map((item) => {
               const mae = item.profiles;
@@ -287,7 +341,6 @@ const MaesSeguidas = () => {
               const stats = mae.estatisticas || {};
 
               return (
-                /* Card seguindo o MESMO padrão do PerfilPublicoMae */
                 <Card key={mae.id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-200 hover:scale-[1.02]">
                   <CardHeader className="text-center pb-4">
                     <div className="flex flex-col items-center">
@@ -302,7 +355,7 @@ const MaesSeguidas = () => {
                         {mae.nome || 'Usuário'}
                       </h3>
                       
-                      {/* Avaliação - MESMO padrão do PerfilPublicoMae */}
+                      {/* Avaliação */}
                       <div className="flex items-center gap-1 mb-4">
                         {[1,2,3,4,5].map((star) => (
                           <Star 
@@ -330,7 +383,7 @@ const MaesSeguidas = () => {
                       </div>
                     )}
 
-                    {/* Localização - MESMO padrão */}
+                    {/* Localização */}
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin className="w-4 h-4 text-primary" />
                       <span className="text-sm">
@@ -357,7 +410,7 @@ const MaesSeguidas = () => {
                       </span>
                     </div>
 
-                    {/* Estatísticas - MESMO padrão do PerfilPublicoMae */}
+                    {/* Estatísticas */}
                     <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                       <div className="text-center">
                         <div className="flex items-center justify-center gap-1 text-gray-600">
@@ -391,7 +444,7 @@ const MaesSeguidas = () => {
                       )}
                     </div>
 
-                    {/* Botões de ação - Estilo do PerfilPublicoMae */}
+                    {/* Botões de ação */}
                     <div className="flex gap-2 pt-4">
                       <Button
                         variant="outline"
