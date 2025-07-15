@@ -1,16 +1,26 @@
-// src/pages/PerfilPublicoMae.tsx - USANDO ITEMCARD IDÊNTICO AO FEED
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// src/pages/PerfilPublicoMae.tsx - EXATAMENTE IGUAL AO FEED
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
-import { ItemCard } from '@/components/shared/ItemCard';
 import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
+import { ItemCard } from '@/components/shared/ItemCard';
 import { useAuth } from '@/hooks/useAuth';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 import { useToast } from '@/hooks/use-toast';
+import { useFeedPerfilEspecifico } from '@/hooks/useFeedPerfilEspecifico';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   MapPin, 
@@ -18,7 +28,9 @@ import {
   Package, 
   Calendar,
   Star,
-  ArrowLeft
+  ArrowLeft,
+  Search,
+  Filter
 } from 'lucide-react';
 
 const PerfilPublicoMae = () => {
@@ -28,125 +40,149 @@ const PerfilPublicoMae = () => {
   const { toast } = useToast();
 
   const [profile, setProfile] = useState<any>(null);
-  const [itensData, setItensData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingItens, setLoadingItens] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [errorProfile, setErrorProfile] = useState<string | null>(null);
+
+  // ✅ ESTADOS DE FILTROS IDÊNTICOS AO FEED
+  const [busca, setBusca] = useState('');
+  const [categoria, setCategoria] = useState('todas');
+  const [subcategoria, setSubcategoria] = useState('todas');
+  const [genero, setGenero] = useState('todos');
+  const [tamanho, setTamanho] = useState('todos');
+  const [precoRange, setPrecoRange] = useState([0, 200]);
+  const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
+  const [mostrarReservados, setMostrarReservados] = useState(true);
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ Função para carregar perfil
-  const carregarPerfil = useCallback(async () => {
-    if (!id) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (profileError) {
-        console.error('Erro ao buscar perfil:', profileError);
-        setError('Perfil não encontrado');
-        return;
-      }
-
-      setProfile(profileData);
-      
-    } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
-      setError('Erro ao carregar perfil');
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  // ✅ Função para carregar itens usando RPC específica
-  const carregarItens = useCallback(async () => {
-    if (!id || !user?.id) return;
-    
-    try {
-      setLoadingItens(true);
-      
-      console.log('🔄 Carregando itens do usuário:', id);
-      
-      const { data, error } = await supabase
-        .rpc('carregar_itens_usuario_especifico', { 
-          p_user_id: user.id,
-          p_target_user_id: id
-        });
-
-      if (error) {
-        console.error('❌ Erro ao buscar itens:', error);
-        throw error;
-      }
-
-      console.log('✅ Resposta da RPC:', data);
-
-      if (data?.success) {
-        setItensData(data);
-        console.log(`✅ ${data.itens?.length || 0} itens carregados`);
-      } else {
-        console.error('❌ RPC retornou erro:', data?.message);
-        throw new Error(data?.message || 'Erro na RPC');
-      }
-      
-    } catch (error) {
-      console.error('❌ Erro ao carregar itens:', error);
-      toast({
-        title: "Erro ao carregar itens",
-        description: "Não foi possível carregar os itens do usuário.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingItens(false);
-    }
-  }, [id, user?.id, toast]);
-
-  // ✅ Carregar dados na inicialização
-  useEffect(() => {
-    carregarPerfil();
-  }, [carregarPerfil]);
-
-  useEffect(() => {
-    carregarItens();
-  }, [carregarItens]);
-
-  // ✅ Dados para o ItemCard EXATAMENTE IGUAL AO FEED
+  // ✅ HOOKS IDÊNTICOS AO FEED
+  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
+  const debouncedBusca = useDebounce(busca, 500);
+  
+  // ✅ DELETAR filtrosCompletos - não precisamos mais
+  
+  // ✅ HOOK ESPECÍFICO PARA PERFIL
+  const {
+    data: paginasFeed,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loadingFeed,
+    refetch
+  } = useFeedPerfilEspecifico(user?.id || '', {
+    busca: debouncedBusca,
+    categoria: categoria === 'todas' ? undefined : categoria,
+    subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
+    genero: genero === 'todos' ? undefined : genero,
+    tamanho: tamanho === 'todos' ? undefined : tamanho,
+    precoMin: precoRange[0],
+    precoMax: precoRange[1],
+    mostrarReservados,
+    targetUserId: id
+  });
+  
+  // ✅ EXTRAIR DADOS IDÊNTICO AO FEED
+  const itens = useMemo(() => {
+    return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
+  }, [paginasFeed]);
+  
+  // ✅ DADOS CONSOLIDADOS IDÊNTICOS AO FEED
   const feedData = useMemo(() => {
-    if (!itensData) return { 
-      favoritos: [], 
-      reservas_usuario: [], 
-      filas_espera: {},
-      configuracoes: null,
-      profile_essencial: null,
-      taxaTransacao: 5 
-    };
-    
+    const primeiraPagina = paginasFeed?.pages?.[0];
     return {
-      favoritos: itensData.favoritos || [],
-      reservas_usuario: itensData.reservas_usuario || [],
-      filas_espera: itensData.filas_espera || {},
-      configuracoes: null, // Não precisamos para perfil específico
-      profile_essencial: null, // Não precisamos para perfil específico
+      favoritos: primeiraPagina?.favoritos || [],
+      reservas_usuario: primeiraPagina?.reservas_usuario || [],
+      filas_espera: primeiraPagina?.filas_espera || {},
+      configuracoes: primeiraPagina?.configuracoes,
+      profile_essencial: primeiraPagina?.profile_essencial,
       taxaTransacao: 5
     };
-  }, [itensData]);
-
-  // ✅ Lista de itens formatados para ItemCard
-  const itens = useMemo(() => {
-    if (!itensData?.itens) return [];
+  }, [paginasFeed]);
+  
+  const categorias = feedData.configuracoes?.categorias || [];
+  const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
+  
+  // ✅ LÓGICAS IDÊNTICAS AO FEED
+  const getSubcategoriasFiltradas = () => {
+    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
-    return itensData.itens.map((item: any) => ({
-      ...item,
-      mesma_escola: item.escola_comum || false
-    }));
-  }, [itensData]);
+    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    return subcategoriasUnicas;
+  };
 
-  const itensDisponiveis = itens.filter(item => item.status === 'disponivel');
+  const getTamanhosDisponiveis = () => {
+    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
+    
+    const tipos = Object.keys(tiposTamanho);
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  };
+
+  const subcategoriasFiltradas = getSubcategoriasFiltradas();
+  const tamanhosDisponiveis = getTamanhosDisponiveis();
+
+  // ✅ FILTRAR ITENS IDÊNTICO AO FEED
+  const itensFiltrados = mostrarReservados 
+    ? itens 
+    : itens.filter(item => item.status === 'disponivel');
+
+  // ✅ SCROLL INFINITO IDÊNTICO AO FEED
+  const { ref: infiniteRef } = useInfiniteScroll({
+    loading: isFetchingNextPage,
+    hasNextPage: hasNextPage || false,
+    onLoadMore: fetchNextPage,
+    disabled: !hasNextPage,
+    rootMargin: '100px',
+  });
+
+  // ✅ Carregar perfil separadamente
+  React.useEffect(() => {
+    const carregarPerfil = async () => {
+      if (!id) return;
+      
+      try {
+        setLoadingProfile(true);
+        setErrorProfile(null);
+        
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (profileError) {
+          console.error('Erro ao buscar perfil:', profileError);
+          setErrorProfile('Perfil não encontrado');
+          return;
+        }
+
+        setProfile(profileData);
+        
+      } catch (error) {
+        console.error('Erro ao carregar perfil:', error);
+        setErrorProfile('Erro ao carregar perfil');
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+
+    carregarPerfil();
+  }, [id]);
 
   const handleItemClick = useCallback((itemId: string) => {
     navigate(`/item/${itemId}`);
@@ -194,8 +230,7 @@ const PerfilPublicoMae = () => {
         setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
       }, 2000);
       
-      // ✅ Recarregar dados após ação
-      await carregarItens();
+      await refetch();
       return true;
     } catch (err) {
       console.error('Erro ao entrar na fila:', err);
@@ -248,8 +283,7 @@ const PerfilPublicoMae = () => {
         });
       }
       
-      // ✅ Recarregar dados após ação
-      await carregarItens();
+      await refetch();
     } catch (error) {
       console.error('Erro ao toggle favorito:', error);
       toast({
@@ -260,7 +294,7 @@ const PerfilPublicoMae = () => {
     }
   };
 
-  // ✅ Handlers IDÊNTICOS AO FEED
+  // ✅ HANDLERS IDÊNTICOS AO FEED
   const handleReservarItem = async (itemId: string) => {
     try {
       await entrarNaFila(itemId);
@@ -285,6 +319,37 @@ const PerfilPublicoMae = () => {
     }
   };
 
+  // ✅ HANDLERS DE FILTROS IDÊNTICOS AO FEED
+  const handleAplicarFiltros = () => {
+    refetch();
+  };
+
+  const handleLimparFiltros = () => {
+    setBusca('');
+    setCategoria('todas');
+    setSubcategoria('todas');
+    setGenero('todos');
+    setTamanho('todos');
+    setPrecoRange([0, 200]);
+    setMostrarReservados(true);
+    setMostrarFiltrosAvancados(false);
+    refetch();
+  };
+
+  const toggleFiltrosAvancados = () => {
+    setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
+  };
+
+  const handleCategoriaChange = (novaCategoria: string) => {
+    setCategoria(novaCategoria);
+    setSubcategoria('todas');
+    setTamanho('todos');
+  };
+
+  const handleTamanhoChange = (valor: string) => {
+    setTamanho(valor);
+  };
+
   const calcularIdade = (dataNascimento: string | null) => {
     if (!dataNascimento) return null;
     const hoje = new Date();
@@ -297,7 +362,7 @@ const PerfilPublicoMae = () => {
     return idade;
   };
 
-  if (loading) {
+  if (loadingProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
@@ -312,7 +377,7 @@ const PerfilPublicoMae = () => {
     );
   }
 
-  if (error || !profile) {
+  if (errorProfile || !profile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
@@ -320,7 +385,7 @@ const PerfilPublicoMae = () => {
           <Card className="max-w-md mx-auto text-center">
             <CardContent className="p-8">
               <h2 className="text-2xl font-bold mb-4">Perfil não encontrado</h2>
-              <p className="text-gray-600 mb-6">{error || 'O perfil que você está procurando não existe.'}</p>
+              <p className="text-gray-600 mb-6">{errorProfile || 'O perfil que você está procurando não existe.'}</p>
               <Button onClick={() => navigate('/feed')}>
                 Voltar ao Feed
               </Button>
@@ -338,7 +403,7 @@ const PerfilPublicoMae = () => {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
       <Header />
       
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
+      <main className="container mx-auto px-4 py-6">
         {/* Botão Voltar */}
         <div className="mb-6">
           <Button
@@ -352,24 +417,23 @@ const PerfilPublicoMae = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Perfil da Mãe */}
-          <div className="lg:col-span-1">
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="text-center pb-4">
-                <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-white shadow-lg">
-                  <AvatarImage src={profile.avatar_url || undefined} alt={nomeCompleto} />
-                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-2xl font-bold">
-                    {profile.nome?.split(' ').map((n: string) => n[0]).join('') || 'M'}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">
+        {/* ✅ CARD DO PERFIL - COMPACTO NO TOPO */}
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-16 h-16 border-2 border-purple-200">
+                <AvatarImage src={profile.avatar_url || undefined} alt={nomeCompleto} />
+                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-lg font-bold">
+                  {profile.nome?.split(' ').map((n: string) => n[0]).join('') || 'M'}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1">
+                <h1 className="text-xl font-bold text-gray-800 mb-1">
                   {nomeCompleto}
                 </h1>
                 
-                {/* Avaliação */}
-                <div className="flex items-center justify-center gap-1 mb-4">
+                <div className="flex items-center gap-2 mb-2">
                   {[1,2,3,4,5].map((star) => (
                     <Star 
                       key={star} 
@@ -380,113 +444,267 @@ const PerfilPublicoMae = () => {
                       }`} 
                     />
                   ))}
-                  <span className="text-sm text-gray-600 ml-2">
+                  <span className="text-sm text-gray-600">
                     ({((profile.reputacao || 0) / 20).toFixed(1)})
                   </span>
                 </div>
-              </CardHeader>
-              
-              <CardContent className="space-y-4">
-                {/* Bio */}
-                {profile.bio && (
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
-                    <p className="text-gray-600 text-sm">{profile.bio}</p>
-                  </div>
-                )}
 
-                {/* Localização */}
-                <div className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-4 h-4 text-primary" />
-                  <span className="text-sm">
-                    {profile.cidade && profile.estado 
-                      ? `${profile.cidade}, ${profile.estado}`
-                      : 'Localização não informada'
-                    }
-                  </span>
-                </div>
-
-                {/* Idade */}
-                {profile?.data_nascimento && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    <span className="text-sm">{calcularIdade(profile.data_nascimento)} anos</span>
-                  </div>
-                )}
-
-                {/* Estatísticas */}
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-gray-600">
-                      <Users className="w-4 h-4" />
-                      <span className="font-bold">0</span>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  {profile.cidade && profile.estado && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      {profile.cidade}, {profile.estado}
                     </div>
-                    <p className="text-xs text-gray-500">Seguidores</p>
+                  )}
+                  {profile.data_nascimento && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {calcularIdade(profile.data_nascimento)} anos
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Package className="w-3 h-3" />
+                    {itensFiltrados.length} itens
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ✅ FILTROS E BUSCA IDÊNTICOS AO FEED */}
+        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              type="text"
+              placeholder="Busque nos itens deste usuário..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-10 pr-12 h-12 text-base"
+            />
+            <button
+              onClick={toggleFiltrosAvancados}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+            >
+              <Filter className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* ✅ FILTROS AVANÇADOS IDÊNTICOS AO FEED */}
+          {mostrarFiltrosAvancados && (
+            <div className="space-y-6 border-t pt-4">
+              {/* Mostrar itens reservados */}
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">OPÇÕES DE VISUALIZAÇÃO</h3>
+                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
+                      Mostrar itens reservados
+                    </Label>
+                    <Switch
+                      id="mostrar-reservados"
+                      checked={mostrarReservados}
+                      onCheckedChange={setMostrarReservados}
+                    />
                   </div>
                   
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1 text-gray-600">
-                      <Package className="w-4 h-4" />
-                      <span className="font-bold">{itensDisponiveis.length}</span>
-                    </div>
-                    <p className="text-xs text-gray-500">Itens ativos</p>
+                  <div className="text-xs text-gray-500">
+                    {itensFiltrados.length} itens
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
 
-          {/* Itens da Mãe - USANDO ITEMCARD IDÊNTICO AO FEED */}
-          <div className="lg:col-span-2">
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Itens disponíveis ({itensDisponiveis.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingItens ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <ItemCardSkeleton key={i} />
-                    ))}
-                  </div>
-                ) : itensDisponiveis.length === 0 ? (
-                  <EmptyState
-                    type="search"
-                    title="Nenhum item disponível"
-                    description="Este usuário não tem itens disponíveis no momento"
+              {/* Categoria e Subcategoria */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
+                  <Select value={categoria} onValueChange={handleCategoriaChange}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                      <SelectItem value="todas">Todas</SelectItem>
+                      {categorias.map((cat) => (
+                        <SelectItem key={cat.codigo} value={cat.codigo}>
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm">{cat.icone}</span>
+                            {cat.nome}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
+                  <Select 
+                    value={subcategoria} 
+                    onValueChange={setSubcategoria}
+                    disabled={categoria === 'todas'}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                      <SelectItem value="todas">Todas</SelectItem>
+                      {subcategoriasFiltradas.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhuma subcategoria encontrada</SelectItem>
+                      ) : (
+                        subcategoriasFiltradas.map((sub) => (
+                          <SelectItem key={sub.id} value={sub.nome}>
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm">{sub.icone}</span>
+                              {sub.nome}
+                            </span>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Gênero e Tamanho */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
+                  <Select value={genero} onValueChange={setGenero}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg z-50">
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="menino">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👦</span>
+                          Menino
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="menina">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👧</span>
+                          Menina
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="unissex">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👶</span>
+                          Unissex
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                    {categoria === 'calcados' ? 'NÚMERO' : 
+                     categoria === 'brinquedos' ? 'IDADE' : 
+                     categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
+                  </h3>
+                  <Select 
+                    value={tamanho} 
+                    onValueChange={handleTamanhoChange}
+                    disabled={categoria === 'todas' || loadingTamanhos}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {loadingTamanhos ? (
+                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                      ) : tamanhosDisponiveis.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhum tamanho encontrado</SelectItem>
+                      ) : (
+                        tamanhosDisponiveis.map((tam) => (
+                          <SelectItem key={tam.id} value={tam.valor}>
+                            {tam.label_display}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Faixa de Preço */}
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                  PREÇO: {precoRange[0]} - {precoRange[1]} G
+                </h3>
+                <div className="px-2">
+                  <Slider
+                    value={precoRange}
+                    onValueChange={setPrecoRange}
+                    max={200}
+                    min={0}
+                    step={5}
+                    className="w-full"
                   />
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {itensDisponiveis.map((item) => (
-                      <ItemCard
-                        key={item.id}
-                        item={item}
-                        feedData={feedData}
-                        currentUserId={user?.id || ''}
-                        taxaTransacao={feedData.taxaTransacao}
-                        onItemClick={handleItemClick}
-                        showActions={true}
-                        showLocation={true}
-                        showAuthor={false}
-                        onToggleFavorito={() => handleToggleFavorito(item.id)}
-                        onReservar={() => handleReservarItem(item.id)}
-                        onEntrarFila={() => handleEntrarFila(item.id)}
-                        actionState={actionStates[item.id]}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </main>
-      <QuickNav />
-    </div>
-  );
-};
+                </div>
+              </div>
 
-export default PerfilPublicoMae;
+              {/* Botões de ação */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleLimparFiltros}
+                  variant="outline"
+                  className="flex-1 h-12"
+                >
+                  Limpar Filtros
+                </Button>
+                <Button
+                  onClick={handleAplicarFiltros}
+                  className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500"
+                >
+                  Aplicar Filtros
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ✅ LOADING STATE IDÊNTICO AO FEED */}
+        {loadingFeed && itensFiltrados.length === 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <ItemCardSkeleton key={i} />
+            ))}
+          </div>
+        )}
+
+        {/* ✅ EMPTY STATE IDÊNTICO AO FEED */}
+        {!loadingFeed && itensFiltrados.length === 0 && (
+          <EmptyState
+            type="search"
+            title="Nenhum item encontrado"
+            description={
+              !mostrarReservados 
+                ? "Tente incluir itens reservados ou ajustar os filtros"
+                : "Este usuário não tem itens que correspondam aos filtros aplicados"
+            }
+            actionLabel="Limpar filtros"
+            onAction={handleLimparFiltros}
+          />
+        )}
+
+        {/* ✅ GRID DE ITENS IDÊNTICO AO FEED */}
+        {itensFiltrados.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {itensFiltrados.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  feedData={feedData}
+                  currentUserId={user?.id || ''}
+                  taxaTransacao={feedData.taxaTransacao}
+                  onItemClick={handleItemClick}
+                  showActions={true}
+                  onToggleFavorito={() => handleToggleFavorito(item.id)}
+                  onReservar={() => handleReservarItem(item.id)}
+                  onEntrarFila={() => handleEntrarFila(item.id)}
+                  actionState={actionStates[item.id]}
