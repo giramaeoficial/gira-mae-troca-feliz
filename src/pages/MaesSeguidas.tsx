@@ -61,8 +61,7 @@ const MaesSeguidas = () => {
                   .from('itens')
                   .select('*')
                   .eq('autor_id', mae.id)
-                  .eq('status', 'disponivel'),
-                // Buscar estatísticas do perfil
+                  .in('status', ['disponivel', 'reservado']),
                 buscarEstatisticas?.(mae.id)
               ]);
 
