@@ -27,10 +27,10 @@ export const useConfigSistema = () => {
       }, {} as any);
 
       return {
-        taxa_transferencia: configObj.taxa_transferencia || { percentual: 1.0 },
-        taxa_transacao: configObj.taxa_transacao || { percentual: 5.0 },
+        taxa_transferencia: configObj.taxa_transferencia || { percentual: 0.0 },
+        taxa_transacao: configObj.taxa_transacao || { percentual: 0.0 },
         validade_girinhas: configObj.validade_girinhas || { meses: 12 },
-        queima_por_transacao: configObj.queima_por_transacao || { quantidade: 1.0 },
+        queima_por_transacao: configObj.queima_por_transacao || { quantidade: 0.0 },
         preco_manual_girinhas: configObj.preco_manual_girinhas || { valor: 1.00 }
       };
     },
@@ -38,8 +38,8 @@ export const useConfigSistema = () => {
     refetchInterval: 300000, // 5 minutos
   });
 
-  const taxaTransferencia = config?.taxa_transferencia?.percentual ?? 1.0;
-  const taxaTransacao = config?.taxa_transacao?.percentual ?? 5.0;
+  const taxaTransferencia = config?.taxa_transferencia?.percentual ?? 0.0;
+  const taxaTransacao = config?.taxa_transacao?.percentual ?? 0.0;
   const precoManual = config?.preco_manual_girinhas?.valor || 1.00;
 
   return {
