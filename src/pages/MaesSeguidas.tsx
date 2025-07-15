@@ -14,6 +14,7 @@ import { useSeguidores } from '@/hooks/useSeguidores';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
+import { useInView } from 'react-intersection-observer';
 import { 
   MapPin, 
   Package, 
@@ -29,7 +30,8 @@ import {
   MessageCircle,
   Truck,
   User,
-  TrendingUp
+  TrendingUp,
+  Loader
 } from 'lucide-react';
 
 interface MaeSeguida {
@@ -84,8 +86,12 @@ interface MaeSeguida {
 
 interface RespostaAPI {
   success: boolean;
+  page: number;
+  limit: number;
   total_seguindo: number;
   data: MaeSeguida[];
+  has_more: boolean;
+  total_count: number;
 }
 
 const MaesSeguidas = () => {
@@ -99,42 +105,79 @@ const MaesSeguidas = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
+  
+  // ✅ Estados para scroll infinito
+  const [page, setPage] = React.useState(0);
+  const [hasMore, setHasMore] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
+  
+  // ✅ Hook para detectar quando o usuário chega no final da página
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0.1,
+    triggerOnce: false
+  });
 
-  // ✅ Função para buscar dados usando a RPC function
-  const carregarMaesSeguidas = React.useCallback(async () => {
+  // ✅ Função para buscar dados usando a RPC function paginada
+  const carregarMaesSeguidas = React.useCallback(async (pageNum: number = 0, reset: boolean = false) => {
     if (!user?.id) return;
     
     try {
-      setError(null);
+      if (pageNum === 0) setError(null);
+      if (pageNum > 0) setLoadingMore(true);
       
       const { data, error } = await supabase
-        .rpc('carregar_maes_seguidas', { p_user_id: user.id });
+        .rpc('carregar_maes_seguidas_paginado', { 
+          p_user_id: user.id,
+          p_page: pageNum,
+          p_limit: 20 
+        });
 
       if (error) throw error;
 
       const resultado = data as RespostaAPI;
       
       if (resultado.success) {
-        setSeguindo(resultado.data || []);
+        if (reset || pageNum === 0) {
+          // Reset completo ou primeira página
+          setSeguindo(resultado.data || []);
+        } else {
+          // Adicionar à lista existente
+          setSeguindo(prev => [...prev, ...(resultado.data || [])]);
+        }
+        
         setTotalSeguindo(resultado.total_seguindo || 0);
+        setHasMore(resultado.has_more || false);
+        setPage(pageNum);
       } else {
         throw new Error(resultado.message || 'Erro ao carregar dados');
       }
     } catch (err) {
       console.error('Erro ao carregar mães seguidas:', err);
-      setError(err instanceof Error ? err.message : 'Não foi possível carregar as mães seguidas');
+      if (pageNum === 0) {
+        setError(err instanceof Error ? err.message : 'Não foi possível carregar as mães seguidas');
+      }
+    } finally {
+      if (pageNum > 0) setLoadingMore(false);
     }
   }, [user?.id]);
 
+  // ✅ Carregamento inicial
   React.useEffect(() => {
     const carregarDados = async () => {
       setLoading(true);
-      await carregarMaesSeguidas();
+      await carregarMaesSeguidas(0, true);
       setLoading(false);
     };
 
     carregarDados();
   }, [carregarMaesSeguidas]);
+
+  // ✅ Scroll infinito - carregar mais quando chegar no final
+  React.useEffect(() => {
+    if (inView && hasMore && !loadingMore && !loading) {
+      carregarMaesSeguidas(page + 1);
+    }
+  }, [inView, hasMore, loadingMore, loading, page, carregarMaesSeguidas]);
 
   const handleUnfollow = async (maeId: string) => {
     try {
@@ -152,9 +195,12 @@ const MaesSeguidas = () => {
     navigate(`/perfil/${maeId}`);
   };
 
+  // ✅ Refresh completo
   const handleRefresh = async () => {
     setRefreshing(true);
-    await carregarMaesSeguidas();
+    setPage(0);
+    setHasMore(true);
+    await carregarMaesSeguidas(0, true);
     setRefreshing(false);
   };
 
@@ -274,6 +320,11 @@ const MaesSeguidas = () => {
                   Seguindo
                 </Badge>
               )}
+              {seguindo.length > 0 && seguindo.length < totalSeguindo && (
+                <Badge variant="outline" className="text-xs">
+                  Mostrando {seguindo.length} de {totalSeguindo}
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -293,223 +344,250 @@ const MaesSeguidas = () => {
             }
           />
         ) : (
-          /* Grid responsivo para desktop */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {seguindo.map((item) => {
-              const mae = item.profiles;
-              if (!mae) return null;
+          <>
+            {/* Grid responsivo para desktop */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              {seguindo.map((item) => {
+                const mae = item.profiles;
+                if (!mae) return null;
 
-              const stats = mae.estatisticas;
-              const nomeCompleto = formatarNomeCompleto(mae.nome, mae.sobrenome);
+                const stats = mae.estatisticas;
+                const nomeCompleto = formatarNomeCompleto(mae.nome, mae.sobrenome);
 
-              return (
-                <Card key={mae.id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] overflow-hidden">
-                  <CardHeader className="text-center pb-4 relative">
-                    {/* Badges de destaque */}
-                    <div className="absolute top-2 right-2 flex flex-col gap-1">
-                      {mae.escola_comum && (
-                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                          🏫 Mesma escola
-                        </Badge>
-                      )}
-                      {mae.logistica.entrega_disponivel && (
-                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                          <Truck className="w-3 h-3 mr-1" />
-                          Entrega
-                        </Badge>
-                      )}
-                      {stats.distancia_km && stats.distancia_km <= 5 && (
-                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                          📍 {stats.distancia_km}km
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col items-center">
-                      <Avatar className="w-20 h-20 mb-4 border-2 border-purple-200">
-                        <AvatarImage src={mae.avatar_url || undefined} alt={nomeCompleto} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
-                          {mae.nome?.split(' ').map(n => n[0]).join('') || 'M'}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">
-                        {nomeCompleto}
-                      </h3>
-                      
-                      {/* Avaliação */}
-                      <div className="flex items-center gap-1 mb-4">
-                        {[1,2,3,4,5].map((star) => (
-                          <Star 
-                            key={star} 
-                            className={`w-4 h-4 ${
-                              star <= Math.floor(stats.media_avaliacao || 0) 
-                                ? 'fill-current text-yellow-500' 
-                                : 'text-gray-300'
-                            }`} 
-                          />
-                        ))}
-                        <span className="text-sm text-gray-600 ml-1">
-                          ({(stats.media_avaliacao || 0).toFixed(1)})
-                        </span>
-                        {stats.avaliacoes_recebidas > 0 && (
-                          <span className="text-xs text-gray-500">
-                            · {stats.avaliacoes_recebidas} avaliações
-                          </span>
+                return (
+                  <Card key={mae.id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] overflow-hidden">
+                    <CardHeader className="text-center pb-4 relative">
+                      {/* Badges de destaque */}
+                      <div className="absolute top-2 right-2 flex flex-col gap-1">
+                        {mae.escola_comum && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            🏫 Mesma escola
+                          </Badge>
+                        )}
+                        {mae.logistica.entrega_disponivel && (
+                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                            <Truck className="w-3 h-3 mr-1" />
+                            Entrega
+                          </Badge>
+                        )}
+                        {stats.distancia_km && stats.distancia_km <= 5 && (
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                            📍 {stats.distancia_km}km
+                          </Badge>
                         )}
                       </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    {/* Bio */}
-                    {mae.bio && (
-                      <div>
-                        <h4 className="font-semibold text-gray-800 mb-2 text-sm">Sobre</h4>
-                        <p className="text-gray-600 text-sm line-clamp-2">{mae.bio}</p>
-                      </div>
-                    )}
 
-                    {/* Informações básicas */}
-                    <div className="space-y-2">
-                      {/* Localização */}
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                        <span className="text-sm">
-                          {mae.cidade 
-                            ? `${mae.cidade}, ${mae.estado || 'BR'}`
-                            : 'Localização não informada'
-                          }
-                        </span>
-                      </div>
-
-                      {/* Idade */}
-                      {mae.data_nascimento && (
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span className="text-sm">{calcularIdade(mae.data_nascimento)} anos</span>
-                        </div>
-                      )}
-
-                      {/* Última atividade */}
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-sm">
-                          {formatLastActivity(stats.ultima_atividade)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Estatísticas em grid 2x2 */}
-                    <div className="grid grid-cols-2 gap-3 pt-4 border-t">
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-600">
-                          <Users className="w-4 h-4" />
-                          <span className="font-bold">{stats.total_seguidores}</span>
-                        </div>
-                        <p className="text-xs text-gray-500">Seguidores</p>
-                      </div>
-                      
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-600">
-                          <Package className="w-4 h-4" />
-                          <span className="font-bold">{stats.itens_disponiveis}</span>
-                        </div>
-                        <p className="text-xs text-gray-500">Disponíveis</p>
-                      </div>
-
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-600">
-                          <TrendingUp className="w-4 h-4" />
-                          <span className="font-bold">{stats.total_itens}</span>
-                        </div>
-                        <p className="text-xs text-gray-500">Total itens</p>
-                      </div>
-
-                      <div className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-600">
-                          <User className="w-4 h-4" />
-                          <span className="font-bold">{stats.total_seguindo}</span>
-                        </div>
-                        <p className="text-xs text-gray-500">Seguindo</p>
-                      </div>
-                    </div>
-
-                    {/* Itens recentes preview */}
-                    {mae.itens_recentes && mae.itens_recentes.length > 0 && (
-                      <div className="pt-4 border-t">
-                        <h4 className="font-semibold text-gray-800 mb-2 text-sm">Itens recentes</h4>
-                        <div className="flex gap-2 overflow-x-auto">
-                          {mae.itens_recentes.slice(0, 3).map((item) => (
-                            <div key={item.id} className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
-                              {item.fotos[0] ? (
-                                <img 
-                                  src={item.fotos[0]} 
-                                  alt={item.titulo}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <Package className="w-6 h-6 text-gray-400" />
-                                </div>
-                              )}
-                            </div>
+                      <div className="flex flex-col items-center">
+                        <Avatar className="w-20 h-20 mb-4 border-2 border-purple-200">
+                          <AvatarImage src={mae.avatar_url || undefined} alt={nomeCompleto} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                            {mae.nome?.split(' ').map(n => n[0]).join('') || 'M'}
+                          </AvatarFallback>
+                        </Avatar>
+                        
+                        <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">
+                          {nomeCompleto}
+                        </h3>
+                        
+                        {/* Avaliação */}
+                        <div className="flex items-center gap-1 mb-4">
+                          {[1,2,3,4,5].map((star) => (
+                            <Star 
+                              key={star} 
+                              className={`w-4 h-4 ${
+                                star <= Math.floor(stats.media_avaliacao || 0) 
+                                  ? 'fill-current text-yellow-500' 
+                                  : 'text-gray-300'
+                              }`} 
+                            />
                           ))}
+                          <span className="text-sm text-gray-600 ml-1">
+                            ({(stats.media_avaliacao || 0).toFixed(1)})
+                          </span>
+                          {stats.avaliacoes_recebidas > 0 && (
+                            <span className="text-xs text-gray-500">
+                              · {stats.avaliacoes_recebidas} avaliações
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {mae.itens_recentes.length} {mae.itens_recentes.length === 1 ? 'item' : 'itens'} recentes
-                        </p>
                       </div>
-                    )}
-
-                    {/* Badges informativos */}
-                    <div className="flex flex-wrap gap-2 justify-center pt-2">
-                      {mae.reputacao && mae.reputacao > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          ⭐ {mae.reputacao} pontos
-                        </Badge>
-                      )}
-                      
-                      {mae.interesses && mae.interesses.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          💝 {mae.interesses.length} interesses
-                        </Badge>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      {/* Bio */}
+                      {mae.bio && (
+                        <div>
+                          <h4 className="font-semibold text-gray-800 mb-2 text-sm">Sobre</h4>
+                          <p className="text-gray-600 text-sm line-clamp-2">{mae.bio}</p>
+                        </div>
                       )}
 
-                      {mae.aceita_entrega_domicilio && (
-                        <Badge variant="outline" className="text-xs">
-                          🚚 Entrega domicílio
-                        </Badge>
-                      )}
-                    </div>
+                      {/* Informações básicas */}
+                      <div className="space-y-2">
+                        {/* Localização */}
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                          <span className="text-sm">
+                            {mae.cidade 
+                              ? `${mae.cidade}, ${mae.estado || 'BR'}`
+                              : 'Localização não informada'
+                            }
+                          </span>
+                        </div>
 
-                    {/* Botões de ação */}
-                    <div className="flex gap-2 pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewProfile(mae.id)}
-                        className="flex-1 text-purple-600 border-purple-600 hover:bg-purple-50 transition-colors"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Ver Perfil
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUnfollow(mae.id)}
-                        className="flex-1 text-red-600 border-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <UserX className="w-4 h-4 mr-2" />
-                        Deixar de Seguir
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                        {/* Idade */}
+                        {mae.data_nascimento && (
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
+                            <span className="text-sm">{calcularIdade(mae.data_nascimento)} anos</span>
+                          </div>
+                        )}
+
+                        {/* Última atividade */}
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-sm">
+                            {formatLastActivity(stats.ultima_atividade)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Estatísticas em grid 2x2 */}
+                      <div className="grid grid-cols-2 gap-3 pt-4 border-t">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-gray-600">
+                            <Users className="w-4 h-4" />
+                            <span className="font-bold">{stats.total_seguidores}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">Seguidores</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-gray-600">
+                            <Package className="w-4 h-4" />
+                            <span className="font-bold">{stats.itens_disponiveis}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">Disponíveis</p>
+                        </div>
+
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-gray-600">
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="font-bold">{stats.total_itens}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">Total itens</p>
+                        </div>
+
+                        <div className="text-center">
+                          <div className="flex items-center justify-center gap-1 text-gray-600">
+                            <User className="w-4 h-4" />
+                            <span className="font-bold">{stats.total_seguindo}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">Seguindo</p>
+                        </div>
+                      </div>
+
+                      {/* Itens recentes preview */}
+                      {mae.itens_recentes && mae.itens_recentes.length > 0 && (
+                        <div className="pt-4 border-t">
+                          <h4 className="font-semibold text-gray-800 mb-2 text-sm">Itens recentes</h4>
+                          <div className="flex gap-2 overflow-x-auto">
+                            {mae.itens_recentes.slice(0, 3).map((item) => (
+                              <div key={item.id} className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                                {item.fotos[0] ? (
+                                  <img 
+                                    src={item.fotos[0]} 
+                                    alt={item.titulo}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <Package className="w-6 h-6 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {mae.itens_recentes.length} {mae.itens_recentes.length === 1 ? 'item' : 'itens'} recentes
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Badges informativos */}
+                      <div className="flex flex-wrap gap-2 justify-center pt-2">
+                        {mae.reputacao && mae.reputacao > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            ⭐ {mae.reputacao} pontos
+                          </Badge>
+                        )}
+                        
+                        {mae.interesses && mae.interesses.length > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            💝 {mae.interesses.length} interesses
+                          </Badge>
+                        )}
+
+                        {mae.aceita_entrega_domicilio && (
+                          <Badge variant="outline" className="text-xs">
+                            🚚 Entrega domicílio
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Botões de ação */}
+                      <div className="flex gap-2 pt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewProfile(mae.id)}
+                          className="flex-1 text-purple-600 border-purple-600 hover:bg-purple-50 transition-colors"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Ver Perfil
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUnfollow(mae.id)}
+                          className="flex-1 text-red-600 border-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <UserX className="w-4 h-4 mr-2" />
+                          Deixar de Seguir
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* ✅ Loading indicator para scroll infinito */}
+            {hasMore && (
+              <div 
+                ref={loadMoreRef}
+                className="flex justify-center items-center py-8"
+              >
+                {loadingMore && (
+                  <div className="flex items-center gap-2 text-purple-600">
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span className="text-sm">Carregando mais mães...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ✅ Indicador de fim da lista */}
+            {!hasMore && seguindo.length > 0 && (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-gray-600 text-sm">
+                  <Heart className="w-4 h-4" />
+                  Você viu todas as {totalSeguindo} mães que segue
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
