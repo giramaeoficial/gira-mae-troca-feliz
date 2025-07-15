@@ -14,7 +14,6 @@ import { useSeguidores } from '@/hooks/useSeguidores';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
-import { useInView } from 'react-intersection-observer';
 import { 
   MapPin, 
   Package, 
@@ -27,7 +26,6 @@ import {
   RefreshCw,
   Users,
   Calendar,
-  MessageCircle,
   Truck,
   User,
   TrendingUp,
@@ -111,11 +109,32 @@ const MaesSeguidas = () => {
   const [hasMore, setHasMore] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   
-  // ✅ Hook para detectar quando o usuário chega no final da página
-  const { ref: loadMoreRef, inView } = useInView({
-    threshold: 0.1,
-    triggerOnce: false
-  });
+  // ✅ Ref para o elemento de scroll infinito
+  const loadMoreRef = React.useRef<HTMLDivElement>(null);
+
+  // ✅ Hook personalizado para intersection observer (sem dependência externa)
+  const useInfiniteScroll = (callback: () => void, deps: any[]) => {
+    React.useEffect(() => {
+      const element = loadMoreRef.current;
+      if (!element) return;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const target = entries[0];
+          if (target.isIntersecting && hasMore && !loadingMore && !loading) {
+            callback();
+          }
+        },
+        { threshold: 0.1 }
+      );
+
+      observer.observe(element);
+
+      return () => {
+        observer.unobserve(element);
+      };
+    }, deps);
+  };
 
   // ✅ Função para buscar dados usando a RPC function paginada
   const carregarMaesSeguidas = React.useCallback(async (pageNum: number = 0, reset: boolean = false) => {
@@ -172,12 +191,10 @@ const MaesSeguidas = () => {
     carregarDados();
   }, [carregarMaesSeguidas]);
 
-  // ✅ Scroll infinito - carregar mais quando chegar no final
-  React.useEffect(() => {
-    if (inView && hasMore && !loadingMore && !loading) {
-      carregarMaesSeguidas(page + 1);
-    }
-  }, [inView, hasMore, loadingMore, loading, page, carregarMaesSeguidas]);
+  // ✅ Configurar scroll infinito
+  useInfiniteScroll(() => {
+    carregarMaesSeguidas(page + 1);
+  }, [page, hasMore, loadingMore, loading]);
 
   const handleUnfollow = async (maeId: string) => {
     try {
