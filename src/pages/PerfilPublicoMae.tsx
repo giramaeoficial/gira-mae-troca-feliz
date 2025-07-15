@@ -1,79 +1,118 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+// src/pages/PerfilPublicoMae.tsx - CORRIGIDO
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
-import { ItemCard } from '@/components/shared/ItemCard';
 import BotaoSeguir from '@/components/perfil/BotaoSeguir';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, MapPin, Star, Calendar, Users, Package } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { useFeedInfinito } from '@/hooks/useFeedInfinito'; // ✅ ADICIONAR
-import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
+import ItemCard from '@/components/items/ItemCard';
+import ItemCardSkeleton from '@/components/items/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  MapPin, 
+  Users, 
+  Package, 
+  Calendar,
+  Star,
+  ArrowLeft
+} from 'lucide-react';
 
-type Profile = Tables<'profiles'>;
+interface ProfileData {
+  id: string;
+  nome: string;
+  sobrenome?: string;
+  avatar_url?: string;
+  bio?: string;
+  cidade?: string;
+  estado?: string;
+  bairro?: string;
+  data_nascimento?: string;
+  reputacao?: number;
+  created_at: string;
+}
+
+interface ItemData {
+  id: string;
+  titulo: string;
+  descricao: string;
+  categoria: string;
+  subcategoria?: string;
+  genero?: string;
+  tamanho_categoria?: string;
+  tamanho_valor?: string;
+  estado_conservacao: string;
+  valor_girinhas: number;
+  fotos: string[];
+  status: string;
+  publicado_por: string;
+  created_at: string;
+  updated_at: string;
+  endereco_bairro?: string;
+  endereco_cidade?: string;
+  endereco_estado?: string;
+  aceita_entrega?: boolean;
+  raio_entrega_km?: number;
+  logistica?: {
+    entrega_disponivel: boolean;
+    busca_disponivel: boolean;
+    distancia_km?: number;
+  };
+  publicado_por_profile?: {
+    nome: string;
+    avatar_url?: string;
+    reputacao: number;
+    whatsapp?: string;
+  };
+  escola_comum?: boolean;
+  is_favorito?: boolean;
+  fila_info?: {
+    total_fila: number;
+    posicao_usuario: number;
+  };
+}
+
+interface RespostaItensAPI {
+  success: boolean;
+  target_user_id: string;
+  total_itens: number;
+  itens: ItemData[];
+  favoritos: string[];
+  reservas_usuario: Array<{
+    item_id: string;
+    status: string;
+    id: string;
+    usuario_reservou: string;
+  }>;
+  filas_espera: Record<string, {
+    total_fila: number;
+    posicao_usuario: number;
+    usuario_id: string;
+  }>;
+}
 
 const PerfilPublicoMae = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
+
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [itensData, setItensData] = useState<RespostaItensAPI | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingItens, setLoadingItens] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
+  const [actionStates, setActionStates] = useState<Record<string, string>>({});
+  const [estatisticas, setEstatisticas] = useState({ total_seguindo: 0, total_seguidores: 0 });
 
-  // ✅ USAR DADOS REAIS DO FEED (substituir o mock)
-  const filtrosPerfilItens = useMemo(() => ({
-    busca: '',
-    cidade: '',
-    categoria: 'todas',
-    subcategoria: 'todas',
-    genero: 'todos',
-    tamanho: 'todos',
-    precoMin: 0,
-    precoMax: 200,
-    mostrarReservados: true,
-    modalidadeLogistica: 'todas' as 'todas' | 'entrega' | 'busca'
-  }), []);
-
-  const {
-    data: paginasFeed,
-    isLoading: loadingFeedData,
-    refetch: refetchItens
-  } = useFeedInfinito(user?.id || '', filtrosPerfilItens);
-
-  // ✅ EXTRAIR DADOS CONSOLIDADOS (substituir o mock)
-  const feedData = useMemo(() => {
-    const primeiraPagina = paginasFeed?.pages?.[0];
-    return {
-      favoritos: primeiraPagina?.favoritos || [],
-      reservas_usuario: primeiraPagina?.reservas_usuario || [],
-      filas_espera: primeiraPagina?.filas_espera || {},
-      configuracoes: primeiraPagina?.configuracoes,
-      profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao: 5
-    };
-  }, [paginasFeed]);
-
-  // ✅ FILTRAR ITENS DO PERFIL ESPECÍFICO DOS DADOS CONSOLIDADOS
-  const itensDoProfile = useMemo(() => {
-    if (!paginasFeed?.pages || !id) return [];
-    
-    const todosItens = paginasFeed.pages.flatMap(page => page?.itens || []);
-    return todosItens.filter(item => item.publicado_por === id);
-  }, [paginasFeed, id]);
-
+  // ✅ Carregar dados do perfil
   useEffect(() => {
-    const carregarDados = async () => {
+    const carregarPerfil = async () => {
       if (!id) {
         setError('ID do perfil não informado');
         setLoading(false);
@@ -86,7 +125,6 @@ const PerfilPublicoMae = () => {
         
         console.log('Buscando perfil por ID:', id);
         
-        // Buscar perfil por ID
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
@@ -96,18 +134,11 @@ const PerfilPublicoMae = () => {
         if (profileError) {
           console.error('Erro ao buscar perfil:', profileError);
           setError('Perfil não encontrado');
-          setLoading(false);
           return;
         }
 
         console.log('Perfil encontrado:', profileData);
         setProfile(profileData);
-        
-        // ✅ Não precisamos mais buscar itens separadamente - vem do useFeedInfinito
-        // Os itens são filtrados no useMemo itensDoProfile
-        
-        // Buscar estatísticas de seguidores (simulado por enquanto)
-        setEstatisticas({ total_seguindo: 0, total_seguidores: 0 });
         
       } catch (error) {
         console.error('Erro ao carregar dados do perfil:', error);
@@ -117,10 +148,61 @@ const PerfilPublicoMae = () => {
       }
     };
 
-    carregarDados();
+    carregarPerfil();
   }, [id]);
 
-  // ✅ Funções de ação similares ao FeedOptimized
+  // ✅ Carregar itens usando a RPC específica
+  useEffect(() => {
+    const carregarItens = async () => {
+      if (!id || !user?.id) return;
+      
+      try {
+        setLoadingItens(true);
+        
+        console.log('Buscando itens do usuário:', id);
+        
+        const { data, error } = await supabase
+          .rpc('carregar_itens_usuario_especifico', { 
+            p_user_id: user.id,
+            p_target_user_id: id
+          });
+
+        if (error) {
+          console.error('Erro ao buscar itens:', error);
+          return;
+        }
+
+        const resultado = data as RespostaItensAPI;
+        
+        if (resultado.success) {
+          setItensData(resultado);
+          console.log('Itens carregados:', resultado.itens.length);
+        } else {
+          console.error('Erro na resposta da API:', resultado);
+        }
+        
+      } catch (error) {
+        console.error('Erro ao carregar itens:', error);
+      } finally {
+        setLoadingItens(false);
+      }
+    };
+
+    carregarItens();
+  }, [id, user?.id]);
+
+  // ✅ Dados para o ItemCard
+  const feedData = useMemo(() => {
+    if (!itensData) return { favoritos: [], reservas_usuario: [], filas_espera: {}, taxaTransacao: 5 };
+    
+    return {
+      favoritos: itensData.favoritos || [],
+      reservas_usuario: itensData.reservas_usuario || [],
+      filas_espera: itensData.filas_espera || {},
+      taxaTransacao: 5
+    };
+  }, [itensData]);
+
   const handleItemClick = useCallback((itemId: string) => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
@@ -152,34 +234,32 @@ const PerfilPublicoMae = () => {
       if (result?.tipo === 'reserva_direta') {
         toast({ 
           title: "Item reservado! 🎉", 
-          description: "As Girinhas foram bloqueadas." 
+          description: "As Girinhas foram bloqueadas."
         });
-        await refetchItens(); // ✅ ATUALIZAR DADOS APÓS AÇÃO
       } else if (result?.tipo === 'fila_espera') {
         toast({ 
-          title: "Entrou na fila! 📝", 
-          description: `Você está na posição ${result.posicao} da fila.` 
+          title: "Entrou na fila! ⏳", 
+          description: `Você está na posição ${result.posicao} da fila.`
         });
-        await refetchItens(); // ✅ ATUALIZAR DADOS APÓS AÇÃO
+      }
+
+      setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
+      
+      // Recarregar itens para atualizar dados
+      const { data: novosItens } = await supabase
+        .rpc('carregar_itens_usuario_especifico', { 
+          p_user_id: user.id,
+          p_target_user_id: id!
+        });
+      
+      if (novosItens?.success) {
+        setItensData(novosItens);
       }
       
-      setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
-      setTimeout(() => {
-        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
-      }, 2000);
-      
       return true;
-    } catch (err) {
-      console.error('Erro ao entrar na fila:', err);
-      toast({ 
-        title: "Erro ao entrar na fila", 
-        description: err instanceof Error ? err.message : "Tente novamente.", 
-        variant: "destructive" 
-      });
+    } catch (error) {
+      console.error('Erro ao entrar na fila:', error);
       setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
-      setTimeout(() => {
-        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
-      }, 2000);
       return false;
     }
   };
@@ -187,9 +267,9 @@ const PerfilPublicoMae = () => {
   const toggleFavorito = async (itemId: string) => {
     if (!user) return;
     
-    const isFavorito = feedData.favoritos.includes(itemId);
-    
     try {
+      const isFavorito = itensData?.favoritos.includes(itemId);
+      
       if (isFavorito) {
         const { error } = await supabase
           .from('favoritos')
@@ -198,9 +278,9 @@ const PerfilPublicoMae = () => {
           .eq('item_id', itemId);
 
         if (error) throw error;
-
+        
         toast({
-          title: "Removido dos favoritos",
+          title: "Removido dos favoritos 💔",
           description: "Item removido da sua lista de desejos.",
         });
       } else {
@@ -212,14 +292,23 @@ const PerfilPublicoMae = () => {
           });
 
         if (error) throw error;
-
+        
         toast({
-          title: "Adicionado aos favoritos! ❤️",
+          title: "Adicionado aos favoritos ❤️",
           description: "Item adicionado à sua lista de desejos.",
         });
       }
       
-      await refetchItens(); // ✅ ATUALIZAR DADOS APÓS AÇÃO
+      // Recarregar dados
+      const { data: novosItens } = await supabase
+        .rpc('carregar_itens_usuario_especifico', { 
+          p_user_id: user.id,
+          p_target_user_id: id!
+        });
+      
+      if (novosItens?.success) {
+        setItensData(novosItens);
+      }
       
     } catch (error) {
       console.error('Erro ao toggle favorito:', error);
@@ -267,8 +356,7 @@ const PerfilPublicoMae = () => {
     return idade;
   };
 
-  // ✅ INCLUIR LOADING DO FEED DATA
-  if (loading || loadingFeedData) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
@@ -292,7 +380,9 @@ const PerfilPublicoMae = () => {
             <CardContent className="p-8">
               <h2 className="text-2xl font-bold mb-4">Perfil não encontrado</h2>
               <p className="text-gray-600 mb-6">{error || 'O perfil que você está procurando não existe.'}</p>
-              <Button onClick={() => navigate(-1)}>Voltar</Button>
+              <Button onClick={() => navigate('/feed')}>
+                Voltar ao Feed
+              </Button>
             </CardContent>
           </Card>
         </main>
@@ -301,72 +391,87 @@ const PerfilPublicoMae = () => {
     );
   }
 
+  const nomeCompleto = profile.sobrenome ? `${profile.nome} ${profile.sobrenome}` : profile.nome;
+  const itensDisponiveis = itensData?.itens.filter(item => item.status === 'disponivel') || [];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
-        {/* Botão Voltar */}
+      
+      <main className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* ✅ Botão Voltar */}
         <div className="mb-6">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="text-purple-600 hover:text-purple-700"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* ✅ Perfil da Mãe - Mantido igual */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* ✅ Perfil da Mãe */}
           <div className="lg:col-span-1">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="text-center">
-                <div className="flex flex-col items-center">
-                  <Avatar className="w-24 h-24 mb-4">
-                    <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.nome || 'Avatar'} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                      {profile?.nome?.split(' ').map(n => n[0]).join('') || 'M'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <CardTitle className="text-2xl text-gray-800 mb-2">
-                    {profile?.nome || 'Usuário'}
-                  </CardTitle>
-                  
-                  <div className="flex items-center gap-1 mb-4">
-                    {[1,2,3,4,5].map((star) => (
-                      <Star 
-                        key={star} 
-                        className={`w-4 h-4 ${
-                          star <= Math.floor(profile?.reputacao || 0) 
-                            ? 'fill-current text-yellow-500' 
-                            : 'text-gray-300'
-                        }`} 
-                      />
-                    ))}
-                    <span className="text-sm text-gray-600 ml-1">
-                      ({(profile?.reputacao || 0).toFixed(1)})
-                    </span>
-                  </div>
-
-                  {profile && <BotaoSeguir usuarioId={profile.id} className="w-full mb-4" />}
+              <CardHeader className="text-center pb-4">
+                <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-white shadow-lg">
+                  <AvatarImage src={profile.avatar_url || undefined} alt={nomeCompleto} />
+                  <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-2xl font-bold">
+                    {profile.nome?.split(' ').map(n => n[0]).join('') || 'M'}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">
+                  {nomeCompleto}
+                </h1>
+                
+                {/* ✅ Avaliação */}
+                <div className="flex items-center justify-center gap-1 mb-4">
+                  {[1,2,3,4,5].map((star) => (
+                    <Star 
+                      key={star} 
+                      className={`w-4 h-4 ${
+                        star <= Math.floor((profile.reputacao || 0) / 20) 
+                          ? 'fill-current text-yellow-500' 
+                          : 'text-gray-300'
+                      }`} 
+                    />
+                  ))}
+                  <span className="text-sm text-gray-600 ml-2">
+                    ({((profile.reputacao || 0) / 20).toFixed(1)})
+                  </span>
                 </div>
+
+                {/* ✅ Botão Seguir */}
+                {user?.id !== id && (
+                  <BotaoSeguir usuarioId={id!} className="w-full mb-4" />
+                )}
               </CardHeader>
               
               <CardContent className="space-y-4">
-                {profile?.bio && (
+                {/* ✅ Bio */}
+                {profile.bio && (
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-2">Sobre</h3>
                     <p className="text-gray-600 text-sm">{profile.bio}</p>
                   </div>
                 )}
 
+                {/* ✅ Localização */}
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="w-4 h-4 text-primary" />
                   <span className="text-sm">
-                    {profile?.cidade 
+                    {profile.cidade && profile.estado 
                       ? `${profile.cidade}, ${profile.estado}`
                       : 'Localização não informada'
                     }
                   </span>
                 </div>
 
+                {/* ✅ Idade */}
                 {profile?.data_nascimento && (
                   <div className="flex items-center gap-2 text-gray-600">
                     <Calendar className="w-4 h-4 text-primary" />
@@ -374,6 +479,7 @@ const PerfilPublicoMae = () => {
                   </div>
                 )}
 
+                {/* ✅ Estatísticas */}
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-gray-600">
@@ -386,7 +492,7 @@ const PerfilPublicoMae = () => {
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1 text-gray-600">
                       <Package className="w-4 h-4" />
-                      <span className="font-bold">{itensDoProfile.length}</span>
+                      <span className="font-bold">{itensDisponiveis.length}</span>
                     </div>
                     <p className="text-xs text-gray-500">Itens ativos</p>
                   </div>
@@ -395,35 +501,39 @@ const PerfilPublicoMae = () => {
             </Card>
           </div>
 
-          {/* ✅ Itens da Mãe - USANDO ITEMCARD DO FEED COM DADOS REAIS */}
+          {/* ✅ Itens da Mãe */}
           <div className="lg:col-span-2">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  Itens disponíveis ({itensDoProfile.length})
+                  Itens disponíveis ({itensDisponiveis.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {loading ? (
+                {loadingItens ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
                       <ItemCardSkeleton key={i} />
                     ))}
                   </div>
-                ) : itensDoProfile.length === 0 ? (
+                ) : !itensData || itensDisponiveis.length === 0 ? (
                   <EmptyState
-                    type="search"
+                    icon={<Package className="w-16 h-16 text-purple-400" />}
                     title="Nenhum item disponível"
                     description="Este usuário não tem itens disponíveis no momento"
                   />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {itensDoProfile.map((item) => (
+                    {itensDisponiveis.map((item) => (
                       <ItemCard
                         key={item.id}
-                        item={item}
-                        feedData={feedData} // ✅ AGORA COM DADOS REAIS
+                        item={{
+                          ...item,
+                          publicado_por_profile: item.publicado_por_profile,
+                          mesma_escola: item.escola_comum || false
+                        }}
+                        feedData={feedData}
                         currentUserId={user?.id || ''}
                         taxaTransacao={feedData.taxaTransacao}
                         onItemClick={handleItemClick}
