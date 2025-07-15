@@ -1,5 +1,5 @@
-
-import { useState, useEffect } from 'react';
+// src/hooks/useSeguidores.ts
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -12,7 +12,7 @@ export const useSeguidores = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const seguirUsuario = async (seguidoId: string) => {
+  const seguirUsuario = useCallback(async (seguidoId: string) => {
     if (!user) return false;
     
     try {
@@ -35,9 +35,9 @@ export const useSeguidores = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const deixarDeSeguir = async (seguidoId: string) => {
+  const deixarDeSeguir = useCallback(async (seguidoId: string) => {
     if (!user) return false;
     
     try {
@@ -59,9 +59,9 @@ export const useSeguidores = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const verificarSeSigo = async (seguidoId: string) => {
+  const verificarSeSigo = useCallback(async (seguidoId: string) => {
     if (!user) return false;
     
     try {
@@ -78,22 +78,28 @@ export const useSeguidores = () => {
       console.error('Erro ao verificar seguimento:', err);
       return false;
     }
-  };
+  }, [user]);
 
-  const buscarSeguindo = async () => {
-    if (!user) return [];
+  // ✅ CORREÇÃO: buscarSeguindo com useCallback
+  const buscarSeguindo = useCallback(async () => {
+    if (!user?.id) return [];
     
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('seguidores')
         .select(`
           *,
           profiles!seguido_id(*)
         `)
-        .eq('seguidor_id', user.id);
+        .eq('seguidor_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log('Dados de seguindo retornados:', data);
       return data || [];
     } catch (err) {
       console.error('Erro ao buscar quem sigo:', err);
@@ -102,20 +108,24 @@ export const useSeguidores = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const buscarSeguidores = async () => {
-    if (!user) return [];
+  // ✅ CORREÇÃO: buscarSeguidores com useCallback
+  const buscarSeguidores = useCallback(async () => {
+    if (!user?.id) return [];
     
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('seguidores')
         .select(`
           *,
           profiles!seguidor_id(*)
         `)
-        .eq('seguido_id', user.id);
+        .eq('seguido_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data || [];
@@ -126,9 +136,9 @@ export const useSeguidores = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const buscarEstatisticas = async (usuarioId?: string) => {
+  const buscarEstatisticas = useCallback(async (usuarioId?: string) => {
     const targetId = usuarioId || user?.id;
     if (!targetId) return { total_seguindo: 0, total_seguidores: 0 };
     
@@ -142,13 +152,15 @@ export const useSeguidores = () => {
       console.error('Erro ao buscar estatísticas:', err);
       return { total_seguindo: 0, total_seguidores: 0 };
     }
-  };
+  }, [user?.id]);
 
-  const buscarItensDasMinhasSeguidas = async () => {
-    if (!user) return [];
+  // ✅ CORREÇÃO: buscarItensDasMinhasSeguidas com useCallback
+  const buscarItensDasMinhasSeguidas = useCallback(async () => {
+    if (!user?.id) return [];
     
     try {
       setLoading(true);
+      setError(null);
       
       // Primeiro buscar os IDs das usuárias que sigo
       const { data: seguidas, error: seguidasError } = await supabase
@@ -182,7 +194,7 @@ export const useSeguidores = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   return {
     seguirUsuario,
