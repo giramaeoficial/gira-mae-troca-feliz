@@ -708,3 +708,28 @@ const PerfilPublicoMae = () => {
                   onReservar={() => handleReservarItem(item.id)}
                   onEntrarFila={() => handleEntrarFila(item.id)}
                   actionState={actionStates[item.id]}
+                />
+              ))}
+            </div>
+
+            {/* ✅ SCROLL INFINITO IDÊNTICO AO FEED */}
+            {hasNextPage && (
+              <div ref={infiniteRef}>
+                <InfiniteScrollIndicator 
+                  isFetchingNextPage={isFetchingNextPage}
+                  hasNextPage={hasNextPage || false}
+                  itemsCount={itensFiltrados.length}
+                  isInitialLoading={loadingFeed}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </main>
+      
+      <QuickNav />
+    </div>
+  );
+};
+
+export default PerfilPublicoMae;

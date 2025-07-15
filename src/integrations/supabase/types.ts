@@ -1477,7 +1477,6 @@ export type Database = {
           nome: string | null
           numero: string | null
           numero_whatsapp: string | null
-          onboarding_step: number | null
           politica_aceita: boolean | null
           politica_aceita_em: string | null
           ponto_referencia: string | null
@@ -1523,7 +1522,6 @@ export type Database = {
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
-          onboarding_step?: number | null
           politica_aceita?: boolean | null
           politica_aceita_em?: string | null
           ponto_referencia?: string | null
@@ -1569,7 +1567,6 @@ export type Database = {
           nome?: string | null
           numero?: string | null
           numero_whatsapp?: string | null
-          onboarding_step?: number | null
           politica_aceita?: boolean | null
           politica_aceita_em?: string | null
           ponto_referencia?: string | null
@@ -2392,6 +2389,31 @@ export type Database = {
         }
         Returns: Json
       }
+      carregar_itens_usuario_especifico: {
+        Args: {
+          p_user_id: string
+          p_target_user_id: string
+          p_page?: number
+          p_limit?: number
+          p_busca?: string
+          p_categoria?: string
+          p_subcategoria?: string
+          p_genero?: string
+          p_tamanho?: string
+          p_preco_min?: number
+          p_preco_max?: number
+          p_mostrar_reservados?: boolean
+        }
+        Returns: Json
+      }
+      carregar_maes_seguidas: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      carregar_maes_seguidas_paginado: {
+        Args: { p_user_id: string; p_page?: number; p_limit?: number }
+        Returns: Json
+      }
       check_database_status: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2404,14 +2426,6 @@ export type Database = {
       coletar_recompensa_missao: {
         Args: { p_user_id: string; p_missao_id: string }
         Returns: Json
-      }
-      complete_endereco_step: {
-        Args: { p_user_id: string }
-        Returns: boolean
-      }
-      complete_whatsapp_step: {
-        Args: { p_user_id: string }
-        Returns: boolean
       }
       create_notification: {
         Args: {
@@ -2450,16 +2464,6 @@ export type Database = {
       delete_user_by_email: {
         Args: { p_email: string }
         Returns: string
-      }
-      determinar_rota_usuario: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          rota_destino: string
-          pode_acessar: boolean
-          motivo: string
-          dados_debug: Json
-          timestamp_decisao: string
-        }[]
       }
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>
@@ -2601,14 +2605,6 @@ export type Database = {
       obter_valor_bonus: {
         Args: { p_tipo_bonus: string }
         Returns: number
-      }
-      pode_acessar_rota: {
-        Args: { p_rota_tentativa: string }
-        Returns: {
-          pode_acessar: boolean
-          rota_correta: string
-          motivo: string
-        }[]
       }
       pode_estender_transacao: {
         Args: { p_user_id: string; p_transacao_id: string }

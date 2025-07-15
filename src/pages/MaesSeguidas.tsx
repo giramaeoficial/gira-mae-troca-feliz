@@ -1,34 +1,23 @@
 // src/pages/MaesSeguidas.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import EmptyState from '@/components/loading/EmptyState';
 import FriendlyError from '@/components/error/FriendlyError';
+import MaeSeguidaCard from '@/components/shared/MaeSeguidaCard';
 import { useSeguidores } from '@/hooks/useSeguidores';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  MapPin, 
   Package, 
-  UserX, 
-  Eye, 
-  Star, 
-  Clock, 
   Heart,
   ArrowLeft,
   RefreshCw,
-  Users,
-  Calendar,
-  Truck,
-  User,
-  TrendingUp,
   Loader
 } from 'lucide-react';
 
@@ -153,7 +142,7 @@ const MaesSeguidas = () => {
 
       if (error) throw error;
 
-      const resultado = data as RespostaAPI;
+      const resultado = data as unknown as RespostaAPI;
       
       if (resultado.success) {
         if (reset || pageNum === 0) {
@@ -168,7 +157,7 @@ const MaesSeguidas = () => {
         setHasMore(resultado.has_more || false);
         setPage(pageNum);
       } else {
-        throw new Error(resultado.message || 'Erro ao carregar dados');
+        throw new Error('Erro ao carregar dados');
       }
     } catch (err) {
       console.error('Erro ao carregar mães seguidas:', err);
@@ -221,37 +210,6 @@ const MaesSeguidas = () => {
     setRefreshing(false);
   };
 
-  const formatLastActivity = (timestamp: string | null) => {
-    if (!timestamp) return 'Nunca vista';
-    
-    const now = new Date();
-    const activity = new Date(timestamp);
-    const diffMs = now.getTime() - activity.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Ativa hoje';
-    if (diffDays === 1) return 'Ativa ontem';
-    if (diffDays < 7) return `Ativa há ${diffDays} dias`;
-    if (diffDays < 30) return `Ativa há ${Math.floor(diffDays / 7)} semanas`;
-    return `Ativa há ${Math.floor(diffDays / 30)} meses`;
-  };
-
-  const calcularIdade = (dataNascimento: string) => {
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const m = hoje.getMonth() - nascimento.getMonth();
-    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-      idade--;
-    }
-    return idade;
-  };
-
-  const formatarNomeCompleto = (nome?: string, sobrenome?: string) => {
-    if (!nome) return 'Usuário';
-    return sobrenome ? `${nome} ${sobrenome}` : nome;
-  };
-
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
@@ -272,7 +230,7 @@ const MaesSeguidas = () => {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
         <Header />
         <div className="px-4 pt-4">
-          <LoadingSpinner message="Carregando mães seguidas..." />
+          <LoadingSpinner />
         </div>
         <QuickNav />
       </div>
@@ -284,7 +242,7 @@ const MaesSeguidas = () => {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
         <Header />
         <FriendlyError 
-          type="network"
+          type="connection"
           title="Erro ao Carregar"
           message={error}
           onRetry={handleRefresh}
@@ -348,17 +306,11 @@ const MaesSeguidas = () => {
 
         {seguindo.length === 0 ? (
           <EmptyState
-            icon={<Package className="w-16 h-16 text-purple-400" />}
+            type="search"
             title="Nenhuma mãe seguida"
             description="Você ainda não segue nenhuma mãe. Explore perfis e comece a seguir outras mamães!"
-            action={
-              <Button 
-                onClick={() => navigate('/feed')}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                Explorar Feed
-              </Button>
-            }
+            actionLabel="Explorar Feed"
+            onAction={() => navigate('/feed')}
           />
         ) : (
           <>
@@ -368,214 +320,13 @@ const MaesSeguidas = () => {
                 const mae = item.profiles;
                 if (!mae) return null;
 
-                const stats = mae.estatisticas;
-                const nomeCompleto = formatarNomeCompleto(mae.nome, mae.sobrenome);
-
                 return (
-                  <Card key={mae.id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] overflow-hidden">
-                    <CardHeader className="text-center pb-4 relative">
-                      {/* Badges de destaque */}
-                      <div className="absolute top-2 right-2 flex flex-col gap-1">
-                        {mae.escola_comum && (
-                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                            🏫 Mesma escola
-                          </Badge>
-                        )}
-                        {mae.logistica.entrega_disponivel && (
-                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                            <Truck className="w-3 h-3 mr-1" />
-                            Entrega
-                          </Badge>
-                        )}
-                        {stats.distancia_km && stats.distancia_km <= 5 && (
-                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                            📍 {stats.distancia_km}km
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col items-center">
-                        <Avatar className="w-20 h-20 mb-4 border-2 border-purple-200">
-                          <AvatarImage src={mae.avatar_url || undefined} alt={nomeCompleto} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
-                            {mae.nome?.split(' ').map(n => n[0]).join('') || 'M'}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">
-                          {nomeCompleto}
-                        </h3>
-                        
-                        {/* Avaliação */}
-                        <div className="flex items-center gap-1 mb-4">
-                          {[1,2,3,4,5].map((star) => (
-                            <Star 
-                              key={star} 
-                              className={`w-4 h-4 ${
-                                star <= Math.floor(stats.media_avaliacao || 0) 
-                                  ? 'fill-current text-yellow-500' 
-                                  : 'text-gray-300'
-                              }`} 
-                            />
-                          ))}
-                          <span className="text-sm text-gray-600 ml-1">
-                            ({(stats.media_avaliacao || 0).toFixed(1)})
-                          </span>
-                          {stats.avaliacoes_recebidas > 0 && (
-                            <span className="text-xs text-gray-500">
-                              · {stats.avaliacoes_recebidas} avaliações
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-4">
-                      {/* Bio */}
-                      {mae.bio && (
-                        <div>
-                          <h4 className="font-semibold text-gray-800 mb-2 text-sm">Sobre</h4>
-                          <p className="text-gray-600 text-sm line-clamp-2">{mae.bio}</p>
-                        </div>
-                      )}
-
-                      {/* Informações básicas */}
-                      <div className="space-y-2">
-                        {/* Localização */}
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                          <span className="text-sm">
-                            {mae.cidade 
-                              ? `${mae.cidade}, ${mae.estado || 'BR'}`
-                              : 'Localização não informada'
-                            }
-                          </span>
-                        </div>
-
-                        {/* Idade */}
-                        {mae.data_nascimento && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Calendar className="w-4 h-4 text-primary flex-shrink-0" />
-                            <span className="text-sm">{calcularIdade(mae.data_nascimento)} anos</span>
-                          </div>
-                        )}
-
-                        {/* Última atividade */}
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-sm">
-                            {formatLastActivity(stats.ultima_atividade)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Estatísticas em grid 2x2 */}
-                      <div className="grid grid-cols-2 gap-3 pt-4 border-t">
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 text-gray-600">
-                            <Users className="w-4 h-4" />
-                            <span className="font-bold">{stats.total_seguidores}</span>
-                          </div>
-                          <p className="text-xs text-gray-500">Seguidores</p>
-                        </div>
-                        
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 text-gray-600">
-                            <Package className="w-4 h-4" />
-                            <span className="font-bold">{stats.itens_disponiveis}</span>
-                          </div>
-                          <p className="text-xs text-gray-500">Disponíveis</p>
-                        </div>
-
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 text-gray-600">
-                            <TrendingUp className="w-4 h-4" />
-                            <span className="font-bold">{stats.total_itens}</span>
-                          </div>
-                          <p className="text-xs text-gray-500">Total itens</p>
-                        </div>
-
-                        <div className="text-center">
-                          <div className="flex items-center justify-center gap-1 text-gray-600">
-                            <User className="w-4 h-4" />
-                            <span className="font-bold">{stats.total_seguindo}</span>
-                          </div>
-                          <p className="text-xs text-gray-500">Seguindo</p>
-                        </div>
-                      </div>
-
-                      {/* Itens recentes preview */}
-                      {mae.itens_recentes && mae.itens_recentes.length > 0 && (
-                        <div className="pt-4 border-t">
-                          <h4 className="font-semibold text-gray-800 mb-2 text-sm">Itens recentes</h4>
-                          <div className="flex gap-2 overflow-x-auto">
-                            {mae.itens_recentes.slice(0, 3).map((item) => (
-                              <div key={item.id} className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
-                                {item.fotos[0] ? (
-                                  <img 
-                                    src={item.fotos[0]} 
-                                    alt={item.titulo}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <Package className="w-6 h-6 text-gray-400" />
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {mae.itens_recentes.length} {mae.itens_recentes.length === 1 ? 'item' : 'itens'} recentes
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Badges informativos */}
-                      <div className="flex flex-wrap gap-2 justify-center pt-2">
-                        {mae.reputacao && mae.reputacao > 0 && (
-                          <Badge variant="outline" className="text-xs">
-                            ⭐ {mae.reputacao} pontos
-                          </Badge>
-                        )}
-                        
-                        {mae.interesses && mae.interesses.length > 0 && (
-                          <Badge variant="outline" className="text-xs">
-                            💝 {mae.interesses.length} interesses
-                          </Badge>
-                        )}
-
-                        {mae.aceita_entrega_domicilio && (
-                          <Badge variant="outline" className="text-xs">
-                            🚚 Entrega domicílio
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* Botões de ação */}
-                      <div className="flex gap-2 pt-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewProfile(mae.id)}
-                          className="flex-1 text-purple-600 border-purple-600 hover:bg-purple-50 transition-colors"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver Perfil
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUnfollow(mae.id)}
-                          className="flex-1 text-red-600 border-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <UserX className="w-4 h-4 mr-2" />
-                          Deixar de Seguir
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <MaeSeguidaCard
+                    key={mae.id}
+                    mae={mae}
+                    onUnfollow={handleUnfollow}
+                    onViewProfile={handleViewProfile}
+                  />
                 );
               })}
             </div>
