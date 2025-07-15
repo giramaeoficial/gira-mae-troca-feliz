@@ -1,13 +1,16 @@
-// src/pages/PerfilPublicoMae.tsx - VERSÃO SIMPLIFICADA E COMPATÍVEL
-import React, { useState, useEffect, useCallback } from 'react';
+// src/pages/PerfilPublicoMae.tsx - USANDO ITEMCARD IDÊNTICO AO FEED
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
+import { ItemCard } from '@/components/shared/ItemCard';
+import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
+import EmptyState from '@/components/loading/EmptyState';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   MapPin, 
@@ -15,9 +18,7 @@ import {
   Package, 
   Calendar,
   Star,
-  ArrowLeft,
-  Heart,
-  ShoppingCart
+  ArrowLeft
 } from 'lucide-react';
 
 const PerfilPublicoMae = () => {
@@ -27,19 +28,20 @@ const PerfilPublicoMae = () => {
   const { toast } = useToast();
 
   const [profile, setProfile] = useState<any>(null);
-  const [itens, setItens] = useState<any[]>([]);
+  const [itensData, setItensData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingItens, setLoadingItens] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ Função simplificada para carregar dados
-  const carregarDados = useCallback(async () => {
-    if (!id || !user?.id) return;
+  // ✅ Função para carregar perfil
+  const carregarPerfil = useCallback(async () => {
+    if (!id) return;
     
     try {
       setLoading(true);
       setError(null);
       
-      // Buscar perfil
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -53,53 +55,235 @@ const PerfilPublicoMae = () => {
       }
 
       setProfile(profileData);
-
-      // ✅ Buscar itens usando a RPC se existir, senão usar query simples
-      try {
-        // Tentar usar RPC específica
-        const { data: itensRPC, error: rpcError } = await supabase
-          .rpc('carregar_itens_usuario_especifico', { 
-            p_user_id: user.id,
-            p_target_user_id: id
-          });
-
-        if (!rpcError && itensRPC?.success) {
-          setItens(itensRPC.itens || []);
-        } else {
-          throw new Error('RPC não disponível');
-        }
-      } catch (rpcError) {
-        console.log('RPC não disponível, usando query direta');
-        
-        // Fallback para query direta
-        const { data: itensData, error: itensError } = await supabase
-          .from('itens')
-          .select(`
-            *,
-            publicado_por_profile:profiles!publicado_por(nome, avatar_url, reputacao)
-          `)
-          .eq('publicado_por', id)
-          .in('status', ['disponivel', 'reservado'])
-          .order('created_at', { ascending: false });
-
-        if (itensError) {
-          console.error('Erro ao buscar itens:', itensError);
-        } else {
-          setItens(itensData || []);
-        }
-      }
       
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Erro ao carregar perfil:', error);
       setError('Erro ao carregar perfil');
     } finally {
       setLoading(false);
     }
-  }, [id, user?.id]);
+  }, [id]);
+
+  // ✅ Função para carregar itens usando RPC específica
+  const carregarItens = useCallback(async () => {
+    if (!id || !user?.id) return;
+    
+    try {
+      setLoadingItens(true);
+      
+      console.log('🔄 Carregando itens do usuário:', id);
+      
+      const { data, error } = await supabase
+        .rpc('carregar_itens_usuario_especifico', { 
+          p_user_id: user.id,
+          p_target_user_id: id
+        });
+
+      if (error) {
+        console.error('❌ Erro ao buscar itens:', error);
+        throw error;
+      }
+
+      console.log('✅ Resposta da RPC:', data);
+
+      if (data?.success) {
+        setItensData(data);
+        console.log(`✅ ${data.itens?.length || 0} itens carregados`);
+      } else {
+        console.error('❌ RPC retornou erro:', data?.message);
+        throw new Error(data?.message || 'Erro na RPC');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erro ao carregar itens:', error);
+      toast({
+        title: "Erro ao carregar itens",
+        description: "Não foi possível carregar os itens do usuário.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingItens(false);
+    }
+  }, [id, user?.id, toast]);
+
+  // ✅ Carregar dados na inicialização
+  useEffect(() => {
+    carregarPerfil();
+  }, [carregarPerfil]);
 
   useEffect(() => {
-    carregarDados();
-  }, [carregarDados]);
+    carregarItens();
+  }, [carregarItens]);
+
+  // ✅ Dados para o ItemCard EXATAMENTE IGUAL AO FEED
+  const feedData = useMemo(() => {
+    if (!itensData) return { 
+      favoritos: [], 
+      reservas_usuario: [], 
+      filas_espera: {},
+      configuracoes: null,
+      profile_essencial: null,
+      taxaTransacao: 5 
+    };
+    
+    return {
+      favoritos: itensData.favoritos || [],
+      reservas_usuario: itensData.reservas_usuario || [],
+      filas_espera: itensData.filas_espera || {},
+      configuracoes: null, // Não precisamos para perfil específico
+      profile_essencial: null, // Não precisamos para perfil específico
+      taxaTransacao: 5
+    };
+  }, [itensData]);
+
+  // ✅ Lista de itens formatados para ItemCard
+  const itens = useMemo(() => {
+    if (!itensData?.itens) return [];
+    
+    return itensData.itens.map((item: any) => ({
+      ...item,
+      mesma_escola: item.escola_comum || false
+    }));
+  }, [itensData]);
+
+  const itensDisponiveis = itens.filter(item => item.status === 'disponivel');
+
+  const handleItemClick = useCallback((itemId: string) => {
+    navigate(`/item/${itemId}`);
+  }, [navigate]);
+
+  // ✅ FUNÇÃO entrarNaFila IDÊNTICA AO FEED
+  const entrarNaFila = async (itemId: string) => {
+    if (!user) return;
+    
+    setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('entrar_fila_espera', { 
+          p_item_id: itemId, 
+          p_usuario_id: user.id 
+        });
+
+      if (error) {
+        toast({ 
+          title: "Erro ao reservar", 
+          description: error.message, 
+          variant: "destructive" 
+        });
+        setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+        return false;
+      }
+
+      const result = data as { tipo?: string; posicao?: number } | null;
+      
+      if (result?.tipo === 'reserva_direta') {
+        toast({ 
+          title: "Item reservado! 🎉", 
+          description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega." 
+        });
+      } else if (result?.tipo === 'fila_espera') {
+        toast({ 
+          title: "Entrou na fila! 📝", 
+          description: `Você está na posição ${result.posicao} da fila. As Girinhas NÃO foram bloqueadas ainda.` 
+        });
+      }
+      
+      setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      
+      // ✅ Recarregar dados após ação
+      await carregarItens();
+      return true;
+    } catch (err) {
+      console.error('Erro ao entrar na fila:', err);
+      toast({ 
+        title: "Erro ao entrar na fila", 
+        description: err instanceof Error ? err.message : "Tente novamente.", 
+        variant: "destructive" 
+      });
+      setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      return false;
+    }
+  };
+
+  // ✅ FUNÇÃO toggleFavorito IDÊNTICA AO FEED
+  const toggleFavorito = async (itemId: string) => {
+    if (!user) return;
+    
+    const isFavorito = feedData.favoritos.includes(itemId);
+    
+    try {
+      if (isFavorito) {
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', itemId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Removido dos favoritos",
+          description: "Item removido da sua lista de desejos.",
+        });
+      } else {
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({
+            user_id: user.id,
+            item_id: itemId
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Adicionado aos favoritos! ❤️",
+          description: "Item adicionado à sua lista de desejos.",
+        });
+      }
+      
+      // ✅ Recarregar dados após ação
+      await carregarItens();
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar os favoritos.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ✅ Handlers IDÊNTICOS AO FEED
+  const handleReservarItem = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+    } catch (error) {
+      console.error('Erro ao reservar item:', error);
+    }
+  };
+
+  const handleEntrarFila = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+    } catch (error) {
+      console.error('Erro ao entrar na fila:', error);
+    }
+  };
+
+  const handleToggleFavorito = async (itemId: string) => {
+    try {
+      await toggleFavorito(itemId);
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+    }
+  };
 
   const calcularIdade = (dataNascimento: string | null) => {
     if (!dataNascimento) return null;
@@ -111,102 +295,6 @@ const PerfilPublicoMae = () => {
       idade--;
     }
     return idade;
-  };
-
-  const handleToggleFavorito = async (itemId: string) => {
-    if (!user) return;
-    
-    try {
-      // Verificar se já é favorito
-      const { data: favoritoExistente } = await supabase
-        .from('favoritos')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('item_id', itemId)
-        .single();
-
-      if (favoritoExistente) {
-        // Remover favorito
-        await supabase
-          .from('favoritos')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('item_id', itemId);
-        
-        toast({
-          title: "Removido dos favoritos 💔",
-          description: "Item removido da sua lista de desejos.",
-        });
-      } else {
-        // Adicionar favorito
-        await supabase
-          .from('favoritos')
-          .insert({
-            user_id: user.id,
-            item_id: itemId
-          });
-        
-        toast({
-          title: "Adicionado aos favoritos ❤️",
-          description: "Item adicionado à sua lista de desejos.",
-        });
-      }
-      
-    } catch (error) {
-      console.error('Erro ao toggle favorito:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar os favoritos.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleReservarItem = async (itemId: string) => {
-    if (!user) return;
-    
-    try {
-      const item = itens.find(i => i.id === itemId);
-      if (!item) return;
-
-      const { data, error } = await supabase
-        .rpc('entrar_fila_espera', { 
-          p_item_id: itemId, 
-          p_usuario_id: user.id,
-          p_valor_girinhas: item.valor_girinhas
-        });
-
-      if (error) {
-        toast({ 
-          title: "Erro ao reservar", 
-          description: error.message, 
-          variant: "destructive" 
-        });
-        return;
-      }
-
-      const result = data as { tipo?: string; posicao?: number } | null;
-      
-      if (result?.tipo === 'reserva_direta') {
-        toast({ 
-          title: "Item reservado! 🎉", 
-          description: "As Girinhas foram bloqueadas."
-        });
-      } else if (result?.tipo === 'fila_espera') {
-        toast({ 
-          title: "Entrou na fila! ⏳", 
-          description: `Você está na posição ${result.posicao} da fila.`
-        });
-      }
-      
-    } catch (error) {
-      console.error('Erro ao reservar item:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível reservar o item.",
-        variant: "destructive",
-      });
-    }
   };
 
   if (loading) {
@@ -245,7 +333,6 @@ const PerfilPublicoMae = () => {
   }
 
   const nomeCompleto = profile.sobrenome ? `${profile.nome} ${profile.sobrenome}` : profile.nome;
-  const itensDisponiveis = itens.filter(item => item.status === 'disponivel');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
@@ -349,7 +436,7 @@ const PerfilPublicoMae = () => {
             </Card>
           </div>
 
-          {/* Itens da Mãe */}
+          {/* Itens da Mãe - USANDO ITEMCARD IDÊNTICO AO FEED */}
           <div className="lg:col-span-2">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
               <CardHeader>
@@ -359,89 +446,36 @@ const PerfilPublicoMae = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {itensDisponiveis.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Package className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                      Nenhum item disponível
-                    </h3>
-                    <p className="text-gray-600">
-                      Este usuário não tem itens disponíveis no momento
-                    </p>
+                {loadingItens ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <ItemCardSkeleton key={i} />
+                    ))}
                   </div>
+                ) : itensDisponiveis.length === 0 ? (
+                  <EmptyState
+                    type="search"
+                    title="Nenhum item disponível"
+                    description="Este usuário não tem itens disponíveis no momento"
+                  />
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {itensDisponiveis.map((item) => (
-                      <Card key={item.id} className="border shadow-md hover:shadow-lg transition-shadow cursor-pointer">
-                        <div onClick={() => navigate(`/item/${item.id}`)}>
-                          {/* Imagem do item */}
-                          <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
-                            {item.fotos && item.fotos.length > 0 ? (
-                              <img 
-                                src={item.fotos[0]} 
-                                alt={item.titulo}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <Package className="w-12 h-12 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <CardContent className="p-4">
-                          <div className="space-y-2">
-                            {/* Título e preço */}
-                            <div className="flex justify-between items-start">
-                              <h3 className="font-semibold text-gray-800 text-sm line-clamp-2">
-                                {item.titulo}
-                              </h3>
-                              <span className="text-lg font-bold text-purple-600 ml-2">
-                                {item.valor_girinhas}💝
-                              </span>
-                            </div>
-
-                            {/* Categoria e estado */}
-                            <div className="flex gap-2">
-                              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded">
-                                {item.categoria}
-                              </span>
-                              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded">
-                                {item.estado_conservacao}
-                              </span>
-                            </div>
-
-                            {/* Ações */}
-                            <div className="flex gap-2 pt-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggleFavorito(item.id);
-                                }}
-                                className="flex-1"
-                              >
-                                <Heart className="w-4 h-4 mr-2" />
-                                Favoritar
-                              </Button>
-                              
-                              <Button
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleReservarItem(item.id);
-                                }}
-                                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                              >
-                                <ShoppingCart className="w-4 h-4 mr-2" />
-                                Reservar
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                      <ItemCard
+                        key={item.id}
+                        item={item}
+                        feedData={feedData}
+                        currentUserId={user?.id || ''}
+                        taxaTransacao={feedData.taxaTransacao}
+                        onItemClick={handleItemClick}
+                        showActions={true}
+                        showLocation={true}
+                        showAuthor={false}
+                        onToggleFavorito={() => handleToggleFavorito(item.id)}
+                        onReservar={() => handleReservarItem(item.id)}
+                        onEntrarFila={() => handleEntrarFila(item.id)}
+                        actionState={actionStates[item.id]}
+                      />
                     ))}
                   </div>
                 )}
