@@ -103,10 +103,9 @@ const WhatsAppOnboarding: React.FC = () => {
 
         {/* Form */}
         <div className="space-y-6">
-          <PhoneStepV2 
-            onComplete={handlePhoneComplete}
-            disabled={isCompleting}
-          />
+        <PhoneStepV2 
+          onComplete={handlePhoneComplete}
+        />
         </div>
 
         {/* Loading overlay */}

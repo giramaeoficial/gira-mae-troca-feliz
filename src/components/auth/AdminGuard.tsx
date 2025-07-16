@@ -44,8 +44,8 @@ const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
 
         const telefoneStatus = !profileError && profileData?.telefone_verificado;
 
-        setIsAdmin(adminStatus);
-        setTelefoneVerificado(telefoneStatus);
+        setIsAdmin(!!adminStatus);
+        setTelefoneVerificado(!!telefoneStatus);
         setLoading(false);
       } catch (error) {
         console.error('Erro ao verificar admin:', error);
