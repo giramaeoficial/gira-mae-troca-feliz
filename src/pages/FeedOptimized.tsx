@@ -22,6 +22,7 @@ import { useFeedInfinito } from '@/hooks/useFeedInfinito';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
 import { supabase } from '@/integrations/supabase/client';
+import { useConfigSistema } from '@/hooks/useConfigSistema';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
@@ -94,7 +95,9 @@ const FeedOptimized = () => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
   
-  // ✅ DADOS CONSOLIDADOS da primeira página
+// ✅ OBTER TAXA DO SISTEMA
+  const { taxaTransacao } = useConfigSistema();
+  
   const feedData = useMemo(() => {
     const primeiraPagina = paginasFeed?.pages?.[0];
     return {
@@ -103,9 +106,9 @@ const FeedOptimized = () => {
       filas_espera: primeiraPagina?.filas_espera || {},
       configuracoes: primeiraPagina?.configuracoes,
       profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao: 5
+      taxaTransacao: taxaTransacao
     };
-  }, [paginasFeed]);
+  }, [paginasFeed, taxaTransacao]);
   
   const categorias = feedData.configuracoes?.categorias || [];
   const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
