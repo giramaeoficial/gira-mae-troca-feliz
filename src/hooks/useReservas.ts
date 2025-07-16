@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,10 +16,12 @@ type ReservaComRelacionamentos = Tables<'reservas'> & {
   profiles_reservador?: {
     nome: string;
     avatar_url: string | null;
+    whatsapp?: string; // ✅ ADICIONADO CAMPO WHATSAPP
   } | null;
   profiles_vendedor?: {
     nome: string;
     avatar_url: string | null;
+    whatsapp?: string; // ✅ ADICIONADO CAMPO WHATSAPP
   } | null;
   posicao_fila?: number;
   tempo_restante?: number;
@@ -36,6 +37,7 @@ type FilaEsperaComRelacionamentos = Tables<'fila_espera'> & {
   profiles_vendedor?: {
     nome: string;
     avatar_url: string | null;
+    whatsapp?: string; // ✅ ADICIONADO CAMPO WHATSAPP
   } | null;
 };
 
@@ -67,6 +69,8 @@ export const useReservas = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // ✅ BUSCAR RESERVAS
       const { data: reservasData, error: reservasError } = await supabase
         .from('reservas')
         .select(`*, codigo_confirmacao, itens (titulo, fotos, valor_girinhas)`)
@@ -75,6 +79,7 @@ export const useReservas = () => {
         .limit(20);
       if (reservasError) throw reservasError;
 
+      // ✅ BUSCAR FILAS DE ESPERA
       const { data: filasData, error: filasError } = await supabase
         .from('fila_espera')
         .select(`*, itens (titulo, fotos, valor_girinhas, publicado_por)`)
@@ -83,22 +88,55 @@ export const useReservas = () => {
         .limit(10);
       if (filasError) throw filasError;
       
+      // ✅ COLETAR USER IDs
       const userIds = new Set<string>();
-      reservasData?.forEach(r => { userIds.add(r.usuario_reservou); userIds.add(r.usuario_item); });
-      filasData?.forEach(f => { if (f.itens?.publicado_por) userIds.add(f.itens.publicado_por); });
+      reservasData?.forEach(r => { 
+        userIds.add(r.usuario_reservou); 
+        userIds.add(r.usuario_item); 
+      });
+      filasData?.forEach(f => { 
+        if (f.itens?.publicado_por) userIds.add(f.itens.publicado_por); 
+      });
       
-      const { data: profilesData } = await supabase.from('profiles').select('id, nome, avatar_url, telefone').in('id', Array.from(userIds));
-      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+      // ✅ BUSCAR PERFIS COM TELEFONE
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, nome, avatar_url, telefone')
+        .in('id', Array.from(userIds));
       
+      // ✅ CRIAR MAPA DE PERFIS MAPEANDO TELEFONE PARA WHATSAPP
+      const profilesMap = new Map(
+        profilesData?.map(p => [
+          p.id, 
+          {
+            id: p.id,
+            nome: p.nome,
+            avatar_url: p.avatar_url,
+            whatsapp: p.telefone // ✅ MAPEAR TELEFONE PARA WHATSAPP
+          }
+        ]) || []
+      );
+      
+      // ✅ PROCESSAR RESERVAS COM PERFIS CORRIGIDOS
       const reservasComPerfis = (reservasData || []).map(reserva => {
         let tempo_restante;
         if (reserva.status === 'pendente') {
           tempo_restante = Math.max(0, new Date(reserva.prazo_expiracao).getTime() - new Date().getTime());
         }
-        return { ...reserva, profiles_reservador: profilesMap.get(reserva.usuario_reservou) || null, profiles_vendedor: profilesMap.get(reserva.usuario_item) || null, tempo_restante };
+        
+        return { 
+          ...reserva, 
+          profiles_reservador: profilesMap.get(reserva.usuario_reservou) || null, 
+          profiles_vendedor: profilesMap.get(reserva.usuario_item) || null, 
+          tempo_restante // ✅ CORRIGIDO A SINTAXE
+        };
       });
       
-      const filasComPerfis = (filasData || []).map(fila => ({ ...fila, profiles_vendedor: fila.itens?.publicado_por ? profilesMap.get(fila.itens.publicado_por) || null : null }));
+      // ✅ PROCESSAR FILAS COM PERFIS
+      const filasComPerfis = (filasData || []).map(fila => ({ 
+        ...fila, 
+        profiles_vendedor: fila.itens?.publicado_por ? profilesMap.get(fila.itens.publicado_por) || null : null 
+      }));
       
       setReservas(reservasComPerfis);
       setFilasEspera(filasComPerfis);
