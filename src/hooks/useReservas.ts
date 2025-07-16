@@ -87,7 +87,7 @@ export const useReservas = () => {
       reservasData?.forEach(r => { userIds.add(r.usuario_reservou); userIds.add(r.usuario_item); });
       filasData?.forEach(f => { if (f.itens?.publicado_por) userIds.add(f.itens.publicado_por); });
       
-      const { data: profilesData } = await supabase.from('profiles').select('id, nome, avatar_url').in('id', Array.from(userIds));
+      const { data: profilesData } = await supabase.from('profiles').select('id, nome, avatar_url, telefone').in('id', Array.from(userIds));
       const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
       
       const reservasComPerfis = (reservasData || []).map(reserva => {
