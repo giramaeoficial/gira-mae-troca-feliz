@@ -23,6 +23,7 @@ import { useFeedPerfilEspecifico } from '@/hooks/useFeedPerfilEspecifico';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
 import { supabase } from '@/integrations/supabase/client';
+import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { 
   MapPin, 
   Users, 
@@ -85,7 +86,8 @@ const PerfilPublicoMae = () => {
   const itens = useMemo(() => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
-  
+
+  const { taxaTransacao } = useConfigSistema();
   // ✅ DADOS CONSOLIDADOS IDÊNTICOS AO FEED
   const feedData = useMemo(() => {
     const primeiraPagina = paginasFeed?.pages?.[0];
@@ -95,9 +97,9 @@ const PerfilPublicoMae = () => {
       filas_espera: primeiraPagina?.filas_espera || {},
       configuracoes: primeiraPagina?.configuracoes,
       profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao: 5
+      taxaTransacao:taxaTransacao
     };
-  }, [paginasFeed]);
+  }, [paginasFeed, taxaTransacao]);
   
   const categorias = feedData.configuracoes?.categorias || [];
   const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
