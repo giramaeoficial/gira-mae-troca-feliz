@@ -420,310 +420,320 @@ const PerfilPublicoMae = () => {
           </Button>
         </div>
 
-        {/* ✅ CARD DO PERFIL USANDO MaeSeguidaCard */}
-        <div className="mb-6">
-          <MaeSeguidaCard
-            mae={{
-              id: profile.id,
-              nome: profile.nome || 'Usuário',
-              sobrenome: profile.sobrenome,
-              avatar_url: profile.avatar_url,
-              bio: profile.bio,
-              cidade: profile.cidade,
-              estado: profile.estado,
-              bairro: profile.bairro,
-              data_nascimento: profile.data_nascimento,
-              reputacao: profile.reputacao || 0,
-              interesses: profile.interesses || [],
-              created_at: profile.created_at,
-              last_seen_at: profile.ultima_atividade,
-              aceita_entrega_domicilio: profile.aceita_entrega_domicilio || false,
-              raio_entrega_km: profile.raio_entrega_km,
-              estatisticas: {
-                total_itens: itensFiltrados.length,
-                itens_ativos: itensFiltrados.filter(item => item.status === 'disponivel').length,
-                itens_disponiveis: itensFiltrados.filter(item => item.status === 'disponivel').length,
-                total_seguidores: 0, // Pode ser implementado depois
-                total_seguindo: 0,   // Pode ser implementado depois
-                avaliacoes_recebidas: 0, // Pode ser implementado depois
-                media_avaliacao: (profile.reputacao || 0) / 20,
-                ultima_atividade: profile.ultima_atividade,
-                membro_desde: profile.created_at,
-                distancia_km: undefined
-              },
-              itens_recentes: itensFiltrados.slice(0, 4).map(item => ({
-                id: item.id,
-                titulo: item.titulo,
-                categoria: item.categoria,
-                valor_girinhas: item.valor_girinhas,
-                fotos: item.fotos || [],
-                status: item.status,
-                created_at: item.created_at
-              })),
-              escola_comum: false,
-              logistica: {
-                entrega_disponivel: profile.aceita_entrega_domicilio || false,
-                busca_disponivel: true
-              }
-            }}
-            onViewProfile={() => {}}
-            showUnfollowButton={false}
-          />
-        </div>
-
-        {/* ✅ FILTROS E BUSCA IDÊNTICOS AO FEED */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              type="text"
-              placeholder="Busque nos itens deste usuário..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="pl-10 pr-12 h-12 text-base"
-            />
-            <button
-              onClick={toggleFiltrosAvancados}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
-            >
-              <Filter className="w-5 h-5 text-gray-400" />
-            </button>
+        {/* ✅ LAYOUT EM DUAS COLUNAS PARA DESKTOP */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* ✅ COLUNA ESQUERDA - CARD DO PERFIL */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-6">
+              <MaeSeguidaCard
+                mae={{
+                  id: profile.id,
+                  nome: profile.nome || 'Usuário',
+                  sobrenome: profile.sobrenome,
+                  avatar_url: profile.avatar_url,
+                  bio: profile.bio,
+                  cidade: profile.cidade,
+                  estado: profile.estado,
+                  bairro: profile.bairro,
+                  data_nascimento: profile.data_nascimento,
+                  reputacao: profile.reputacao || 0,
+                  interesses: profile.interesses || [],
+                  created_at: profile.created_at,
+                  last_seen_at: profile.ultima_atividade,
+                  aceita_entrega_domicilio: profile.aceita_entrega_domicilio || false,
+                  raio_entrega_km: profile.raio_entrega_km,
+                  estatisticas: {
+                    total_itens: itensFiltrados.length,
+                    itens_ativos: itensFiltrados.filter(item => item.status === 'disponivel').length,
+                    itens_disponiveis: itensFiltrados.filter(item => item.status === 'disponivel').length,
+                    total_seguidores: 0, // Pode ser implementado depois
+                    total_seguindo: 0,   // Pode ser implementado depois
+                    avaliacoes_recebidas: 0, // Pode ser implementado depois
+                    media_avaliacao: (profile.reputacao || 0) / 20,
+                    ultima_atividade: profile.ultima_atividade,
+                    membro_desde: profile.created_at,
+                    distancia_km: undefined
+                  },
+                  itens_recentes: itensFiltrados.slice(0, 4).map(item => ({
+                    id: item.id,
+                    titulo: item.titulo,
+                    categoria: item.categoria,
+                    valor_girinhas: item.valor_girinhas,
+                    fotos: item.fotos || [],
+                    status: item.status,
+                    created_at: item.created_at
+                  })),
+                  escola_comum: false,
+                  logistica: {
+                    entrega_disponivel: profile.aceita_entrega_domicilio || false,
+                    busca_disponivel: true
+                  }
+                }}
+                showViewProfileButton={false}
+                showFollowButton={true}
+                showUnfollowButton={false}
+                onViewProfile={() => {}}
+              />
+            </div>
           </div>
 
-          {/* ✅ FILTROS AVANÇADOS IDÊNTICOS AO FEED */}
-          {mostrarFiltrosAvancados && (
-            <div className="space-y-6 border-t pt-4">
-              {/* Mostrar itens reservados */}
-              <div>
-                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">OPÇÕES DE VISUALIZAÇÃO</h3>
-                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
-                      Mostrar itens reservados
-                    </Label>
-                    <Switch
-                      id="mostrar-reservados"
-                      checked={mostrarReservados}
-                      onCheckedChange={setMostrarReservados}
-                    />
-                  </div>
-                  
-                  <div className="text-xs text-gray-500">
-                    {itensFiltrados.length} itens
-                  </div>
-                </div>
+          {/* ✅ COLUNA DIREITA - FILTROS E ITENS */}
+          <div className="lg:col-span-2">
+            {/* ✅ FILTROS E BUSCA IDÊNTICOS AO FEED */}
+            <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Busque nos itens deste usuário..."
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  className="pl-10 pr-12 h-12 text-base"
+                />
+                <button
+                  onClick={toggleFiltrosAvancados}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+                >
+                  <Filter className="w-5 h-5 text-gray-400" />
+                </button>
               </div>
 
-              {/* Categoria e Subcategoria */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
-                  <Select value={categoria} onValueChange={handleCategoriaChange}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
-                      <SelectItem value="todas">Todas</SelectItem>
-                      {categorias.map((cat) => (
-                        <SelectItem key={cat.codigo} value={cat.codigo}>
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm">{cat.icone}</span>
-                            {cat.nome}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* ✅ FILTROS AVANÇADOS IDÊNTICOS AO FEED */}
+              {mostrarFiltrosAvancados && (
+                <div className="space-y-6 border-t pt-4">
+                  {/* Mostrar itens reservados */}
+                  <div>
+                    <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">OPÇÕES DE VISUALIZAÇÃO</h3>
+                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
+                          Mostrar itens reservados
+                        </Label>
+                        <Switch
+                          id="mostrar-reservados"
+                          checked={mostrarReservados}
+                          onCheckedChange={setMostrarReservados}
+                        />
+                      </div>
+                      
+                      <div className="text-xs text-gray-500">
+                        {itensFiltrados.length} itens
+                      </div>
+                    </div>
+                  </div>
 
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
-                  <Select 
-                    value={subcategoria} 
-                    onValueChange={setSubcategoria}
-                    disabled={categoria === 'todas'}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
-                      <SelectItem value="todas">Todas</SelectItem>
-                      {subcategoriasFiltradas.length === 0 ? (
-                        <SelectItem value="none" disabled>Nenhuma subcategoria encontrada</SelectItem>
-                      ) : (
-                        subcategoriasFiltradas.map((sub) => (
-                          <SelectItem key={sub.id} value={sub.nome}>
+                  {/* Categoria e Subcategoria */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
+                      <Select value={categoria} onValueChange={handleCategoriaChange}>
+                        <SelectTrigger className="h-12">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                          <SelectItem value="todas">Todas</SelectItem>
+                          {categorias.map((cat) => (
+                            <SelectItem key={cat.codigo} value={cat.codigo}>
+                              <span className="flex items-center gap-2">
+                                <span className="text-sm">{cat.icone}</span>
+                                {cat.nome}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
+                      <Select 
+                        value={subcategoria} 
+                        onValueChange={setSubcategoria}
+                        disabled={categoria === 'todas'}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                          <SelectItem value="todas">Todas</SelectItem>
+                          {subcategoriasFiltradas.length === 0 ? (
+                            <SelectItem value="none" disabled>Nenhuma subcategoria encontrada</SelectItem>
+                          ) : (
+                            subcategoriasFiltradas.map((sub) => (
+                              <SelectItem key={sub.id} value={sub.nome}>
+                                <span className="flex items-center gap-2">
+                                  <span className="text-sm">{sub.icone}</span>
+                                  {sub.nome}
+                                </span>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Gênero e Tamanho */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
+                      <Select value={genero} onValueChange={setGenero}>
+                        <SelectTrigger className="h-12">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg z-50">
+                          <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="menino">
                             <span className="flex items-center gap-2">
-                              <span className="text-sm">{sub.icone}</span>
-                              {sub.nome}
+                              <span className="text-sm">👦</span>
+                              Menino
                             </span>
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Gênero e Tamanho */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
-                  <Select value={genero} onValueChange={setGenero}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg z-50">
-                      <SelectItem value="todos">Todos</SelectItem>
-                      <SelectItem value="menino">
-                        <span className="flex items-center gap-2">
-                          <span className="text-sm">👦</span>
-                          Menino
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="menina">
-                        <span className="flex items-center gap-2">
-                          <span className="text-sm">👧</span>
-                          Menina
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="unissex">
-                        <span className="flex items-center gap-2">
-                          <span className="text-sm">👶</span>
-                          Unissex
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                    {categoria === 'calcados' ? 'NÚMERO' : 
-                     categoria === 'brinquedos' ? 'IDADE' : 
-                     categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
-                  </h3>
-                  <Select 
-                    value={tamanho} 
-                    onValueChange={handleTamanhoChange}
-                    disabled={categoria === 'todas' || loadingTamanhos}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
-                      <SelectItem value="todos">Todos</SelectItem>
-                      {loadingTamanhos ? (
-                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
-                      ) : tamanhosDisponiveis.length === 0 ? (
-                        <SelectItem value="none" disabled>Nenhum tamanho encontrado</SelectItem>
-                      ) : (
-                        tamanhosDisponiveis.map((tam) => (
-                          <SelectItem key={tam.id} value={tam.valor}>
-                            {tam.label_display}
+                          <SelectItem value="menina">
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm">👧</span>
+                              Menina
+                            </span>
                           </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                          <SelectItem value="unissex">
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm">👶</span>
+                              Unissex
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                        {categoria === 'calcados' ? 'NÚMERO' : 
+                         categoria === 'brinquedos' ? 'IDADE' : 
+                         categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
+                      </h3>
+                      <Select 
+                        value={tamanho} 
+                        onValueChange={handleTamanhoChange}
+                        disabled={categoria === 'todas' || loadingTamanhos}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                          <SelectItem value="todos">Todos</SelectItem>
+                          {loadingTamanhos ? (
+                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                          ) : tamanhosDisponiveis.length === 0 ? (
+                            <SelectItem value="none" disabled>Nenhum tamanho encontrado</SelectItem>
+                          ) : (
+                            tamanhosDisponiveis.map((tam) => (
+                              <SelectItem key={tam.id} value={tam.valor}>
+                                {tam.label_display}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Faixa de Preço */}
+                  <div>
+                    <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                      PREÇO: {precoRange[0]} - {precoRange[1]} G
+                    </h3>
+                    <div className="px-2">
+                      <Slider
+                        value={precoRange}
+                        onValueChange={setPrecoRange}
+                        max={200}
+                        min={0}
+                        step={5}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Botões de ação */}
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      onClick={handleLimparFiltros}
+                      variant="outline"
+                      className="flex-1 h-12"
+                    >
+                      Limpar Filtros
+                    </Button>
+                    <Button
+                      onClick={handleAplicarFiltros}
+                      className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500"
+                    >
+                      Aplicar Filtros
+                    </Button>
+                  </div>
                 </div>
-              </div>
-
-              {/* Faixa de Preço */}
-              <div>
-                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
-                  PREÇO: {precoRange[0]} - {precoRange[1]} G
-                </h3>
-                <div className="px-2">
-                  <Slider
-                    value={precoRange}
-                    onValueChange={setPrecoRange}
-                    max={200}
-                    min={0}
-                    step={5}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Botões de ação */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  onClick={handleLimparFiltros}
-                  variant="outline"
-                  className="flex-1 h-12"
-                >
-                  Limpar Filtros
-                </Button>
-                <Button
-                  onClick={handleAplicarFiltros}
-                  className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500"
-                >
-                  Aplicar Filtros
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ✅ LOADING STATE IDÊNTICO AO FEED */}
-        {loadingFeed && itensFiltrados.length === 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <ItemCardSkeleton key={i} />
-            ))}
-          </div>
-        )}
-
-        {/* ✅ EMPTY STATE IDÊNTICO AO FEED */}
-        {!loadingFeed && itensFiltrados.length === 0 && (
-          <EmptyState
-            type="search"
-            title="Nenhum item encontrado"
-            description={
-              !mostrarReservados 
-                ? "Tente incluir itens reservados ou ajustar os filtros"
-                : "Este usuário não tem itens que correspondam aos filtros aplicados"
-            }
-            actionLabel="Limpar filtros"
-            onAction={handleLimparFiltros}
-          />
-        )}
-
-        {/* ✅ GRID DE ITENS IDÊNTICO AO FEED */}
-        {itensFiltrados.length > 0 && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {itensFiltrados.map((item) => (
-                <ItemCard
-                  key={item.id}
-                  item={item}
-                  feedData={feedData}
-                  currentUserId={user?.id || ''}
-                  taxaTransacao={feedData.taxaTransacao}
-                  onItemClick={handleItemClick}
-                  showActions={true}
-                  onToggleFavorito={() => handleToggleFavorito(item.id)}
-                  onReservar={() => handleReservarItem(item.id)}
-                  onEntrarFila={() => handleEntrarFila(item.id)}
-                  actionState={actionStates[item.id]}
-                />
-              ))}
+              )}
             </div>
 
-            {/* ✅ SCROLL INFINITO IDÊNTICO AO FEED */}
-            {hasNextPage && (
-              <div ref={infiniteRef}>
-                <InfiniteScrollIndicator 
-                  isFetchingNextPage={isFetchingNextPage}
-                  hasNextPage={hasNextPage || false}
-                  itemsCount={itensFiltrados.length}
-                  isInitialLoading={loadingFeed}
-                />
+            {/* ✅ LOADING STATE IDÊNTICO AO FEED */}
+            {loadingFeed && itensFiltrados.length === 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <ItemCardSkeleton key={i} />
+                ))}
               </div>
             )}
-          </>
-        )}
+
+            {/* ✅ EMPTY STATE IDÊNTICO AO FEED */}
+            {!loadingFeed && itensFiltrados.length === 0 && (
+              <EmptyState
+                type="search"
+                title="Nenhum item encontrado"
+                description={
+                  !mostrarReservados 
+                    ? "Tente incluir itens reservados ou ajustar os filtros"
+                    : "Este usuário não tem itens que correspondam aos filtros aplicados"
+                }
+                actionLabel="Limpar filtros"
+                onAction={handleLimparFiltros}
+              />
+            )}
+
+            {/* ✅ GRID DE ITENS IDÊNTICO AO FEED */}
+            {itensFiltrados.length > 0 && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {itensFiltrados.map((item) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      feedData={feedData}
+                      currentUserId={user?.id || ''}
+                      taxaTransacao={feedData.taxaTransacao}
+                      onItemClick={handleItemClick}
+                      showActions={true}
+                      onToggleFavorito={() => handleToggleFavorito(item.id)}
+                      onReservar={() => handleReservarItem(item.id)}
+                      onEntrarFila={() => handleEntrarFila(item.id)}
+                      actionState={actionStates[item.id]}
+                    />
+                  ))}
+                </div>
+
+                {/* ✅ SCROLL INFINITO IDÊNTICO AO FEED */}
+                {hasNextPage && (
+                  <div ref={infiniteRef}>
+                    <InfiniteScrollIndicator 
+                      isFetchingNextPage={isFetchingNextPage}
+                      hasNextPage={hasNextPage || false}
+                      itemsCount={itensFiltrados.length}
+                      isInitialLoading={loadingFeed}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </main>
       
       <QuickNav />
