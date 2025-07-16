@@ -16,7 +16,7 @@ const AuthCallback: React.FC = () => {
 
     if (user) {
       console.log('✅ User found after OAuth:', user);
-      navigate('/', { replace: true });
+      navigate('/feed', { replace: true });
     } else {
       console.log('❌ No user found after OAuth');
       navigate('/auth', { replace: true });
