@@ -1,3 +1,5 @@
+// src/components/reservas/ReservaCard.tsx - VERSÃO CORRIGIDA
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,7 +67,7 @@ const ReservaCard = ({
   const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
   const imagemItem = reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
 
-  // ✅ NOVA FUNÇÃO WHATSAPP
+  // ✅ HANDLER WHATSAPP CORRIGIDO COM LIMPEZA DE NÚMERO E REGISTRO DE LOG
   const handleWhatsAppClick = async () => {
     if (!outraPessoa?.whatsapp) {
       toast({
@@ -76,10 +78,30 @@ const ReservaCard = ({
       return;
     }
 
-    const whatsappNumber = outraPessoa.whatsapp;
+    // ✅ LIMPAR E VALIDAR NÚMERO DE TELEFONE
+    const rawNumber = outraPessoa.whatsapp;
+    const cleanNumber = rawNumber.replace(/\D/g, ''); // Remove tudo que não é dígito
+    
+    // ✅ VALIDAR SE O NÚMERO É VÁLIDO (pelo menos 10 dígitos)
+    if (cleanNumber.length < 10) {
+      toast({
+        title: "Número inválido",
+        description: "O número de WhatsApp desta pessoa parece estar incompleto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // ✅ GARANTIR FORMATO BRASILEIRO (adicionar 55 se necessário)
+    let finalNumber = cleanNumber;
+    if (!finalNumber.startsWith('55')) {
+      finalNumber = '55' + finalNumber;
+    }
+
     const nomeOutraPessoa = outraPessoa.nome;
     const tituloItem = reserva.itens?.titulo || "item";
     
+    // ✅ MENSAGEM PERSONALIZADA BASEADA NO PAPEL DO USUÁRIO
     let mensagem = "";
     
     if (isReservador) {
@@ -90,19 +112,36 @@ const ReservaCard = ({
       mensagem = `Olá ${nomeOutraPessoa}! Sobre o item "${tituloItem}" que você reservou. Quando podemos combinar a entrega? 😊`;
     }
     
-    const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(mensagem)}`;
+    // ✅ CONSTRUIR URL DO WHATSAPP (SEM 55 DUPLICADO)
+    const whatsappUrl = `https://wa.me/${finalNumber}?text=${encodeURIComponent(mensagem)}`;
+    
+    console.log('🟡 Abrindo WhatsApp:', {
+      numeroOriginal: rawNumber,
+      numeroLimpo: cleanNumber,
+      numeroFinal: finalNumber,
+      url: whatsappUrl
+    });
     
     try {
-      // Registrar conversa no banco (opcional)
+      // ✅ REGISTRAR CONVERSA NO LOG (IGUAL AO FEED)
       await supabase.rpc('registrar_conversa_whatsapp', {
         p_reserva_id: reserva.id,
         p_usuario_recebeu: isReservador ? reserva.usuario_item : reserva.usuario_reservou
       });
       console.log('✅ Comunicação WhatsApp registrada no banco');
+      
+      // ✅ MOSTRAR TOAST DE CONFIRMAÇÃO
+      toast({
+        title: "Abrindo WhatsApp...",
+        description: `Iniciando conversa com ${nomeOutraPessoa}`,
+      });
+      
     } catch (error) {
       console.error('❌ Erro ao registrar comunicação WhatsApp:', error);
+      // Não bloquear a abertura do WhatsApp por erro no log
     }
     
+    // ✅ ABRIR WHATSAPP
     window.open(whatsappUrl, '_blank');
   };
 
@@ -127,82 +166,40 @@ const ReservaCard = ({
         return !!data;
       } catch (error) {
         if (i === maxTentativas - 1) {
-          console.error('Erro ao verificar avaliação:', error);
-          return false;
+          console.error('Erro ao verificar avaliação após retry:', error);
         }
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     return false;
   };
 
-  const formatarTempo = (milliseconds: number) => {
-    const horas = Math.floor(milliseconds / (1000 * 60 * 60));
-    const minutos = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+  const formatarTempo = (tempo?: number) => {
+    if (!tempo) return 'Expirado';
+    const horas = Math.floor(tempo / (1000 * 60 * 60));
+    const minutos = Math.floor((tempo % (1000 * 60 * 60)) / (1000 * 60));
     return `${horas}h ${minutos}m`;
-  };
-
-  // FUNÇÃO ATUALIZADA: Usar sistema V2 atômico
-  const handleConfirmarEntrega = async (codigo: string): Promise<boolean> => {
-    setLoadingConfirmacao(true);
-    try {
-      const sucesso = await onConfirmarEntrega(reserva.id, codigo);
-      
-      if (sucesso) {
-        setTimeout(async () => {
-          const { data: reservaAtualizada } = await supabase
-            .from('reservas')
-            .select('*')
-            .eq('id', reserva.id)
-            .single();
-
-          if (reservaAtualizada?.status === 'confirmada') {
-            const jaAvaliou = await verificarSeJaAvaliouComRetry();
-            
-            if (!jaAvaliou) {
-              setShowAvaliacao(true);
-              
-              toast({
-                title: "🎉 Troca concluída!",
-                description: "Agora você pode avaliar esta troca.",
-              });
-            }
-          }
-        }, 1000);
-        
-        setShowCodigoModal(false);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Erro ao confirmar entrega:', error);
-      return false;
-    } finally {
-      setLoadingConfirmacao(false);
-    }
   };
 
   const getStatusBadge = () => {
     switch (reserva.status) {
       case 'pendente':
-        return <Badge className="bg-orange-500 text-white">Ativa</Badge>;
-      case 'fila_espera':
-        return <Badge className="bg-blue-500 text-white">Na Fila</Badge>;
+        return <Badge className="bg-orange-100 text-orange-700 border-orange-200">Ativa</Badge>;
       case 'confirmada':
-        return <Badge className="bg-green-500 text-white">Concluída</Badge>;
+        return <Badge className="bg-green-100 text-green-700 border-green-200">Confirmada</Badge>;
       case 'cancelada':
-        return <Badge className="bg-gray-500 text-white">Cancelada</Badge>;
+        return <Badge variant="secondary">Cancelada</Badge>;
       default:
         return <Badge variant="outline">{reserva.status}</Badge>;
     }
   };
 
   const getPrioridade = () => {
-    if (reserva.status === 'fila_espera' && reserva.posicao_fila) {
+    if (reserva.posicao_fila && reserva.posicao_fila > 0) {
       return (
-        <div className="flex items-center gap-1 text-sm text-blue-600">
+        <div className="flex items-center gap-1 text-blue-600">
           <Users className="w-4 h-4" />
-          <span>{reserva.posicao_fila}º na fila</span>
+          <span className="text-sm">{reserva.posicao_fila}º na fila</span>
         </div>
       );
     }
@@ -211,9 +208,9 @@ const ReservaCard = ({
 
   const getTempoRestante = () => {
     if (reserva.status === 'pendente' && reserva.tempo_restante) {
-      const isUrgente = reserva.tempo_restante < 3 * 60 * 60 * 1000; // menos de 3 horas
+      const isUrgent = reserva.tempo_restante < 2 * 60 * 60 * 1000; // menos de 2 horas
       return (
-        <div className={`flex items-center gap-1 text-sm ${isUrgente ? 'text-red-600' : 'text-orange-600'}`}>
+        <div className={`flex items-center gap-1 ${isUrgent ? 'text-red-600' : 'text-orange-600'}`}>
           <Clock className="w-4 h-4" />
           <span>Expira em {formatarTempo(reserva.tempo_restante)}</span>
         </div>
@@ -303,7 +300,7 @@ const ReservaCard = ({
 
             {reserva.status === 'pendente' && (
               <>
-                {/* ✅ BOTÃO WHATSAPP - NOVO! */}
+                {/* ✅ BOTÃO WHATSAPP CORRIGIDO */}
                 {mostrarWhatsApp && (
                   <Button 
                     size="sm" 
@@ -321,49 +318,28 @@ const ReservaCard = ({
                   className={`${mostrarWhatsApp ? 'shrink-0' : 'flex-1'} bg-blue-600 hover:bg-blue-700`}
                 >
                   <Key className="w-4 h-4 mr-1" />
-                  {isVendedor ? 'Código' : 'Ver código'}
+                  {isVendedor ? 'Ver código' : 'Código'}
                 </Button>
 
                 <Button 
-                  variant="destructive" 
                   size="sm" 
+                  variant="outline" 
                   onClick={() => onCancelarReserva(reserva.id)}
-                  className="shrink-0"
+                  className="shrink-0 border-red-200 text-red-600 hover:bg-red-50"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </>
             )}
 
-            {reserva.status === 'confirmada' && (
-              <div className="flex gap-2 flex-1">
-                <Button variant="outline" size="sm" className="flex-1" disabled>
-                  <CheckCircle className="w-4 h-4 mr-1" />
-                  Troca concluída
-                </Button>
-                
-                {mostrarBotaoAvaliar && (
-                  <Button 
-                    size="sm" 
-                    onClick={() => setShowAvaliacao(true)}
-                    className="bg-yellow-500 hover:bg-yellow-600 shrink-0"
-                  >
-                    <Star className="w-4 h-4 mr-1" />
-                    Avaliar
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {reserva.status === 'fila_espera' && (
+            {mostrarBotaoAvaliar && (
               <Button 
-                variant="destructive" 
                 size="sm" 
-                onClick={() => onCancelarReserva(reserva.id)}
-                className="flex-1"
+                onClick={() => setShowAvaliacao(true)}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
               >
-                <X className="w-4 h-4 mr-1" />
-                Sair da fila
+                <Star className="w-4 h-4 mr-1" />
+                Avaliar
               </Button>
             )}
           </div>
@@ -371,24 +347,24 @@ const ReservaCard = ({
       </Card>
 
       {/* Modais */}
-      <AvaliacaoModal
-        isOpen={showAvaliacao}
-        onClose={() => setShowAvaliacao(false)}
-        reserva={reserva}
-        onAvaliacaoCompleta={() => {
-          setJaAvaliou(true);
-          setShowAvaliacao(false);
-        }}
-      />
+      {showCodigoModal && (
+        <CodigoConfirmacaoModal
+          isOpen={showCodigoModal}
+          onClose={() => setShowCodigoModal(false)}
+          reserva={reserva}
+          onConfirmar={onConfirmarEntrega}
+          isVendedor={isVendedor}
+        />
+      )}
 
-      <CodigoConfirmacaoModal
-        isOpen={showCodigoModal}
-        onClose={() => setShowCodigoModal(false)}
-        reserva={reserva}
-        isVendedor={isVendedor}
-        onConfirmarCodigo={handleConfirmarEntrega}
-        loading={loading}
-      />
+      {showAvaliacao && (
+        <AvaliacaoModal
+          isOpen={showAvaliacao}
+          onClose={() => setShowAvaliacao(false)}
+          reservaId={reserva.id}
+          onRefresh={onRefresh}
+        />
+      )}
     </>
   );
 };
