@@ -1,124 +1,322 @@
-import React, { useState, useMemo } from 'react';
+// src/pages/ItensFavoritos.tsx - EXATAMENTE IGUAL AO PERFIL
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
-import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
-import FriendlyError from '@/components/error/FriendlyError';
 import { ItemCard } from '@/components/shared/ItemCard';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFavoritos } from '@/hooks/useFavoritos';
 import { useAuth } from '@/hooks/useAuth';
-import { Filter } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
+import { useToast } from '@/hooks/use-toast';
+import { useFeedInfinito } from '@/hooks/useFeedInfinito';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  ArrowLeft,
+  Search,
+  Filter
+} from 'lucide-react';
 
 const ItensFavoritos = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { favoritos, loading } = useFavoritos();
+  const { toast } = useToast();
+
+  // ✅ ESTADOS DE FILTROS IDÊNTICOS AO PERFIL
+  const [busca, setBusca] = useState('');
+  const [categoria, setCategoria] = useState('todas');
+  const [subcategoria, setSubcategoria] = useState('todas');
+  const [genero, setGenero] = useState('todos');
+  const [tamanho, setTamanho] = useState('todos');
+  const [precoRange, setPrecoRange] = useState([0, 200]);
+  const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
+  const [mostrarReservados, setMostrarReservados] = useState(true);
+  const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
+
+  // ✅ HOOKS IDÊNTICOS AO PERFIL
+  const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
+  const debouncedBusca = useDebounce(busca, 500);
   
-  const [itensDetalhados, setItensDetalhados] = useState<any[]>([]);
-  const [loadingItens, setLoadingItens] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filtroCategoria, setFiltroCategoria] = useState<string>('todos');
-  const [filtroStatus, setFiltroStatus] = useState<string>('todos');
-
-  // Carregar detalhes dos itens favoritos
-  React.useEffect(() => {
-    const carregarItensDetalhados = async () => {
-      if (!user?.id || favoritos.length === 0) {
-        setItensDetalhados([]);
-        return;
-      }
-
-      try {
-        setLoadingItens(true);
-        
-        const itemIds = favoritos.map(fav => fav.item_id);
-        
-        const { data, error } = await supabase
-          .from('itens_completos')
-          .select('*')
-          .in('id', itemIds)
-          .in('status', ['disponivel', 'reservado']); 
-        
-        if (error) {
-          console.error('Erro ao carregar itens favoritos:', error);
-          throw error;
-        }
-
-        setItensDetalhados(data || []);
-      } catch (err) {
-        console.error('Erro ao carregar itens favoritos:', err);
-        setError('Não foi possível carregar seus itens favoritos');
-      } finally {
-        setLoadingItens(false);
-      }
+  // ✅ HOOK DO FEED COM FILTRO DE FAVORITOS
+  const {
+    data: paginasFeed,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: loadingFeed,
+    refetch
+  } = useFeedInfinito(user?.id || '', {
+    busca: debouncedBusca,
+    categoria: categoria === 'todas' ? undefined : categoria,
+    subcategoria: subcategoria === 'todas' ? undefined : subcategoria,
+    genero: genero === 'todos' ? undefined : genero,
+    tamanho: tamanho === 'todos' ? undefined : tamanho,
+    precoMin: precoRange[0],
+    precoMax: precoRange[1],
+    mostrarReservados
+  });
+  
+  // ✅ EXTRAIR DADOS IDÊNTICO AO PERFIL
+  const itens = useMemo(() => {
+    return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
+  }, [paginasFeed]);
+  
+  // ✅ DADOS CONSOLIDADOS IDÊNTICOS AO PERFIL
+  const feedData = useMemo(() => {
+    const primeiraPagina = paginasFeed?.pages?.[0];
+    return {
+      favoritos: primeiraPagina?.favoritos || [],
+      reservas_usuario: primeiraPagina?.reservas_usuario || [],
+      filas_espera: primeiraPagina?.filas_espera || {},
+      configuracoes: primeiraPagina?.configuracoes,
+      profile_essencial: primeiraPagina?.profile_essencial,
+      taxaTransacao: 5
     };
+  }, [paginasFeed]);
+  
+  const categorias = feedData.configuracoes?.categorias || [];
+  const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
+  
+  // ✅ LÓGICAS IDÊNTICAS AO PERFIL
+  const getSubcategoriasFiltradas = () => {
+    if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
+    
+    const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
+    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+      if (!acc.some(item => item.nome === sub.nome)) {
+        acc.push(sub);
+      }
+      return acc;
+    }, [] as typeof filtradas);
+    
+    return subcategoriasUnicas;
+  };
 
-    carregarItensDetalhados();
-  }, [user?.id, favoritos]);
+  const getTamanhosDisponiveis = () => {
+    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
+    
+    const tipos = Object.keys(tiposTamanho);
+    const tipoUnico = tipos[0];
+    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    
+    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.valor === tamanho.valor)) {
+        acc.push(tamanho);
+      }
+      return acc;
+    }, [] as typeof tamanhos);
+    
+    return tamanhosUnicos;
+  };
 
-  // Filtrar itens
+  const subcategoriasFiltradas = getSubcategoriasFiltradas();
+  const tamanhosDisponiveis = getTamanhosDisponiveis();
+
+  // ✅ FILTRAR ITENS FAVORITOS
   const itensFiltrados = useMemo(() => {
-    return itensDetalhados.filter(item => {
-      const passaCategoria = filtroCategoria === 'todos' || item.categoria === filtroCategoria;
-      const passaStatus = filtroStatus === 'todos' || item.status === filtroStatus;
-      return passaCategoria && passaStatus;
-    });
-  }, [itensDetalhados, filtroCategoria, filtroStatus]);
+    const itensFavoritos = itens.filter(item => feedData.favoritos.includes(item.id));
+    return mostrarReservados 
+      ? itensFavoritos 
+      : itensFavoritos.filter(item => item.status === 'disponivel');
+  }, [itens, feedData.favoritos, mostrarReservados]);
 
-  // Obter categorias únicas
-  const categorias = useMemo(() => {
-    const cats = [...new Set(itensDetalhados.map(item => item.categoria))];
-    return cats.sort();
-  }, [itensDetalhados]);
+  // ✅ SCROLL INFINITO IDÊNTICO AO PERFIL
+  const { ref: infiniteRef } = useInfiniteScroll({
+    loading: isFetchingNextPage,
+    hasNextPage: hasNextPage || false,
+    onLoadMore: fetchNextPage,
+    disabled: !hasNextPage,
+    rootMargin: '100px',
+  });
 
-  // Dados do feed para o ItemCard
-  const feedData = useMemo(() => ({
-    favoritos: favoritos.map(fav => fav.item_id),
-    reservas_usuario: [],
-    filas_espera: {}
-  }), [favoritos]);
+  const handleItemClick = useCallback((itemId: string) => {
+    navigate(`/item/${itemId}`);
+  }, [navigate]);
+
+  // ✅ FUNÇÃO entrarNaFila IDÊNTICA AO PERFIL
+  const entrarNaFila = async (itemId: string) => {
+    if (!user) return;
+    
+    setActionStates(prev => ({ ...prev, [itemId]: 'loading' }));
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('entrar_fila_espera', { 
+          p_item_id: itemId, 
+          p_usuario_id: user.id 
+        });
+
+      if (error) {
+        toast({ 
+          title: "Erro ao reservar", 
+          description: error.message, 
+          variant: "destructive" 
+        });
+        setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+        return false;
+      }
+
+      const result = data as { tipo?: string; posicao?: number } | null;
+      
+      if (result?.tipo === 'reserva_direta') {
+        toast({ 
+          title: "Item reservado! 🎉", 
+          description: "As Girinhas foram bloqueadas. Use o código de confirmação na entrega." 
+        });
+      } else if (result?.tipo === 'fila_espera') {
+        toast({ 
+          title: "Entrou na fila! 📝", 
+          description: `Você está na posição ${result.posicao} da fila. As Girinhas NÃO foram bloqueadas ainda.` 
+        });
+      }
+      
+      setActionStates(prev => ({ ...prev, [itemId]: 'success' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      
+      await refetch();
+      return true;
+    } catch (err) {
+      console.error('Erro ao entrar na fila:', err);
+      toast({ 
+        title: "Erro ao entrar na fila", 
+        description: err instanceof Error ? err.message : "Tente novamente.", 
+        variant: "destructive" 
+      });
+      setActionStates(prev => ({ ...prev, [itemId]: 'error' }));
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, [itemId]: 'idle' }));
+      }, 2000);
+      return false;
+    }
+  };
+
+  // ✅ FUNÇÃO toggleFavorito IDÊNTICA AO PERFIL
+  const toggleFavorito = async (itemId: string) => {
+    if (!user) return;
+    
+    const isFavorito = feedData.favoritos.includes(itemId);
+    
+    try {
+      if (isFavorito) {
+        const { error } = await supabase
+          .from('favoritos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('item_id', itemId);
+
+        if (error) throw error;
+
+        toast({
+          title: "Removido dos favoritos",
+          description: "Item removido da sua lista de desejos.",
+        });
+      } else {
+        const { error } = await supabase
+          .from('favoritos')
+          .insert({
+            user_id: user.id,
+            item_id: itemId
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Adicionado aos favoritos! ❤️",
+          description: "Item adicionado à sua lista de desejos.",
+        });
+      }
+      
+      await refetch();
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar os favoritos.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ✅ HANDLERS IDÊNTICOS AO PERFIL
+  const handleReservarItem = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+    } catch (error) {
+      console.error('Erro ao reservar item:', error);
+    }
+  };
+
+  const handleEntrarFila = async (itemId: string) => {
+    try {
+      await entrarNaFila(itemId);
+    } catch (error) {
+      console.error('Erro ao entrar na fila:', error);
+    }
+  };
+
+  const handleToggleFavorito = async (itemId: string) => {
+    try {
+      await toggleFavorito(itemId);
+    } catch (error) {
+      console.error('Erro ao toggle favorito:', error);
+    }
+  };
+
+  // ✅ HANDLERS DE FILTROS IDÊNTICOS AO PERFIL
+  const handleAplicarFiltros = () => {
+    refetch();
+  };
+
+  const handleLimparFiltros = () => {
+    setBusca('');
+    setCategoria('todas');
+    setSubcategoria('todas');
+    setGenero('todos');
+    setTamanho('todos');
+    setPrecoRange([0, 200]);
+    setMostrarReservados(true);
+    setMostrarFiltrosAvancados(false);
+    refetch();
+  };
+
+  const toggleFiltrosAvancados = () => {
+    setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
+  };
+
+  const handleCategoriaChange = (novaCategoria: string) => {
+    setCategoria(novaCategoria);
+    setSubcategoria('todas');
+    setTamanho('todos');
+  };
+
+  const handleTamanhoChange = (valor: string) => {
+    setTamanho(valor);
+  };
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
-        <FriendlyError 
-          type="permission"
-          title="Acesso Restrito"
-          message="Você precisa estar logado para ver seus favoritos."
-          showHomeButton={true}
-        />
-        <QuickNav />
-      </div>
-    );
-  }
-
-  if (loading || loadingItens) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
-        <Header />
-        <div className="container mx-auto px-4 py-6">
-          <LoadingSpinner text="Carregando seus favoritos..." />
-        </div>
-        <QuickNav />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
-        <Header />
-        <FriendlyError 
-          type="connection"
-          title="Erro de Conexão"
-          message={error}
-          onRetry={() => window.location.reload()}
-        />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold mb-4">Acesso Restrito</h2>
+            <p className="text-gray-600 mb-6">Você precisa estar logado para ver seus favoritos.</p>
+            <Button onClick={() => navigate('/auth')}>
+              Fazer Login
+            </Button>
+          </div>
+        </main>
         <QuickNav />
       </div>
     );
@@ -128,131 +326,285 @@ const ItensFavoritos = () => {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 pb-24">
       <Header />
       
-      <div className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6">
+        {/* Botão Voltar */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="text-purple-600 hover:text-purple-700"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+        </div>
+
         {/* Header da página */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Meus favoritos</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Meus Favoritos</h1>
             <p className="text-gray-600 mt-1">
               {itensFiltrados.length} {itensFiltrados.length === 1 ? 'item' : 'itens'}
             </p>
           </div>
         </div>
 
-        {/* Filtros */}
-        {itensDetalhados.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-4 mb-6 p-4 bg-white rounded-lg shadow-sm">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Filtros:</span>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todas as categorias</SelectItem>
-                  {categorias.map(categoria => (
-                    <SelectItem key={categoria} value={categoria}>
-                      {categoria.charAt(0).toUpperCase() + categoria.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={filtroStatus} onValueChange={setFiltroStatus}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos os status</SelectItem>
-                  <SelectItem value="disponivel">Disponível</SelectItem>
-                  <SelectItem value="reservado">Reservado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {(filtroCategoria !== 'todos' || filtroStatus !== 'todos') && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setFiltroCategoria('todos');
-                  setFiltroStatus('todos');
-                }}
-              >
-                Limpar filtros
-              </Button>
-            )}
+        {/* ✅ FILTROS E BUSCA IDÊNTICOS AO PERFIL */}
+        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              type="text"
+              placeholder="Busque nos seus favoritos..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-10 pr-12 h-12 text-base"
+            />
+            <button
+              onClick={toggleFiltrosAvancados}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
+            >
+              <Filter className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
-        )}
 
-        {/* Lista de itens favoritos */}
-        {favoritos.length === 0 ? (
-          <EmptyState
-            type="favoritos"
-            title="Nenhum favorito ainda"
-            description="Você ainda não marcou nenhum item como favorito. Explore o feed e favorite os itens que mais gostar!"
-            actionLabel="Ir para o Feed"
-            onAction={() => navigate('/feed')}
-          />
-        ) : itensFiltrados.length === 0 && itensDetalhados.length > 0 ? (
-          <EmptyState
-            type="search"
-            title="Nenhum item encontrado"
-            description="Nenhum item favorito corresponde aos filtros selecionados."
-            actionLabel="Limpar filtros"
-            onAction={() => {
-              setFiltroCategoria('todos');
-              setFiltroStatus('todos');
-            }}
-          />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {itensFiltrados.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={{
-                  id: item.id,
-                  titulo: item.titulo,
-                  descricao: item.descricao,
-                  valor_girinhas: item.valor_girinhas,
-                  categoria: item.categoria,
-                  subcategoria: item.subcategoria,
-                  estado_conservacao: item.estado_conservacao,
-                  status: item.status,
-                  fotos: item.fotos,
-                  genero: item.genero,
-                  tamanho_valor: item.tamanho_valor,
-                  tamanho_categoria: item.tamanho_categoria,
-                  endereco_bairro: item.vendedor_bairro,
-                  endereco_cidade: item.vendedor_cidade,
-                  endereco_estado: item.vendedor_estado,
-                  aceita_entrega: item.aceita_entrega_domicilio,
-                  raio_entrega_km: item.vendedor_raio_entrega,
-                  publicado_por: item.publicado_por,
-                  created_at: item.created_at,
-                  publicado_por_profile: {
-                    nome: item.vendedor_nome,
-                    avatar_url: item.vendedor_avatar,
-                    reputacao: item.vendedor_reputacao,
-                    whatsapp: item.vendedor_telefone
-                  }
-                }}
-                feedData={feedData}
-                currentUserId={user.id}
-                showActions={true}
-                showLocation={true}
-                showAuthor={true}
-                onItemClick={(itemId) => navigate(`/item/${itemId}`)}
-              />
+          {/* ✅ FILTROS AVANÇADOS IDÊNTICOS AO PERFIL */}
+          {mostrarFiltrosAvancados && (
+            <div className="space-y-6 border-t pt-4">
+              {/* Mostrar itens reservados */}
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">OPÇÕES DE VISUALIZAÇÃO</h3>
+                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="mostrar-reservados" className="text-sm font-medium">
+                      Mostrar itens reservados
+                    </Label>
+                    <Switch
+                      id="mostrar-reservados"
+                      checked={mostrarReservados}
+                      onCheckedChange={setMostrarReservados}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-gray-500">
+                    {itensFiltrados.length} itens
+                  </div>
+                </div>
+              </div>
+
+              {/* Categoria e Subcategoria */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
+                  <Select value={categoria} onValueChange={handleCategoriaChange}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                      <SelectItem value="todas">Todas</SelectItem>
+                      {categorias.map((cat) => (
+                        <SelectItem key={cat.codigo} value={cat.codigo}>
+                          <span className="flex items-center gap-2">
+                            <span className="text-sm">{cat.icone}</span>
+                            {cat.nome}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">SUBCATEGORIA</h3>
+                  <Select 
+                    value={subcategoria} 
+                    onValueChange={setSubcategoria}
+                    disabled={categoria === 'todas'}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                      <SelectItem value="todas">Todas</SelectItem>
+                      {subcategoriasFiltradas.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhuma subcategoria encontrada</SelectItem>
+                      ) : (
+                        subcategoriasFiltradas.map((sub) => (
+                          <SelectItem key={sub.id} value={sub.nome}>
+                            <span className="flex items-center gap-2">
+                              <span className="text-sm">{sub.icone}</span>
+                              {sub.nome}
+                            </span>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Gênero e Tamanho */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
+                  <Select value={genero} onValueChange={setGenero}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg z-50">
+                      <SelectItem value="todos">Todos</SelectItem>
+                      <SelectItem value="menino">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👦</span>
+                          Menino
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="menina">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👧</span>
+                          Menina
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="unissex">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm">👶</span>
+                          Unissex
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                    {categoria === 'calcados' ? 'NÚMERO' : 
+                     categoria === 'brinquedos' ? 'IDADE' : 
+                     categoria === 'livros' ? 'FAIXA ETÁRIA' : 'TAMANHO'}
+                  </h3>
+                  <Select 
+                    value={tamanho} 
+                    onValueChange={handleTamanhoChange}
+                    disabled={categoria === 'todas' || loadingTamanhos}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60 z-50">
+                      <SelectItem value="todos">Todos</SelectItem>
+                      {loadingTamanhos ? (
+                        <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                      ) : tamanhosDisponiveis.length === 0 ? (
+                        <SelectItem value="none" disabled>Nenhum tamanho encontrado</SelectItem>
+                      ) : (
+                        tamanhosDisponiveis.map((tam) => (
+                          <SelectItem key={tam.id} value={tam.valor}>
+                            {tam.label_display}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Faixa de Preço */}
+              <div>
+                <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
+                  PREÇO: {precoRange[0]} - {precoRange[1]} G
+                </h3>
+                <div className="px-2">
+                  <Slider
+                    value={precoRange}
+                    onValueChange={setPrecoRange}
+                    max={200}
+                    min={0}
+                    step={5}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleLimparFiltros}
+                  variant="outline"
+                  className="flex-1 h-12"
+                >
+                  Limpar Filtros
+                </Button>
+                <Button
+                  onClick={handleAplicarFiltros}
+                  className="flex-1 h-12 bg-gradient-to-r from-primary to-pink-500"
+                >
+                  Aplicar Filtros
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ✅ LOADING STATE IDÊNTICO AO PERFIL */}
+        {loadingFeed && itensFiltrados.length === 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <ItemCardSkeleton key={i} />
             ))}
           </div>
         )}
-      </div>
 
+        {/* ✅ EMPTY STATE IDÊNTICO AO PERFIL */}
+        {!loadingFeed && itensFiltrados.length === 0 && (
+          <EmptyState
+            type="favoritos"
+            title="Nenhum favorito encontrado"
+            description={
+              !mostrarReservados 
+                ? "Tente incluir itens reservados ou ajustar os filtros"
+                : "Você ainda não tem itens favoritos que correspondam aos filtros aplicados"
+            }
+            actionLabel="Limpar filtros"
+            onAction={handleLimparFiltros}
+          />
+        )}
+
+        {/* ✅ GRID DE ITENS IDÊNTICO AO PERFIL */}
+        {itensFiltrados.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {itensFiltrados.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  feedData={feedData}
+                  currentUserId={user?.id || ''}
+                  taxaTransacao={feedData.taxaTransacao}
+                  onItemClick={handleItemClick}
+                  showActions={true}
+                  onToggleFavorito={() => handleToggleFavorito(item.id)}
+                  onReservar={() => handleReservarItem(item.id)}
+                  onEntrarFila={() => handleEntrarFila(item.id)}
+                  actionState={actionStates[item.id]}
+                />
+              ))}
+            </div>
+
+            {/* ✅ SCROLL INFINITO IDÊNTICO AO PERFIL */}
+            {hasNextPage && (
+              <div ref={infiniteRef}>
+                <InfiniteScrollIndicator 
+                  isFetchingNextPage={isFetchingNextPage}
+                  hasNextPage={hasNextPage || false}
+                  itemsCount={itensFiltrados.length}
+                  isInitialLoading={loadingFeed}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </main>
+      
       <QuickNav />
     </div>
   );

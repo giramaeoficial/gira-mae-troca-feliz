@@ -14,6 +14,7 @@ import QuickNav from '@/components/shared/QuickNav';
 import ItemCardSkeleton from '@/components/loading/ItemCardSkeleton';
 import EmptyState from '@/components/loading/EmptyState';
 import { ItemCard } from '@/components/shared/ItemCard';
+import MaeSeguidaCard from '@/components/shared/MaeSeguidaCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
@@ -417,60 +418,56 @@ const PerfilPublicoMae = () => {
           </Button>
         </div>
 
-        {/* ✅ CARD DO PERFIL - COMPACTO NO TOPO */}
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm mb-6">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16 border-2 border-purple-200">
-                <AvatarImage src={profile.avatar_url || undefined} alt={nomeCompleto} />
-                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white text-lg font-bold">
-                  {profile.nome?.split(' ').map((n: string) => n[0]).join('') || 'M'}
-                </AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1">
-                <h1 className="text-xl font-bold text-gray-800 mb-1">
-                  {nomeCompleto}
-                </h1>
-                
-                <div className="flex items-center gap-2 mb-2">
-                  {[1,2,3,4,5].map((star) => (
-                    <Star 
-                      key={star} 
-                      className={`w-4 h-4 ${
-                        star <= Math.floor((profile.reputacao || 0) / 20) 
-                          ? 'fill-current text-yellow-500' 
-                          : 'text-gray-300'
-                      }`} 
-                    />
-                  ))}
-                  <span className="text-sm text-gray-600">
-                    ({((profile.reputacao || 0) / 20).toFixed(1)})
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-4 text-sm text-gray-600">
-                  {profile.cidade && profile.estado && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {profile.cidade}, {profile.estado}
-                    </div>
-                  )}
-                  {profile.data_nascimento && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {calcularIdade(profile.data_nascimento)} anos
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <Package className="w-3 h-3" />
-                    {itensFiltrados.length} itens
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* ✅ CARD DO PERFIL USANDO MaeSeguidaCard */}
+        <div className="mb-6">
+          <MaeSeguidaCard
+            mae={{
+              id: profile.id,
+              nome: profile.nome || 'Usuário',
+              sobrenome: profile.sobrenome,
+              avatar_url: profile.avatar_url,
+              bio: profile.bio,
+              cidade: profile.cidade,
+              estado: profile.estado,
+              bairro: profile.bairro,
+              data_nascimento: profile.data_nascimento,
+              reputacao: profile.reputacao || 0,
+              interesses: profile.interesses || [],
+              created_at: profile.created_at,
+              last_seen_at: profile.ultima_atividade,
+              aceita_entrega_domicilio: profile.aceita_entrega_domicilio || false,
+              raio_entrega_km: profile.raio_entrega_km,
+              estatisticas: {
+                total_itens: itensFiltrados.length,
+                itens_ativos: itensFiltrados.filter(item => item.status === 'disponivel').length,
+                itens_disponiveis: itensFiltrados.filter(item => item.status === 'disponivel').length,
+                total_seguidores: 0, // Pode ser implementado depois
+                total_seguindo: 0,   // Pode ser implementado depois
+                avaliacoes_recebidas: 0, // Pode ser implementado depois
+                media_avaliacao: (profile.reputacao || 0) / 20,
+                ultima_atividade: profile.ultima_atividade,
+                membro_desde: profile.created_at,
+                distancia_km: undefined
+              },
+              itens_recentes: itensFiltrados.slice(0, 4).map(item => ({
+                id: item.id,
+                titulo: item.titulo,
+                categoria: item.categoria,
+                valor_girinhas: item.valor_girinhas,
+                fotos: item.fotos || [],
+                status: item.status,
+                created_at: item.created_at
+              })),
+              escola_comum: false,
+              logistica: {
+                entrega_disponivel: profile.aceita_entrega_domicilio || false,
+                busca_disponivel: true
+              }
+            }}
+            onViewProfile={() => {}}
+            showUnfollowButton={false}
+          />
+        </div>
 
         {/* ✅ FILTROS E BUSCA IDÊNTICOS AO FEED */}
         <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
