@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import BotaoSeguir from '@/components/perfil/BotaoSeguir';
 import { 
   MapPin, 
   Package, 
@@ -66,14 +67,20 @@ interface MaeSeguidaCardProps {
   mae: MaeSeguidaProfile;
   onUnfollow?: (maeId: string) => void;
   onViewProfile?: (maeId: string) => void;
-  showUnfollowButton?: boolean;
+  // ✅ NOVAS PROPS PARA CONTROLE DOS BOTÕES:
+  showViewProfileButton?: boolean;   // Default: true
+  showFollowButton?: boolean;        // Default: false
+  showUnfollowButton?: boolean;      // Default: true (para compatibilidade)
 }
 
 const MaeSeguidaCard: React.FC<MaeSeguidaCardProps> = ({ 
   mae, 
   onUnfollow, 
   onViewProfile,
-  showUnfollowButton = true 
+  // ✅ VALORES PADRÃO DAS NOVAS PROPS:
+  showViewProfileButton = true,
+  showFollowButton = false,
+  showUnfollowButton = true
 }) => {
   const navigate = useNavigate();
 
@@ -283,18 +290,30 @@ const MaeSeguidaCard: React.FC<MaeSeguidaCardProps> = ({
           </div>
         )}
 
-        {/* Botões de ação */}
+        {/* ✅ BOTÕES DE AÇÃO CONDICIONAIS */}
         <div className="flex gap-2 pt-4 border-t">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleViewProfile}
-            className="flex-1 flex items-center gap-2"
-          >
-            <Eye className="w-4 h-4" />
-            Ver Perfil
-          </Button>
+          {/* Botão "Ver perfil" */}
+          {showViewProfileButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewProfile}
+              className="flex-1 flex items-center gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              Ver Perfil
+            </Button>
+          )}
           
+          {/* Botão "Seguir/Deixar de seguir" (componente existente) */}
+          {showFollowButton && (
+            <BotaoSeguir 
+              usuarioId={mae.id} 
+              className="flex-1"
+            />
+          )}
+          
+          {/* Botão "Deixar de seguir" (para página de mães seguidas) */}
           {showUnfollowButton && onUnfollow && (
             <Button
               variant="destructive"
