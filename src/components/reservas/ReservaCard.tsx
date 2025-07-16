@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, CheckCircle, X, Users, Star, Key, Eye } from "lucide-react";
+import { Clock, CheckCircle, X, Users, Star, Key, Eye, MessageCircle } from "lucide-react";
 import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,16 +31,18 @@ interface ReservaCardProps {
     profiles_reservador?: {
       nome: string;
       avatar_url: string | null;
+      whatsapp?: string;
     } | null;
     profiles_vendedor?: {
       nome: string;
       avatar_url: string | null;
+      whatsapp?: string;
     } | null;
   };
   onConfirmarEntrega: (reservaId: string, codigo: string) => Promise<boolean>;
   onCancelarReserva: (reservaId: string) => void;
   onRefresh?: () => void;
-  onVerDetalhes?: (itemId: string) => void; // ✅ NOVA PROP
+  onVerDetalhes?: (itemId: string) => void;
 }
 
 const ReservaCard = ({ 
@@ -48,7 +50,7 @@ const ReservaCard = ({
   onConfirmarEntrega, 
   onCancelarReserva, 
   onRefresh,
-  onVerDetalhes // ✅ NOVA PROP
+  onVerDetalhes
 }: ReservaCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -62,6 +64,47 @@ const ReservaCard = ({
   const isVendedor = reserva.usuario_item === user?.id;
   const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
   const imagemItem = reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
+
+  // ✅ NOVA FUNÇÃO WHATSAPP
+  const handleWhatsAppClick = async () => {
+    if (!outraPessoa?.whatsapp) {
+      toast({
+        title: "WhatsApp não disponível",
+        description: "Esta pessoa não possui WhatsApp cadastrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const whatsappNumber = outraPessoa.whatsapp;
+    const nomeOutraPessoa = outraPessoa.nome;
+    const tituloItem = reserva.itens?.titulo || "item";
+    
+    let mensagem = "";
+    
+    if (isReservador) {
+      // Você reservou - vai falar com o vendedor
+      mensagem = `Olá ${nomeOutraPessoa}! Sobre o item "${tituloItem}" que reservei. Quando podemos combinar a entrega? 😊`;
+    } else {
+      // Reservaram seu item - vai falar com o comprador
+      mensagem = `Olá ${nomeOutraPessoa}! Sobre o item "${tituloItem}" que você reservou. Quando podemos combinar a entrega? 😊`;
+    }
+    
+    const whatsappUrl = `https://wa.me/55${whatsappNumber}?text=${encodeURIComponent(mensagem)}`;
+    
+    try {
+      // Registrar conversa no banco (opcional)
+      await supabase.rpc('registrar_conversa_whatsapp', {
+        p_reserva_id: reserva.id,
+        p_usuario_recebeu: isReservador ? reserva.usuario_item : reserva.usuario_reservou
+      });
+      console.log('✅ Comunicação WhatsApp registrada no banco');
+    } catch (error) {
+      console.error('❌ Erro ao registrar comunicação WhatsApp:', error);
+    }
+    
+    window.open(whatsappUrl, '_blank');
+  };
 
   // ✅ FUNÇÃO PARA ABRIR DETALHES
   const handleVerDetalhes = () => {
@@ -181,6 +224,9 @@ const ReservaCard = ({
 
   const mostrarBotaoAvaliar = reserva.status === 'confirmada' && !jaAvaliou;
 
+  // ✅ VERIFICAR SE DEVE MOSTRAR WHATSAPP
+  const mostrarWhatsApp = reserva.status === 'pendente' && outraPessoa?.whatsapp;
+
   return (
     <>
       <Card className="overflow-hidden">
@@ -257,10 +303,22 @@ const ReservaCard = ({
 
             {reserva.status === 'pendente' && (
               <>
+                {/* ✅ BOTÃO WHATSAPP - NOVO! */}
+                {mostrarWhatsApp && (
+                  <Button 
+                    size="sm" 
+                    onClick={handleWhatsAppClick}
+                    className="flex-1 bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1" />
+                    WhatsApp
+                  </Button>
+                )}
+
                 <Button 
                   size="sm" 
                   onClick={() => setShowCodigoModal(true)}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  className={`${mostrarWhatsApp ? 'shrink-0' : 'flex-1'} bg-blue-600 hover:bg-blue-700`}
                 >
                   <Key className="w-4 h-4 mr-1" />
                   {isVendedor ? 'Código' : 'Ver código'}
