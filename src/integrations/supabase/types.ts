@@ -2392,9 +2392,7 @@ export type Database = {
         Returns: number
       }
       cancelar_reserva: {
-        Args:
-          | { p_reserva_id: string; p_usuario_id: string }
-          | { p_reserva_id: string; p_usuario_id: string; p_motivo?: string }
+        Args: { p_reserva_id: string; p_usuario_id: string; p_motivo?: string }
         Returns: boolean
       }
       carregar_dados_feed_paginado: {

@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Clock, CheckCircle, X, Users, Star, Key, Eye, MessageCircle } from "lucide-react";
 import AvaliacaoModal from "./AvaliacaoModal";
 import CodigoConfirmacaoModal from "./CodigoConfirmacaoModal";
+import { CancelarReservaModal } from "./CancelarReservaModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useReservas } from "@/hooks/useReservas";
@@ -59,6 +60,7 @@ const ReservaCard = ({
   const { confirmarEntrega, loading } = useReservas();
   const [showAvaliacao, setShowAvaliacao] = useState(false);
   const [showCodigoModal, setShowCodigoModal] = useState(false);
+  const [showCancelarModal, setShowCancelarModal] = useState(false);
   const [loadingConfirmacao, setLoadingConfirmacao] = useState(false);
   const [jaAvaliou, setJaAvaliou] = useState(false);
 
@@ -324,7 +326,7 @@ const ReservaCard = ({
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  onClick={() => onCancelarReserva(reserva.id)}
+                  onClick={() => setShowCancelarModal(true)}
                   className="shrink-0 border-red-200 text-red-600 hover:bg-red-50"
                 >
                   <X className="w-4 h-4" />
@@ -364,6 +366,19 @@ const ReservaCard = ({
           onClose={() => setShowAvaliacao(false)}
           reserva={reserva}
           onAvaliacaoCompleta={onRefresh}
+        />
+      )}
+
+      {showCancelarModal && (
+        <CancelarReservaModal
+          isOpen={showCancelarModal}
+          onClose={() => setShowCancelarModal(false)}
+          reserva={reserva}
+          isVendedor={isVendedor}
+          onCancelamentoCompleto={() => {
+            setShowCancelarModal(false);
+            onRefresh?.();
+          }}
         />
       )}
     </>
