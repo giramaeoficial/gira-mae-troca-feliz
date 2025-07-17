@@ -2383,6 +2383,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      calcular_prazo_expiracao: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       calcular_usuarios_elegiveis: {
         Args: { criterios_segmentacao: Json }
         Returns: number
@@ -2538,6 +2542,10 @@ export type Database = {
       get_municipios_por_uf: {
         Args: { uf_param: string }
         Returns: string[]
+      }
+      get_prazo_reserva_horas: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       get_user_form_data: {
         Args: Record<PropertyKey, never>
