@@ -1670,6 +1670,7 @@ export type Database = {
           id: string
           item_id: string
           localizacao_combinada: string | null
+          motivo_cancelamento: string | null
           prazo_expiracao: string
           status: string
           updated_at: string
@@ -1686,6 +1687,7 @@ export type Database = {
           id?: string
           item_id: string
           localizacao_combinada?: string | null
+          motivo_cancelamento?: string | null
           prazo_expiracao?: string
           status?: string
           updated_at?: string
@@ -1702,6 +1704,7 @@ export type Database = {
           id?: string
           item_id?: string
           localizacao_combinada?: string | null
+          motivo_cancelamento?: string | null
           prazo_expiracao?: string
           status?: string
           updated_at?: string
@@ -1727,6 +1730,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      reservation_cancel_metrics: {
+        Row: {
+          dt: string
+          motivo: string
+          total: number
+        }
+        Insert: {
+          dt: string
+          motivo: string
+          total?: number
+        }
+        Update: {
+          dt?: string
+          motivo?: string
+          total?: number
+        }
+        Relationships: []
       }
       seguidores: {
         Row: {

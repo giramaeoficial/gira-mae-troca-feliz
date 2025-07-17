@@ -352,8 +352,9 @@ const ReservaCard = ({
           isOpen={showCodigoModal}
           onClose={() => setShowCodigoModal(false)}
           reserva={reserva}
-          onConfirmar={onConfirmarEntrega}
+          onConfirmarCodigo={(codigo) => onConfirmarEntrega(reserva.id, codigo)}
           isVendedor={isVendedor}
+          loading={false}
         />
       )}
 
@@ -361,8 +362,8 @@ const ReservaCard = ({
         <AvaliacaoModal
           isOpen={showAvaliacao}
           onClose={() => setShowAvaliacao(false)}
-          reservaId={reserva.id}
-          onRefresh={onRefresh}
+          reserva={reserva}
+          onAvaliacaoCompleta={onRefresh}
         />
       )}
     </>
