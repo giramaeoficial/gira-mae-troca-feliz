@@ -2726,6 +2726,10 @@ export type Database = {
         Args: { p_dados: Json }
         Returns: Json
       }
+      processar_reservas_expiradas_batch: {
+        Args: { p_batch_size?: number }
+        Returns: number
+      }
       processar_taxa_transacao: {
         Args: { p_reserva_id: string }
         Returns: undefined
