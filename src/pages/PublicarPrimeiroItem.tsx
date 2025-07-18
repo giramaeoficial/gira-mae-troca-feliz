@@ -70,30 +70,33 @@ const PublicarPrimeiroItem = () => {
                 <Trophy className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-800">MISSÃO OBRIGATÓRIA #1</h1>
-                <p className="text-sm text-gray-600">Anunciar 2 itens para venda</p>
+                <h1 className="text-lg font-bold text-gray-800">MISSÃO IMPORTANTE #1</h1>
+                <p className="text-sm text-gray-600">Anunciar 2 peças que seu pequeno não usa mais</p>
               </div>
             </div>
             <div className="bg-white/60 rounded-lg p-3">
               <p className="text-sm font-medium text-gray-800 mb-2">
-                🎯 <strong>A REAL:</strong> Aqui TODOS contribuem! 
+                <strong>Entre a gente:</strong> todo mundo contribui um pouquinho.
+              </p>
+              <p className="text-xs text-gray-700 mb-2">
+                Aqui você usa <strong>Girinhas</strong> (1 Girinha = R$ 1,00) para trocar o que não serve mais por peças que seu filho realmente precisa. Essa é a única missão obrigatória — só pra garantir que todas as mães participem de verdade.
               </p>
               <p className="text-xs text-gray-700">
-                Você vende por <strong>Girinhas</strong> (1 Girinha = R$ 1,00) e pode comprar de outras mães. 
-                Esta é a ÚNICA missão obrigatória para ter acesso completo.
+                E um recadinho importante: evite anunciar peças manchadas, rasgadas ou com aspecto de descuido. Isso pode afetar sua reputação na plataforma e a confiança de outras mães em trocar com você. Capriche nas escolhas — carinho chama carinho.
               </p>
             </div>
           </CardContent>
         </Card>
 
+
         {/* Warning Alert */}
-        <Alert className="border-red-200 bg-red-50">
-          <Ban className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-700 text-sm">
-            <strong>ATENÇÃO:</strong> Itens falsos ou inadequados resultam em banimento da plataforma. 
-            Aqui não é bagunça!
-          </AlertDescription>
-        </Alert>
+      <Alert className="border-yellow-200 bg-yellow-50">
+        <Ban className="h-4 w-4 text-yellow-600" />
+        <AlertDescription className="text-yellow-700 text-sm">
+          <strong>Ei, mamãe 💛</strong> só um lembrete carinhoso: evitar itens falsos ou fora do perfil da comunidade ajuda a manter nosso cantinho seguro e especial pra todas. Vamos cuidar juntas desse espaço, tá bom?
+        </AlertDescription>
+      </Alert>
+
 
         {/* Progress */}
         <div className="text-center">
@@ -144,19 +147,11 @@ const PublicarPrimeiroItem = () => {
             )}
           </Button>
           
-          <Button
-            variant="ghost"
-            onClick={handlePostpone}
-            className="w-full text-gray-600"
-          >
-            Cadastrar depois (acesso limitado)
-          </Button>
         </div>
 
         {/* Footer Info */}
         <div className="text-center text-xs text-gray-500 space-y-1">
-          <p>⚡ Após completar esta missão você ganha 100 Girinhas!</p>
-          <p>🔒 Esta é a única missão obrigatória da plataforma</p>
+          <p>Esta é a única missão obrigatória da plataforma</p>
         </div>
       </div>
     </div>
