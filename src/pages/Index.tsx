@@ -8,10 +8,10 @@ import {
   ArrowRight,
   CheckCircle,
   ChevronDown,
-  Users, // Used for community icon
-  Handshake, // Used for a soft "solution" icon
-  Shield, // Used for security
-  Lightbulb // Used for mission/purpose
+  Users, 
+  Handshake, 
+  Shield, 
+  Lightbulb 
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
@@ -26,8 +26,6 @@ const LandingPageOptimized = () => {
   const { taxaTransacao } = useConfigSistema();
   const { missoes } = useMissoes();
 
-  // Calcular valores dinâmicos das missões
-  // A missão de pacto de entrada é usada para o bônus inicial
   const missaoPactoEntrada = missoes?.find(m => m.tipo_missao === 'basic' && m.categoria === 'pacto_entrada');
   const recompensaPacto = missaoPactoEntrada?.recompensa_girinhas || 100;
   const itensNecessarios = missaoPactoEntrada?.condicoes?.quantidade || 2;
@@ -88,7 +86,7 @@ const LandingPageOptimized = () => {
     },
     {
       q: `Por que cobram ${taxaTransacao}%?`,
-      a: "Para pagar servidor, manutenção, melhorias... É o mínimo para manter tudo funcionando bem para todas nós."
+      a: "Cobramos apenas 0% para manter tudo funcionando. Sem pegadinhas, sem letras miúdas."
     },
     {
       q: "Posso confiar nas outras mães?",
@@ -152,7 +150,7 @@ const LandingPageOptimized = () => {
             </div>
 
             <h2 className="text-xl md:text-3xl font-bold text-gray-800 mb-4">
-              Onde mães cuidam de mães
+              Onde mães cuidam de mães!
             </h2>
 
             <p className="text-lg md:text-2xl text-gray-700 mb-6 leading-relaxed max-w-3xl mx-auto italic">
@@ -348,7 +346,7 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4 bg-white">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 text-center mb-12">
-              O que nos torna diferentes
+              O que nos torna diferentes?
             </h2>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -380,8 +378,8 @@ const LandingPageOptimized = () => {
               {realBenefits.map((benefit, index) => (
                 <Card key={index} className="border-0 shadow-lg p-6">
                   <CardContent className="p-0">
-                    <h3 className="text-xl md:text-2xl font-bold text-primary mb-3">{benefit.title}</h3>
-                    <p className="text-lg text-gray-700 leading-relaxed">{benefit.description}</p>
+                    <h3 className="text-xl md:text-2xl font-bold text-primary  mb-3">{benefit.title}</h3>
+                    <p className="text-lg text-gray-700  leading-relaxed">{benefit.description}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -548,8 +546,8 @@ const LandingPageOptimized = () => {
               </p>
               <div className="text-gray-400 space-y-1">
                 <p>contato@giramae.com.br</p>
-                <p>(11) 99999-9999</p>
-                <p>São Paulo, SP</p>
+                <p>(11) 98765-4321</p>
+                <p>Canoas, RS</p>
               </div>
             </div>
 
@@ -578,7 +576,7 @@ const LandingPageOptimized = () => {
               <Sparkles className="h-6 w-6 text-primary mr-2" />
               <span className="text-xl font-bold text-primary">GiraMãe</span>
             </div>
-            <p className="mb-4">© 2024 GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
+            <p className="mb-4">© 2025 GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
             <div className="flex flex-wrap justify-center gap-6 mt-4 text-sm">
               <a href="#" className="hover:text-white transition-colors">Termos de Uso</a>
               <a href="#" className="hover:text-white transition-colors">Política de Privacidade</a>

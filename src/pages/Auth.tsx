@@ -58,11 +58,11 @@ const Auth = () => {
             <div className="flex items-center justify-center mb-4">
               <Sparkles className="h-8 w-8 text-primary mr-2" />
               <CardTitle className="text-2xl bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
-                Entrar no GiraMãe
+                Cadastrar no GiraMãe
               </CardTitle>
             </div>
             <CardDescription>
-              Faça login para começar a trocar itens infantis com outras mães da comunidade.
+              Faça seu cadastro para começar a trocar itens infantis com outras mães da comunidade.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

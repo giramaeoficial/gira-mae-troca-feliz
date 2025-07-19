@@ -150,10 +150,10 @@ const Header: React.FC = () => {
             </Link>
             
             <div className="flex items-center space-x-4">
-              <Link to="/auth">
+              <Link to="/login">
                 <Button variant="outline">Entrar</Button>
               </Link>
-              <Link to="/cadastro">
+              <Link to="/auth">
                 <Button>Cadastrar</Button>
               </Link>
             </div>
