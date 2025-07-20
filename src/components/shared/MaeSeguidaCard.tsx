@@ -167,20 +167,20 @@ const MaeSeguidaCard: React.FC<MaeSeguidaCardProps> = ({
             {nomeCompleto}
           </h3>
           
-          {/* Avaliação */}
+          {/* Avaliação - CORRIGIDO: Usar mae.reputacao */}
           <div className="flex items-center gap-1 mb-4">
             {[1,2,3,4,5].map((star) => (
               <Star 
                 key={star} 
                 className={`w-4 h-4 ${
-                  star <= Math.floor(stats.media_avaliacao || 0) 
+                  star <= Math.floor(mae.reputacao || 0) 
                     ? 'fill-current text-yellow-500' 
                     : 'text-gray-300'
                 }`} 
               />
             ))}
             <span className="text-sm text-gray-600 ml-1">
-              ({(stats.media_avaliacao || 0).toFixed(1)})
+              ({(mae.reputacao || 0).toFixed(1)})
             </span>
             {stats.avaliacoes_recebidas > 0 && (
               <span className="text-xs text-gray-500">
@@ -259,7 +259,7 @@ const MaeSeguidaCard: React.FC<MaeSeguidaCardProps> = ({
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 text-gray-600">
               <Star className="w-4 h-4" />
-              <span className="font-bold">{(stats.media_avaliacao || 0).toFixed(1)}</span>
+              <span className="font-bold">{(mae.reputacao || 0).toFixed(1)}</span>
             </div>
             <p className="text-xs text-gray-500">Avaliação</p>
           </div>
