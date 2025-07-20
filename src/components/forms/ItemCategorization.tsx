@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,9 +34,20 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     onFieldChange('tamanho_valor', '');
   };
 
+  // ✅ CORRIGIDO: Encontrar o tipo correto do tamanho selecionado
   const handleTamanhoChange = (valor: string) => {
-    const tipoUnico = Object.keys(tiposTamanho || {})[0];
-    onFieldChange('tamanho_categoria', tipoUnico || '');
+    let tipoEncontrado = '';
+    
+    if (tiposTamanho) {
+      Object.keys(tiposTamanho).forEach(tipoKey => {
+        const tamanhosDoTipo = tiposTamanho[tipoKey] || [];
+        if (tamanhosDoTipo.some(tamanho => tamanho.valor === valor)) {
+          tipoEncontrado = tipoKey;
+        }
+      });
+    }
+    
+    onFieldChange('tamanho_categoria', tipoEncontrado);
     onFieldChange('tamanho_valor', valor);
   };
 
@@ -58,21 +68,28 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     return subcategoriasUnicas;
   }, [subcategorias, formData.categoria_id]);
 
-  // Obter tamanhos do primeiro tipo disponível sem duplicação
+  // ✅ CORRIGIDO: Obter TODOS os tamanhos de TODOS os tipos da categoria
   const tamanhosDisponiveis = React.useMemo(() => {
-    const tipos = Object.keys(tiposTamanho || {});
-    const tipoUnico = tipos[0];
-    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
+    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
-    // Remover duplicatas baseado no valor
-    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
+    // Combinar tamanhos de TODOS os tipos, não apenas o primeiro
+    const todosTamanhos: any[] = [];
+    
+    Object.keys(tiposTamanho).forEach(tipoKey => {
+      const tamanhosDoTipo = tiposTamanho[tipoKey] || [];
+      todosTamanhos.push(...tamanhosDoTipo);
+    });
+    
+    // Remover duplicatas baseado no valor, mantendo ordem original
+    const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
       if (!acc.some(item => item.valor === tamanho.valor)) {
         acc.push(tamanho);
       }
       return acc;
-    }, [] as typeof tamanhos);
+    }, []);
     
-    return tamanhosUnicos;
+    // Ordenar pelos campos ordem para manter ordem correta
+    return tamanhosUnicos.sort((a, b) => a.ordem - b.ordem);
   }, [tiposTamanho]);
 
   return (
