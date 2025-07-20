@@ -3,6 +3,8 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import { referralStorage } from '@/utils/referralStorage';
+import { supabase } from '@/integrations/supabase/client';
 
 const AuthCallback: React.FC = () => {
   const { user, loading } = useAuth(); // ✅ ADICIONAR LOADING
@@ -14,13 +16,35 @@ const AuthCallback: React.FC = () => {
       return; // Não fazer nada enquanto carrega
     }
 
-    if (user) {
-      console.log('✅ User found after OAuth:', user);
-      navigate('/feed', { replace: true });
-    } else {
-      console.log('❌ No user found after OAuth');
-      navigate('/auth', { replace: true });
-    }
+    const processarCallback = async () => {
+      if (user) {
+        console.log('✅ User found after OAuth:', user);
+        
+        // Processar indicação pendente se existir
+        const referralData = referralStorage.get();
+        if (referralData && !referralData.processed) {
+          try {
+            const { error } = await supabase.rpc('registrar_indicacao', {
+              p_indicador_id: referralData.indicadorId,
+              p_indicado_id: user.id
+            });
+            
+            if (!error) {
+              referralStorage.markAsProcessed();
+            }
+          } catch (error) {
+            console.warn('Erro ao processar indicação no callback:', error);
+          }
+        }
+        
+        navigate('/feed', { replace: true });
+      } else {
+        console.log('❌ No user found after OAuth');
+        navigate('/auth', { replace: true });
+      }
+    };
+
+    processarCallback();
   }, [user, loading, navigate]); // ✅ ADICIONAR LOADING NAS DEPENDÊNCIAS
 
   return (

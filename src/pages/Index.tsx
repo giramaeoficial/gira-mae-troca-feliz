@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,12 +19,24 @@ import QuickNav from "@/components/shared/QuickNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useConfigSistema } from "@/hooks/useConfigSistema";
 import { useMissoes } from "@/hooks/useMissoes";
+import { referralStorage } from '@/utils/referralStorage';
 
 const LandingPageOptimized = () => {
   const [openFaq, setOpenFaq] = useState(null);
   const { user } = useAuth();
   const { taxaTransacao } = useConfigSistema();
   const { missoes } = useMissoes();
+
+  // Capturar parâmetro de indicação da URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const indicadorId = urlParams.get('indicador');
+    
+    if (indicadorId && !user) {
+      // Armazenar indicação apenas se usuário não estiver logado
+      referralStorage.set(indicadorId);
+    }
+  }, [user]);
 
   const missaoPactoEntrada = missoes?.find(m => m.tipo_missao === 'basic' && m.categoria === 'pacto_entrada');
   const recompensaPacto = missaoPactoEntrada?.recompensa_girinhas || 100;

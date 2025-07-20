@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 // OneSignal imports
 import { initializeOneSignal } from '@/lib/onesignal';
 import { syncPlayerIdWithDatabase } from '@/lib/sync-player-id';
+import { referralStorage } from '@/utils/referralStorage';
 
 interface AuthContextType {
   session: Session | null;
@@ -40,10 +41,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Processar indicação pendente após autenticação
+      if (session?.user) {
+        await processarIndicacaoPendente(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -92,6 +98,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setupOneSignal();
   }, [user?.id, loading]);
+
+  const processarIndicacaoPendente = async (userId: string) => {
+    const referralData = referralStorage.get();
+    
+    if (referralData && !referralData.processed) {
+      try {
+        const { error } = await supabase.rpc('registrar_indicacao', {
+          p_indicador_id: referralData.indicadorId,
+          p_indicado_id: userId
+        });
+        
+        if (!error) {
+          referralStorage.markAsProcessed();
+        }
+      } catch (error) {
+        console.warn('Erro ao processar indicação:', error);
+      }
+    }
+  };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
