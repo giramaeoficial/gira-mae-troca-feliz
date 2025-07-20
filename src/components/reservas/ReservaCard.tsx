@@ -1,6 +1,6 @@
 // src/components/reservas/ReservaCard.tsx - VERSÃO CORRIGIDA
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +65,28 @@ const ReservaCard = ({
   const [jaAvaliou, setJaAvaliou] = useState(false);
 
   const isReservador = reserva.usuario_reservou === user?.id;
+
+  // Verificar se já avaliou quando componente carrega
+  useEffect(() => {
+    const verificarAvaliacao = async () => {
+      if (reserva.status === 'confirmada' && user?.id) {
+        try {
+          const { data } = await supabase
+            .from('avaliacoes')
+            .select('id')
+            .eq('reserva_id', reserva.id)
+            .eq('avaliador_id', user.id)
+            .maybeSingle();
+          
+          setJaAvaliou(!!data);
+        } catch (error) {
+          console.error('Erro ao verificar avaliação:', error);
+        }
+      }
+    };
+
+    verificarAvaliacao();
+  }, [reserva.id, reserva.status, user?.id]);
   const isVendedor = reserva.usuario_item === user?.id;
   const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
   const imagemItem = reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
@@ -365,7 +387,10 @@ const ReservaCard = ({
           isOpen={showAvaliacao}
           onClose={() => setShowAvaliacao(false)}
           reserva={reserva}
-          onAvaliacaoCompleta={onRefresh}
+          onAvaliacaoCompleta={() => {
+            setJaAvaliou(true);
+            onRefresh?.();
+          }}
         />
       )}
 
