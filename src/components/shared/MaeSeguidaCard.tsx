@@ -251,14 +251,12 @@ const MaeSeguidaCard: React.FC<MaeSeguidaCardProps> = ({
               <span className="text-sm text-gray-600 ml-1">
                 ({(mae.reputacao || 0).toFixed(1)})
               </span>
-              {stats.avaliacoes_recebidas > 0 && (
                 <button
                   onClick={handleViewReviews}
                   className="text-xs text-primary hover:underline ml-1"
                 >
-                  ver avaliações
+                  ver comentários
                 </button>
-              )}
             </div>
           </div>
         </CardHeader>
