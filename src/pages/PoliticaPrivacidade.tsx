@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SEOHead from '@/components/seo/SEOHead';
 import { Button } from '@/components/ui/button';
 
 const PoliticaPrivacidade: React.FC = () => {
@@ -8,6 +9,12 @@ const PoliticaPrivacidade: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+      <SEOHead
+        title="Política de Privacidade - GiraMãe"
+        description="Política de privacidade da plataforma GiraMãe. Como protegemos e utilizamos suas informações pessoais na comunidade de troca de roupas infantis."
+        url="https://preview--gira-mae-troca-feliz.lovable.app/privacidade"
+        noindex={true}
+      />
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

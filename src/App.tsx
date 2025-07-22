@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { HelmetProvider } from 'react-helmet-async';
 
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
@@ -52,10 +53,11 @@ const queryClient = new QueryClient();
 
 function App() {
  return (
-   <QueryClientProvider client={queryClient}>
-     <Toaster />
-     <SonnerToaster />
-     <BrowserRouter>
+   <HelmetProvider>
+     <QueryClientProvider client={queryClient}>
+       <Toaster />
+       <SonnerToaster />
+       <BrowserRouter>
        <Routes>
           {/* ================================================ */}
           {/* ROTAS PÚBLICAS (sem proteção)                   */}
@@ -327,7 +329,8 @@ function App() {
            <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-   </QueryClientProvider>
+     </QueryClientProvider>
+   </HelmetProvider>
  );
 }
 

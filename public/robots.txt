@@ -12,3 +12,17 @@ Allow: /
 
 User-agent: *
 Allow: /
+Allow: /termos
+Allow: /privacidade
+Disallow: /feed
+Disallow: /buscar
+Disallow: /perfil
+Disallow: /carteira
+Disallow: /reservas
+Disallow: /admin
+Disallow: /configuracoes
+Disallow: /publicar
+Disallow: /onboarding
+Disallow: /auth
+
+Sitemap: https://preview--gira-mae-troca-feliz.lovable.app/sitemap.xml

@@ -1,12 +1,19 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SEOHead from '@/components/seo/SEOHead';
 
 const TermosUso: React.FC = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+      <SEOHead
+        title="Termos de Uso - GiraMãe"
+        description="Termos e condições de uso da plataforma GiraMãe. Regras, responsabilidades e informações sobre o uso das Girinhas e sistema de trocas."
+        url="https://preview--gira-mae-troca-feliz.lovable.app/termos"
+        noindex={true}
+      />
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
