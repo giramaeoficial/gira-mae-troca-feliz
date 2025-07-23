@@ -1,4 +1,3 @@
-
 import { TipoTransacaoEnum } from '@/types/transacao.types';
 
 // Formatação limpa dos tipos de transação
@@ -9,6 +8,14 @@ export const formatarTipoTransacao = (tipo: string): string => {
     'bonus_cadastro': 'Bônus de Cadastro',
     'bonus_diario': 'Bônus Diário',
     'bonus_troca_concluida': 'Troca Concluída',
+    // ✅ ADICIONAR BÔNUS DE INDICAÇÃO:
+    'bonus_indicacao_cadastro': 'Indicação - Cadastro',
+    'bonus_indicacao_primeiro_item': 'Indicação - Primeiro Item',
+    'bonus_indicacao_primeira_compra': 'Indicação - Primeira Compra',
+    'bonus_indicacao_cadastro_indicado': 'Bônus de Boas-vindas',
+    // ✅ ADICIONAR OUTROS BÔNUS FALTANDO:
+    'bonus_avaliacao': 'Bônus Avaliação',
+    'bonus_promocional': 'Bônus Promocional',
     'bonus_meta_bronze': 'Meta Bronze',
     'bonus_meta_prata': 'Meta Prata',
     'bonus_meta_ouro': 'Meta Ouro',
@@ -27,17 +34,24 @@ export const formatarTipoTransacao = (tipo: string): string => {
     'queima_expiracao': 'Expiração',
     'queima_administrativa': 'Queima Admin'
   };
-
   return mapeamento[tipo] || tipo;
 };
 
-// Tipos que ADICIONAM saldo
+// ✅ CORREÇÃO: Tipos que ADICIONAM saldo (incluindo os 6 tipos faltando)
 export const isTransacaoPositiva = (tipo: string): boolean => {
   const tiposPositivos: string[] = [
     'compra',
     'bonus_cadastro',
     'bonus_diario',
     'bonus_troca_concluida',
+    // ✅ ADICIONAR TODOS OS BÔNUS DE INDICAÇÃO:
+    'bonus_indicacao_cadastro',
+    'bonus_indicacao_primeiro_item',        // ✅ ADICIONADO
+    'bonus_indicacao_primeira_compra',      // ✅ ADICIONADO
+    'bonus_indicacao_cadastro_indicado',    // ✅ ADICIONADO
+    // ✅ OUTROS BÔNUS FALTANDO:
+    'bonus_avaliacao',                      // ✅ ADICIONADO
+    'bonus_promocional',                    // ✅ ADICIONADO
     'bonus_meta_bronze',
     'bonus_meta_prata',
     'bonus_meta_ouro',
@@ -77,8 +91,6 @@ export const criarTransacaoValidada = async (
     p_descricao: descricao,
     p_metadados: metadados
   });
-
   if (error) throw error;
   return data;
 };
-
