@@ -98,16 +98,8 @@ const LandingPageOptimized = () => {
       a: "Somos transparentes: CNPJ, endereço, tudo certinho. E as roupas sempre são suas, não nossas. Nosso sistema de avaliações garante a qualidade das trocas."
     },
     {
-      q: `Por que cobram ${taxaTransacao}%?`,
-      a: "Cobramos apenas 0% para manter tudo funcionando. Sem pegadinhas, sem letras miúdas."
-    },
-    {
       q: "Posso confiar nas outras mães?",
-      a: "Criamos um sistema de avaliações justamente para isso. Quem não cumpre o combinado perde a reputação e sai naturalmente."
-    },
-    {
-      q: "Como funciona o sistema de reservas e bloqueio de Girinhas?",
-      a: "Quando você reserva um item disponível, suas Girinhas são bloqueadas automaticamente, garantindo a transação. Se o item já está reservado, você entra na fila de espera SEM bloquear Girinhas. Quando chegar sua vez, você é notificada e pode escolher se quer prosseguir."
+      a: "Criamos um sistema de avaliações justamente para isso. Quem não cumpre o combinado perde a reputação e sai naturalmente, bem simples."
     },
     {
       q: "O que é a fila de espera e como funciona?",
@@ -123,7 +115,7 @@ const LandingPageOptimized = () => {
     },
     {
       q: "Como funciona o bônus diário?",
-      a: "Entre na plataforma todos os dias e ganhe Girinhas de bônus! É nossa forma de recompensar mães ativas na comunidade. Quanto mais você participa, mais você ganha."
+      a: "É nossa forma de recompensar mães ativas na comunidade. Entre na plataforma todos os dias e ganhe Girinhas de bônus! Quanto mais você participa, mais você ganha."
     },
     {
       q: "Posso transferir Girinhas para outras mães?",
