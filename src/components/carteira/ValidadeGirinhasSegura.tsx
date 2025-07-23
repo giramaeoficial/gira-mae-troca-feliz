@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -134,7 +133,8 @@ const ValidadeGirinhasSegura = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="grid grid-cols-6 gap-2 text-sm font-medium text-gray-600 pb-2 border-b">
+              {/* ✅ CABEÇALHO DESKTOP APENAS (hidden sm:grid) */}
+              <div className="hidden sm:grid grid-cols-6 gap-2 text-sm font-medium text-gray-600 pb-2 border-b">
                 <span>Tipo</span>
                 <span>Data</span>
                 <span>Quantidade</span>
@@ -146,48 +146,108 @@ const ValidadeGirinhasSegura = () => {
               {expiracao.detalhes_expiracao
                 .sort((a, b) => a.dias_restantes - b.dias_restantes)
                 .map((item, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-6 gap-2 items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    {getIconePorTipo(item.tipo)}
-                    <span className="text-sm font-medium text-gray-700">
-                      {formatarTipo(item.tipo)}
-                    </span>
+                <div key={index}>
+                  {/* ✅ LAYOUT MOBILE (padrão) */}
+                  <div className="block sm:hidden bg-white border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm">
+                    {/* Header do card mobile */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getIconePorTipo(item.tipo)}
+                        <span className="font-medium text-gray-800">
+                          {formatarTipo(item.tipo)}
+                        </span>
+                      </div>
+                      <Badge 
+                        variant="secondary" 
+                        className={`text-xs font-medium flex items-center gap-1 ${getCorPorDias(item.dias_restantes)}`}
+                      >
+                        {getIconePorDias(item.dias_restantes)}
+                        {item.dias_restantes <= 7 ? 'Urgente' : 
+                         item.dias_restantes <= 30 ? 'Atenção' : 'Normal'}
+                      </Badge>
+                    </div>
+
+                    {/* Informações principais */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-500 block">Quantidade</span>
+                        <span className="font-medium text-gray-800">
+                          {Number(item.valor).toFixed(0)} Girinhas
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 block">Expira em</span>
+                        <span className="font-medium text-gray-800">
+                          {item.dias_restantes} dia{item.dias_restantes !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 block">Data</span>
+                        <span className="text-gray-700">
+                          {formatarData(item.data_compra)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500 block">Extensão</span>
+                        {item.ja_estendida ? (
+                          <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Estendida
+                          </Badge>
+                        ) : item.pode_estender ? (
+                          <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+                            Elegível
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            N/A
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-700">
-                    {formatarData(item.data_compra)}
-                  </span>
-                  <span className="font-medium text-gray-800">
-                    {Number(item.valor).toFixed(0)} Girinhas
-                  </span>
-                  <span className="text-sm">
-                    {item.dias_restantes} dia{item.dias_restantes !== 1 ? 's' : ''}
-                  </span>
-                  <Badge 
-                    variant="secondary" 
-                    className={`text-xs font-medium flex items-center gap-1 ${getCorPorDias(item.dias_restantes)}`}
-                  >
-                    {getIconePorDias(item.dias_restantes)}
-                    {item.dias_restantes <= 7 ? 'Urgente' : 
-                     item.dias_restantes <= 30 ? 'Atenção' : 'Normal'}
-                  </Badge>
-                  <div className="text-xs">
-                    {item.ja_estendida ? (
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Estendida
-                      </Badge>
-                    ) : item.pode_estender ? (
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">
-                        Elegível
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">
-                        N/A
-                      </Badge>
-                    )}
+
+                  {/* ✅ LAYOUT DESKTOP (hidden no mobile, grid no sm+) */}
+                  <div className="hidden sm:grid grid-cols-6 gap-2 items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-2">
+                      {getIconePorTipo(item.tipo)}
+                      <span className="text-sm font-medium text-gray-700">
+                        {formatarTipo(item.tipo)}
+                      </span>
+                    </div>
+                    <span className="text-sm text-gray-700">
+                      {formatarData(item.data_compra)}
+                    </span>
+                    <span className="font-medium text-gray-800">
+                      {Number(item.valor).toFixed(0)} Girinhas
+                    </span>
+                    <span className="text-sm">
+                      {item.dias_restantes} dia{item.dias_restantes !== 1 ? 's' : ''}
+                    </span>
+                    <Badge 
+                      variant="secondary" 
+                      className={`text-xs font-medium flex items-center gap-1 ${getCorPorDias(item.dias_restantes)}`}
+                    >
+                      {getIconePorDias(item.dias_restantes)}
+                      {item.dias_restantes <= 7 ? 'Urgente' : 
+                       item.dias_restantes <= 30 ? 'Atenção' : 'Normal'}
+                    </Badge>
+                    <div className="text-xs">
+                      {item.ja_estendida ? (
+                        <Badge className="bg-green-100 text-green-800 border-green-200">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Estendida
+                        </Badge>
+                      ) : item.pode_estender ? (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          Elegível
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          N/A
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
