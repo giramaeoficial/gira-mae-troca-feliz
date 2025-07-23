@@ -2,9 +2,11 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SEOHead from '@/components/seo/SEOHead';
+import { useConfigSistema } from '@/hooks/useConfigSistema';
 
 const TermosUso: React.FC = () => {
   const navigate = useNavigate();
+  const { config, taxaTransferencia, taxaTransacao, precoManual, isLoadingConfig } = useConfigSistema();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
@@ -83,9 +85,9 @@ const TermosUso: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">4. Sistema de Girinhas</h2>
             <p><strong>4.1 Características das Girinhas:</strong></p>
             <ul className="list-disc pl-6 space-y-1">
-              <li><strong>Valor de referência:</strong> 1 Girinha = R$ 1,00 (um real)</li>
+              <li><strong>Valor de referência:</strong> 1 Girinha = R$ {precoManual?.toFixed(2) || '1,00'}</li>
               <li><strong>Natureza:</strong> Moeda virtual interna, não conversível em dinheiro real</li>
-              <li><strong>Validade:</strong> 12 (doze) meses a partir da data de aquisição</li>
+              <li><strong>Validade:</strong> {config?.validade_girinhas?.meses || 12} ({config?.validade_girinhas?.meses === 1 ? 'um mês' : `${config?.validade_girinhas?.meses || 12} meses`}) a partir da data de aquisição</li>
               <li><strong>Uso exclusivo:</strong> Apenas dentro da plataforma GiraMãe</li>
               <li><strong>Não reembolsável:</strong> Não podem ser convertidas em dinheiro</li>
               <li><strong>Intransferível:</strong> Exceto por meio das funcionalidades da plataforma</li>
@@ -104,9 +106,9 @@ const TermosUso: React.FC = () => {
 
             <p><strong>4.3 Taxas Aplicáveis:</strong></p>
             <ul className="list-disc pl-6 space-y-1">
-              <li><strong>Taxa de transação:</strong> 5% sobre o valor de cada item vendido</li>
-              <li><strong>Taxa de transferência P2P:</strong> 1% sobre transferências entre usuários</li>
-              <li><strong>Taxa de extensão de validade:</strong> 20% das Girinhas expirando para estender por 30 dias</li>
+              <li><strong>Taxa de transação:</strong> {taxaTransacao}% sobre o valor de cada item vendido</li>
+              <li><strong>Taxa de transferência P2P:</strong> {taxaTransferencia}% sobre transferências entre usuários</li>
+              <li><strong>Taxa de extensão de validade:</strong> Conforme configuração da plataforma das Girinhas expirando para estender validade</li>
             </ul>
 
             <h2 className="text-xl font-semibold text-gray-900 mb-3">5. Sistema de Reservas e Transações</h2>

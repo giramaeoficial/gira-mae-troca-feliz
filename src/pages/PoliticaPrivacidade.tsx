@@ -2,10 +2,12 @@ import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SEOHead from '@/components/seo/SEOHead';
+import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { Button } from '@/components/ui/button';
 
 const PoliticaPrivacidade: React.FC = () => {
   const navigate = useNavigate();
+  const { config, precoManual } = useConfigSistema();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
