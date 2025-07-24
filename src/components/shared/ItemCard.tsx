@@ -10,11 +10,12 @@ import {
   CarouselNext, 
   CarouselPrevious 
 } from '@/components/ui/carousel';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User, Flag } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
 import ActionFeedback from '@/components/loading/ActionFeedback';
 import { supabase } from '@/integrations/supabase/client';
+import { DenunciaModal } from '@/components/denuncias/DenunciaModal';
 
 interface LogisticaInfo {
  entrega_disponivel: boolean;
@@ -88,22 +89,23 @@ interface ItemCardProps {
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({ 
- item, 
- feedData,
- currentUserId,
- taxaTransacao = 0,
- onToggleFavorito,
- onEntrarFila,
- onReservar,
- onItemClick,
- actionState = 'idle',
- showActions = true,
- showLocation = true,
- showAuthor = true,
- compact = false
+  item, 
+  feedData,
+  currentUserId,
+  taxaTransacao = 0,
+  onToggleFavorito,
+  onEntrarFila,
+  onReservar,
+  onItemClick,
+  actionState = 'idle',
+  showActions = true,
+  showLocation = true,
+  showAuthor = true,
+  compact = false
 }) => {
- const navigate = useNavigate();
- const [showDetails, setShowDetails] = useState(false);
+  const navigate = useNavigate();
+  const [showDetails, setShowDetails] = useState(false);
+  const [showDenunciaModal, setShowDenunciaModal] = useState(false);
  
  // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
  const isFavorito = feedData.favoritos.includes(item.id);
@@ -256,24 +258,41 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full",
      itemIsReservado && "opacity-75"
    )}>
-     {/* Botão de favorito - ÚNICA COISA SOBRE A IMAGEM */}
-     {showActions && onToggleFavorito && (
-       <Button
-         variant="ghost"
-         size="sm"
-         className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/95 backdrop-blur-sm hover:bg-white/100 z-10"
-         onClick={handleFavoriteClick}
-       >
-         <Heart 
-           className={cn(
-             "w-4 h-4 transition-colors",
-             isFavorito 
-               ? 'fill-red-500 text-red-500' 
-               : 'text-gray-500 hover:text-red-400'
-           )} 
-         />
-       </Button>
-     )}
+      {/* Botões sobre a imagem */}
+      <div className="absolute top-2 right-2 flex gap-1 z-10">
+        {/* Botão de denúncia */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm hover:bg-white/100 hover:bg-red-50 hover:border-red-200"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDenunciaModal(true);
+          }}
+          title="Denunciar item"
+        >
+          <Flag className="w-4 h-4 text-gray-500 hover:text-red-500 transition-colors" />
+        </Button>
+        
+        {/* Botão de favorito */}
+        {showActions && onToggleFavorito && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm hover:bg-white/100"
+            onClick={handleFavoriteClick}
+          >
+            <Heart 
+              className={cn(
+                "w-4 h-4 transition-colors",
+                isFavorito 
+                  ? 'fill-red-500 text-red-500' 
+                  : 'text-gray-500 hover:text-red-400'
+              )} 
+            />
+          </Button>
+        )}
+      </div>
 
      <CardContent className="p-0" onClick={handleClick}>
        {/* ✅ SEÇÃO DE IMAGEM COM CARROUSEL */}
@@ -612,8 +631,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
              className="mt-2"
            />
          )}
-       </div>
-     </CardContent>
-   </Card>
- );
+        </div>
+      </CardContent>
+
+      {/* Modal de denúncia */}
+      <DenunciaModal
+        open={showDenunciaModal}
+        onClose={() => setShowDenunciaModal(false)}
+        itemId={item.id}
+        itemTitulo={item.titulo}
+      />
+    </Card>
+  );
 };
