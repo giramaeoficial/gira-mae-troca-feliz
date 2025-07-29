@@ -1,10 +1,16 @@
 {
-  "rewrites": [ 
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "installCommand": "npm install",
+  
+  "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
+  
   "redirects": [
     {
       "source": "https://www.giramae.com.br/(.*)",
@@ -12,6 +18,7 @@
       "permanent": true
     }
   ],
+  
   "headers": [
     {
       "source": "/(.*)",
@@ -21,7 +28,7 @@
           "value": "nosniff"
         },
         {
-          "key": "X-Frame-Options",
+          "key": "X-Frame-Options", 
           "value": "DENY"
         },
         {
@@ -31,8 +38,42 @@
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
         }
       ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  
+  "functions": {
+    "app/api/**": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
