@@ -662,6 +662,63 @@ export type Database = {
         }
         Relationships: []
       }
+      denuncias: {
+        Row: {
+          analisada_por: string | null
+          created_at: string
+          data_analise: string | null
+          denunciante_id: string
+          descricao: string | null
+          id: string
+          item_id: string
+          motivo: string
+          observacoes_admin: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          analisada_por?: string | null
+          created_at?: string
+          data_analise?: string | null
+          denunciante_id: string
+          descricao?: string | null
+          id?: string
+          item_id: string
+          motivo: string
+          observacoes_admin?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          analisada_por?: string | null
+          created_at?: string
+          data_analise?: string | null
+          denunciante_id?: string
+          descricao?: string | null
+          id?: string
+          item_id?: string
+          motivo?: string
+          observacoes_admin?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "denuncias_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "denuncias_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       error_log: {
         Row: {
           created_at: string | null
@@ -1156,6 +1213,30 @@ export type Database = {
           proximo_reset?: string | null
           total_girinhas_coletadas?: number | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      log_cadastro_status: {
+        Row: {
+          alterado_em: string
+          id: number
+          status_anterior: string | null
+          status_novo: string
+          user_id: string
+        }
+        Insert: {
+          alterado_em?: string
+          id?: number
+          status_anterior?: string | null
+          status_novo: string
+          user_id: string
+        }
+        Update: {
+          alterado_em?: string
+          id?: number
+          status_anterior?: string | null
+          status_novo?: string
           user_id?: string
         }
         Relationships: []
@@ -2490,6 +2571,18 @@ export type Database = {
         Args: { p_email: string }
         Returns: string
       }
+      delete_user_fixed_fk: {
+        Args: { p_email: string }
+        Returns: string
+      }
+      delete_user_minimal: {
+        Args: { p_email: string }
+        Returns: string
+      }
+      diagnosticar_exclusao: {
+        Args: { p_email: string }
+        Returns: string
+      }
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2508,6 +2601,10 @@ export type Database = {
           p_apenas_ativas?: boolean
         }
         Returns: number
+      }
+      endereco_completo: {
+        Args: { p_user_id: string }
+        Returns: boolean
       }
       entrar_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }
@@ -2756,6 +2853,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      read_geocoding_messages: {
+        Args: { p_limit?: number }
+        Returns: {
+          msg_id: number
+          read_ct: number
+          enqueued_at: string
+          vt: string
+          message: Json
+        }[]
+      }
       registrar_analytics_missao: {
         Args: {
           p_missao_id: string
@@ -2866,6 +2973,10 @@ export type Database = {
       verificar_progresso_missoes_segmentadas: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      verificar_status_usuario: {
+        Args: { p_user_id: string }
+        Returns: Json
       }
       verificar_username_disponivel: {
         Args: { p_username: string }
