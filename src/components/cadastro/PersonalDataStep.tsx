@@ -11,6 +11,7 @@ interface PersonalDataStepProps {
     instagram: string;
     telefone: string;
     data_nascimento: string;
+    username: string;
     interesses: string[];
     categorias_favoritas: string[];
   };
