@@ -125,20 +125,7 @@ export const CancelarReservaModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <XCircle className="w-5 h-5 text-red-600" />
-            Cancelar Reserva
-          </DialogTitle>
-          <DialogDescription>
-            {isVendedor ? 
-              'Por que você não pode mais vender este item?' : 
-              'Por que você quer cancelar esta reserva?'
-            }
-          </DialogDescription>
-        </DialogHeader>
-
+      <DialogContent className="max-w-sm mx-auto p-0 gap-0">
         <div className="space-y-4 p-4">
           <div className="text-center">
             <h2 className="text-lg font-semibold text-red-600">🚫 Cancelar Reserva</h2>
@@ -206,23 +193,22 @@ export const CancelarReservaModal = ({
               <div className="text-green-700 mt-1">O item ficará disponível para outros compradores</div>
             </div>
           </div>
-        </div>
-
-        {/* Botões */}
-        <div className="flex flex-col gap-3 pt-4">
-          <button 
-            className="w-full bg-red-500 text-white py-3 rounded-lg font-medium disabled:opacity-50"
-            onClick={handleCancelar}
-            disabled={loading || !motivoSelecionado}
-          >
-            {loading ? "Cancelando..." : "Confirmar"}
-          </button>
-          <button 
-            className="w-full border border-gray-300 py-3 rounded-lg font-medium"
-            onClick={onClose}
-          >
-            Manter Reserva
-          </button>
+          {/* Botões */}
+          <div className="flex flex-col gap-3 pt-4">
+            <button 
+              className="w-full bg-red-500 text-white py-3 rounded-lg font-medium disabled:opacity-50"
+              onClick={handleCancelar}
+              disabled={loading || !motivoSelecionado}
+            >
+              {loading ? "Cancelando..." : "Confirmar"}
+            </button>
+            <button 
+              className="w-full border border-gray-300 py-3 rounded-lg font-medium"
+              onClick={onClose}
+            >
+              Manter Reserva
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
