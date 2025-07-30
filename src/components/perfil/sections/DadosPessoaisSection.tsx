@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ImageUpload from '@/components/ui/image-upload';
 import { DatePicker } from '@/components/ui/date-picker';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const INTERESSES_DISPONIVEIS = [
   'Moda Infantil', 'Educação', 'Atividades ao Ar Livre', 'Arte e Criatividade',
@@ -25,6 +27,7 @@ interface DadosPessoaisSectionProps {
     instagram: string;
     telefone: string;
     data_nascimento: string;
+    username: string;
     interesses: string[];
     categorias_favoritas: string[];
   };
@@ -45,6 +48,49 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
   onCategoriaToggle,
   onAvatarChange
 }) => {
+  const { toast } = useToast();
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+
+  const checkUsernameAvailability = async (username: string) => {
+    if (!username || username.length < 3) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    setCheckingUsername(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username.toLowerCase())
+        .neq('id', profile?.id || '');
+
+      if (error) throw error;
+      
+      setUsernameAvailable(data.length === 0);
+    } catch (error) {
+      console.error('Erro ao verificar username:', error);
+      setUsernameAvailable(null);
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
+  useEffect(() => {
+    if (formData.username) {
+      const timer = setTimeout(() => {
+        checkUsernameAvailability(formData.username);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.username]);
+
+  const handleUsernameChange = (value: string) => {
+    // Remove caracteres especiais e espaços, mantém apenas letras, números e underscore
+    const sanitized = value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    onInputChange('username', sanitized);
+  };
   return (
     <div className="space-y-6">
       <Card>
@@ -85,6 +131,32 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
               onChange={(e) => onInputChange('nome', e.target.value)}
               placeholder="Seu nome completo"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="username">Nome de usuário *</Label>
+            <Input
+              id="username"
+              value={formData.username}
+              onChange={(e) => handleUsernameChange(e.target.value)}
+              placeholder="meuusername"
+              className={
+                usernameAvailable === false ? "border-destructive" : 
+                usernameAvailable === true ? "border-success" : ""
+              }
+            />
+            {checkingUsername && (
+              <p className="text-sm text-muted-foreground mt-1">Verificando disponibilidade...</p>
+            )}
+            {usernameAvailable === false && (
+              <p className="text-sm text-destructive mt-1">Nome de usuário já está em uso</p>
+            )}
+            {usernameAvailable === true && (
+              <p className="text-sm text-success mt-1">Nome de usuário disponível</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Apenas letras, números e underscore. Mínimo 3 caracteres.
+            </p>
           </div>
 
           <div>
