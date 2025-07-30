@@ -42,30 +42,22 @@ interface CancelarReservaModalProps {
   onCancelamentoCompleto: () => void;
 }
 
+// Motivos específicos para vendedor conforme especificação
 const motivosCancelamento = [
   {
-    value: 'comprador_cancelou',
-    label: 'Mudei de ideia',
-    description: 'Não quero mais o item',
-    forVendedor: false
-  },
-  {
-    value: 'vendedor_cancelou', 
-    label: 'Não posso vender',
-    description: 'Item não está mais disponível',
+    value: 'remover_item',
+    label: 'Não vou mais vender esse item e quero remover da plataforma.',
     forVendedor: true
   },
   {
-    value: 'item_inadequado',
-    label: 'Item inadequado',
-    description: 'Item não confere com a descrição',
-    forVendedor: false
+    value: 'trocar_comprador',
+    label: 'Não me acertei com atual comprador. Encontrar outro comprador.',
+    forVendedor: true
   },
   {
-    value: 'desistencia',
-    label: 'Desistência',
-    description: 'Motivos pessoais',
-    forVendedor: 'both'
+    value: 'outro',
+    label: 'Outro motivo',
+    forVendedor: true
   }
 ];
 
@@ -81,9 +73,8 @@ export const CancelarReservaModal = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const motivosDisponiveis = motivosCancelamento.filter(motivo => 
-    motivo.forVendedor === 'both' || motivo.forVendedor === isVendedor
-  );
+  // Para vendedor, mostrar todas as opções
+  const motivosDisponiveis = isVendedor ? motivosCancelamento : [];
 
   const handleCancelar = async () => {
     if (!motivoSelecionado) {
@@ -100,7 +91,7 @@ export const CancelarReservaModal = ({
       // Chamar função RPC para cancelar reserva com motivo
       const { data, error } = await supabase.rpc('cancelar_reserva', {
         p_reserva_id: reserva.id,
-        p_usuario_id: isVendedor ? reserva.usuario_item : reserva.usuario_reservou,
+        p_usuario_id: reserva.usuario_item, // Sempre o vendedor que está cancelando
         p_motivo: motivoSelecionado
       });
 
@@ -132,9 +123,6 @@ export const CancelarReservaModal = ({
     }
   };
 
-  const motivoSelecionadoObj = motivosDisponiveis.find(m => m.value === motivoSelecionado);
-  const temPenalidade = isVendedor && motivoSelecionado === 'vendedor_cancelou';
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -151,8 +139,15 @@ export const CancelarReservaModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Informações da reserva */}
+        <div className="space-y-4 p-4">
+          <div className="text-center">
+            <h2 className="text-lg font-semibold text-red-600">🚫 Cancelar Reserva</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Por que você está cancelando?
+            </p>
+          </div>
+
+          {/* Informações do item - MANTER IGUAL ao atual */}
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex items-center gap-3">
               <img
@@ -165,10 +160,7 @@ export const CancelarReservaModal = ({
                   {reserva.itens?.titulo || "Item"}
                 </h4>
                 <p className="text-xs text-gray-600">
-                  {isVendedor ? 
-                    `Comprador: ${reserva.profiles_reservador?.nome || 'Usuário'}` : 
-                    `Vendedor: ${reserva.profiles_vendedor?.nome || 'Usuário'}`
-                  }
+                  Comprador: {reserva.profiles_reservador?.nome || 'Usuário'}
                 </p>
                 <Badge variant="secondary" className="text-xs mt-1">
                   {reserva.valor_girinhas} Girinhas
@@ -176,82 +168,62 @@ export const CancelarReservaModal = ({
               </div>
             </div>
           </div>
-
-          {/* Seleção de motivo */}
-          <div className="space-y-3">
-            <Label>Selecione o motivo:</Label>
-            <RadioGroup value={motivoSelecionado} onValueChange={setMotivoSelecionado}>
-              {motivosDisponiveis.map((motivo) => (
-                <div key={motivo.value} className="flex items-start space-x-2">
-                  <RadioGroupItem value={motivo.value} id={motivo.value} className="mt-1" />
-                  <div className="space-y-1 flex-1">
-                    <Label 
-                      htmlFor={motivo.value} 
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      {motivo.label}
-                    </Label>
-                    <p className="text-xs text-gray-500">{motivo.description}</p>
-                  </div>
-                </div>
-              ))}
-            </RadioGroup>
+          
+          {/* Opções EXATAS solicitadas */}
+          <div className="space-y-2">
+            {motivosDisponiveis.map((motivo) => (
+              <label key={motivo.value} className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                <input 
+                  type="radio" 
+                  name="motivo" 
+                  value={motivo.value}
+                  className="mt-1" 
+                  checked={motivoSelecionado === motivo.value}
+                  onChange={(e) => setMotivoSelecionado(e.target.value)}
+                />
+                <span className="text-sm">{motivo.label}</span>
+              </label>
+            ))}
           </div>
 
-          {/* Aviso de penalidade */}
-          {temPenalidade && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-yellow-800">Atenção</p>
-                  <p className="text-yellow-700">
-                    Cancelamentos pelo vendedor podem afetar sua reputação.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Observações opcionais */}
+          {/* Campo observações - OPCIONAL */}
           <div className="space-y-2">
-            <Label htmlFor="observacoes">Observações (opcional)</Label>
-            <Textarea
-              id="observacoes"
-              placeholder="Adicione detalhes se necessário..."
+            <label className="text-sm font-medium">Observações (opcional)</label>
+            <textarea 
+              className="w-full p-3 border rounded-lg text-sm"
+              placeholder="[Campo observações - opcional]"
+              maxLength={200}
+              rows={3}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
-              rows={3}
-              maxLength={200}
             />
-            <p className="text-xs text-gray-500">
-              {observacoes.length}/200 caracteres
-            </p>
           </div>
 
-          {/* Resumo do reembolso */}
+          {/* Aviso FIXO - sempre igual */}
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-sm text-green-800">
-              <strong>💰 Reembolso:</strong> {reserva.valor_girinhas} Girinhas serão devolvidas
-              {!isVendedor ? ' para você' : ' para o comprador'}.
-            </p>
+            <div className="text-sm">
+              <div className="font-medium text-green-800">💰 {reserva.valor_girinhas} Girinhas serão devolvidas para {reserva.profiles_reservador?.nome || 'o comprador'}</div>
+              <div className="text-green-700 mt-1">O item ficará disponível para outros compradores</div>
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
-            Manter Reserva
-          </Button>
-          
-          <Button 
-            variant="destructive"
-            onClick={handleCancelar} 
+        {/* Botões */}
+        <div className="flex flex-col gap-3 pt-4">
+          <button 
+            className="w-full bg-red-500 text-white py-3 rounded-lg font-medium disabled:opacity-50"
+            onClick={handleCancelar}
             disabled={loading || !motivoSelecionado}
-            className="w-full sm:w-auto"
           >
-            {loading ? "Cancelando..." : "Confirmar Cancelamento"}
-          </Button>
-        </DialogFooter>
+            {loading ? "Cancelando..." : "Confirmar"}
+          </button>
+          <button 
+            className="w-full border border-gray-300 py-3 rounded-lg font-medium"
+            onClick={onClose}
+          >
+            Manter Reserva
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );
