@@ -256,19 +256,6 @@ export const CancelarReservaModal = ({
             />
           </div>
 
-          {/* Aviso de reembolso */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="text-sm">
-              <div className="font-medium text-green-800">
-                💰 {reserva.valor_girinhas} Girinhas serão devolvidas para {
-                  isVendedor 
-                    ? reserva.profiles_reservador?.nome || 'o comprador'
-                    : 'você'
-                }
-              </div>
-            </div>
-          </div>
-
           {/* Botões */}
           <div className="flex flex-col gap-3 pt-4">
             <button 
