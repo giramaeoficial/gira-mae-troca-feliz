@@ -2586,10 +2586,6 @@ export type Database = {
         Args: { criterios_segmentacao: Json }
         Returns: number
       }
-      cancelar_reserva: {
-        Args: { p_reserva_id: string; p_usuario_id: string; p_motivo?: string }
-        Returns: boolean
-      }
       cancelar_reserva_v2: {
         Args: {
           p_reserva_id: string
@@ -2597,7 +2593,7 @@ export type Database = {
           p_motivo_codigo: string
           p_observacoes?: string
         }
-        Returns: Json
+        Returns: boolean
       }
       carregar_dados_feed_paginado: {
         Args: {
