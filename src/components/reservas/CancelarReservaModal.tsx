@@ -266,12 +266,6 @@ export const CancelarReservaModal = ({
                     : 'você'
                 }
               </div>
-              <div className="text-green-700 mt-1">
-                {isVendedor 
-                  ? 'O item ficará disponível para outros compradores'
-                  : 'O item ficará novamente disponível'
-                }
-              </div>
             </div>
           </div>
 
