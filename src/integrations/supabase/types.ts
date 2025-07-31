@@ -2582,12 +2582,19 @@ export type Database = {
         Returns: boolean
       }
       cancelar_reserva_v2: {
-        Args: {
-          p_reserva_id: string
-          p_usuario_id: string
-          p_motivo_codigo: string
-          p_observacoes?: string
-        }
+        Args:
+          | {
+              p_reserva_id: string
+              p_usuario_id: string
+              p_motivo_codigo: string
+              p_observacoes?: string
+            }
+          | {
+              p_reserva_id: string
+              p_usuario_id: string
+              p_motivo_codigo: string
+              p_observacoes?: string
+            }
         Returns: Json
       }
       carregar_dados_feed_paginado: {
