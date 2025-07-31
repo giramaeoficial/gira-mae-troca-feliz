@@ -2842,6 +2842,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      obter_resultado_cancelamento: {
+        Args: { p_data: Json }
+        Returns: boolean
+      }
       obter_valor_bonus: {
         Args: { p_tipo_bonus: string }
         Returns: number
