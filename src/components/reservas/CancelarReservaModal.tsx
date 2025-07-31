@@ -88,11 +88,12 @@ export const CancelarReservaModal = ({
 
     setLoading(true);
     try {
-      // Chamar função RPC para cancelar reserva com motivo
-      const { data, error } = await supabase.rpc('cancelar_reserva', {
+      // Chamar função melhorada para cancelar reserva com motivo
+      const { data, error } = await supabase.rpc('cancelar_reserva_v2', {
         p_reserva_id: reserva.id,
         p_usuario_id: reserva.usuario_item, // Sempre o vendedor que está cancelando
-        p_motivo: motivoSelecionado
+        p_motivo_codigo: motivoSelecionado,
+        p_observacoes: observacoes || null
       });
 
       if (error) {
