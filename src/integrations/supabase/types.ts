@@ -923,6 +923,39 @@ export type Database = {
           },
         ]
       }
+      fila_dead_letter: {
+        Row: {
+          criado_em: string | null
+          id: number
+          item_id: string
+          metadados: Json | null
+          reserva_id: string
+          tentativas_finais: number | null
+          tipo_operacao: string
+          ultimo_erro: string | null
+        }
+        Insert: {
+          criado_em?: string | null
+          id?: number
+          item_id: string
+          metadados?: Json | null
+          reserva_id: string
+          tentativas_finais?: number | null
+          tipo_operacao: string
+          ultimo_erro?: string | null
+        }
+        Update: {
+          criado_em?: string | null
+          id?: number
+          item_id?: string
+          metadados?: Json | null
+          reserva_id?: string
+          tentativas_finais?: number | null
+          tipo_operacao?: string
+          ultimo_erro?: string | null
+        }
+        Relationships: []
+      }
       fila_espera: {
         Row: {
           created_at: string
@@ -971,6 +1004,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fila_processamento: {
+        Row: {
+          criado_em: string | null
+          erro_mensagem: string | null
+          id: number
+          item_id: string
+          lease_expira: string | null
+          max_tentativas: number | null
+          metadados: Json | null
+          processado_em: string | null
+          reserva_id: string
+          status: number | null
+          tentativas: number | null
+          tipo_operacao: string
+        }
+        Insert: {
+          criado_em?: string | null
+          erro_mensagem?: string | null
+          id?: number
+          item_id: string
+          lease_expira?: string | null
+          max_tentativas?: number | null
+          metadados?: Json | null
+          processado_em?: string | null
+          reserva_id: string
+          status?: number | null
+          tentativas?: number | null
+          tipo_operacao: string
+        }
+        Update: {
+          criado_em?: string | null
+          erro_mensagem?: string | null
+          id?: number
+          item_id?: string
+          lease_expira?: string | null
+          max_tentativas?: number | null
+          metadados?: Json | null
+          processado_em?: string | null
+          reserva_id?: string
+          status?: number | null
+          tentativas?: number | null
+          tipo_operacao?: string
+        }
+        Relationships: []
       }
       filhos: {
         Row: {
@@ -1401,6 +1479,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      motivos_cancelamento: {
+        Row: {
+          ativo: boolean | null
+          codigo: string
+          created_at: string | null
+          descricao: string | null
+          id: number
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          codigo: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: number
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          codigo?: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: number
+          nome?: string
+        }
+        Relationships: []
       }
       notification_logs: {
         Row: {
@@ -2476,6 +2581,15 @@ export type Database = {
         Args: { p_reserva_id: string; p_usuario_id: string; p_motivo?: string }
         Returns: boolean
       }
+      cancelar_reserva_v2: {
+        Args: {
+          p_reserva_id: string
+          p_usuario_id: string
+          p_motivo_codigo: string
+          p_observacoes?: string
+        }
+        Returns: Json
+      }
       carregar_dados_feed_paginado: {
         Args: {
           p_user_id: string
@@ -2795,7 +2909,11 @@ export type Database = {
       }
       processar_proximo_fila: {
         Args: { p_item_id: string }
-        Returns: undefined
+        Returns: {
+          nova_reserva_id: string
+          usuario_id: string
+          sucesso: boolean
+        }[]
       }
       processar_reserva: {
         Args:
