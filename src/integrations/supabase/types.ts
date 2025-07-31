@@ -1850,6 +1850,8 @@ export type Database = {
       }
       reservas: {
         Row: {
+          cancelada_em: string | null
+          cancelada_por: string | null
           codigo_confirmacao: string | null
           created_at: string
           data_reserva: string
@@ -1857,6 +1859,7 @@ export type Database = {
           item_id: string
           localizacao_combinada: string | null
           motivo_cancelamento: string | null
+          observacoes_cancelamento: string | null
           prazo_expiracao: string
           status: string
           updated_at: string
@@ -1867,6 +1870,8 @@ export type Database = {
           valor_total: number
         }
         Insert: {
+          cancelada_em?: string | null
+          cancelada_por?: string | null
           codigo_confirmacao?: string | null
           created_at?: string
           data_reserva?: string
@@ -1874,6 +1879,7 @@ export type Database = {
           item_id: string
           localizacao_combinada?: string | null
           motivo_cancelamento?: string | null
+          observacoes_cancelamento?: string | null
           prazo_expiracao?: string
           status?: string
           updated_at?: string
@@ -1884,6 +1890,8 @@ export type Database = {
           valor_total?: number
         }
         Update: {
+          cancelada_em?: string | null
+          cancelada_por?: string | null
           codigo_confirmacao?: string | null
           created_at?: string
           data_reserva?: string
@@ -1891,6 +1899,7 @@ export type Database = {
           item_id?: string
           localizacao_combinada?: string | null
           motivo_cancelamento?: string | null
+          observacoes_cancelamento?: string | null
           prazo_expiracao?: string
           status?: string
           updated_at?: string
@@ -2582,19 +2591,12 @@ export type Database = {
         Returns: boolean
       }
       cancelar_reserva_v2: {
-        Args:
-          | {
-              p_reserva_id: string
-              p_usuario_id: string
-              p_motivo_codigo: string
-              p_observacoes?: string
-            }
-          | {
-              p_reserva_id: string
-              p_usuario_id: string
-              p_motivo_codigo: string
-              p_observacoes?: string
-            }
+        Args: {
+          p_reserva_id: string
+          p_usuario_id: string
+          p_motivo_codigo: string
+          p_observacoes?: string
+        }
         Returns: Json
       }
       carregar_dados_feed_paginado: {
