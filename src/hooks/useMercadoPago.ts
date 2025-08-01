@@ -33,10 +33,10 @@ export const useMercadoPago = () => {
     }
 
     // 🔒 SEGURANÇA: Validações client-side
-    if (!Number.isInteger(quantidade) || quantidade < 10 || quantidade > 999000) {
+    if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 999000) {
       toast({
         title: "Quantidade Inválida",
-        description: "A quantidade deve ser entre 10 e 999.000 Girinhas.",
+        description: "A quantidade deve ser entre 1 e 999.000 Girinhas.",
         variant: "destructive",
       });
       return false;
