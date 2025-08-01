@@ -78,15 +78,6 @@ const PaginaIndicacoes = () => {
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <div className="text-center mb-8">
-        <Users className="w-16 h-16 text-purple-500 mx-auto mb-4" />
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema de Indicações</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Indique amigas para o GiraMãe e ganhe bônus quando elas se cadastrarem, 
-          publicarem o primeiro item ou fizerem a primeira compra!
-        </p>
-      </div>
-
       {/* Como funciona o sistema de indicações */}
       <Card className="bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 border-purple-200 mb-6">
         <CardHeader>
@@ -95,11 +86,7 @@ const PaginaIndicacoes = () => {
             Mãe, vem ver que vantagem! 💜
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-gray-700 mb-6 text-lg">
-            Indica uma amiga e vocês duas ganham! É como aquele "ganha-ganha" que a gente adora 😍
-          </p>
-          
+        <CardContent>       
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Para você que indica */}
             <div className="bg-white rounded-lg p-4 border border-purple-100">
