@@ -26,7 +26,7 @@ const CheckoutMercadoPago = () => {
   };
 
   // Verificar se está fora dos limites para mostrar erro
-  const isQuantidadeInvalida = quantidade < 10 || quantidade > 999000;
+  const isQuantidadeInvalida = quantidade < 1 || quantidade > 999000;
 
   const handleComprar = async () => {
     if (!user) {
@@ -38,10 +38,10 @@ const CheckoutMercadoPago = () => {
       return;
     }
 
-    if (quantidade < 10 || quantidade > 999000) {
+    if (quantidade < 1 || quantidade > 999000) {
       toast({
         title: "Opa! Vamos ajustar isso? 😊",
-        description: "Entre 10 e 999.000 Girinhas é perfeito para uma compra!",
+        description: "Entre 1 e 999.000 Girinhas é perfeito para uma compra!",
         variant: "destructive",
       });
       return;
@@ -79,7 +79,7 @@ const CheckoutMercadoPago = () => {
             <Input
               id="quantidade"
               type="number"
-              min="10"
+              min="1"
               max="999000"
               value={quantidade}
               onChange={handleQuantidadeChange}
@@ -92,8 +92,8 @@ const CheckoutMercadoPago = () => {
               <div className="flex items-center gap-1 text-red-500 text-sm">
                 <AlertTriangle className="h-4 w-4" />
                 <span>
-                  {quantidade < 10 
-                    ? "Ops! O mínimo são 10 Girinhas pra conseguir fazer a compra 😊"
+                  {quantidade < 1 
+                    ? "Ops! O mínimo são 1 Girinhas pra conseguir fazer a compra 😊"
                     : "Nossa! Máximo de 999.000 Girinhas por compra. Que tal dividir em compras menores? 💝"
                   }
                 </span>
@@ -101,7 +101,7 @@ const CheckoutMercadoPago = () => {
             )}
             
             <p className="text-sm text-muted-foreground">
-              Entre 10 e 999.000 Girinhas - escolha a quantidade ideal para você! ✨
+              Entre 1 e 999.000 Girinhas - escolha a quantidade ideal para você! ✨
             </p>
           </div>
 
