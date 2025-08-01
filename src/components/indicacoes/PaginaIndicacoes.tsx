@@ -142,7 +142,7 @@ const PaginaIndicacoes = () => {
                     (parseFloat(String(obterConfigTipo('bonus_indicacao_cadastro')?.valor_padrao || '10')) +
                      parseFloat(String(obterConfigTipo('bonus_indicacao_primeiro_item')?.valor_padrao || '10')) +
                      parseFloat(String(obterConfigTipo('bonus_indicacao_primeira_compra')?.valor_padrao || '30'))).toFixed(0)
-                  } Girinhas por amiga! 🎉
+                  } Girinhas por amiga!
                 </p>
               </div>
             </div>
@@ -185,9 +185,8 @@ const PaginaIndicacoes = () => {
               <p className="font-semibold text-orange-800">Dica de mãe experiente:</p>
             </div>
             <p className="text-orange-700">
-              Quanto mais amigas você indicar, mais Girinhas você ganha! É uma renda extra 
-              que vem das suas conexões mesmo. Compartilha nos grupos das mães, no WhatsApp da escola... 
-              Todo mundo ganha! 💪
+              Quanto mais amigas você indicar, mais Girinhas você ganha!
+              Compartilha nos grupos das mães, no WhatsApp da escola...
             </p>
           </div>
         </CardContent>
