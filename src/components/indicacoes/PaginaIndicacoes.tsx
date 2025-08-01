@@ -15,6 +15,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useIndicacoes } from '@/hooks/useIndicacoes';
+import { useTiposTransacao } from '@/hooks/useTiposTransacao';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ const PaginaIndicacoes = () => {
     obterEstatisticas 
   } = useIndicacoes();
 
+  const { obterConfigTipo } = useTiposTransacao();
   const [estatisticas, setEstatisticas] = React.useState<any>(null);
 
   React.useEffect(() => {
@@ -84,6 +86,112 @@ const PaginaIndicacoes = () => {
           publicarem o primeiro item ou fizerem a primeira compra!
         </p>
       </div>
+
+      {/* Como funciona o sistema de indicações */}
+      <Card className="bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 border-purple-200 mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-purple-700">
+            <Gift className="w-6 h-6" />
+            Mãe, vem ver que vantagem! 💜
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-700 mb-6 text-lg">
+            Indica uma amiga e vocês duas ganham! É como aquele "ganha-ganha" que a gente adora 😍
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Para você que indica */}
+            <div className="bg-white rounded-lg p-4 border border-purple-100">
+              <h3 className="font-semibold text-purple-700 mb-3 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Para você que indica:
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">👥</div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      +{obterConfigTipo('bonus_indicacao_cadastro')?.valor_padrao || 10} Girinhas
+                    </p>
+                    <p className="text-sm text-gray-600">quando ela se cadastrar</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">📦</div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      +{obterConfigTipo('bonus_indicacao_primeiro_item')?.valor_padrao || 10} Girinhas
+                    </p>
+                    <p className="text-sm text-gray-600">quando ela publicar o primeiro item</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">🛍️</div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      +{obterConfigTipo('bonus_indicacao_primeira_compra')?.valor_padrao || 30} Girinhas
+                    </p>
+                    <p className="text-sm text-gray-600">quando ela fizer a primeira compra</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+                <p className="text-sm font-medium text-purple-700">
+                  Total possível: até {
+                    (parseFloat(String(obterConfigTipo('bonus_indicacao_cadastro')?.valor_padrao || '10')) +
+                     parseFloat(String(obterConfigTipo('bonus_indicacao_primeiro_item')?.valor_padrao || '10')) +
+                     parseFloat(String(obterConfigTipo('bonus_indicacao_primeira_compra')?.valor_padrao || '30'))).toFixed(0)
+                  } Girinhas por amiga! 🎉
+                </p>
+              </div>
+            </div>
+
+            {/* Para sua amiga */}
+            <div className="bg-white rounded-lg p-4 border border-pink-100">
+              <h3 className="font-semibold text-pink-700 mb-3 flex items-center gap-2">
+                <Gift className="w-5 h-5" />
+                Para sua amiga:
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">🎁</div>
+                  <div>
+                    <p className="font-medium text-gray-800">
+                      +{obterConfigTipo('bonus_indicacao_cadastro_indicado')?.valor_padrao || 25} Girinhas
+                    </p>
+                    <p className="text-sm text-gray-600">de boas-vindas no cadastro</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">💝</div>
+                  <div>
+                    <p className="font-medium text-gray-800">Entrada VIP</p>
+                    <p className="text-sm text-gray-600">direto na comunidade mais querida das mães</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-pink-50 rounded-lg">
+                <p className="text-sm font-medium text-pink-700">
+                  Ela já começa com {obterConfigTipo('bonus_indicacao_cadastro_indicado')?.valor_padrao || 25} Girinhas! 💖
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-2xl">✨</div>
+              <p className="font-semibold text-orange-800">Dica de mãe experiente:</p>
+            </div>
+            <p className="text-orange-700">
+              Quanto mais amigas você indicar, mais Girinhas você ganha! É uma renda extra 
+              que vem das suas conexões mesmo. Compartilha nos grupos das mães, no WhatsApp da escola... 
+              Todo mundo ganha! 💪
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Estatísticas */}
       {estatisticas && (
