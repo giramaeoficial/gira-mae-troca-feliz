@@ -219,12 +219,24 @@ export const useReservas = () => {
     if (!user) return false;
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('cancelar_reserva', { p_reserva_id: reservaId, p_usuario_id: user.id });
+      const { data, error } = await supabase.rpc('cancelar_reserva_v2', { 
+        p_reserva_id: reservaId, 
+        p_usuario_id: user.id,
+        p_motivo_codigo: 'cancelamento_usuario',
+        p_observacoes: 'Cancelamento pelo usuário'
+      });
       if (error) throw error;
-      toast({ title: "Reserva cancelada", description: "As Girinhas foram reembolsadas." });
-      const reserva = reservas.find(r => r.id === reservaId);
-      await Promise.all([fetchReservas(), invalidateItemQueries(reserva?.item_id)]);
-      return true;
+      
+      const responseData = data as any;
+      if (responseData && typeof responseData === 'object' && 'sucesso' in responseData && responseData.sucesso) {
+        toast({ title: "Reserva cancelada", description: "As Girinhas foram reembolsadas." });
+        const reserva = reservas.find(r => r.id === reservaId);
+        await Promise.all([fetchReservas(), invalidateItemQueries(reserva?.item_id)]);
+        return true;
+      } else {
+        const erro = responseData && typeof responseData === 'object' && 'erro' in responseData ? String(responseData.erro) : 'Erro ao cancelar reserva';
+        throw new Error(erro);
+      }
     } catch (err) {
       console.error('Erro ao cancelar reserva:', err);
       toast({ title: "Erro ao cancelar reserva", description: err instanceof Error ? err.message : "Tente novamente.", variant: "destructive" });

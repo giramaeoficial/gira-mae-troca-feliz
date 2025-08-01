@@ -148,7 +148,7 @@ export const CancelarReservaModal = ({
         throw error;
       }
 
-      if (data === true || (data && data.sucesso)) {
+      if (data === true || (data && typeof data === 'object' && 'sucesso' in data && (data as any).sucesso)) {
         toast({
           title: 'Reserva cancelada',
           description: 'A reserva foi cancelada e o valor foi reembolsado.',
@@ -157,7 +157,8 @@ export const CancelarReservaModal = ({
         onCancelamentoCompleto();
         onClose();
       } else {
-        throw new Error(data?.erro || 'Não foi possível cancelar a reserva');
+        const erro = data && typeof data === 'object' && 'erro' in data ? String((data as any).erro) : 'Não foi possível cancelar a reserva';
+        throw new Error(erro);
       }
 
     } catch (error: any) {

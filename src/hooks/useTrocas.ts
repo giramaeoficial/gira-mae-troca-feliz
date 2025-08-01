@@ -110,9 +110,11 @@ export const useTrocas = () => {
 
     try {
       const { data, error } = await supabase
-        .rpc('cancelar_reserva', {
+        .rpc('cancelar_reserva_v2', {
           p_reserva_id: reservaId,
-          p_usuario_id: user.id
+          p_usuario_id: user.id,
+          p_motivo_codigo: 'cancelamento_usuario',
+          p_observacoes: 'Cancelamento pelo usuário'
         });
 
       if (error) throw error;
@@ -120,7 +122,11 @@ export const useTrocas = () => {
       // Recarregar dados
       await fetchTrocas();
       
-      return data === true; // Retorna true se houve reembolso
+      const responseData = data as any;
+      if (responseData && typeof responseData === 'object' && 'sucesso' in responseData) {
+        return responseData.sucesso as boolean;
+      }
+      return data === true; // Fallback se retornar boolean direto
     } catch (err) {
       console.error('Erro ao cancelar troca:', err);
       setError(err instanceof Error ? err.message : 'Erro ao cancelar troca');
