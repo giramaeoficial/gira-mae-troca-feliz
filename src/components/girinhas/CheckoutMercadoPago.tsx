@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CreditCard, DollarSign, Shield, Clock, AlertTriangle } from "lucide-react";
 import { useMercadoPago } from '@/hooks/useMercadoPago';
 import { useConfigMercadoPago } from '@/hooks/useConfigMercadoPago';
+import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,6 +16,7 @@ const CheckoutMercadoPago = () => {
   const [quantidade, setQuantidade] = useState<number>(50);
   const { criarPreferencia, isProcessing, ambiente } = useMercadoPago();
   const { config } = useConfigMercadoPago();
+  const { quantidadeMin, quantidadeMax, isLoadingConfig } = useConfigSistema();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -26,7 +28,7 @@ const CheckoutMercadoPago = () => {
   };
 
   // Verificar se está fora dos limites para mostrar erro
-  const isQuantidadeInvalida = quantidade < 1 || quantidade > 999000;
+  const isQuantidadeInvalida = quantidade < quantidadeMin || quantidade > quantidadeMax;
 
   const handleComprar = async () => {
     if (!user) {
@@ -38,10 +40,10 @@ const CheckoutMercadoPago = () => {
       return;
     }
 
-    if (quantidade < 1 || quantidade > 999000) {
+    if (quantidade < quantidadeMin || quantidade > quantidadeMax) {
       toast({
         title: "Opa! Vamos ajustar isso? 😊",
-        description: "Entre 1 e 999.000 Girinhas é perfeito para uma compra!",
+        description: `Entre ${quantidadeMin.toLocaleString()} e ${quantidadeMax.toLocaleString()} Girinhas é perfeito para uma compra!`,
         variant: "destructive",
       });
       return;
@@ -49,6 +51,22 @@ const CheckoutMercadoPago = () => {
 
     await criarPreferencia(quantidade);
   };
+
+  if (isLoadingConfig) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="h-10 bg-gray-200 rounded mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -79,11 +97,11 @@ const CheckoutMercadoPago = () => {
             <Input
               id="quantidade"
               type="number"
-              min="1"
-              max="999000"
+              min={quantidadeMin}
+              max={quantidadeMax}
               value={quantidade}
               onChange={handleQuantidadeChange}
-              placeholder="Ex: 50 (quantas você quiser!)"
+              placeholder={`Ex: ${quantidadeMin} (quantas você quiser!)`}
               className="text-lg"
             />
             
@@ -92,16 +110,16 @@ const CheckoutMercadoPago = () => {
               <div className="flex items-center gap-1 text-red-500 text-sm">
                 <AlertTriangle className="h-4 w-4" />
                 <span>
-                  {quantidade < 1 
-                    ? "Ops! O mínimo são 1 Girinhas pra conseguir fazer a compra 😊"
-                    : "Nossa! Máximo de 999.000 Girinhas por compra. Que tal dividir em compras menores? 💝"
+                  {quantidade < quantidadeMin 
+                    ? `Ops! O mínimo são ${quantidadeMin.toLocaleString()} Girinhas pra conseguir fazer a compra 😊`
+                    : `Nossa! Máximo de ${quantidadeMax.toLocaleString()} Girinhas por compra. Que tal dividir em compras menores? 💝`
                   }
                 </span>
               </div>
             )}
             
             <p className="text-sm text-muted-foreground">
-              Entre 1 e 999.000 Girinhas - escolha a quantidade ideal para você! ✨
+              Entre {quantidadeMin.toLocaleString()} e {quantidadeMax.toLocaleString()} Girinhas - escolha a quantidade ideal para você! ✨
             </p>
           </div>
 
