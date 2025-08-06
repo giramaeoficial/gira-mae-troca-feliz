@@ -144,8 +144,8 @@ const LandingPageOptimized = () => {
     "@type": "Organization",
     "name": "GiraMãe",
     "description": "Plataforma de troca de roupas infantis entre mães com economia circular e moeda virtual Girinhas",
-    "url": "https://preview--gira-mae-troca-feliz.lovable.app",
-    "logo": "https://preview--gira-mae-troca-feliz.lovable.app/og-image.jpg",
+    "url": "https://giramae.com.br",
+    "logo": "https://giramae.com.br/og-image.jpg",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Canoas",
@@ -153,12 +153,12 @@ const LandingPageOptimized = () => {
       "addressCountry": "BR"
     },
     "sameAs": [
-      "https://preview--gira-mae-troca-feliz.lovable.app"
+      "https://giramae.com.br"
     ],
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "customer service",
-      "email": "contato@giramae.com.br"
+      "email": "atendimento@giramae.com.br"
     }
   };
 
@@ -168,7 +168,7 @@ const LandingPageOptimized = () => {
         title="GiraMãe - Troca de Roupas Infantis entre Mães | Brechó Online Sustentável em Canoas/RS"
         description="Plataforma de troca de roupas infantis entre mães em Canoas/RS. Economia circular com moeda virtual Girinhas. Brechó online sustentável para roupas, brinquedos e calçados infantis."
         keywords="troca roupas infantis, brechó online, economia circular mães, sustentabilidade infantil, roupas usadas criança, GiraMãe, Girinhas, Canoas RS, brechó virtual, comunidade mães"
-        url="https://preview--gira-mae-troca-feliz.lovable.app/"
+        url="https://giramae.com.br/"
         structuredData={structuredData}
       />
       <Header />
