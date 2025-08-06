@@ -44,6 +44,10 @@ import CodigoOnboarding from '@/pages/onboarding/CodigoOnboarding';
 import TermosOnboarding from '@/pages/onboarding/TermosOnboarding';
 import TermosUso from '@/pages/TermosUso';
 import PoliticaPrivacidade from '@/pages/PoliticaPrivacidade';
+import ComoFunciona from '@/pages/ComoFunciona';
+import Contato from '@/pages/Contato';
+import Sobre from '@/pages/Sobre';
+import FAQ from '@/pages/FAQ';
 import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
@@ -59,18 +63,23 @@ function App() {
        <SonnerToaster />
        <BrowserRouter>
        <Routes>
-          {/* ================================================ */}
-          {/* ROTAS PÚBLICAS (sem proteção)                   */}
-          {/* ================================================ */}
-           <Route path="/" element={<Index />} />
-           <Route path="/auth" element={<Auth />} />
-           <Route path="/auth-callback" element={<AuthCallback />} />
-           <Route path="/login" element={<Login />} />
-          {/* ✅ ROTAS PÚBLICAS - Termos e Política */}
-          <Route path="/onboarding/termos" element={<TermosOnboarding />} />
-          <Route path="/termos" element={<TermosUso />} />
-          <Route path="/onboarding/privacidade" element={<PoliticaPrivacidade />} />
-          <Route path="/privacidade" element={<PoliticaPrivacidade />} />
+           {/* ================================================ */}
+           {/* ROTAS PÚBLICAS (sem proteção)                   */}
+           {/* ================================================ */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth-callback" element={<AuthCallback />} />
+            <Route path="/login" element={<Login />} />
+           {/* ✅ ROTAS PÚBLICAS - Termos e Política */}
+           <Route path="/onboarding/termos" element={<TermosOnboarding />} />
+           <Route path="/termos" element={<TermosUso />} />
+           <Route path="/onboarding/privacidade" element={<PoliticaPrivacidade />} />
+           <Route path="/privacidade" element={<PoliticaPrivacidade />} />
+           {/* ✅ ROTAS PÚBLICAS - SEO */}
+           <Route path="/como-funciona" element={<ComoFunciona />} />
+           <Route path="/contato" element={<Contato />} />
+           <Route path="/sobre" element={<Sobre />} />
+           <Route path="/faq" element={<FAQ />} />
           
           {/* ================================================ */}
           {/* NÍVEL 1: ROTAS DE ONBOARDING                    */}
