@@ -13,8 +13,8 @@ interface SEOHeadProps {
 }
 
 const SEOHead: React.FC<SEOHeadProps> = ({
-  title = "GiraMãe - Troca de Roupas Infantis entre Mães | Brechó Online Sustentável",
-  description = "Plataforma de troca de roupas infantis entre mães em Canoas/RS. Economia circular com moeda virtual Girinhas. Brechó online sustentável para roupas, brinquedos e calçados infantis.",
+  title = "GiraMãe - Troca de Roupas Infantis entre Mães | Comunidade de Mães",
+  description = "Plataforma de troca de roupas infantis entre mães. Economia circular com moeda virtual Girinhas. Brechó online sustentável para roupas, brinquedos e calçados infantis.",
   keywords = "troca roupas infantis, brechó online, economia circular mães, sustentabilidade infantil, roupas usadas criança, GiraMãe, Girinhas, Canoas RS",
   image = "https://giramae.com.br/og-image.jpg",
   url = "https://giramae.com.br",
