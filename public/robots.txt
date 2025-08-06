@@ -25,4 +25,4 @@ Disallow: /publicar
 Disallow: /onboarding
 Disallow: /auth
 
-Sitemap: https://preview--gira-mae-troca-feliz.lovable.app/sitemap.xml
+Sitemap: https://giramae.com.br/sitemap.xml
