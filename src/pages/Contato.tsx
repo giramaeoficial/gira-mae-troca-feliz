@@ -162,7 +162,7 @@ const Contato = () => {
                     <Mail className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">E-mail</p>
-                      <p className="text-sm text-muted-foreground">contato@giramae.com.br</p>
+                      <p className="text-sm text-muted-foreground">atendimento@giramae.com.br</p>
                     </div>
                   </div>
                   
