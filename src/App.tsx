@@ -53,7 +53,18 @@ import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
 import ItensFavoritos from '@/pages/ItensFavoritos';
 
-const queryClient = new QueryClient();
+//const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+      staleTime: 1 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+    },
+  },
+});
 
 function App() {
  return (
