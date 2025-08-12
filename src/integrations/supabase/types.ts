@@ -3246,6 +3246,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      inativar_item_com_feedback: {
+        Args: {
+          p_item_id: string
+          p_moderador_id: string
+          p_motivo: string
+          p_observacoes?: string
+        }
+        Returns: Json
+      }
       inicializar_limites_missoes: {
         Args: { p_user_id: string }
         Returns: undefined
@@ -3474,6 +3483,10 @@ export type Database = {
           vt: string
           message: Json
         }[]
+      }
+      reativar_item_corrigido: {
+        Args: { p_item_id: string; p_user_id: string }
+        Returns: Json
       }
       registrar_analytics_missao: {
         Args: {

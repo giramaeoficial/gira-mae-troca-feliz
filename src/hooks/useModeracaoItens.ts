@@ -191,30 +191,25 @@ export const useModeracaoItens = () => {
 
   const rejeitarItem = async (moderacaoId: string, comentario: string, observacoes?: string) => {
     try {
-      const { error } = await supabase
-        .from('moderacao_itens')
-        .update({
-          status: 'rejeitado',
-          moderador_id: (await supabase.auth.getUser()).data.user?.id,
-          moderado_em: new Date().toISOString(),
-          comentario_predefinido: comentario,
-          observacoes: observacoes || 'Item rejeitado'
-        })
-        .eq('id', moderacaoId);
+      const { error } = await supabase.rpc('inativar_item_com_feedback', {
+        p_item_id: itens.find(item => item.moderacao_id === moderacaoId)?.item_id,
+        p_moderador_id: (await supabase.auth.getUser()).data.user?.id,
+        p_motivo: comentario,
+        p_observacoes: observacoes
+      });
 
       if (error) throw error;
 
       toast({
-        title: "Item rejeitado",
-        description: "O item foi rejeitado e removido do feed.",
+        title: "Item inativado",
+        description: "O item foi inativado e o usuário foi notificado para correção.",
       });
 
-      // Atualizar lista
       await fetchItensPendentes();
     } catch (err: any) {
       toast({
         title: "Erro",
-        description: "Falha ao rejeitar item: " + err.message,
+        description: "Falha ao inativar item: " + err.message,
         variant: "destructive",
       });
     }
