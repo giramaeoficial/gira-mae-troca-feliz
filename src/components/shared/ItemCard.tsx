@@ -10,11 +10,27 @@ import {
   CarouselNext, 
   CarouselPrevious 
 } from '@/components/ui/carousel';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User, MoreVertical, Flag } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
 import ActionFeedback from '@/components/loading/ActionFeedback';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface LogisticaInfo {
  entrega_disponivel: boolean;
@@ -104,6 +120,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 }) => {
  const navigate = useNavigate();
  const [showDetails, setShowDetails] = useState(false);
+ const [showReportDialog, setShowReportDialog] = useState(false);
+ const [reportMotivo, setReportMotivo] = useState('');
+ const [reportDescricao, setReportDescricao] = useState('');
  
  // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
  const isFavorito = feedData.favoritos.includes(item.id);
@@ -129,8 +148,31 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    hasActiveReservation && 
    item.publicado_por !== currentUserId;
 
- // ✅ VERIFICAR SE TEM MÚLTIPLAS FOTOS
- const hasMultiplePhotos = item.fotos && item.fotos.length > 1;
+  // ✅ VERIFICAR SE TEM MÚLTIPLAS FOTOS
+  const hasMultiplePhotos = item.fotos && item.fotos.length > 1;
+
+  // ✅ DENÚNCIA
+  const handleReportSubmit = async () => {
+    try {
+      const { error } = await supabase
+        .from('denuncias')
+        .insert({
+          item_id: item.id,
+          denunciante_id: currentUserId,
+          motivo: reportMotivo,
+          descricao: reportDescricao
+        });
+
+      if (error) throw error;
+
+      setShowReportDialog(false);
+      setReportMotivo('');
+      setReportDescricao('');
+      // Pode adicionar toast aqui se quiser
+    } catch (error) {
+      console.error('Erro ao denunciar item:', error);
+    }
+  };
 
  // ✅ CALCULAR VALORES COM TAXA
  const calcularValores = () => {
@@ -256,24 +298,48 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full",
      itemIsReservado && "opacity-75"
    )}>
-     {/* Botão de favorito - ÚNICA COISA SOBRE A IMAGEM */}
-     {showActions && onToggleFavorito && (
-       <Button
-         variant="ghost"
-         size="sm"
-         className="absolute top-2 right-2 h-8 w-8 p-0 bg-white/95 backdrop-blur-sm hover:bg-white/100 z-10"
-         onClick={handleFavoriteClick}
-       >
-         <Heart 
-           className={cn(
-             "w-4 h-4 transition-colors",
-             isFavorito 
-               ? 'fill-red-500 text-red-500' 
-               : 'text-gray-500 hover:text-red-400'
-           )} 
-         />
-       </Button>
-     )}
+      {/* Botões sobre a imagem */}
+      <div className="absolute top-2 right-2 flex gap-2 z-10">
+        {/* Menu de opções */}
+        {item.publicado_por !== currentUserId && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm hover:bg-white/100"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setShowReportDialog(true)}>
+                <Flag className="mr-2 h-4 w-4" />
+                Reportar item
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
+        {/* Botão de favorito */}
+        {showActions && onToggleFavorito && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm hover:bg-white/100"
+            onClick={handleFavoriteClick}
+          >
+            <Heart 
+              className={cn(
+                "w-4 h-4 transition-colors",
+                isFavorito 
+                  ? 'fill-red-500 text-red-500' 
+                  : 'text-gray-500 hover:text-red-400'
+              )} 
+            />
+          </Button>
+        )}
+      </div>
 
      <CardContent className="p-0" onClick={handleClick}>
        {/* ✅ SEÇÃO DE IMAGEM COM CARROUSEL */}
@@ -612,8 +678,62 @@ export const ItemCard: React.FC<ItemCardProps> = ({
              className="mt-2"
            />
          )}
-       </div>
-     </CardContent>
-   </Card>
- );
+        </div>
+      </CardContent>
+
+      {/* Modal de Denúncia */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reportar Item</DialogTitle>
+            <DialogDescription>
+              Descreva o motivo da sua denúncia. Nossa equipe irá analisar.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Motivo</label>
+              <Select value={reportMotivo} onValueChange={setReportMotivo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o motivo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="conteudo_inapropriado">Conteúdo inapropriado</SelectItem>
+                  <SelectItem value="preco_abusivo">Preço abusivo</SelectItem>
+                  <SelectItem value="informacoes_falsas">Informações falsas</SelectItem>
+                  <SelectItem value="item_danificado">Item danificado</SelectItem>
+                  <SelectItem value="spam">Spam</SelectItem>
+                  <SelectItem value="outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium">Descrição (opcional)</label>
+              <Textarea
+                placeholder="Descreva mais detalhes sobre o problema..."
+                value={reportDescricao}
+                onChange={(e) => setReportDescricao(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowReportDialog(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleReportSubmit}
+              disabled={!reportMotivo}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Reportar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
 };
