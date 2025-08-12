@@ -37,7 +37,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useUserCarteira } from '@/hooks/useUserCarteira';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
-import EditarItem from '@/components/perfil/EditarItem';
+import EditarItemModeracao from './EditarItemModeracao';
 
 interface ItemModeracaoCardCompletoProps {
   item: any;
@@ -65,8 +65,14 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
   
   const userProfile = profiles[item.usuario_id];
 
+  // Debug logs
+  console.log('🔍 ItemModeracaoCardCompleto - Item:', item);
+  console.log('🔍 ItemModeracaoCardCompleto - UserProfile:', userProfile);
+  console.log('🔍 ItemModeracaoCardCompleto - CarteiraData:', carteiraData);
+
   useEffect(() => {
     if (item.usuario_id && !userProfile) {
+      console.log('🔍 Buscando perfil para usuário:', item.usuario_id);
       fetchUserProfile(item.usuario_id);
     }
   }, [item.usuario_id, userProfile, fetchUserProfile]);
@@ -126,6 +132,11 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
                 <div className="relative">
                   <div className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer" 
                        onClick={() => setFullImageModal(item.fotos?.[activeImageIndex] || item.primeira_foto)}>
+                    {(() => {
+                      console.log('🔍 Fotos do item:', item.fotos);
+                      console.log('🔍 Primeira foto:', item.primeira_foto);
+                      return null;
+                    })()}
                     {(item.fotos?.[activeImageIndex] || item.primeira_foto) ? (
                       <img 
                         src={item.fotos?.[activeImageIndex] || item.primeira_foto} 
@@ -201,6 +212,10 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
                     {getCategoriaIcon(item.categoria)}
                     <span className="text-sm text-muted-foreground">{item.categoria}</span>
                     {item.subcategoria && <span className="text-xs text-muted-foreground">• {item.subcategoria}</span>}
+                    {(() => {
+                      console.log('🔍 Categoria:', item.categoria, 'Subcategoria:', item.subcategoria);
+                      return null;
+                    })()}
                   </div>
                   <h3 className="font-semibold text-lg leading-tight">{item.titulo}</h3>
                 </div>
@@ -524,7 +539,7 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
 
       {/* Modal de Edição */}
       {editModalAberto && (
-        <EditarItem
+        <EditarItemModeracao
           item={item}
           isOpen={editModalAberto}
           onClose={() => setEditModalAberto(false)}
