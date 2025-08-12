@@ -4,11 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ConfiguracaoBonus {
-  id: string;
-  tipo_bonus: string;
-  valor_girinhas: number;
-  descricao: string;
-  ativo: boolean;
+  tipo: string;
+  valor_padrao: number | null;
+  descricao_pt: string;
+  ativo: boolean | null;
+  categoria: string;
+  icone: string | null;
+  cor_hex: string | null;
 }
 
 export const useConfigIndicacoes = () => {
@@ -20,15 +22,15 @@ export const useConfigIndicacoes = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('configuracoes_bonus')
+        .from('transacao_config')
         .select('*')
-        .in('tipo_bonus', [
-          'indicacao_cadastro',
-          'indicacao_primeiro_item', 
-          'indicacao_primeira_compra',
-          'bonus_cadastro_indicado'
+        .in('tipo', [
+          'bonus_indicacao_cadastro',
+          'bonus_indicacao_primeiro_item', 
+          'bonus_indicacao_primeira_compra',
+          'bonus_cadastro'
         ])
-        .order('tipo_bonus');
+        .order('tipo');
 
       if (error) throw error;
       setConfiguracoes(data || []);
@@ -44,7 +46,7 @@ export const useConfigIndicacoes = () => {
     }
   };
 
-  const atualizarConfiguracao = async (id: string, valor: number, ativo: boolean) => {
+  const atualizarConfiguracao = async (tipo: string, valor: number, ativo: boolean) => {
     try {
       // Validar valor
       if (valor < 0 || valor > 100) {
@@ -57,13 +59,13 @@ export const useConfigIndicacoes = () => {
       }
 
       const { error } = await supabase
-        .from('configuracoes_bonus')
+        .from('transacao_config')
         .update({ 
-          valor_girinhas: valor,
+          valor_padrao: valor,
           ativo: ativo,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
+        .eq('tipo', tipo as any);
 
       if (error) throw error;
 

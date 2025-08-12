@@ -4,11 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ConfiguracaoBonus {
-  id: string;
-  tipo_bonus: string;
-  valor_girinhas: number;
-  descricao: string;
-  ativo: boolean;
+  tipo: string;
+  valor_padrao: number | null;
+  descricao_pt: string;
+  ativo: boolean | null;
+  categoria: string;
+  icone: string | null;
+  cor_hex: string | null;
 }
 
 export const useConfiguracoesBonus = () => {
@@ -20,9 +22,9 @@ export const useConfiguracoesBonus = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('configuracoes_bonus')
+        .from('transacao_config')
         .select('*')
-        .order('tipo_bonus');
+        .order('tipo');
 
       if (error) throw error;
       setConfiguracoes(data || []);
@@ -39,8 +41,8 @@ export const useConfiguracoesBonus = () => {
   };
 
   const obterValorBonus = (tipo: string): number => {
-    const config = configuracoes.find(c => c.tipo_bonus === tipo && c.ativo);
-    return config?.valor_girinhas || 0;
+    const config = configuracoes.find(c => c.tipo === tipo && c.ativo);
+    return config?.valor_padrao || 0;
   };
 
   useEffect(() => {

@@ -19,29 +19,29 @@ const ConfigIndicacoes: React.FC = () => {
     if (configuracoes.length > 0) {
       const newValues: Record<string, { valor: number; ativo: boolean }> = {};
       configuracoes.forEach(config => {
-        newValues[config.id] = {
-          valor: config.valor_girinhas,
-          ativo: config.ativo
+        newValues[config.tipo] = {
+          valor: config.valor_padrao || 0,
+          ativo: config.ativo || false
         };
       });
       setValues(newValues);
     }
   }, [configuracoes]);
 
-  const handleSave = async (configId: string) => {
-    setSaving(configId);
-    const config = values[configId];
+  const handleSave = async (configTipo: string) => {
+    setSaving(configTipo);
+    const config = values[configTipo];
     if (config) {
-      await atualizarConfiguracao(configId, config.valor, config.ativo);
+      await atualizarConfiguracao(configTipo, config.valor, config.ativo);
     }
     setSaving(null);
   };
 
-  const updateValue = (configId: string, field: 'valor' | 'ativo', value: number | boolean) => {
+  const updateValue = (configTipo: string, field: 'valor' | 'ativo', value: number | boolean) => {
     setValues(prev => ({
       ...prev,
-      [configId]: {
-        ...prev[configId],
+      [configTipo]: {
+        ...prev[configTipo],
         [field]: value
       }
     }));
@@ -49,13 +49,13 @@ const ConfigIndicacoes: React.FC = () => {
 
   const getIcon = (tipo: string) => {
     switch (tipo) {
-      case 'indicacao_cadastro':
+      case 'bonus_indicacao_cadastro':
         return <UserPlus className="w-4 h-4" />;
-      case 'indicacao_primeiro_item':
+      case 'bonus_indicacao_primeiro_item':
         return <Package className="w-4 h-4" />;
-      case 'indicacao_primeira_compra':
+      case 'bonus_indicacao_primeira_compra':
         return <ShoppingCart className="w-4 h-4" />;
-      case 'bonus_cadastro_indicado':
+      case 'bonus_cadastro':
         return <Gift className="w-4 h-4" />;
       default:
         return <Gift className="w-4 h-4" />;
@@ -64,13 +64,13 @@ const ConfigIndicacoes: React.FC = () => {
 
   const getTitle = (tipo: string) => {
     switch (tipo) {
-      case 'indicacao_cadastro':
+      case 'bonus_indicacao_cadastro':
         return 'Bônus por Cadastro de Indicado';
-      case 'indicacao_primeiro_item':
+      case 'bonus_indicacao_primeiro_item':
         return 'Bônus por Primeiro Item do Indicado';
-      case 'indicacao_primeira_compra':
+      case 'bonus_indicacao_primeira_compra':
         return 'Bônus por Primeira Compra do Indicado';
-      case 'bonus_cadastro_indicado':
+      case 'bonus_cadastro':
         return 'Bônus para o Usuário Indicado';
       default:
         return tipo;
@@ -108,17 +108,17 @@ const ConfigIndicacoes: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         {configuracoes.map((config) => {
-          const currentValue = values[config.id];
+          const currentValue = values[config.tipo];
           if (!currentValue) return null;
 
           return (
-            <div key={config.id} className="border rounded-lg p-4 space-y-4">
+            <div key={config.tipo} className="border rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {getIcon(config.tipo_bonus)}
+                  {getIcon(config.tipo)}
                   <div>
-                    <h3 className="font-medium">{getTitle(config.tipo_bonus)}</h3>
-                    <p className="text-sm text-gray-600">{config.descricao}</p>
+                    <h3 className="font-medium">{getTitle(config.tipo)}</h3>
+                    <p className="text-sm text-gray-600">{config.descricao_pt}</p>
                   </div>
                 </div>
                 <Badge variant={currentValue.ativo ? "default" : "secondary"}>
@@ -128,34 +128,34 @@ const ConfigIndicacoes: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div className="space-y-2">
-                  <Label htmlFor={`valor-${config.id}`}>Valor (Girinhas)</Label>
+                  <Label htmlFor={`valor-${config.tipo}`}>Valor (Girinhas)</Label>
                   <Input
-                    id={`valor-${config.id}`}
+                    id={`valor-${config.tipo}`}
                     type="number"
                     min="0"
                     max="100"
                     step="0.5"
                     value={currentValue.valor}
-                    onChange={(e) => updateValue(config.id, 'valor', parseFloat(e.target.value) || 0)}
+                    onChange={(e) => updateValue(config.tipo, 'valor', parseFloat(e.target.value) || 0)}
                     className="w-full"
                   />
                 </div>
                 
                 <div className="flex items-center space-x-2">
                   <Switch
-                    id={`ativo-${config.id}`}
+                    id={`ativo-${config.tipo}`}
                     checked={currentValue.ativo}
-                    onCheckedChange={(checked) => updateValue(config.id, 'ativo', checked)}
+                    onCheckedChange={(checked) => updateValue(config.tipo, 'ativo', checked)}
                   />
-                  <Label htmlFor={`ativo-${config.id}`}>Ativo</Label>
+                  <Label htmlFor={`ativo-${config.tipo}`}>Ativo</Label>
                 </div>
                 
                 <Button
-                  onClick={() => handleSave(config.id)}
-                  disabled={saving === config.id}
+                  onClick={() => handleSave(config.tipo)}
+                  disabled={saving === config.tipo}
                   className="w-full md:w-auto"
                 >
-                  {saving === config.id ? (
+                  {saving === config.tipo ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (
                     <>
