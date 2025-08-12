@@ -3,18 +3,20 @@ import { useModeracaoItens } from '@/hooks/useModeracaoItens';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Check, X, Calendar, User, Tag, DollarSign } from 'lucide-react';
+import { AlertTriangle, Check, X, Calendar, User, Tag, DollarSign, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import StatusModeracaoWidget from './StatusModeracaoWidget';
 
 const ModeracaoItens = () => {
   const { itens, loading, aprovarItem, rejeitarItem, refetch } = useModeracaoItens();
   const [rejeitandoId, setRejeitandoId] = useState<string | null>(null);
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [moderacaoLoading, setModeracaoLoading] = useState(false);
 
   const motivosRejeicao = [
     { value: 'conteudo_inadequado', label: 'Conteúdo inadequado' },
@@ -27,13 +29,27 @@ const ModeracaoItens = () => {
     { value: 'outros', label: 'Outros motivos' }
   ];
 
+  const handleAprovar = async (itemId: string) => {
+    setModeracaoLoading(true);
+    try {
+      await aprovarItem(itemId);
+    } finally {
+      setModeracaoLoading(false);
+    }
+  };
+
   const handleRejeitar = async () => {
     if (!rejeitandoId || !motivoRejeicao) return;
     
-    await rejeitarItem(rejeitandoId, motivoRejeicao, observacoes);
-    setRejeitandoId(null);
-    setMotivoRejeicao('');
-    setObservacoes('');
+    setModeracaoLoading(true);
+    try {
+      await rejeitarItem(rejeitandoId, motivoRejeicao, observacoes);
+      setRejeitandoId(null);
+      setMotivoRejeicao('');
+      setObservacoes('');
+    } finally {
+      setModeracaoLoading(false);
+    }
   };
 
   if (loading) {
@@ -53,26 +69,47 @@ const ModeracaoItens = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Moderação de Itens</h2>
           <p className="text-muted-foreground">
-            {itens.length} item(ns) aguardando moderação
+            Análise e aprovação de itens publicados na plataforma
           </p>
         </div>
-        <Button onClick={refetch} variant="outline">
-          Atualizar Lista
+        <Button onClick={refetch} variant="outline" disabled={loading}>
+          {loading ? 'Carregando...' : 'Atualizar Lista'}
         </Button>
       </div>
 
-      {itens.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Check className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">Tudo em dia!</h3>
-            <p className="text-muted-foreground">
-              Não há itens pendentes de moderação no momento.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6">
+      {/* Widget de Status */}
+      <StatusModeracaoWidget
+        totalPendentes={itens.length}
+        totalAprovados={0} // TODO: implementar contadores no hook
+        totalRejeitados={0} // TODO: implementar contadores no hook
+      />
+
+      {/* Lista de Itens para Moderação */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-500" />
+            Itens Pendentes de Moderação
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : itens.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>✅ Nenhum item pendente de moderação!</p>
+              <p className="text-sm mt-2">Todos os itens foram analisados.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>📊 {itens.length} itens para analisar</span>
+                <span>•</span>
+                <span>🔄 Atualizado: {new Date().toLocaleTimeString()}</span>
+              </div>
           {itens.map((item) => (
             <Card key={item.moderacao_id} className="overflow-hidden">
               <CardHeader className="pb-4">
@@ -109,9 +146,10 @@ const ModeracaoItens = () => {
                   
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => aprovarItem(item.moderacao_id)}
+                      onClick={() => handleAprovar(item.moderacao_id)}
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
+                      disabled={moderacaoLoading}
                     >
                       <Check className="h-4 w-4 mr-1" />
                       Aprovar
@@ -123,6 +161,7 @@ const ModeracaoItens = () => {
                           onClick={() => setRejeitandoId(item.moderacao_id)}
                           size="sm"
                           variant="destructive"
+                          disabled={moderacaoLoading}
                         >
                           <X className="h-4 w-4 mr-1" />
                           Rejeitar
@@ -166,9 +205,9 @@ const ModeracaoItens = () => {
                             <Button 
                               variant="destructive" 
                               onClick={handleRejeitar}
-                              disabled={!motivoRejeicao}
+                              disabled={!motivoRejeicao || moderacaoLoading}
                             >
-                              Confirmar Rejeição
+                              {moderacaoLoading ? 'Processando...' : 'Confirmar Rejeição'}
                             </Button>
                           </div>
                         </div>
@@ -217,8 +256,10 @@ const ModeracaoItens = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

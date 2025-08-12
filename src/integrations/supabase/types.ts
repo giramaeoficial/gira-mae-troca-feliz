@@ -302,6 +302,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "avaliacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderados"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "avaliacoes_reserva_id_fkey"
             columns: ["reserva_id"]
             isOneToOne: false
@@ -583,6 +597,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversas_whatsapp_log_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_whatsapp_log_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderados"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversas_whatsapp_log_reserva_id_fkey"
             columns: ["reserva_id"]
             isOneToOne: false
@@ -685,6 +713,20 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "denuncias_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "denuncias_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
         ]
@@ -891,6 +933,20 @@ export type Database = {
             referencedRelation: "itens_completos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "favoritos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favoritos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderados"
+            referencedColumns: ["id"]
+          },
         ]
       }
       fila_dead_letter: {
@@ -964,6 +1020,20 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fila_espera_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fila_espera_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
           {
@@ -1510,6 +1580,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "moderacao_itens_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "itens_moderados"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "moderacao_itens_moderador_id_fkey"
             columns: ["moderador_id"]
             isOneToOne: false
@@ -1962,6 +2046,20 @@ export type Database = {
             referencedRelation: "itens_completos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reservas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderados"
+            referencedColumns: ["id"]
+          },
         ]
       }
       reservation_cancel_metrics: {
@@ -2213,6 +2311,20 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_disponiveis_moderados"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
           {
@@ -2493,6 +2605,130 @@ export type Database = {
           },
         ]
       }
+      itens_disponiveis_moderados: {
+        Row: {
+          aguardando_moderacao: boolean | null
+          categoria: string | null
+          comentario_predefinido: string | null
+          created_at: string | null
+          descricao: string | null
+          estado_conservacao: string | null
+          fotos: string[] | null
+          genero: string | null
+          id: string | null
+          item_rejeitado: boolean | null
+          moderacao_status: string | null
+          moderado_em: string | null
+          moderador_id: string | null
+          publicado_por: string | null
+          status: string | null
+          subcategoria: string | null
+          tamanho_categoria: string | null
+          tamanho_valor: string | null
+          titulo: string | null
+          updated_at: string | null
+          valor_girinhas: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_itens_categoria"
+            columns: ["categoria"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_estado_conservacao"
+            columns: ["estado_conservacao"]
+            isOneToOne: false
+            referencedRelation: "estados_conservacao"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_genero"
+            columns: ["genero"]
+            isOneToOne: false
+            referencedRelation: "generos"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["publicado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_moderador_id_fkey"
+            columns: ["moderador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itens_moderados: {
+        Row: {
+          aguardando_moderacao: boolean | null
+          categoria: string | null
+          comentario_predefinido: string | null
+          created_at: string | null
+          descricao: string | null
+          estado_conservacao: string | null
+          fotos: string[] | null
+          genero: string | null
+          id: string | null
+          item_rejeitado: boolean | null
+          moderacao_status: string | null
+          moderado_em: string | null
+          moderador_id: string | null
+          publicado_por: string | null
+          status: string | null
+          subcategoria: string | null
+          tamanho_categoria: string | null
+          tamanho_valor: string | null
+          titulo: string | null
+          updated_at: string | null
+          valor_girinhas: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_itens_categoria"
+            columns: ["categoria"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_estado_conservacao"
+            columns: ["estado_conservacao"]
+            isOneToOne: false
+            referencedRelation: "estados_conservacao"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "fk_itens_genero"
+            columns: ["genero"]
+            isOneToOne: false
+            referencedRelation: "generos"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["publicado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_moderador_id_fkey"
+            columns: ["moderador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saldo_detalhado_v2: {
         Row: {
           categoria: string | null
@@ -2557,6 +2793,22 @@ export type Database = {
       }
     }
     Functions: {
+      admin_buscar_todos_itens: {
+        Args: { p_limite?: number; p_offset?: number }
+        Returns: {
+          id: string
+          titulo: string
+          categoria: string
+          valor_girinhas: number
+          status: string
+          moderacao_status: string
+          publicado_por: string
+          vendedor_nome: string
+          created_at: string
+          moderado_em: string
+          comentario_predefinido: string
+        }[]
+      }
       atualizar_contadores_cidade: {
         Args: { p_cidade: string; p_estado: string }
         Returns: undefined
@@ -2577,6 +2829,32 @@ export type Database = {
           latitude: string
           longitude: string
           distancia_cep: number
+        }[]
+      }
+      buscar_itens_com_moderacao: {
+        Args: {
+          p_user_id?: string
+          p_categoria?: string
+          p_limite?: number
+          p_offset?: number
+        }
+        Returns: {
+          id: string
+          titulo: string
+          descricao: string
+          categoria: string
+          subcategoria: string
+          valor_girinhas: number
+          status: string
+          fotos: string[]
+          created_at: string
+          publicado_por: string
+          moderacao_status: string
+          aguardando_moderacao: boolean
+          vendedor_nome: string
+          vendedor_avatar: string
+          vendedor_cidade: string
+          vendedor_estado: string
         }[]
       }
       buscar_itens_mesma_escola: {

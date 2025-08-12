@@ -44,23 +44,25 @@ export const useItens = () => {
     setError('');
     
     try {
+      // ✅ ETAPA 3: Usar view com moderação + join manual com profiles
       const { data, error } = await supabase
-        .from('itens')
+        .from('itens_moderados')
         .select(`
           *,
-          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+          profiles!publicado_por(nome, avatar_url, cidade, reputacao)
         `)
-        .in('status', ['disponivel', 'reservado'])
+        .eq('status', 'disponivel')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       
       const itensFormatados = data?.map(item => ({
         ...item,
-        publicado_por_profile: item.publicado_por_profile || undefined,
+        publicado_por_profile: item.profiles || undefined,
         mesma_escola: false
       })) || [];
       
+      console.log('✅ Itens carregados (com moderação):', itensFormatados.length);
       setItens(itensFormatados);
       return itensFormatados;
     } catch (err) {
@@ -110,11 +112,12 @@ export const useItens = () => {
     setError('');
     
     try {
+      // ✅ ETAPA 3: Usar view com moderação + join manual com profiles
       const { data, error } = await supabase
-        .from('itens')
+        .from('itens_moderados')
         .select(`
           *,
-          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+          profiles!publicado_por(nome, avatar_url, cidade, reputacao)
         `)
         .eq('publicado_por', userId)
         .in('status', ['disponivel', 'reservado'])
@@ -124,10 +127,11 @@ export const useItens = () => {
       
       const itensFormatados = data?.map(item => ({
         ...item,
-        publicado_por_profile: item.publicado_por_profile || undefined,
+        publicado_por_profile: item.profiles || undefined,
         mesma_escola: false
       })) || [];
       
+      console.log('✅ Itens do usuário carregados (com moderação):', itensFormatados.length);
       setItens(itensFormatados);
       return itensFormatados;
     } catch (err) {
@@ -144,11 +148,12 @@ export const useItens = () => {
     setError('');
     
     try {
+      // ✅ ETAPA 3: Usar view com moderação para item específico
       const { data, error } = await supabase
-        .from('itens')
+        .from('itens_moderados')
         .select(`
           *,
-          publicado_por_profile:profiles(nome, avatar_url, cidade, reputacao)
+          profiles!publicado_por(nome, avatar_url, cidade, reputacao)
         `)
         .eq('id', itemId)
         .single();
@@ -157,10 +162,11 @@ export const useItens = () => {
       
       const itemFormatado = {
         ...data,
-        publicado_por_profile: data.publicado_por_profile || undefined,
+        publicado_por_profile: data.profiles || undefined,
         mesma_escola: false
       };
       
+      console.log('✅ Item carregado (com moderação):', itemFormatado.titulo);
       return itemFormatado;
     } catch (err) {
       console.error('Erro ao buscar item:', err);
