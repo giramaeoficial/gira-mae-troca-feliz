@@ -1789,6 +1789,50 @@ export type Database = {
           },
         ]
       }
+      penalidades_usuario: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          expira_em: string | null
+          id: string
+          motivo: string | null
+          nivel: number | null
+          tipo: string
+          updated_at: string | null
+          usuario_id: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          expira_em?: string | null
+          id?: string
+          motivo?: string | null
+          nivel?: number | null
+          tipo: string
+          updated_at?: string | null
+          usuario_id: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          expira_em?: string | null
+          id?: string
+          motivo?: string | null
+          nivel?: number | null
+          tipo?: string
+          updated_at?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "penalidades_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preserved_user_id: {
         Row: {
           id: string | null
@@ -2911,6 +2955,15 @@ export type Database = {
           comentario_predefinido: string
         }[]
       }
+      aplicar_penalidade: {
+        Args: {
+          p_usuario_id: string
+          p_tipo: string
+          p_nivel: number
+          p_motivo: string
+        }
+        Returns: undefined
+      }
       atualizar_contadores_cidade: {
         Args: { p_cidade: string; p_estado: string }
         Returns: undefined
@@ -3203,6 +3256,10 @@ export type Database = {
           p_notas?: string
         }
         Returns: Json
+      }
+      limpar_penalidades_expiradas: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       log_debug: {
         Args: {

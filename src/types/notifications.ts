@@ -9,7 +9,9 @@ export type NotificationType =
   | 'missao_completada'
   | 'sistema'
   | 'boas_vindas'
-  | 'item_disponivel';
+  | 'item_disponivel'
+  | 'item_rejeitado'
+  | 'item_aprovado';
 
 export type NotificationChannel = 'push' | 'email' | 'in_app';
 
