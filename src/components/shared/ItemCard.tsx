@@ -15,6 +15,7 @@ import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
 import ActionFeedback from '@/components/loading/ActionFeedback';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,11 +119,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
  showAuthor = true,
  compact = false
 }) => {
- const navigate = useNavigate();
- const [showDetails, setShowDetails] = useState(false);
- const [showReportDialog, setShowReportDialog] = useState(false);
- const [reportMotivo, setReportMotivo] = useState('');
- const [reportDescricao, setReportDescricao] = useState('');
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [showDetails, setShowDetails] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportMotivo, setReportMotivo] = useState('');
+  const [reportDescricao, setReportDescricao] = useState('');
  
  // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
  const isFavorito = feedData.favoritos.includes(item.id);
@@ -168,7 +170,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       setShowReportDialog(false);
       setReportMotivo('');
       setReportDescricao('');
-      // Pode adicionar toast aqui se quiser
+      
+      toast({
+        title: "Obrigada pela denúncia!",
+        description: "Vamos analisar este item e tomar as providências necessárias.",
+      });
     } catch (error) {
       console.error('Erro ao denunciar item:', error);
     }
