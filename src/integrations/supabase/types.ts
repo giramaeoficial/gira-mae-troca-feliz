@@ -539,36 +539,6 @@ export type Database = {
         }
         Relationships: []
       }
-      configuracoes_bonus: {
-        Row: {
-          ativo: boolean
-          created_at: string
-          descricao: string | null
-          id: string
-          tipo_bonus: string
-          updated_at: string
-          valor_girinhas: number
-        }
-        Insert: {
-          ativo?: boolean
-          created_at?: string
-          descricao?: string | null
-          id?: string
-          tipo_bonus: string
-          updated_at?: string
-          valor_girinhas: number
-        }
-        Update: {
-          ativo?: boolean
-          created_at?: string
-          descricao?: string | null
-          id?: string
-          tipo_bonus?: string
-          updated_at?: string
-          valor_girinhas?: number
-        }
-        Relationships: []
-      }
       conversas_whatsapp_log: {
         Row: {
           created_at: string | null
@@ -1476,6 +1446,74 @@ export type Database = {
             columns: ["missao_id"]
             isOneToOne: false
             referencedRelation: "missoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderacao_itens: {
+        Row: {
+          comentario_predefinido: string | null
+          created_at: string | null
+          denuncia_aceita: boolean | null
+          denuncia_id: string | null
+          id: string
+          item_id: string
+          moderado_em: string | null
+          moderador_id: string | null
+          observacoes: string | null
+          status: string
+        }
+        Insert: {
+          comentario_predefinido?: string | null
+          created_at?: string | null
+          denuncia_aceita?: boolean | null
+          denuncia_id?: string | null
+          id?: string
+          item_id: string
+          moderado_em?: string | null
+          moderador_id?: string | null
+          observacoes?: string | null
+          status?: string
+        }
+        Update: {
+          comentario_predefinido?: string | null
+          created_at?: string | null
+          denuncia_aceita?: boolean | null
+          denuncia_id?: string | null
+          id?: string
+          item_id?: string
+          moderado_em?: string | null
+          moderador_id?: string | null
+          observacoes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderacao_itens_denuncia_id_fkey"
+            columns: ["denuncia_id"]
+            isOneToOne: false
+            referencedRelation: "denuncias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
+            referencedRelation: "itens_completos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_moderador_id_fkey"
+            columns: ["moderador_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2562,10 +2600,6 @@ export type Database = {
           avatar_url: string
         }[]
       }
-      bypass_rls_for_user_creation: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
       calcular_custo_extensao: {
         Args: { p_valor_expirando: number }
         Returns: number
@@ -2773,6 +2807,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      is_master_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_trigger_context: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2869,10 +2907,6 @@ export type Database = {
         Args: { p_indicado_id: string; p_tipo_bonus: string }
         Returns: undefined
       }
-      processar_bonus_indicado: {
-        Args: { p_indicado_id: string }
-        Returns: undefined
-      }
       processar_compra_girinhas: {
         Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
         Returns: string
@@ -2919,9 +2953,9 @@ export type Database = {
       processar_proximo_fila: {
         Args: { p_item_id: string }
         Returns: {
-          nova_reserva_id: string
-          usuario_id: string
-          sucesso: boolean
+          reserva_id_retorno: string
+          usuario_id_retorno: string
+          sucesso_retorno: boolean
         }[]
       }
       processar_reserva: {
