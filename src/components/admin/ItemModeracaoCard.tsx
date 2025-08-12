@@ -33,6 +33,7 @@ import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { usePenalidades } from '@/hooks/usePenalidades';
+import { useAdminActions } from '@/hooks/useAdminActions';
 
 interface UserProfile {
   id: string;
@@ -100,6 +101,7 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
   loading = false
 }) => {
   const { toast } = useToast();
+  const { executeAdminAction } = useAdminActions();
   const [editMode, setEditMode] = useState(false);
   const [editedData, setEditedData] = useState({
     titulo: item.titulo,
@@ -144,33 +146,34 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
 
   const handleSaveEdit = async () => {
     try {
-      const { error } = await supabase
-        .from('itens')
-        .update({
-          titulo: editedData.titulo,
-          descricao: editedData.descricao,
-          categoria: editedData.categoria,
-          subcategoria: editedData.subcategoria || null,
-          valor_girinhas: editedData.valor_girinhas,
-          estado_conservacao: editedData.estado_conservacao,
-          genero: editedData.genero || null,
-          tamanho_valor: editedData.tamanho_valor || null
-        })
-        .eq('id', item.item_id);
+      await executeAdminAction(
+        'admin_update_item_basico',
+        async () => {
+          const { error } = await supabase.rpc('admin_update_item_basico', {
+            p_item_id: item.item_id,
+            p_titulo: editedData.titulo,
+            p_descricao: editedData.descricao,
+            p_categoria: editedData.categoria,
+            p_subcategoria: editedData.subcategoria || null,
+            p_valor_girinhas: editedData.valor_girinhas,
+            p_estado_conservacao: editedData.estado_conservacao,
+            p_genero: editedData.genero || null,
+            p_tamanho_valor: editedData.tamanho_valor || null,
+          } as any);
+          if (error) throw error;
+          return true;
+        },
+        'Item atualizado com sucesso',
+        { item_id: item.item_id }
+      );
 
-      if (error) throw error;
-
-      toast({
-        title: "Item atualizado",
-        description: "As alterações foram salvas com sucesso."
-      });
       setEditMode(false);
     } catch (error) {
       console.error('Erro ao atualizar item:', error);
       toast({
-        title: "Erro",
-        description: "Erro ao atualizar o item.",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Erro ao atualizar o item.',
+        variant: 'destructive',
       });
     }
   };
@@ -252,9 +255,17 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
 
             {/* Meta informações */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground mb-3">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                {item.usuario_nome}
+                <span>{item.usuario_nome}</span>
+                <Button
+                  variant="link"
+                  className="h-6 p-0 text-sm"
+                  onClick={() => window.open(`/perfil/${item.usuario_id}`, '_blank')}
+                  aria-label="Ver perfil público"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
