@@ -1,54 +1,90 @@
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useModeracaoItens } from '@/hooks/useModeracaoItens';
+import { useUserProfileAdmin } from '@/hooks/useUserProfileAdmin';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Check, X, Calendar, User, Tag, DollarSign, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { AlertTriangle, AlertCircle, RefreshCw } from 'lucide-react';
+import { ItemModeracaoCard } from './ItemModeracaoCard';
 import StatusModeracaoWidget from './StatusModeracaoWidget';
 
 const ModeracaoItens = () => {
   const { itens, loading, aprovarItem, rejeitarItem, aceitarDenuncia, rejeitarDenuncia, refetch } = useModeracaoItens();
-  const [rejeitandoId, setRejeitandoId] = useState<string | null>(null);
-  const [motivoRejeicao, setMotivoRejeicao] = useState('');
-  const [observacoes, setObservacoes] = useState('');
   const [moderacaoLoading, setModeracaoLoading] = useState(false);
-  const [denunciaModalOpen, setDenunciaModalOpen] = useState(false);
-  const [denunciaAtual, setDenunciaAtual] = useState<string | null>(null);
+  
+  // Estados para dados dos usuários 
+  const [userProfiles, setUserProfiles] = useState<{[key: string]: any}>({});
+  const [userStats, setUserStats] = useState<{[key: string]: any}>({});
+  const [userDataLoading, setUserDataLoading] = useState(false);
 
-  const motivosRejeicao = [
-    { value: 'conteudo_inadequado', label: 'Conteúdo inadequado' },
-    { value: 'preco_incorreto', label: 'Preço incorreto' },
-    { value: 'fotos_ruins', label: 'Fotos de baixa qualidade' },
-    { value: 'descricao_insuficiente', label: 'Descrição insuficiente' },
-    { value: 'item_danificado', label: 'Item muito danificado' },
-    { value: 'categoria_errada', label: 'Categoria incorreta' },
-    { value: 'duplicado', label: 'Item duplicado' },
-    { value: 'outros', label: 'Outros motivos' }
-  ];
+  // Carregar dados dos usuários quando a lista de itens mudar
+  React.useEffect(() => {
+    const loadUserData = async () => {
+      if (itens.length === 0) return;
+      
+      setUserDataLoading(true);
+      const profiles: {[key: string]: any} = {};
+      const stats: {[key: string]: any} = {};
+      
+      // Buscar dados únicos de usuários
+      const uniqueUserIds = Array.from(new Set(itens.map(item => item.usuario_id)));
+      
+      for (const userId of uniqueUserIds) {
+        try {
+          // Buscar perfil
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+          
+          if (profile) profiles[userId] = profile;
+          
+          // Buscar estatísticas básicas
+          const [
+            { count: totalItens },
+            { count: totalVendas },
+            { data: carteira }
+          ] = await Promise.all([
+            supabase.from('itens').select('*', { count: 'exact', head: true }).eq('publicado_por', userId),
+            supabase.from('reservas').select('*', { count: 'exact', head: true }).eq('usuario_item', userId).eq('status', 'confirmada'),
+            supabase.from('carteiras').select('saldo_atual').eq('user_id', userId).single()
+          ]);
+          
+          stats[userId] = {
+            total_itens_publicados: totalItens || 0,
+            total_vendas_realizadas: totalVendas || 0,
+            saldo_atual: carteira?.saldo_atual || 0,
+            cadastro_completo: !!(profile?.nome && profile?.telefone && profile?.cep)
+          };
+        } catch (error) {
+          console.error(`Erro ao buscar dados do usuário ${userId}:`, error);
+        }
+      }
+      
+      setUserProfiles(profiles);
+      setUserStats(stats);
+      setUserDataLoading(false);
+    };
+    
+    loadUserData();
+  }, [itens]);
 
   const handleAprovar = async (itemId: string) => {
     setModeracaoLoading(true);
     try {
       await aprovarItem(itemId);
+      await refetch(); // Atualizar lista após aprovação
     } finally {
       setModeracaoLoading(false);
     }
   };
 
-  const handleRejeitar = async () => {
-    if (!rejeitandoId || !motivoRejeicao) return;
-    
+  const handleRejeitar = async (itemId: string, motivo: string, observacoes?: string) => {
     setModeracaoLoading(true);
     try {
-      await rejeitarItem(rejeitandoId, motivoRejeicao, observacoes);
-      setRejeitandoId(null);
-      setMotivoRejeicao('');
-      setObservacoes('');
+      await rejeitarItem(itemId, motivo, observacoes);
+      await refetch(); // Atualizar lista após rejeição
     } finally {
       setModeracaoLoading(false);
     }
@@ -58,8 +94,7 @@ const ModeracaoItens = () => {
     setModeracaoLoading(true);
     try {
       await aceitarDenuncia(denunciaId, 'denuncia_procedente', 'Item removido por denúncia válida');
-      setDenunciaModalOpen(false);
-      setDenunciaAtual(null);
+      await refetch(); // Atualizar lista após aceitar denúncia
     } finally {
       setModeracaoLoading(false);
     }
@@ -69,8 +104,7 @@ const ModeracaoItens = () => {
     setModeracaoLoading(true);
     try {
       await rejeitarDenuncia(denunciaId, 'Denúncia considerada improcedente');
-      setDenunciaModalOpen(false);
-      setDenunciaAtual(null);
+      await refetch(); // Atualizar lista após rejeitar denúncia
     } finally {
       setModeracaoLoading(false);
     }
@@ -97,6 +131,7 @@ const ModeracaoItens = () => {
           </p>
         </div>
         <Button onClick={refetch} variant="outline" disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           {loading ? 'Carregando...' : 'Atualizar Lista'}
         </Button>
       </div>
@@ -128,204 +163,26 @@ const ModeracaoItens = () => {
               <p className="text-sm mt-2">Todos os itens foram analisados.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                 <span>📊 {itens.length} itens para analisar</span>
                 <span>•</span>
                 <span>🔄 Atualizado: {new Date().toLocaleTimeString()}</span>
               </div>
-          {itens.map((item) => (
-            <Card key={item.moderacao_id} className="overflow-hidden">
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <CardTitle className="flex items-center gap-2">
-                      {item.titulo}
-                      {item.tem_denuncia && (
-                        <Badge variant="destructive" className="gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          Denúncia
-                        </Badge>
-                      )}
-                    </CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        {item.usuario_nome}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        {new Date(item.data_publicacao).toLocaleDateString('pt-BR')}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Tag className="h-4 w-4" />
-                        {item.categoria}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
-                        {item.valor_girinhas} Girinhas
-                      </div>
-                      {item.status === 'em_analise' && (
-                        <Badge variant="secondary" className="gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Em análise
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    {item.tem_denuncia && item.denuncia_id ? (
-                      // Botões para itens denunciados
-                      <>
-                        <Button
-                          onClick={() => handleAceitarDenuncia(item.denuncia_id!)}
-                          size="sm"
-                          variant="destructive"
-                          disabled={moderacaoLoading}
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Aceitar Denúncia
-                        </Button>
-                        
-                        <Button
-                          onClick={() => handleRejeitarDenuncia(item.denuncia_id!)}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={moderacaoLoading}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Rejeitar Denúncia
-                        </Button>
-                      </>
-                    ) : (
-                      // Botões para moderação normal
-                      <>
-                        <Button
-                          onClick={() => handleAprovar(item.moderacao_id)}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={moderacaoLoading}
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Aprovar
-                        </Button>
-                        
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              onClick={() => setRejeitandoId(item.moderacao_id)}
-                              size="sm"
-                              variant="destructive"
-                              disabled={moderacaoLoading}
-                            >
-                              <X className="h-4 w-4 mr-1" />
-                              Rejeitar
-                            </Button>
-                          </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Rejeitar Item</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="motivo">Motivo da rejeição</Label>
-                            <Select onValueChange={setMotivoRejeicao}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o motivo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {motivosRejeicao.map((motivo) => (
-                                  <SelectItem key={motivo.value} value={motivo.value}>
-                                    {motivo.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div>
-                            <Label htmlFor="observacoes">Observações (opcional)</Label>
-                            <Textarea
-                              id="observacoes"
-                              placeholder="Detalhes adicionais sobre a rejeição..."
-                              value={observacoes}
-                              onChange={(e) => setObservacoes(e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="flex gap-2 justify-end">
-                            <Button variant="outline" onClick={() => setRejeitandoId(null)}>
-                              Cancelar
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              onClick={handleRejeitar}
-                              disabled={!motivoRejeicao || moderacaoLoading}
-                            >
-                              {moderacaoLoading ? 'Processando...' : 'Confirmar Rejeição'}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                        </Dialog>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <div className="flex gap-4">
-                  {item.primeira_foto && (
-                    <div className="flex-shrink-0">
-                      <img
-                        src={item.primeira_foto}
-                        alt={item.titulo}
-                        className="w-24 h-24 object-cover rounded-lg border"
-                      />
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 space-y-2">
-                    {item.tem_denuncia && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-red-800 font-medium mb-1">
-                          <AlertTriangle className="h-4 w-4" />
-                          Item denunciado
-                        </div>
-                        <p className="text-sm text-red-700">
-                          <strong>Motivo:</strong> {item.motivo_denuncia}
-                        </p>
-                        {item.descricao_denuncia && (
-                          <p className="text-sm text-red-700 mt-1">
-                            <strong>Descrição:</strong> {item.descricao_denuncia}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mt-2">
-                          <p className="text-xs text-red-600">
-                            {item.total_denuncias} denúncia(s) registrada(s)
-                          </p>
-                          {item.data_denuncia && (
-                            <p className="text-xs text-red-600">
-                              Denunciado em: {new Date(item.data_denuncia).toLocaleDateString('pt-BR')}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <Separator />
-                    
-                    <div className="text-sm text-muted-foreground">
-                      <p><strong>Item ID:</strong> {item.item_id}</p>
-                      <p><strong>Data de moderação:</strong> {new Date(item.data_moderacao).toLocaleString('pt-BR')}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              
+              {itens.map((item) => (
+                <ItemModeracaoCard
+                  key={item.moderacao_id}
+                  item={item}
+                  userProfile={userProfiles[item.usuario_id]}
+                  userStats={userStats[item.usuario_id]}
+                  onAprovar={handleAprovar}
+                  onRejeitar={handleRejeitar}
+                  onAceitarDenuncia={handleAceitarDenuncia}
+                  onRejeitarDenuncia={handleRejeitarDenuncia}
+                  loading={moderacaoLoading}
+                />
+              ))}
             </div>
           )}
         </CardContent>

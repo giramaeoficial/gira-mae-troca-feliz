@@ -9,10 +9,18 @@ export interface ItemModeracaoData {
   data_moderacao: string;
   item_id: string;
   titulo: string;
+  descricao: string;
   categoria: string;
+  subcategoria?: string;
   valor_girinhas: number;
+  estado_conservacao: string;
+  fotos?: string[];
+  genero?: string;
+  tamanho_valor?: string;
+  tamanho_categoria?: string;
   primeira_foto: string | null;
   usuario_nome: string;
+  usuario_id: string;
   data_publicacao: string;
   tem_denuncia: boolean;
   motivo_denuncia: string | null;
@@ -46,10 +54,18 @@ export const useModeracaoItens = () => {
         data_moderacao: item.data_moderacao,
         item_id: item.item_id,
         titulo: item.titulo,
+        descricao: item.descricao || '',
         categoria: item.categoria,
+        subcategoria: item.subcategoria,
         valor_girinhas: item.valor_girinhas,
+        estado_conservacao: item.estado_conservacao || 'usado',
+        fotos: item.fotos,
+        genero: item.genero,
+        tamanho_valor: item.tamanho_valor,
+        tamanho_categoria: item.tamanho_categoria,
         primeira_foto: item.primeira_foto,
         usuario_nome: item.usuario_nome,
+        usuario_id: item.usuario_id || item.publicado_por,
         data_publicacao: item.data_publicacao,
         tem_denuncia: item.tem_denuncia,
         motivo_denuncia: item.motivo_denuncia,
