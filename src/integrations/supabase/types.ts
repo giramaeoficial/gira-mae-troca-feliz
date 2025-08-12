@@ -312,6 +312,13 @@ export type Database = {
             foreignKeyName: "avaliacoes_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
@@ -607,6 +614,13 @@ export type Database = {
             foreignKeyName: "conversas_whatsapp_log_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "conversas_whatsapp_log_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
@@ -721,6 +735,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itens_disponiveis_moderados"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "denuncias_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
           },
           {
             foreignKeyName: "denuncias_item_id_fkey"
@@ -944,6 +965,13 @@ export type Database = {
             foreignKeyName: "favoritos_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "favoritos_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
@@ -1028,6 +1056,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itens_disponiveis_moderados"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fila_espera_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
           },
           {
             foreignKeyName: "fila_espera_item_id_fkey"
@@ -1590,6 +1625,13 @@ export type Database = {
             foreignKeyName: "moderacao_itens_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: true
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: true
             referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
@@ -2057,6 +2099,13 @@ export type Database = {
             foreignKeyName: "reservas_item_id_fkey"
             columns: ["item_id"]
             isOneToOne: false
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "reservas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
             referencedRelation: "itens_moderados"
             referencedColumns: ["id"]
           },
@@ -2319,6 +2368,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "itens_disponiveis_moderados"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transacoes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_moderacao_completa"
+            referencedColumns: ["item_id"]
           },
           {
             foreignKeyName: "transacoes_item_id_fkey"
@@ -2667,6 +2723,43 @@ export type Database = {
           },
         ]
       }
+      itens_moderacao_completa: {
+        Row: {
+          categoria: string | null
+          data_denuncia: string | null
+          data_moderacao: string | null
+          data_publicacao: string | null
+          denuncia_aceita: boolean | null
+          denuncia_id: string | null
+          descricao_denuncia: string | null
+          item_id: string | null
+          moderacao_id: string | null
+          moderacao_status: string | null
+          motivo_denuncia: string | null
+          primeira_foto: string | null
+          tem_denuncia: boolean | null
+          titulo: string | null
+          total_denuncias: number | null
+          usuario_nome: string | null
+          valor_girinhas: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_itens_categoria"
+            columns: ["categoria"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "moderacao_itens_denuncia_id_fkey"
+            columns: ["denuncia_id"]
+            isOneToOne: false
+            referencedRelation: "denuncias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       itens_moderados: {
         Row: {
           aguardando_moderacao: boolean | null
@@ -2793,6 +2886,15 @@ export type Database = {
       }
     }
     Functions: {
+      aceitar_denuncia: {
+        Args: {
+          p_denuncia_id: string
+          p_moderador_id: string
+          p_comentario?: string
+          p_observacoes?: string
+        }
+        Returns: Json
+      }
       admin_buscar_todos_itens: {
         Args: { p_limite?: number; p_offset?: number }
         Returns: {
@@ -3320,6 +3422,14 @@ export type Database = {
       registrar_indicacao: {
         Args: { p_indicador_id: string; p_indicado_id: string }
         Returns: boolean
+      }
+      rejeitar_denuncia: {
+        Args: {
+          p_denuncia_id: string
+          p_moderador_id: string
+          p_observacoes?: string
+        }
+        Returns: Json
       }
       relatorio_banda_situacao: {
         Args: Record<PropertyKey, never>

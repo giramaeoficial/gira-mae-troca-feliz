@@ -12,11 +12,13 @@ import { Separator } from '@/components/ui/separator';
 import StatusModeracaoWidget from './StatusModeracaoWidget';
 
 const ModeracaoItens = () => {
-  const { itens, loading, aprovarItem, rejeitarItem, refetch } = useModeracaoItens();
+  const { itens, loading, aprovarItem, rejeitarItem, aceitarDenuncia, rejeitarDenuncia, refetch } = useModeracaoItens();
   const [rejeitandoId, setRejeitandoId] = useState<string | null>(null);
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [moderacaoLoading, setModeracaoLoading] = useState(false);
+  const [denunciaModalOpen, setDenunciaModalOpen] = useState(false);
+  const [denunciaAtual, setDenunciaAtual] = useState<string | null>(null);
 
   const motivosRejeicao = [
     { value: 'conteudo_inadequado', label: 'Conteúdo inadequado' },
@@ -47,6 +49,28 @@ const ModeracaoItens = () => {
       setRejeitandoId(null);
       setMotivoRejeicao('');
       setObservacoes('');
+    } finally {
+      setModeracaoLoading(false);
+    }
+  };
+
+  const handleAceitarDenuncia = async (denunciaId: string) => {
+    setModeracaoLoading(true);
+    try {
+      await aceitarDenuncia(denunciaId, 'denuncia_procedente', 'Item removido por denúncia válida');
+      setDenunciaModalOpen(false);
+      setDenunciaAtual(null);
+    } finally {
+      setModeracaoLoading(false);
+    }
+  };
+
+  const handleRejeitarDenuncia = async (denunciaId: string) => {
+    setModeracaoLoading(true);
+    try {
+      await rejeitarDenuncia(denunciaId, 'Denúncia considerada improcedente');
+      setDenunciaModalOpen(false);
+      setDenunciaAtual(null);
     } finally {
       setModeracaoLoading(false);
     }
@@ -141,32 +165,64 @@ const ModeracaoItens = () => {
                         <DollarSign className="h-4 w-4" />
                         {item.valor_girinhas} Girinhas
                       </div>
+                      {item.status === 'em_analise' && (
+                        <Badge variant="secondary" className="gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Em análise
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleAprovar(item.moderacao_id)}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      disabled={moderacaoLoading}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Aprovar
-                    </Button>
-                    
-                    <Dialog>
-                      <DialogTrigger asChild>
+                    {item.tem_denuncia && item.denuncia_id ? (
+                      // Botões para itens denunciados
+                      <>
                         <Button
-                          onClick={() => setRejeitandoId(item.moderacao_id)}
+                          onClick={() => handleAceitarDenuncia(item.denuncia_id!)}
                           size="sm"
                           variant="destructive"
                           disabled={moderacaoLoading}
                         >
-                          <X className="h-4 w-4 mr-1" />
-                          Rejeitar
+                          <Check className="h-4 w-4 mr-1" />
+                          Aceitar Denúncia
                         </Button>
-                      </DialogTrigger>
+                        
+                        <Button
+                          onClick={() => handleRejeitarDenuncia(item.denuncia_id!)}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={moderacaoLoading}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Rejeitar Denúncia
+                        </Button>
+                      </>
+                    ) : (
+                      // Botões para moderação normal
+                      <>
+                        <Button
+                          onClick={() => handleAprovar(item.moderacao_id)}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={moderacaoLoading}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Aprovar
+                        </Button>
+                        
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              onClick={() => setRejeitandoId(item.moderacao_id)}
+                              size="sm"
+                              variant="destructive"
+                              disabled={moderacaoLoading}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Rejeitar
+                            </Button>
+                          </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>Rejeitar Item</DialogTitle>
@@ -212,7 +268,9 @@ const ModeracaoItens = () => {
                           </div>
                         </div>
                       </DialogContent>
-                    </Dialog>
+                        </Dialog>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -237,11 +295,23 @@ const ModeracaoItens = () => {
                           Item denunciado
                         </div>
                         <p className="text-sm text-red-700">
-                          Motivo: {item.motivo_denuncia}
+                          <strong>Motivo:</strong> {item.motivo_denuncia}
                         </p>
-                        <p className="text-xs text-red-600">
-                          {item.total_denuncias} denúncia(s) registrada(s)
-                        </p>
+                        {item.descricao_denuncia && (
+                          <p className="text-sm text-red-700 mt-1">
+                            <strong>Descrição:</strong> {item.descricao_denuncia}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between mt-2">
+                          <p className="text-xs text-red-600">
+                            {item.total_denuncias} denúncia(s) registrada(s)
+                          </p>
+                          {item.data_denuncia && (
+                            <p className="text-xs text-red-600">
+                              Denunciado em: {new Date(item.data_denuncia).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     )}
                     

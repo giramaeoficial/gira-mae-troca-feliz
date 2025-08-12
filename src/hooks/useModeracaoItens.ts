@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface ItemModeracaoData {
   moderacao_id: string;
   moderacao_status: string;
+  status: string;
   data_moderacao: string;
   item_id: string;
   titulo: string;
@@ -16,6 +17,9 @@ export interface ItemModeracaoData {
   tem_denuncia: boolean;
   motivo_denuncia: string | null;
   total_denuncias: number;
+  denuncia_id?: string;
+  descricao_denuncia?: string;
+  data_denuncia?: string;
 }
 
 export const useModeracaoItens = () => {
@@ -28,29 +32,31 @@ export const useModeracaoItens = () => {
     try {
       setLoading(true);
       
-      // Buscar itens para moderação
+      // Usar a nova view que prioriza itens denunciados
       const { data, error: directError } = await supabase
-        .from('moderacao_itens')
-        .select('*')
-        .eq('status', 'pendente')
-        .order('created_at', { ascending: false });
+        .from('itens_moderacao_completa')
+        .select('*');
 
       if (directError) throw directError;
 
       const itensFormatados: ItemModeracaoData[] = data?.map((item: any) => ({
-        moderacao_id: item.id,
-        moderacao_status: item.status,
-        data_moderacao: item.created_at,
+        moderacao_id: item.moderacao_id,
+        moderacao_status: item.moderacao_status,
+        status: item.moderacao_status,
+        data_moderacao: item.data_moderacao,
         item_id: item.item_id,
-        titulo: 'Item #' + item.item_id.slice(0, 8),
-        categoria: 'roupas',
-        valor_girinhas: 10,
-        primeira_foto: null,
-        usuario_nome: 'Usuário',
-        data_publicacao: item.created_at,
-        tem_denuncia: !!item.denuncia_id,
-        motivo_denuncia: null,
-        total_denuncias: 0
+        titulo: item.titulo,
+        categoria: item.categoria,
+        valor_girinhas: item.valor_girinhas,
+        primeira_foto: item.primeira_foto,
+        usuario_nome: item.usuario_nome,
+        data_publicacao: item.data_publicacao,
+        tem_denuncia: item.tem_denuncia,
+        motivo_denuncia: item.motivo_denuncia,
+        total_denuncias: item.total_denuncias,
+        denuncia_id: item.denuncia_id,
+        descricao_denuncia: item.descricao_denuncia,
+        data_denuncia: item.data_denuncia
       })) || [];
 
       setItens(itensFormatados);
@@ -124,6 +130,67 @@ export const useModeracaoItens = () => {
     }
   };
 
+  const aceitarDenuncia = async (denunciaId: string, comentario: string = 'denuncia_procedente', observacoes?: string) => {
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase.rpc('aceitar_denuncia', {
+        p_denuncia_id: denunciaId,
+        p_moderador_id: user.id,
+        p_comentario: comentario,
+        p_observacoes: observacoes
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Denúncia aceita",
+        description: "O item foi removido da plataforma.",
+      });
+      
+      await fetchItensPendentes();
+      return data;
+    } catch (err: any) {
+      toast({
+        title: "Erro",
+        description: "Falha ao aceitar denúncia: " + err.message,
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
+
+  const rejeitarDenuncia = async (denunciaId: string, observacoes?: string) => {
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error('Usuário não autenticado');
+
+      const { data, error } = await supabase.rpc('rejeitar_denuncia', {
+        p_denuncia_id: denunciaId,
+        p_moderador_id: user.id,
+        p_observacoes: observacoes
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Denúncia rejeitada",
+        description: "O item foi mantido na plataforma.",
+      });
+      
+      await fetchItensPendentes();
+      return data;
+    } catch (err: any) {
+      toast({
+        title: "Erro",
+        description: "Falha ao rejeitar denúncia: " + err.message,
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchItensPendentes();
   }, []);
@@ -134,6 +201,8 @@ export const useModeracaoItens = () => {
     error,
     aprovarItem,
     rejeitarItem,
+    aceitarDenuncia,
+    rejeitarDenuncia,
     refetch: fetchItensPendentes
   };
 };
