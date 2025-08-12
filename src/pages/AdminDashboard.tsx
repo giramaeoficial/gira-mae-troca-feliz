@@ -33,6 +33,7 @@ import MissoesAdmin from '@/components/admin/MissoesAdmin';
 import ConfigBonusDiario from '@/components/admin/ConfigBonusDiario';
 import ConfigIndicacoes from '@/components/admin/ConfigIndicacoes';
 import LiberacaoCidades from '@/components/admin/LiberacaoCidades';
+import ModeracaoItens from '@/components/admin/ModeracaoItens';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -41,6 +42,7 @@ const AdminDashboard = () => {
 
   const adminTabs = [
     { value: 'overview', label: 'Visão Geral', icon: BarChart3 },
+    { value: 'moderacao', label: 'Moderação', icon: Shield },
     { value: 'users', label: 'Usuários', icon: Users },
     { value: 'categories', label: 'Categorias', icon: FolderOpen },
     { value: 'girinhas', label: 'Girinhas', icon: Coins },
@@ -135,6 +137,10 @@ const AdminDashboard = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsContent value="overview" className="mt-0">
                 <MetricsOverview />
+              </TabsContent>
+
+              <TabsContent value="moderacao" className="mt-0">
+                <ModeracaoItens />
               </TabsContent>
 
               <TabsContent value="users" className="mt-0">
