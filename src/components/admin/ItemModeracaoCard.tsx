@@ -1,60 +1,30 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
+import LazyImage from '@/components/ui/lazy-image';
 import { 
   Check, 
   X, 
   AlertTriangle, 
-  Calendar, 
   User, 
-  Tag, 
-  DollarSign, 
   MapPin,
-  Phone,
-  Mail,
-  ShoppingBag,
-  TrendingUp,
-  ExternalLink,
+  Calendar,
   Edit2,
   Save,
   XCircle,
+  ExternalLink,
   Eye,
-  AlertCircle,
-  Shield
+  DollarSign
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { usePenalidades } from '@/hooks/usePenalidades';
-import { useAdminActions } from '@/hooks/useAdminActions';
-
-interface UserProfile {
-  id: string;
-  nome: string;
-  username: string;
-  email?: string;
-  telefone?: string;
-  avatar_url?: string;
-  cidade?: string;
-  estado?: string;
-  created_at: string;
-  ultima_atividade?: string;
-}
-
-interface UserStats {
-  total_itens_publicados: number;
-  total_vendas_realizadas: number;
-  total_compras_girinhas: number;
-  saldo_atual: number;
-  cadastro_completo: boolean;
-}
 
 interface ItemModeracaoCardProps {
   item: {
@@ -81,8 +51,6 @@ interface ItemModeracaoCardProps {
     primeira_foto?: string;
     usuario_id: string;
   };
-  userProfile?: UserProfile;
-  userStats?: UserStats;
   onAprovar: (moderacaoId: string) => void;
   onRejeitar: (moderacaoId: string, motivo: string, observacoes?: string) => void;
   onAceitarDenuncia: (denunciaId: string) => void;
@@ -92,8 +60,6 @@ interface ItemModeracaoCardProps {
 
 export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
   item,
-  userProfile,
-  userStats,
   onAprovar,
   onRejeitar,
   onAceitarDenuncia,
@@ -101,7 +67,6 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
   loading = false
 }) => {
   const { toast } = useToast();
-  const { executeAdminAction } = useAdminActions();
   const [editMode, setEditMode] = useState(false);
   const [editedData, setEditedData] = useState({
     titulo: item.titulo,
@@ -116,7 +81,6 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
   const [rejeitandoId, setRejeitandoId] = useState<string | null>(null);
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  const [showUserDetails, setShowUserDetails] = useState(false);
 
   const motivosRejeicao = [
     { value: 'conteudo_inadequado', label: 'Conteúdo inadequado' },
@@ -146,26 +110,24 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
 
   const handleSaveEdit = async () => {
     try {
-      await executeAdminAction(
-        'admin_update_item_basico',
-        async () => {
-          const { error } = await supabase.rpc('admin_update_item_basico', {
-            p_item_id: item.item_id,
-            p_titulo: editedData.titulo,
-            p_descricao: editedData.descricao,
-            p_categoria: editedData.categoria,
-            p_subcategoria: editedData.subcategoria || null,
-            p_valor_girinhas: editedData.valor_girinhas,
-            p_estado_conservacao: editedData.estado_conservacao,
-            p_genero: editedData.genero || null,
-            p_tamanho_valor: editedData.tamanho_valor || null,
-          } as any);
-          if (error) throw error;
-          return true;
-        },
-        'Item atualizado com sucesso',
-        { item_id: item.item_id }
-      );
+      const { error } = await supabase.rpc('admin_update_item_basico', {
+        p_item_id: item.item_id,
+        p_titulo: editedData.titulo,
+        p_descricao: editedData.descricao,
+        p_categoria: editedData.categoria,
+        p_subcategoria: editedData.subcategoria || null,
+        p_valor_girinhas: editedData.valor_girinhas,
+        p_estado_conservacao: editedData.estado_conservacao,
+        p_genero: editedData.genero || null,
+        p_tamanho_valor: editedData.tamanho_valor || null,
+      } as any);
+      
+      if (error) throw error;
+
+      toast({
+        title: 'Item atualizado',
+        description: 'As informações do item foram atualizadas com sucesso.',
+      });
 
       setEditMode(false);
     } catch (error) {
@@ -187,95 +149,183 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
     setObservacoes('');
   };
 
-  const PenalidadesUsuario = ({ userId }: { userId: string }) => {
-    const { penalidades, loading, getNivelTexto, getCorNivel } = usePenalidades();
-    
-    // Filtrar apenas penalidades do usuário específico
-    const penalidadesUsuario = penalidades.filter(p => p.usuario_id === userId);
-    
-    if (loading) return <div className="text-sm text-muted-foreground">Carregando penalidades...</div>;
-    
-    if (penalidadesUsuario.length === 0) {
-      return <div className="text-sm text-green-600">✅ Nenhuma penalização ativa</div>;
-    }
-
-    return (
-      <div className="space-y-2">
-        <h4 className="text-sm font-medium text-red-600 flex items-center gap-2">
-          <Shield className="h-4 w-4" />
-          Penalizações Ativas ({penalidadesUsuario.length})
-        </h4>
-        {penalidadesUsuario.map((penalidade) => (
-          <div key={penalidade.id} className="border border-red-200 rounded p-2 bg-red-50">
-            <div className="flex items-center justify-between mb-1">
-              <Badge className={getCorNivel(penalidade.nivel)}>
-                {getNivelTexto(penalidade.nivel)}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(penalidade.created_at), { addSuffix: true, locale: ptBR })}
-              </span>
-            </div>
-            <p className="text-xs text-red-700">
-              <strong>Tipo:</strong> {penalidade.tipo}
-            </p>
-            {penalidade.motivo && (
-              <p className="text-xs text-red-700">
-                <strong>Motivo:</strong> {penalidade.motivo}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
-    <Card className="overflow-hidden border-2">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          {/* Título e informações básicas */}
-          <div className="flex-1 mr-4">
-            {editMode ? (
-              <Input
-                value={editedData.titulo}
-                onChange={(e) => setEditedData({...editedData, titulo: e.target.value})}
-                className="font-semibold text-lg mb-2"
+    <Card className="hover:shadow-md transition-shadow bg-card">
+      <CardContent className="p-4">
+        <div className="flex gap-4">
+          {/* Imagem do item */}
+          <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+            {item.primeira_foto ? (
+              <LazyImage
+                src={item.primeira_foto}
+                alt={item.titulo}
+                className="w-full h-full object-cover"
+                placeholder="📷"
               />
             ) : (
-              <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                {item.titulo}
-                {item.tem_denuncia && (
-                  <Badge variant="destructive" className="gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    Denúncia
-                  </Badge>
-                )}
-              </h3>
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-muted-foreground text-xs">Sem foto</span>
+              </div>
             )}
+          </div>
 
-            {/* Meta informações */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-muted-foreground mb-3">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>{item.usuario_nome}</span>
-                <Button
-                  variant="link"
-                  className="h-6 p-0 text-sm"
-                  onClick={() => window.open(`/perfil/${item.usuario_id}`, '_blank')}
-                  aria-label="Ver perfil público"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                </Button>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {new Date(item.data_publicacao).toLocaleDateString('pt-BR')}
-              </div>
-              <div className="flex items-center gap-1">
-                <Tag className="h-4 w-4" />
+          {/* Conteúdo principal */}
+          <div className="flex-1 min-w-0">
+            {/* Cabeçalho com título e badges */}
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex-1 min-w-0">
                 {editMode ? (
+                  <Input
+                    value={editedData.titulo}
+                    onChange={(e) => setEditedData({...editedData, titulo: e.target.value})}
+                    className="font-medium text-base mb-1"
+                  />
+                ) : (
+                  <h3 className="font-medium text-base mb-1 line-clamp-2">{item.titulo}</h3>
+                )}
+                
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary" className="text-xs">
+                    {item.categoria}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {item.estado_conservacao}
+                  </Badge>
+                  {item.tem_denuncia && (
+                    <Badge variant="destructive" className="text-xs gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {item.total_denuncias} denúncia{item.total_denuncias !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex flex-col gap-1 ml-4">
+                {editMode ? (
+                  <>
+                    <Button onClick={handleSaveEdit} size="sm" className="h-8 px-3 bg-green-600 hover:bg-green-700">
+                      <Save className="h-3 w-3 mr-1" />
+                      Salvar
+                    </Button>
+                    <Button onClick={() => setEditMode(false)} size="sm" variant="outline" className="h-8 px-3">
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Cancelar
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button onClick={() => setEditMode(true)} size="sm" variant="outline" className="h-8 px-3">
+                      <Edit2 className="h-3 w-3 mr-1" />
+                      Editar
+                    </Button>
+                    
+                    {item.tem_denuncia && item.denuncia_id ? (
+                      <>
+                        <Button
+                          onClick={() => onAceitarDenuncia(item.denuncia_id!)}
+                          size="sm"
+                          variant="destructive"
+                          disabled={loading}
+                          className="h-8 px-3"
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Aceitar
+                        </Button>
+                        <Button
+                          onClick={() => onRejeitarDenuncia(item.denuncia_id!)}
+                          size="sm"
+                          className="h-8 px-3 bg-green-600 hover:bg-green-700"
+                          disabled={loading}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Rejeitar
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={() => onAprovar(item.moderacao_id)}
+                          size="sm"
+                          className="h-8 px-3 bg-green-600 hover:bg-green-700"
+                          disabled={loading}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Aprovar
+                        </Button>
+                        
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              onClick={() => setRejeitandoId(item.moderacao_id)}
+                              size="sm"
+                              variant="destructive"
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Rejeitar
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Rejeitar Item</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium">Motivo da rejeição</label>
+                                <Select onValueChange={setMotivoRejeicao}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o motivo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {motivosRejeicao.map((motivo) => (
+                                      <SelectItem key={motivo.value} value={motivo.value}>
+                                        {motivo.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <label className="text-sm font-medium">Observações</label>
+                                <Textarea
+                                  placeholder="Detalhes adicionais sobre a rejeição..."
+                                  value={observacoes}
+                                  onChange={(e) => setObservacoes(e.target.value)}
+                                />
+                              </div>
+                              
+                              <div className="flex gap-2 justify-end">
+                                <Button variant="outline" onClick={() => setRejeitandoId(null)}>
+                                  Cancelar
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={handleRejeitar}
+                                  disabled={!motivoRejeicao || loading}
+                                >
+                                  {loading ? 'Processando...' : 'Confirmar Rejeição'}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Campos editáveis quando em modo de edição */}
+            {editMode && (
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Categoria</label>
                   <Select value={editedData.categoria} onValueChange={(v) => setEditedData({...editedData, categoria: v})}>
-                    <SelectTrigger className="h-6 text-xs">
+                    <SelectTrigger className="h-7 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -284,40 +334,12 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  item.categoria
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                <DollarSign className="h-4 w-4" />
-                {editMode ? (
-                  <Input
-                    type="number"
-                    value={editedData.valor_girinhas}
-                    onChange={(e) => setEditedData({...editedData, valor_girinhas: Number(e.target.value)})}
-                    className="h-6 w-20 text-xs"
-                  />
-                ) : (
-                  `${item.valor_girinhas} Girinhas`
-                )}
-              </div>
-            </div>
-
-            {/* Edição de outros campos */}
-            {editMode && (
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">Subcategoria</label>
-                  <Input
-                    value={editedData.subcategoria}
-                    onChange={(e) => setEditedData({...editedData, subcategoria: e.target.value})}
-                    className="h-8 text-sm"
-                  />
                 </div>
+                
                 <div>
                   <label className="text-xs text-muted-foreground">Estado</label>
                   <Select value={editedData.estado_conservacao} onValueChange={(v) => setEditedData({...editedData, estado_conservacao: v})}>
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-7 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -327,10 +349,21 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div>
+                  <label className="text-xs text-muted-foreground">Valor (Girinhas)</label>
+                  <Input
+                    type="number"
+                    value={editedData.valor_girinhas}
+                    onChange={(e) => setEditedData({...editedData, valor_girinhas: Number(e.target.value)})}
+                    className="h-7 text-xs"
+                  />
+                </div>
+
                 <div>
                   <label className="text-xs text-muted-foreground">Gênero</label>
                   <Select value={editedData.genero} onValueChange={(v) => setEditedData({...editedData, genero: v})}>
-                    <SelectTrigger className="h-8 text-sm">
+                    <SelectTrigger className="h-7 text-xs">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -340,376 +373,81 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Tamanho</label>
-                  <Input
-                    value={editedData.tamanho_valor}
-                    onChange={(e) => setEditedData({...editedData, tamanho_valor: e.target.value})}
-                    className="h-8 text-sm"
+
+                <div className="col-span-2">
+                  <label className="text-xs text-muted-foreground">Descrição</label>
+                  <Textarea
+                    value={editedData.descricao}
+                    onChange={(e) => setEditedData({...editedData, descricao: e.target.value})}
+                    className="h-16 text-xs resize-none"
                   />
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Botões de ação */}
-          <div className="flex flex-col gap-2">
-            {editMode ? (
-              <>
-                <Button onClick={handleSaveEdit} size="sm" className="bg-green-600 hover:bg-green-700">
-                  <Save className="h-4 w-4 mr-1" />
-                  Salvar
-                </Button>
-                <Button onClick={() => setEditMode(false)} size="sm" variant="outline">
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Cancelar
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={() => setEditMode(true)} size="sm" variant="outline">
-                  <Edit2 className="h-4 w-4 mr-1" />
-                  Editar
-                </Button>
-                
-                {item.tem_denuncia && item.denuncia_id ? (
-                  <>
-                    <Button
-                      onClick={() => onAceitarDenuncia(item.denuncia_id!)}
-                      size="sm"
-                      variant="destructive"
-                      disabled={loading}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Aceitar Denúncia
-                    </Button>
-                    <Button
-                      onClick={() => onRejeitarDenuncia(item.denuncia_id!)}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      disabled={loading}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Rejeitar Denúncia
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      onClick={() => onAprovar(item.moderacao_id)}
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700"
-                      disabled={loading}
-                    >
-                      <Check className="h-4 w-4 mr-1" />
-                      Aprovar
-                    </Button>
-                    
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          onClick={() => setRejeitandoId(item.moderacao_id)}
-                          size="sm"
-                          variant="destructive"
-                          disabled={loading}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Rejeitar
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Rejeitar Item</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="text-sm font-medium">Motivo da rejeição</label>
-                            <Select onValueChange={setMotivoRejeicao}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o motivo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {motivosRejeicao.map((motivo) => (
-                                  <SelectItem key={motivo.value} value={motivo.value}>
-                                    {motivo.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          
-                          <div>
-                            <label className="text-sm font-medium">Observações</label>
-                            <Textarea
-                              placeholder="Detalhes adicionais sobre a rejeição..."
-                              value={observacoes}
-                              onChange={(e) => setObservacoes(e.target.value)}
-                            />
-                          </div>
-                          
-                          <div className="flex gap-2 justify-end">
-                            <Button variant="outline" onClick={() => setRejeitandoId(null)}>
-                              Cancelar
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              onClick={handleRejeitar}
-                              disabled={!motivoRejeicao || loading}
-                            >
-                              {loading ? 'Processando...' : 'Confirmar Rejeição'}
-                            </Button>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Coluna 1: Foto e informações do item */}
-          <div className="space-y-3">
-            {item.primeira_foto && (
-              <div className="relative">
-                <img
-                  src={item.primeira_foto}
-                  alt={item.titulo}
-                  className="w-full h-40 object-cover rounded-lg border"
-                />
-                {item.fotos && item.fotos.length > 1 && (
-                  <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    +{item.fotos.length - 1} fotos
-                  </div>
-                )}
-              </div>
+            {/* Descrição do item (quando não editando) */}
+            {!editMode && (
+              <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                {item.descricao}
+              </p>
             )}
 
-            {/* Descrição editável */}
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Descrição</label>
-              {editMode ? (
-                <Textarea
-                  value={editedData.descricao}
-                  onChange={(e) => setEditedData({...editedData, descricao: e.target.value})}
-                  className="mt-1"
-                  rows={3}
-                />
-              ) : (
-                <p className="text-sm bg-gray-50 p-2 rounded mt-1 line-clamp-3">
-                  {item.descricao}
-                </p>
-              )}
+            {/* Preço */}
+            <div className="flex items-center gap-1 mb-3">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-primary">{item.valor_girinhas} Girinhas</span>
             </div>
 
-            {/* Badges de estado */}
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{item.estado_conservacao}</Badge>
-              {item.genero && <Badge variant="outline">{item.genero}</Badge>}
-              {item.tamanho_valor && <Badge variant="outline">Tam. {item.tamanho_valor}</Badge>}
-            </div>
-          </div>
-
-          {/* Coluna 2: Informações do usuário */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium">Dados do Usuário</h4>
-              <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-1" />
-                    Ver Perfil
+            {/* Informações do usuário e data */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  <span>{item.usuario_nome}</span>
+                  <Button
+                    variant="link"
+                    className="h-4 p-0 text-xs"
+                    onClick={() => window.open(`/perfil/${item.usuario_id}`, '_blank')}
+                    aria-label="Ver perfil público"
+                  >
+                    <ExternalLink className="h-3 w-3" />
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Perfil Completo do Usuário</DialogTitle>
-                  </DialogHeader>
-                  
-                  {userProfile && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        {userProfile.avatar_url ? (
-                          <img src={userProfile.avatar_url} alt="Avatar" className="w-12 h-12 rounded-full" />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                            <User className="h-6 w-6 text-gray-500" />
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="font-semibold">{userProfile.nome}</h3>
-                          <p className="text-sm text-muted-foreground">@{userProfile.username}</p>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => window.open(`/perfil/${userProfile.id}`, '_blank')}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          Ver Público
-                        </Button>
-                      </div>
-
-                      <Separator />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="font-medium mb-2">Contato</h4>
-                          <div className="space-y-2 text-sm">
-                            {userProfile.email && (
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4" />
-                                <a href={`mailto:${userProfile.email}`} className="text-blue-600 hover:underline">
-                                  {userProfile.email}
-                                </a>
-                              </div>
-                            )}
-                            {userProfile.telefone && (
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                <a href={`tel:${userProfile.telefone}`} className="text-blue-600 hover:underline">
-                                  {userProfile.telefone}
-                                </a>
-                              </div>
-                            )}
-                            {userProfile.cidade && (
-                              <div className="flex items-center gap-2">
-                                <MapPin className="h-4 w-4" />
-                                {userProfile.cidade}, {userProfile.estado}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="font-medium mb-2">Atividade</h4>
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <strong>Cadastro:</strong> {formatDistanceToNow(new Date(userProfile.created_at), { addSuffix: true, locale: ptBR })}
-                            </div>
-                            {userProfile.ultima_atividade && (
-                              <div>
-                                <strong>Última atividade:</strong> {formatDistanceToNow(new Date(userProfile.ultima_atividade), { addSuffix: true, locale: ptBR })}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {userStats && (
-                        <div>
-                          <h4 className="font-medium mb-2">Estatísticas</h4>
-                          <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="flex items-center gap-2">
-                              <ShoppingBag className="h-4 w-4" />
-                              <span>{userStats.total_itens_publicados} itens publicados</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <TrendingUp className="h-4 w-4" />
-                              <span>{userStats.total_vendas_realizadas} vendas realizadas</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <DollarSign className="h-4 w-4" />
-                              <span>{userStats.total_compras_girinhas} Girinhas compradas</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <DollarSign className="h-4 w-4" />
-                              <span>{userStats.saldo_atual} Girinhas no saldo</span>
-                            </div>
-                          </div>
-                          
-                          {!userStats.cadastro_completo && (
-                            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                              <AlertCircle className="h-4 w-4 inline mr-1" />
-                              Cadastro incompleto
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <Separator />
-
-                      <PenalidadesUsuario userId={userProfile.id} />
-                    </div>
-                  )}
-                </DialogContent>
-              </Dialog>
+                </div>
+                
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>{formatDistanceToNow(new Date(item.data_publicacao), { addSuffix: true, locale: ptBR })}</span>
+                </div>
+              </div>
             </div>
 
-            {userProfile && (
-              <div className="space-y-2 text-sm">
-                <div><strong>Nome:</strong> {userProfile.nome}</div>
-                <div><strong>Username:</strong> @{userProfile.username}</div>
-                {userProfile.cidade && (
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {userProfile.cidade}, {userProfile.estado}
-                  </div>
-                )}
-                <div><strong>Cadastro:</strong> {formatDistanceToNow(new Date(userProfile.created_at), { addSuffix: true, locale: ptBR })}</div>
-              </div>
-            )}
-
-            {userStats && (
-              <>
-                <Separator />
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span>Itens publicados:</span>
-                    <strong>{userStats.total_itens_publicados}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Vendas realizadas:</span>
-                    <strong>{userStats.total_vendas_realizadas}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Saldo atual:</span>
-                    <strong>{userStats.saldo_atual} Girinhas</strong>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Coluna 3: Denúncia e penalizações */}
-          <div className="space-y-3">
+            {/* Informações da denúncia (se houver) */}
             {item.tem_denuncia && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center gap-2 text-red-800 font-medium mb-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Item Denunciado
+              <div className="mt-3 p-2 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium text-red-900">Denúncia</span>
                 </div>
-                <div className="space-y-1 text-sm text-red-700">
-                  <div><strong>Motivo:</strong> {item.motivo_denuncia}</div>
-                  {item.descricao_denuncia && (
-                    <div><strong>Descrição:</strong> {item.descricao_denuncia}</div>
-                  )}
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs">{item.total_denuncias} denúncia(s)</span>
-                    {item.data_denuncia && (
-                      <span className="text-xs">
-                        {formatDistanceToNow(new Date(item.data_denuncia), { addSuffix: true, locale: ptBR })}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                
+                {item.motivo_denuncia && (
+                  <p className="text-xs text-red-700 mb-1">
+                    <strong>Motivo:</strong> {item.motivo_denuncia}
+                  </p>
+                )}
+                
+                {item.descricao_denuncia && (
+                  <p className="text-xs text-red-700 mb-1">
+                    <strong>Descrição:</strong> {item.descricao_denuncia}
+                  </p>
+                )}
+                
+                {item.data_denuncia && (
+                  <p className="text-xs text-red-600">
+                    Denunciado há {formatDistanceToNow(new Date(item.data_denuncia), { addSuffix: true, locale: ptBR })}
+                  </p>
+                )}
               </div>
             )}
-
-            <PenalidadesUsuario userId={item.usuario_id} />
-
-            {/* Informações técnicas */}
-            <div className="p-3 bg-gray-50 rounded-lg text-xs space-y-1">
-              <div><strong>Item ID:</strong> {item.item_id}</div>
-              <div><strong>Moderação ID:</strong> {item.moderacao_id}</div>
-              <div><strong>Usuário ID:</strong> {item.usuario_id}</div>
-            </div>
           </div>
         </div>
       </CardContent>
