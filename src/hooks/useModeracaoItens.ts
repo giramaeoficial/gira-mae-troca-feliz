@@ -79,10 +79,10 @@ export const useModeracaoItens = () => {
         }
       }
 
-      // Buscar dados dos usuários - usar publicado_por dos itens se usuario_id não estiver disponível
+      // Buscar dados dos usuários usando publicado_por dos itens
       const userIds = data?.map(item => {
-        // Verificar se usuario_id existe na view, senão buscar via publicado_por do item
-        return item.usuario_id || (itensCompletos.find(i => i.id === item.item_id)?.publicado_por);
+        const itemCompleto = itensCompletos.find(i => i.id === item.item_id);
+        return itemCompleto?.publicado_por;
       }).filter(Boolean) || [];
       let usersData = [];
 
@@ -110,7 +110,7 @@ export const useModeracaoItens = () => {
           userData
         });
 
-        const calculatedUserId = item.usuario_id || itemCompleto?.publicado_por;
+        const calculatedUserId = itemCompleto?.publicado_por;
         const foundUserData = usersData.find(u => u.id === calculatedUserId);
         
         return {
