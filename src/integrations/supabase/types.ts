@@ -2955,6 +2955,20 @@ export type Database = {
           comentario_predefinido: string
         }[]
       }
+      admin_update_item_basico: {
+        Args: {
+          p_item_id: string
+          p_titulo: string
+          p_descricao: string
+          p_categoria: string
+          p_subcategoria: string
+          p_valor_girinhas: number
+          p_estado_conservacao: string
+          p_genero: string
+          p_tamanho_valor: string
+        }
+        Returns: boolean
+      }
       aplicar_penalidade: {
         Args: {
           p_usuario_id: string
