@@ -16,6 +16,8 @@ const EditarItemModeracao: React.FC<EditarItemModeracaoProps> = ({ item, isOpen,
   console.log('🔍 EditarItemModeracao - Item recebido:', item);
   
   // Adaptar o item para o formato esperado pelo useEditarItemForm
+  console.log('🔍 EditarItemModeracao - Item original:', item);
+  
   const adaptedItem = item ? {
     id: item.item_id,
     titulo: item.titulo,
@@ -24,11 +26,11 @@ const EditarItemModeracao: React.FC<EditarItemModeracaoProps> = ({ item, isOpen,
     subcategoria: item.subcategoria,
     valor_girinhas: item.valor_girinhas,
     estado_conservacao: item.estado_conservacao,
-    fotos: item.fotos,
+    fotos: item.fotos || [],
     genero: item.genero,
     tamanho_valor: item.tamanho_valor,
     tamanho_categoria: item.tamanho_categoria,
-    publicado_por: item.usuario_id,
+    publicado_por: item.publicado_por,
     status: item.status,
     created_at: item.data_publicacao,
     updated_at: item.data_moderacao

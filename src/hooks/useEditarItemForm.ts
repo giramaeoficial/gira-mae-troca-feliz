@@ -26,11 +26,21 @@ interface ValidationErrors {
   [key: string]: string;
 }
 
-export const useEditarItemForm = (initialItem: Item) => {
+export const useEditarItemForm = (initialItem: Item | null) => {
+  console.log('🔄 useEditarItemForm inicializado com item:', initialItem?.id);
+  
   const { validarValorCategoria } = useConfigCategorias();
   const { mutate: atualizarItem, isPending: loading } = useAtualizarItem();
   const { subcategorias, isLoading: loadingSubcategorias } = useSubcategorias();
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(initialItem?.categoria);
+  
+  console.log('📊 Estados de carregamento:', {
+    loadingSubcategorias,
+    loadingTamanhos,
+    categoria: initialItem?.categoria,
+    subcategoriasCount: subcategorias?.length,
+    tiposTamanhoKeys: Object.keys(tiposTamanho || {})
+  });
 
   const [formData, setFormData] = useState<EditFormData>({
     titulo: '',
@@ -76,7 +86,7 @@ export const useEditarItemForm = (initialItem: Item) => {
       setErrors({});
       setIsFormInitialized(true);
     }
-  }, [initialItem, loadingSubcategorias, loadingTamanhos, isFormInitialized, tiposTamanho]);
+  }, [initialItem?.id, loadingSubcategorias, loadingTamanhos, isFormInitialized]);
 
   // Efeito adicional para garantir que o tamanho seja definido quando as opções estiverem prontas
   useEffect(() => {
@@ -233,7 +243,7 @@ export const useEditarItemForm = (initialItem: Item) => {
           console.log(`⬆️ Upload da imagem ${i + 1}/${formData.imagens.length}:`, foto.name);
           
           try {
-            const fileName = generateImagePath(initialItem.publicado_por, foto.name);
+            const fileName = generateImagePath(initialItem?.publicado_por || '', foto.name);
             
             const uploadResult = await uploadImage({
               bucket: 'itens',
@@ -274,7 +284,7 @@ export const useEditarItemForm = (initialItem: Item) => {
         console.log('💾 Salvando dados atualizados:', dadosAtualizados);
 
         atualizarItem(
-          { itemId: initialItem.id, dadosAtualizados },
+          { itemId: initialItem?.id || '', dadosAtualizados },
           {
             onSuccess: () => {
               toast.success("Item atualizado com sucesso! 🎉");
@@ -295,7 +305,7 @@ export const useEditarItemForm = (initialItem: Item) => {
     } finally {
       setUploadingImages(false);
     }
-  }, [formData, validateForm, atualizarItem, initialItem.id, initialItem.publicado_por]);
+  }, [formData, validateForm, atualizarItem, initialItem?.id, initialItem?.publicado_por]);
 
   return {
     formData,
