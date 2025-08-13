@@ -120,30 +120,30 @@ const ModeracaoItens = () => {
     }
   };
 
-  const handleRejeitar = async (moderacaoId: string) => {
+  const handleRejeitar = async (moderacaoId: string, motivo: string, observacoes?: string) => {
     setModeracaoLoading(true);
     try {
-      await rejeitarItem(moderacaoId, 'rejeitado_admin', 'Item rejeitado pela moderação');
+      await rejeitarItem(moderacaoId, motivo, observacoes);
       await refetch();
     } finally {
       setModeracaoLoading(false);
     }
   };
 
-  const handleAceitarDenuncia = async (denunciaId: string) => {
+  const handleAceitarDenuncia = async (denunciaId: string, comentario: string, observacoes?: string) => {
     setModeracaoLoading(true);
     try {
-      await aceitarDenuncia(denunciaId, 'denuncia_procedente', 'Item removido por denúncia válida');
+      await aceitarDenuncia(denunciaId, comentario, observacoes);
       await refetch();
     } finally {
       setModeracaoLoading(false);
     }
   };
 
-  const handleRejeitarDenuncia = async (denunciaId: string) => {
+  const handleRejeitarDenuncia = async (denunciaId: string, observacoes: string) => {
     setModeracaoLoading(true);
     try {
-      await rejeitarDenuncia(denunciaId, 'Denúncia considerada improcedente');
+      await rejeitarDenuncia(denunciaId, observacoes);
       await refetch();
     } finally {
       setModeracaoLoading(false);
