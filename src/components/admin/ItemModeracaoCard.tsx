@@ -53,8 +53,8 @@ interface ItemModeracaoCardProps {
   };
   onAprovar: (moderacaoId: string) => void;
   onRejeitar: (moderacaoId: string, motivo: string, observacoes?: string) => void;
-  onAceitarDenuncia: (denunciaId: string) => void;
-  onRejeitarDenuncia: (denunciaId: string) => void;
+  onAceitarDenuncia: (denunciaId: string, comentario: string, observacoes?: string) => void;
+  onRejeitarDenuncia: (denunciaId: string, observacoes: string) => void;
   loading?: boolean;
 }
 
@@ -78,9 +78,18 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
     genero: item.genero || '',
     tamanho_valor: item.tamanho_valor || ''
   });
+  
+  // Estados para modal de rejeição de item
   const [rejeitandoId, setRejeitandoId] = useState<string | null>(null);
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [observacoes, setObservacoes] = useState('');
+
+  // Estados para modais de denúncia
+  const [aceitandoDenuncia, setAceitandoDenuncia] = useState(false);
+  const [rejeitandoDenuncia, setRejeitandoDenuncia] = useState(false);
+  const [comentarioAceitar, setComentarioAceitar] = useState('');
+  const [observacoesAceitar, setObservacoesAceitar] = useState('');
+  const [observacoesRejeitar, setObservacoesRejeitar] = useState('');
 
   const motivosRejeicao = [
     { value: 'conteudo_inadequado', label: 'Conteúdo inadequado' },
@@ -91,6 +100,16 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
     { value: 'categoria_errada', label: 'Categoria incorreta' },
     { value: 'duplicado', label: 'Item duplicado' },
     { value: 'outros', label: 'Outros motivos' }
+  ];
+
+  const motivosAceitarDenuncia = [
+    { value: 'denuncia_procedente', label: 'Denúncia procedente' },
+    { value: 'conteudo_inapropriado', label: 'Conteúdo inapropriado' },
+    { value: 'preco_abusivo', label: 'Preço abusivo' },
+    { value: 'informacoes_falsas', label: 'Informações falsas' },
+    { value: 'item_danificado', label: 'Item danificado' },
+    { value: 'spam', label: 'Spam' },
+    { value: 'violacao_termos', label: 'Violação dos termos' }
   ];
 
   const categorias = [
@@ -147,6 +166,23 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
     setRejeitandoId(null);
     setMotivoRejeicao('');
     setObservacoes('');
+  };
+
+  const handleAceitarDenunciaConfirm = async () => {
+    if (!item.denuncia_id || !comentarioAceitar) return;
+    
+    await onAceitarDenuncia(item.denuncia_id, comentarioAceitar, observacoesAceitar);
+    setAceitandoDenuncia(false);
+    setComentarioAceitar('');
+    setObservacoesAceitar('');
+  };
+
+  const handleRejeitarDenunciaConfirm = async () => {
+    if (!item.denuncia_id || !observacoesRejeitar) return;
+    
+    await onRejeitarDenuncia(item.denuncia_id, observacoesRejeitar);
+    setRejeitandoDenuncia(false);
+    setObservacoesRejeitar('');
   };
 
   return (
@@ -222,25 +258,104 @@ export const ItemModeracaoCard: React.FC<ItemModeracaoCardProps> = ({
                     
                     {item.tem_denuncia && item.denuncia_id ? (
                       <>
-                        <Button
-                          onClick={() => onAceitarDenuncia(item.denuncia_id!)}
-                          size="sm"
-                          variant="destructive"
-                          disabled={loading}
-                          className="h-8 px-3"
-                        >
-                          <Check className="h-3 w-3 mr-1" />
-                          Aceitar
-                        </Button>
-                        <Button
-                          onClick={() => onRejeitarDenuncia(item.denuncia_id!)}
-                          size="sm"
-                          className="h-8 px-3 bg-green-600 hover:bg-green-700"
-                          disabled={loading}
-                        >
-                          <X className="h-3 w-3 mr-1" />
-                          Rejeitar
-                        </Button>
+                        <Dialog open={aceitandoDenuncia} onOpenChange={setAceitandoDenuncia}>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={loading}
+                              className="h-8 px-3"
+                            >
+                              <Check className="h-3 w-3 mr-1" />
+                              Aceitar
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Aceitar Denúncia</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium">Motivo da aceitação</label>
+                                <Select value={comentarioAceitar} onValueChange={setComentarioAceitar}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o motivo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {motivosAceitarDenuncia.map((motivo) => (
+                                      <SelectItem key={motivo.value} value={motivo.value}>
+                                        {motivo.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div>
+                                <label className="text-sm font-medium">Observações (opcional)</label>
+                                <Textarea
+                                  placeholder="Detalhes adicionais sobre a decisão..."
+                                  value={observacoesAceitar}
+                                  onChange={(e) => setObservacoesAceitar(e.target.value)}
+                                />
+                              </div>
+                              
+                              <div className="flex gap-2 justify-end">
+                                <Button variant="outline" onClick={() => setAceitandoDenuncia(false)}>
+                                  Cancelar
+                                </Button>
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={handleAceitarDenunciaConfirm}
+                                  disabled={!comentarioAceitar || loading}
+                                >
+                                  {loading ? 'Processando...' : 'Aceitar Denúncia'}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Dialog open={rejeitandoDenuncia} onOpenChange={setRejeitandoDenuncia}>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              className="h-8 px-3 bg-green-600 hover:bg-green-700"
+                              disabled={loading}
+                            >
+                              <X className="h-3 w-3 mr-1" />
+                              Rejeitar
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Rejeitar Denúncia</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <label className="text-sm font-medium">Motivo da rejeição</label>
+                                <Textarea
+                                  placeholder="Explique por que a denúncia está sendo rejeitada..."
+                                  value={observacoesRejeitar}
+                                  onChange={(e) => setObservacoesRejeitar(e.target.value)}
+                                />
+                              </div>
+                              
+                              <div className="flex gap-2 justify-end">
+                                <Button variant="outline" onClick={() => setRejeitandoDenuncia(false)}>
+                                  Cancelar
+                                </Button>
+                                <Button 
+                                  className="bg-green-600 hover:bg-green-700"
+                                  onClick={handleRejeitarDenunciaConfirm}
+                                  disabled={!observacoesRejeitar || loading}
+                                >
+                                  {loading ? 'Processando...' : 'Rejeitar Denúncia'}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
                       </>
                     ) : (
                       <>
