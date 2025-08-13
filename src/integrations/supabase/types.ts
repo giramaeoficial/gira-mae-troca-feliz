@@ -82,6 +82,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "admin_actions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       admin_notifications: {
@@ -129,6 +136,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "admin_notifications_sent_by_fkey"
+            columns: ["sent_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       admin_users: {
@@ -160,6 +174,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -205,6 +226,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_missoes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -281,11 +309,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "avaliacoes_avaliado_id_fkey"
+            columns: ["avaliado_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "avaliacoes_avaliador_id_fkey"
             columns: ["avaliador_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_avaliador_id_fkey"
+            columns: ["avaliador_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "avaliacoes_item_id_fkey"
@@ -501,6 +543,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cidades_config_liberada_por_fkey"
+            columns: ["liberada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       compras_girinhas: {
@@ -639,11 +688,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversas_whatsapp_log_usuario_iniciou_fkey"
+            columns: ["usuario_iniciou"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "conversas_whatsapp_log_usuario_recebeu_fkey"
             columns: ["usuario_recebeu"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_whatsapp_log_usuario_recebeu_fkey"
+            columns: ["usuario_recebeu"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -918,6 +981,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "extensoes_validade_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       favoritos: {
@@ -1078,6 +1148,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fila_espera_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       fila_processamento: {
@@ -1177,6 +1254,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "filhos_mae_id_fkey"
+            columns: ["mae_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       generos: {
@@ -1246,11 +1330,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "indicacoes_indicado_id_fkey"
+            columns: ["indicado_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "indicacoes_indicador_id_fkey"
             columns: ["indicador_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "indicacoes_indicador_id_fkey"
+            columns: ["indicador_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1334,6 +1432,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["publicado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1642,6 +1747,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "moderacao_itens_moderador_id_fkey"
+            columns: ["moderador_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       motivos_cancelamento: {
@@ -1709,6 +1821,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1787,6 +1906,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       penalidades_usuario: {
@@ -1830,6 +1956,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penalidades_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2016,6 +2149,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "queimas_girinhas_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       recompensas_missoes: {
@@ -2201,11 +2341,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "seguidores_seguido_id_fkey"
+            columns: ["seguido_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "seguidores_seguidor_id_fkey"
             columns: ["seguidor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seguidores_seguidor_id_fkey"
+            columns: ["seguidor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2285,6 +2439,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "templates_segmentacao_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2480,11 +2641,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transferencias_girinhas_destinatario_id_fkey"
+            columns: ["destinatario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "transferencias_girinhas_remetente_id_fkey"
             columns: ["remetente_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_girinhas_remetente_id_fkey"
+            columns: ["remetente_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2539,6 +2714,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_addresses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       user_notification_preferences: {
@@ -2588,6 +2770,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2644,6 +2833,21 @@ export type Database = {
       }
     }
     Views: {
+      estatisticas_sistema: {
+        Row: {
+          denuncias_ativas: number | null
+          itens_pendentes: number | null
+          itens_publicados_hoje: number | null
+          penalidades_ativas: number | null
+          reservas_hoje: number | null
+          total_usuarios: number | null
+          usuarios_ativos: number | null
+          usuarios_ativos_mes: number | null
+          usuarios_suspensos: number | null
+          usuarios_warned: number | null
+        }
+        Relationships: []
+      }
       itens_aprovados_moderacao: {
         Row: {
           categoria: string | null
@@ -2677,6 +2881,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "moderacao_itens_denuncia_id_fkey"
@@ -2719,6 +2930,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "moderacao_itens_denuncia_id_fkey"
@@ -2766,6 +2984,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "moderacao_itens_denuncia_id_fkey"
             columns: ["denuncia_id"]
             isOneToOne: false
@@ -2811,11 +3036,53 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "itens_publicado_por_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "moderacao_itens_denuncia_id_fkey"
             columns: ["denuncia_id"]
             isOneToOne: false
             referencedRelation: "denuncias"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      penalidades_usuarios_detalhada: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          expira_em: string | null
+          motivo: string | null
+          nivel: number | null
+          nivel_descricao: string | null
+          penalidade_id: string | null
+          status_penalidade: string | null
+          tipo: string | null
+          tipo_descricao: string | null
+          updated_at: string | null
+          usuario_email: string | null
+          usuario_id: string | null
+          usuario_nome: string | null
+          usuario_username: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "penalidades_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penalidades_usuario_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -2878,6 +3145,36 @@ export type Database = {
           descricao_pt?: string | null
           icone?: string | null
           tipo?: Database["public"]["Enums"]["tipo_transacao_enum"] | null
+        }
+        Relationships: []
+      }
+      usuarios_admin: {
+        Row: {
+          avatar_url: string | null
+          cadastro_status: string | null
+          cidade: string | null
+          data_cadastro: string | null
+          email: string | null
+          estado: string | null
+          nome: string | null
+          penalidade_mais_grave: number | null
+          penalidades_ativas: number | null
+          pontuacao_reputacao: number | null
+          saldo_girinhas: number | null
+          status: string | null
+          telefone: string | null
+          total_denuncias_feitas: number | null
+          total_girinhas_gastas: number | null
+          total_girinhas_recebidas: number | null
+          total_itens_publicados: number | null
+          total_penalidades_historico: number | null
+          total_reservas_feitas: number | null
+          total_vendas_realizadas: number | null
+          total_violacoes: number | null
+          ultima_atividade: string | null
+          ultima_penalidade: string | null
+          user_id: string | null
+          username: string | null
         }
         Relationships: []
       }
@@ -3006,6 +3303,27 @@ export type Database = {
           nome: string
           username: string
           avatar_url: string
+        }[]
+      }
+      buscar_usuarios_admin: {
+        Args: {
+          p_termo_busca?: string
+          p_status_filtro?: string
+          p_limite?: number
+          p_offset?: number
+        }
+        Returns: {
+          user_id: string
+          nome: string
+          email: string
+          username: string
+          status: string
+          pontuacao_reputacao: number
+          total_violacoes: number
+          penalidades_ativas: number
+          penalidade_mais_grave: number
+          data_cadastro: string
+          ultima_atividade: string
         }[]
       }
       calcular_custo_extensao: {

@@ -6,7 +6,7 @@ import { RefreshCw } from 'lucide-react';
 import ModerationSidebar from './moderation/ModerationSidebar';
 import ModerationFilters from './moderation/ModerationFilters';
 import ModerationTabs from './moderation/ModerationTabs';
-import { GestorPenalidades } from './GestorPenalidades';
+import { GerenciamentoUsuarios } from './GerenciamentoUsuarios';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -266,16 +266,10 @@ const ModePanel = () => {
           </div>
         )}
 
-        {activeView === 'penalidades' && (
-          <GestorPenalidades />
+        {activeView === 'usuarios' && (
+          <GerenciamentoUsuarios />
         )}
 
-        {activeView === 'usuarios' && (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Usuários</h2>
-            <p className="text-muted-foreground">Em desenvolvimento...</p>
-          </div>
-        )}
 
         {activeView === 'historico' && (
           <div className="text-center py-20">
