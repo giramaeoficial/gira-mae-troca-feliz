@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useItensAdminModerado } from '@/hooks/useItensOptimizedModerado';
 import { useModeracaoItens } from '@/hooks/useModeracaoItens';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,90 @@ import { RefreshCw } from 'lucide-react';
 import ModerationSidebar from './moderation/ModerationSidebar';
 import ModerationFilters from './moderation/ModerationFilters';
 import ModerationTabs from './moderation/ModerationTabs';
+import { supabase } from '@/lib/supabase';
+import { useQuery } from '@tanstack/react-query';
 
 const ModePanel = () => {
-  // CORREÇÃO: Usar hook que carrega TODOS os itens (incluindo aprovados e rejeitados)
-  const { data: itensAdmin, isLoading: loadingAdmin, refetch: refetchAdmin } = useItensAdminModerado(100);
-  
+  // Criar hook customizado para buscar TODOS os itens de moderação
+  const { data: todosItens, isLoading: loadingTodos, refetch: refetchTodos } = useQuery({
+    queryKey: ['todos-itens-moderacao'],
+    queryFn: async () => {
+      console.log('🔍 Buscando TODOS os itens de moderação...');
+      
+      try {
+        // Buscar direto da view que tem todos os itens
+        const { data, error } = await supabase
+          .from('itens_moderacao_completa')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('❌ Erro ao buscar todos os itens:', error);
+          // Se falhar, tentar busca alternativa
+          const { data: dataAlt, error: errorAlt } = await supabase
+            .from('moderacao_itens')
+            .select(`
+              id,
+              status,
+              created_at,
+              moderado_em,
+              denuncia_id,
+              denuncia_aceita,
+              item_id,
+              itens!inner (
+                id,
+                titulo,
+                categoria,
+                valor_girinhas,
+                fotos,
+                created_at,
+                publicado_por,
+                profiles!inner (
+                  nome
+                )
+              )
+            `)
+            .order('created_at', { ascending: false });
+
+          if (errorAlt) {
+            console.error('❌ Erro na busca alternativa:', errorAlt);
+            throw errorAlt;
+          }
+
+          // Converter formato alternativo
+          const itensConvertidos = dataAlt?.map(item => ({
+            moderacao_id: item.id,
+            moderacao_status: item.status,
+            data_moderacao: item.created_at,
+            denuncia_id: item.denuncia_id,
+            denuncia_aceita: item.denuncia_aceita,
+            item_id: item.itens.id,
+            titulo: item.itens.titulo,
+            categoria: item.itens.categoria,
+            valor_girinhas: item.itens.valor_girinhas,
+            primeira_foto: item.itens.fotos?.[0],
+            data_publicacao: item.itens.created_at,
+            usuario_nome: item.itens.profiles.nome,
+            tem_denuncia: !!item.denuncia_id,
+            total_denuncias: 0,
+          })) || [];
+
+          console.log('✅ Busca alternativa bem-sucedida:', itensConvertidos.length, 'itens');
+          return itensConvertidos;
+        }
+
+        console.log('✅ Todos os itens carregados:', data?.length || 0);
+        return data || [];
+      } catch (error) {
+        console.error('💥 Erro geral na busca:', error);
+        throw error;
+      }
+    },
+    staleTime: 1000 * 60 * 2,
+    refetchOnWindowFocus: true,
+    enabled: true
+  });
+
   // Manter o hook original apenas para as funções de moderação
   const { aprovarItem, rejeitarItem, aceitarDenuncia, rejeitarDenuncia } = useModeracaoItens();
   
@@ -23,36 +101,28 @@ const ModePanel = () => {
   const [activeTab, setActiveTab] = useState('pendentes');
   const [activeView, setActiveView] = useState('revisar');
 
-  // CORREÇÃO: Converter dados do admin para formato esperado
-  const itens = useMemo(() => {
-    if (!itensAdmin) return [];
-    
-    return itensAdmin.map(item => ({
-      item_id: item.id,
-      moderacao_id: `mod_${item.id}`, // Gerar ID temporário
-      titulo: item.titulo,
-      categoria: item.categoria,
-      valor_girinhas: item.valor_girinhas,
-      moderacao_status: item.moderacao_status,
-      usuario_id: item.publicado_por,
-      usuario_nome: item.vendedor_nome,
-      created_at: item.created_at,
-      moderado_em: item.moderado_em,
-      tem_denuncia: false, // Por enquanto false, pode ser melhorado depois
-      // ... outros campos necessários
-    }));
-  }, [itensAdmin]);
+  // CORREÇÃO: Usar dados diretos da query customizada
+  const itens = todosItens || [];
+  const loading = loadingTodos;
+  const refetch = refetchTodos;
 
-  const loading = loadingAdmin;
-  const refetch = refetchAdmin;
+  // Debug: verificar dados carregados
+  useEffect(() => {
+    console.log('📊 Dados carregados:', {
+      todosItens: todosItens?.length || 0,
+      loading: loading
+    });
+  }, [todosItens, loading]);
 
   // Buscar perfis dos usuários quando itens carregarem
   useEffect(() => {
     console.log('📊 Itens carregados no ModePanel:', itens);
     if (itens.length > 0) {
-      const userIds = itens.map(item => item.usuario_id).filter(Boolean);
+      const userIds = itens.map(item => item.usuario_id || item.publicado_por).filter(Boolean);
       console.log('👥 UserIds encontrados:', userIds);
-      fetchMultipleProfiles(userIds);
+      if (userIds.length > 0) {
+        fetchMultipleProfiles(userIds);
+      }
     }
   }, [itens, fetchMultipleProfiles]);
 
