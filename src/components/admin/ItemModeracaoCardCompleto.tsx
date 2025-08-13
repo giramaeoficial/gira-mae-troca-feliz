@@ -149,7 +149,7 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
   return (
     <>
       {/* Card Compacto - Layout Grid */}
-      <Card className={`h-[380px] flex flex-col hover:shadow-lg transition-all duration-200 ${item.tem_denuncia ? 'ring-2 ring-red-200 bg-red-50/30' : ''}`}>
+      <Card className={`h-[420px] flex flex-col hover:shadow-lg transition-all duration-200 overflow-hidden ${item.tem_denuncia ? 'ring-2 ring-red-200 bg-red-50/30' : ''}`}>
         <CardContent className="p-4 flex flex-col h-full">
           
           {/* Badge de Categoria no Topo */}
@@ -165,7 +165,7 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
           </div>
 
           {/* Imagem Principal - Aspecto Quadrado */}
-          <div className="relative mb-3">
+          <div className="relative mb-3 flex-shrink-0">
             <div 
               className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer"
               onClick={() => setFullImageModal(item.fotos?.[0] || item.primeira_foto)}
@@ -185,7 +185,7 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
           </div>
 
           {/* Título - Máximo 2 linhas */}
-          <h3 className="font-semibold text-sm line-clamp-2 mb-2 min-h-[2.5rem]">
+          <h3 className="font-semibold text-sm line-clamp-2 mb-2 min-h-[2.5rem] flex-shrink-0">
             {item.titulo}
           </h3>
 
@@ -195,17 +195,17 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
           </p>
 
           {/* Vendedor */}
-          <div className="text-xs text-muted-foreground mb-2">
+          <div className="text-xs text-muted-foreground mb-2 flex-shrink-0">
             <span className="font-medium">Vendedor:</span> {item.usuario_nome}
           </div>
 
           {/* Preço em Destaque */}
-          <div className="text-lg font-bold text-primary mb-4">
+          <div className="text-lg font-bold text-primary mb-4 flex-shrink-0">
             R$ {item.valor_girinhas?.toFixed(2) || '0.00'}
           </div>
 
           {/* Botões de Ação - 3 botões inline */}
-          <div className="flex gap-1 mt-auto">
+          <div className="flex gap-1 mt-auto flex-shrink-0">
             {/* Botão Detalhes */}
             <Button
               variant="outline"
