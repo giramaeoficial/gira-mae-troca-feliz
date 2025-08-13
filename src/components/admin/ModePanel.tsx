@@ -163,11 +163,11 @@ const ModePanel = () => {
     }
   };
 
-  const handleRejeitar = async (moderacaoId: string) => {
+  const handleRejeitar = async (moderacaoId: string, motivo: string, observacoes?: string) => {
     setModeracaoLoading(true);
     try {
-      console.log('🔴 ModePanel - Rejeitando item:', moderacaoId);
-      await rejeitarItem(moderacaoId, 'rejeitado_admin', 'Item rejeitado pela moderação');
+      console.log('🔴 ModePanel - Rejeitando item:', moderacaoId, 'Motivo:', motivo);
+      await rejeitarItem(moderacaoId, motivo, observacoes);
       console.log('🔴 ModePanel - Item rejeitado, fazendo refetch...');
       await refetchTodos();
       console.log('🔴 ModePanel - Refetch concluído');
@@ -176,21 +176,27 @@ const ModePanel = () => {
     }
   };
 
-  const handleAceitarDenuncia = async (denunciaId: string) => {
+  const handleAceitarDenuncia = async (denunciaId: string, comentario: string, observacoes?: string) => {
     setModeracaoLoading(true);
     try {
-      await aceitarDenuncia(denunciaId, 'denuncia_procedente', 'Item removido por denúncia válida');
+      console.log('🔴 ModePanel - Aceitando denúncia:', denunciaId, 'Comentário:', comentario);
+      await aceitarDenuncia(denunciaId, comentario, observacoes);
+      console.log('🔴 ModePanel - Denúncia aceita, fazendo refetch...');
       await refetchTodos();
+      console.log('🔴 ModePanel - Refetch concluído');
     } finally {
       setModeracaoLoading(false);
     }
   };
 
-  const handleRejeitarDenuncia = async (denunciaId: string) => {
+  const handleRejeitarDenuncia = async (denunciaId: string, observacoes: string) => {
     setModeracaoLoading(true);
     try {
-      await rejeitarDenuncia(denunciaId, 'Denúncia considerada improcedente');
+      console.log('🟢 ModePanel - Rejeitando denúncia:', denunciaId, 'Observações:', observacoes);
+      await rejeitarDenuncia(denunciaId, observacoes);
+      console.log('🟢 ModePanel - Denúncia rejeitada, fazendo refetch...');
       await refetchTodos();
+      console.log('🟢 ModePanel - Refetch concluído');
     } finally {
       setModeracaoLoading(false);
     }
