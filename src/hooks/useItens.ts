@@ -44,9 +44,9 @@ export const useItens = () => {
     setError('');
     
     try {
-      // ✅ ETAPA 3: Usar view com moderação + join manual com profiles
+      // Usar tabela itens diretamente com join de profiles
       const { data, error } = await supabase
-        .from('itens_moderados')
+        .from('itens')
         .select(`
           *,
           profiles!publicado_por(nome, avatar_url, cidade, reputacao)
@@ -112,9 +112,9 @@ export const useItens = () => {
     setError('');
     
     try {
-      // ✅ ETAPA 3: Usar view com moderação + join manual com profiles
+      // Usar tabela itens diretamente com join de profiles
       const { data, error } = await supabase
-        .from('itens_moderados')
+        .from('itens')
         .select(`
           *,
           profiles!publicado_por(nome, avatar_url, cidade, reputacao)
@@ -148,9 +148,9 @@ export const useItens = () => {
     setError('');
     
     try {
-      // ✅ ETAPA 3: Usar view com moderação para item específico
+      // Usar tabela itens diretamente com join de profiles
       const { data, error } = await supabase
-        .from('itens_moderados')
+        .from('itens')
         .select(`
           *,
           profiles!publicado_por(nome, avatar_url, cidade, reputacao)

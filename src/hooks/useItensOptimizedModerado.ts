@@ -85,9 +85,9 @@ export const useItensFeedModerado = (limite: number = 20) => {
       console.log('🔍 Carregando feed com moderação - limite:', limite);
       
       try {
-        // Usar view específica para itens disponíveis
+        // Usar tabela itens diretamente
         const { data, error } = await supabase
-          .from('itens_disponiveis_moderados')
+          .from('itens')
           .select(`
             id,
             titulo,
@@ -98,10 +98,9 @@ export const useItensFeedModerado = (limite: number = 20) => {
             status,
             fotos,
             created_at,
-            publicado_por,
-            moderacao_status,
-            aguardando_moderacao
+            publicado_por
           `)
+          .eq('status', 'disponivel')
           .order('created_at', { ascending: false })
           .limit(limite);
 

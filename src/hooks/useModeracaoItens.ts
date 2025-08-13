@@ -47,12 +47,11 @@ export const useModeracaoItens = () => {
       setLoading(true);
       console.log('🔍 Buscando itens para moderação...');
       
-      // Buscar itens com dados completos incluindo fotos e informações do usuário
+      // Buscar itens que precisam de moderação através da view atual
       const { data, error: directError } = await supabase
-        .from('itens_moderacao_completa')
+        .from('itens_pendentes_moderacao')
         .select('*')
-        .order('tem_denuncia', { ascending: false })
-        .order('data_publicacao', { ascending: false });
+        .order('data_moderacao', { ascending: false });
 
       if (directError) {
         console.error('❌ Erro na consulta:', directError);

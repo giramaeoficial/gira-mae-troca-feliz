@@ -77,8 +77,11 @@ const DetalhesItem = () => {
       if (!id) throw new Error('ID do item não fornecido');
 
       const { data, error } = await supabase
-        .from('itens_completos')
-        .select('*')
+        .from('itens')
+        .select(`
+          *,
+          profiles!publicado_por(nome, avatar_url, telefone, cidade, estado, bairro, reputacao)
+        `)
         .eq('id', id)
         .single();
 
@@ -107,15 +110,15 @@ const DetalhesItem = () => {
       created_at: data.created_at || '',
       updated_at: data.updated_at || '',
       publicado_por_profile: {
-        nome: data.vendedor_nome || '',
-        avatar_url: data.vendedor_avatar || '',
-        reputacao: data.vendedor_reputacao || 0,
-        whatsapp: data.vendedor_telefone || ''
+        nome: data.profiles?.nome || '',
+        avatar_url: data.profiles?.avatar_url || '',
+        reputacao: data.profiles?.reputacao || 0,
+        whatsapp: data.profiles?.telefone || ''
       },
-      vendedor_bairro: data.vendedor_bairro || '',
-      vendedor_cidade: data.vendedor_cidade || '',
-      vendedor_estado: data.vendedor_estado || '',
-      vendedor_cep: data.vendedor_cep || '',
+      vendedor_bairro: data.profiles?.bairro || '',
+      vendedor_cidade: data.profiles?.cidade || '',
+      vendedor_estado: data.profiles?.estado || '',
+      vendedor_cep: '',
     };
   }, [data]);
 
