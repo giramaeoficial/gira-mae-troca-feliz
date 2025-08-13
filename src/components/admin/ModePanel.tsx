@@ -15,6 +15,7 @@ const ModePanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todas');
   const [activeTab, setActiveTab] = useState('pendentes');
+  const [activeView, setActiveView] = useState('revisar');
 
   // Buscar perfis dos usuários quando itens carregarem
   useEffect(() => {
@@ -85,14 +86,14 @@ const ModePanel = () => {
         break;
       case 'aprovados':
         resultado = resultado.filter(item => {
-          const isAprovado = item.moderacao_status === 'aprovado';
+          const isAprovado = item.moderacao_status === 'aprovado' || item.moderacao_status === 'em_analise';
           console.log(`  🔍 Filtro aprovados - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isAprovado}`);
           return isAprovado;
         });
         break;
       case 'rejeitados':
         resultado = resultado.filter(item => {
-          const isRejeitado = item.moderacao_status === 'rejeitado';
+          const isRejeitado = item.moderacao_status === 'rejeitado' || item.moderacao_status === 'rejeitado_admin';
           console.log(`  🔍 Filtro rejeitados - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isRejeitado}`);
           return isRejeitado;
         });
@@ -181,7 +182,11 @@ const ModePanel = () => {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <ModerationSidebar stats={stats} />
+      <ModerationSidebar 
+        stats={stats} 
+        activeView={activeView}
+        onViewChange={setActiveView}
+      />
       
       {/* Main Content */}
       <div className="flex-1 p-6">
@@ -197,24 +202,63 @@ const ModePanel = () => {
           </Button>
         </div>
 
-        <ModerationFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-        />
+        {activeView === 'revisar' && (
+          <>
+            <ModerationFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+            />
 
-        <ModerationTabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          stats={stats}
-          itensFiltrados={itensFiltrados}
-          onAprovar={handleAprovar}
-          onRejeitar={handleRejeitar}
-          onAceitarDenuncia={handleAceitarDenuncia}
-          onRejeitarDenuncia={handleRejeitarDenuncia}
-          loading={moderacaoLoading}
-        />
+            <ModerationTabs
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              stats={stats}
+              itensFiltrados={itensFiltrados}
+              onAprovar={handleAprovar}
+              onRejeitar={handleRejeitar}
+              onAceitarDenuncia={handleAceitarDenuncia}
+              onRejeitarDenuncia={handleRejeitarDenuncia}
+              loading={moderacaoLoading}
+            />
+          </>
+        )}
+
+        {activeView === 'dashboard' && (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
+            <p className="text-muted-foreground">Em desenvolvimento...</p>
+          </div>
+        )}
+
+        {activeView === 'denuncias' && (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold mb-4">Denúncias</h2>
+            <p className="text-muted-foreground">Em desenvolvimento...</p>
+          </div>
+        )}
+
+        {activeView === 'usuarios' && (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold mb-4">Usuários</h2>
+            <p className="text-muted-foreground">Em desenvolvimento...</p>
+          </div>
+        )}
+
+        {activeView === 'historico' && (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold mb-4">Histórico</h2>
+            <p className="text-muted-foreground">Em desenvolvimento...</p>
+          </div>
+        )}
+
+        {activeView === 'configuracoes' && (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold mb-4">Configurações</h2>
+            <p className="text-muted-foreground">Em desenvolvimento...</p>
+          </div>
+        )}
       </div>
     </div>
   );

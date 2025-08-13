@@ -18,9 +18,11 @@ interface ModerationSidebarProps {
     aprovados: number;
     rejeitados: number;
   };
+  activeView: string;
+  onViewChange: (view: string) => void;
 }
 
-const ModerationSidebar: React.FC<ModerationSidebarProps> = ({ stats }) => {
+const ModerationSidebar: React.FC<ModerationSidebarProps> = ({ stats, activeView, onViewChange }) => {
   const sidebarItems = [
     { icon: BarChart3, label: 'Dashboard', value: 'dashboard' },
     { icon: Shield, label: 'Revisar Itens', value: 'revisar', count: stats.pendentes },
@@ -53,8 +55,9 @@ const ModerationSidebar: React.FC<ModerationSidebarProps> = ({ stats }) => {
           return (
             <Button
               key={item.value}
-              variant="ghost"
+              variant={activeView === item.value ? "secondary" : "ghost"}
               className="w-full justify-start gap-3 h-auto py-3"
+              onClick={() => onViewChange(item.value)}
             >
               <Icon className="w-4 h-4" />
               <span className="flex-1 text-left">{item.label}</span>
