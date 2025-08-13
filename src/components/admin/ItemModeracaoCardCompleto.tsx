@@ -2,39 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { 
   Check, 
   X, 
   AlertTriangle, 
   Calendar,
   Eye,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Flag,
   DollarSign,
   MapPin,
   Star,
-  Info,
   Package,
   Shirt,
   Palette,
   Phone,
   Mail,
-  School,
   Wallet,
   Edit,
   User,
   Image,
-  FileText,
-  CreditCard,
-  Activity
+  FileText
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -60,7 +50,6 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
   loading
 }) => {
   const [detailsModalAberto, setDetailsModalAberto] = useState(false);
-  const [userModalAberto, setUserModalAberto] = useState(false);
   const [editModalAberto, setEditModalAberto] = useState(false);
   const [fullImageModal, setFullImageModal] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -106,7 +95,6 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
 
   useEffect(() => {
     if (item.usuario_id && !userProfile) {
-      console.log('🔍 Buscando perfil para usuário:', item.usuario_id);
       fetchUserProfile(item.usuario_id);
     }
   }, [item.usuario_id, userProfile, fetchUserProfile]);
@@ -160,18 +148,23 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
 
   return (
     <>
-      {/* Layout Card Compacto Estilo Grid */}
-      <Card className={`h-full flex flex-col hover:shadow-lg transition-all duration-200 ${item.tem_denuncia ? 'ring-2 ring-red-200 bg-red-50/30' : ''}`}>
+      {/* Card Compacto - Layout Grid */}
+      <Card className={`h-[380px] flex flex-col hover:shadow-lg transition-all duration-200 ${item.tem_denuncia ? 'ring-2 ring-red-200 bg-red-50/30' : ''}`}>
         <CardContent className="p-4 flex flex-col h-full">
           
           {/* Badge de Categoria no Topo */}
-          <div className="absolute top-2 right-2 z-10">
+          <div className="flex justify-between items-start mb-3">
             <Badge variant="secondary" className="text-xs">
               {item.categoria}
             </Badge>
+            {item.tem_denuncia && (
+              <Badge variant="destructive" className="text-xs">
+                {item.total_denuncias} denúncia{item.total_denuncias > 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
 
-          {/* Imagem Principal */}
+          {/* Imagem Principal - Aspecto Quadrado */}
           <div className="relative mb-3">
             <div 
               className="aspect-square bg-muted rounded-lg overflow-hidden cursor-pointer"
@@ -191,225 +184,216 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
             </div>
           </div>
 
-          {/* Título */}
-          <h3 className="font-semibold text-base line-clamp-2 mb-2 flex-grow-0">
+          {/* Título - Máximo 2 linhas */}
+          <h3 className="font-semibold text-sm line-clamp-2 mb-2 min-h-[2.5rem]">
             {item.titulo}
           </h3>
 
-          {/* Descrição Resumida */}
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-grow">
+          {/* Descrição Resumida - Máximo 2 linhas */}
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-3 min-h-[2rem] flex-grow">
             {item.descricao}
           </p>
 
-          {/* Informações do Vendedor */}
-          <div className="text-sm text-muted-foreground mb-3">
-            <p>Vendedor: {item.usuario_nome}</p>
+          {/* Vendedor */}
+          <div className="text-xs text-muted-foreground mb-2">
+            <span className="font-medium">Vendedor:</span> {item.usuario_nome}
           </div>
 
-          {/* Preço */}
+          {/* Preço em Destaque */}
           <div className="text-lg font-bold text-primary mb-4">
             R$ {item.valor_girinhas?.toFixed(2) || '0.00'}
           </div>
 
-          {/* Denúncia (se houver) */}
-          {item.tem_denuncia && (
-            <div className="bg-red-100 border border-red-300 rounded p-2 mb-4">
-              <div className="flex items-center gap-1 text-red-800 text-xs">
-                <AlertTriangle className="w-3 h-3" />
-                <span className="font-medium">
-                  {item.total_denuncias} denúncia{item.total_denuncias > 1 ? 's' : ''}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Botão Detalhes e Ações */}
-          <div className="space-y-2 mt-auto">
+          {/* Botões de Ação - 3 botões inline */}
+          <div className="flex gap-1 mt-auto">
+            {/* Botão Detalhes */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setDetailsModalAberto(true)}
-              className="w-full gap-1"
+              className="flex-1 text-xs gap-1 h-8"
             >
-              <Eye className="w-4 h-4" />
-              Detalhes e Ações
+              <Eye className="w-3 h-3" />
+              Detalhes
             </Button>
 
-            {/* Ações Rápidas */}
-            <div className="flex gap-2">
-              {item.tem_denuncia && item.denuncia_id ? (
-                <>
-                  <Dialog open={aceitandoDenuncia} onOpenChange={setAceitandoDenuncia}>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={loading}
-                        className="flex-1"
-                      >
-                        <Check className="w-4 h-4" />
-                        Aceitar
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-[95vw] max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Aceitar Denúncia</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium">Motivo da aceitação</label>
-                          <Select value={comentarioAceitar} onValueChange={setComentarioAceitar}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o motivo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {motivosAceitarDenuncia.map((motivo) => (
-                                <SelectItem key={motivo.value} value={motivo.value}>
-                                  {motivo.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <label className="text-sm font-medium">Observações (opcional)</label>
-                          <Textarea
-                            placeholder="Detalhes adicionais sobre a decisão..."
-                            value={observacoesAceitar}
-                            onChange={(e) => setObservacoesAceitar(e.target.value)}
-                          />
-                        </div>
-                        
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" onClick={() => setAceitandoDenuncia(false)}>
-                            Cancelar
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            onClick={handleAceitarDenunciaConfirm}
-                            disabled={!comentarioAceitar || loading}
-                          >
-                            {loading ? 'Processando...' : 'Aceitar Denúncia'}
-                          </Button>
-                        </div>
+            {/* Botões de Ação baseados no tipo */}
+            {item.tem_denuncia && item.denuncia_id ? (
+              <>
+                {/* Aceitar Denúncia */}
+                <Dialog open={aceitandoDenuncia} onOpenChange={setAceitandoDenuncia}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={loading}
+                      className="flex-1 text-xs gap-1 h-8"
+                    >
+                      <Check className="w-3 h-3" />
+                      Aceitar
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[95vw] max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Aceitar Denúncia</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Motivo da aceitação</label>
+                        <Select value={comentarioAceitar} onValueChange={setComentarioAceitar}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o motivo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {motivosAceitarDenuncia.map((motivo) => (
+                              <SelectItem key={motivo.value} value={motivo.value}>
+                                {motivo.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </DialogContent>
-                  </Dialog>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Observações (opcional)</label>
+                        <Textarea
+                          placeholder="Detalhes adicionais sobre a decisão..."
+                          value={observacoesAceitar}
+                          onChange={(e) => setObservacoesAceitar(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" onClick={() => setAceitandoDenuncia(false)}>
+                          Cancelar
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          onClick={handleAceitarDenunciaConfirm}
+                          disabled={!comentarioAceitar || loading}
+                        >
+                          {loading ? 'Processando...' : 'Aceitar Denúncia'}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
-                  <Dialog open={rejeitandoDenuncia} onOpenChange={setRejeitandoDenuncia}>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        disabled={loading}
-                      >
-                        <X className="w-4 h-4" />
-                        Rejeitar
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-[95vw] max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Rejeitar Denúncia</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium">Motivo da rejeição</label>
-                          <Textarea
-                            placeholder="Explique por que a denúncia está sendo rejeitada..."
-                            value={observacoesRejeitar}
-                            onChange={(e) => setObservacoesRejeitar(e.target.value)}
-                          />
-                        </div>
-                        
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" onClick={() => setRejeitandoDenuncia(false)}>
-                            Cancelar
-                          </Button>
-                          <Button 
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={handleRejeitarDenunciaConfirm}
-                            disabled={!observacoesRejeitar || loading}
-                          >
-                            {loading ? 'Processando...' : 'Rejeitar Denúncia'}
-                          </Button>
-                        </div>
+                {/* Rejeitar Denúncia */}
+                <Dialog open={rejeitandoDenuncia} onOpenChange={setRejeitandoDenuncia}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      className="flex-1 text-xs gap-1 h-8 bg-green-600 hover:bg-green-700"
+                      disabled={loading}
+                    >
+                      <X className="w-3 h-3" />
+                      Rejeitar
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[95vw] max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Rejeitar Denúncia</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Motivo da rejeição</label>
+                        <Textarea
+                          placeholder="Explique por que a denúncia está sendo rejeitada..."
+                          value={observacoesRejeitar}
+                          onChange={(e) => setObservacoesRejeitar(e.target.value)}
+                        />
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </>
-              ) : (
-                <>
-                  <Button
-                    onClick={() => onAprovar(item.moderacao_id)}
-                    size="sm"
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    disabled={loading}
-                  >
-                    <Check className="w-4 h-4" />
-                    Aprovar
-                  </Button>
-                  
-                  <Dialog open={rejeitandoItem} onOpenChange={setRejeitandoItem}>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        disabled={loading}
-                        className="flex-1"
-                      >
-                        <X className="w-4 h-4" />
-                        Rejeitar
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="w-[95vw] max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Rejeitar Item</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium">Motivo da rejeição</label>
-                          <Select value={motivoRejeicao} onValueChange={setMotivoRejeicao}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o motivo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {motivosRejeicao.map((motivo) => (
-                                <SelectItem key={motivo.value} value={motivo.value}>
-                                  {motivo.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <label className="text-sm font-medium">Observações</label>
-                          <Textarea
-                            placeholder="Detalhes adicionais sobre a rejeição..."
-                            value={observacoesRejeicao}
-                            onChange={(e) => setObservacoesRejeicao(e.target.value)}
-                          />
-                        </div>
-                        
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" onClick={() => setRejeitandoItem(false)}>
-                            Cancelar
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            onClick={handleRejeitarItemConfirm}
-                            disabled={!motivoRejeicao || loading}
-                          >
-                            {loading ? 'Processando...' : 'Confirmar Rejeição'}
-                          </Button>
-                        </div>
+                      
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" onClick={() => setRejeitandoDenuncia(false)}>
+                          Cancelar
+                        </Button>
+                        <Button 
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={handleRejeitarDenunciaConfirm}
+                          disabled={!observacoesRejeitar || loading}
+                        >
+                          {loading ? 'Processando...' : 'Rejeitar Denúncia'}
+                        </Button>
                       </div>
-                    </DialogContent>
-                  </Dialog>
-                </>
-              )}
-            </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
+            ) : (
+              <>
+                {/* Aprovar Item */}
+                <Button
+                  onClick={() => onAprovar(item.moderacao_id)}
+                  size="sm"
+                  className="flex-1 text-xs gap-1 h-8 bg-green-600 hover:bg-green-700"
+                  disabled={loading}
+                >
+                  <Check className="w-3 h-3" />
+                  Aprovar
+                </Button>
+                
+                {/* Rejeitar Item */}
+                <Dialog open={rejeitandoItem} onOpenChange={setRejeitandoItem}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      disabled={loading}
+                      className="flex-1 text-xs gap-1 h-8"
+                    >
+                      <X className="w-3 h-3" />
+                      Rejeitar
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[95vw] max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Rejeitar Item</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Motivo da rejeição</label>
+                        <Select value={motivoRejeicao} onValueChange={setMotivoRejeicao}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o motivo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {motivosRejeicao.map((motivo) => (
+                              <SelectItem key={motivo.value} value={motivo.value}>
+                                {motivo.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium">Observações</label>
+                        <Textarea
+                          placeholder="Detalhes adicionais sobre a rejeição..."
+                          value={observacoesRejeicao}
+                          onChange={(e) => setObservacoesRejeicao(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" onClick={() => setRejeitandoItem(false)}>
+                          Cancelar
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          onClick={handleRejeitarItemConfirm}
+                          disabled={!motivoRejeicao || loading}
+                        >
+                          {loading ? 'Processando...' : 'Confirmar Rejeição'}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -418,12 +402,12 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
       <Dialog open={detailsModalAberto} onOpenChange={setDetailsModalAberto}>
         <DialogContent className="w-[95vw] max-w-4xl h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalhes Completos do Item</DialogTitle>
+            <DialogTitle>Detalhes do Item</DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            {/* Coluna 1: Imagens do Item */}
+            {/* Coluna 1: Imagem e Informações do Item */}
             <div className="space-y-4">
               {/* Imagem Principal */}
               <div className="relative">
@@ -467,31 +451,6 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
                 </div>
               )}
 
-              {/* Ações de Edição */}
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1 gap-1 h-8"
-                  onClick={() => setEditModalAberto(true)}
-                >
-                  <Edit className="w-3 h-3" />
-                  Editar
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1 gap-1 h-8"
-                  onClick={() => setFullImageModal(item.fotos?.[0] || item.primeira_foto)}
-                >
-                  <Eye className="w-3 h-3" />
-                  Ver Imagem
-                </Button>
-              </div>
-            </div>
-
-            {/* Coluna 2: Informações do Item */}
-            <div className="space-y-4">
               {/* Título e Categoria */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -499,13 +458,13 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
                   <span className="text-sm text-muted-foreground">{item.categoria}</span>
                   {item.subcategoria && <span className="text-xs text-muted-foreground">• {item.subcategoria}</span>}
                 </div>
-                <h3 className="font-semibold text-lg leading-tight">{item.titulo}</h3>
+                <h3 className="font-semibold text-xl leading-tight">{item.titulo}</h3>
               </div>
 
               {/* Preço */}
               <div className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-green-600" />
-                <span className="text-xl font-bold text-green-600">{item.valor_girinhas} Girinhas</span>
+                <span className="text-2xl font-bold text-green-600">{item.valor_girinhas} Girinhas</span>
                 <span className="text-sm text-muted-foreground">≈ {formatCurrency(item.valor_girinhas * 1.0)}</span>
               </div>
 
@@ -568,102 +527,96 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
               )}
             </div>
 
-            {/* Coluna 3: Informações do Usuário */}
+            {/* Coluna 2: Informações do Vendedor */}
             <div className="space-y-4">
-              {/* Informações do Usuário */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Informações do Vendedor</span>
+              <div className="flex items-center gap-2 mb-3">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Informações do Vendedor</span>
+              </div>
+
+              <div className="space-y-4">
+                {/* Avatar e Nome */}
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-12 h-12">
+                    <AvatarImage src={userProfile?.avatar_url} />
+                    <AvatarFallback className="text-sm">
+                      {item.usuario_nome.split(' ').map((n: string) => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-medium text-lg">{item.usuario_nome}</p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-blue-600 text-sm"
+                      onClick={() => window.open(`/perfil/${item.usuario_id}`, '_blank')}
+                    >
+                      🔗 Ver perfil completo
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  {/* Avatar e Nome */}
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={userProfile?.avatar_url} />
-                      <AvatarFallback className="text-sm">
-                        {item.usuario_nome.split(' ').map((n: string) => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p className="font-medium">{item.usuario_nome}</p>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="h-auto p-0 text-blue-600 text-xs"
-                        onClick={() => window.open(`/perfil/${item.usuario_id}`, '_blank')}
-                      >
-                        Ver perfil público →
-                      </Button>
+                {/* Informações Básicas */}
+                {userProfile && (
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{userProfile.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{userProfile.telefone || 'Não informado'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{userProfile.cidade}, {userProfile.estado}</span>
                     </div>
                   </div>
+                )}
 
-                  {/* Informações Básicas */}
-                  {userProfile && (
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{userProfile.email}</span>
+                {/* Saldo da Carteira */}
+                {carteiraData && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Wallet className="w-4 h-4 text-green-600" />
+                      <span className="font-medium text-green-800">💰 Saldo: R$ {carteiraData.saldo_atual?.toFixed(2)}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="text-center">
+                        <p className="font-bold text-blue-600">{carteiraData.total_recebido}</p>
+                        <p className="text-xs text-muted-foreground">Total Recebido</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{userProfile.telefone || 'Não informado'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{userProfile.cidade}, {userProfile.estado}</span>
+                      <div className="text-center">
+                        <p className="font-bold text-red-600">{carteiraData.total_gasto}</p>
+                        <p className="text-xs text-muted-foreground">Total Gasto</p>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Estatísticas do Usuário */}
-                  {userProfile && (
-                    <div className="grid grid-cols-2 gap-2 text-center">
-                      <div className="p-2 bg-muted rounded-md">
+                {/* Reputação e Estatísticas */}
+                {userProfile && (
+                  <div className="space-y-3">
+                    {userProfile.reputacao && (
+                      <div className="flex items-center gap-2 justify-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <Star className="w-5 h-5 text-yellow-500 fill-current" />
+                        <span className="font-medium text-lg">⭐ {userProfile.reputacao}</span>
+                        <span className="text-sm text-muted-foreground">de reputação</span>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-muted rounded-md text-center">
                         <p className="text-lg font-bold text-green-600">{userProfile.total_vendas || 0}</p>
                         <p className="text-xs text-muted-foreground">Vendas</p>
                       </div>
-                      <div className="p-2 bg-muted rounded-md">
+                      <div className="p-3 bg-muted rounded-md text-center">
                         <p className="text-lg font-bold text-blue-600">{userProfile.total_compras || 0}</p>
                         <p className="text-xs text-muted-foreground">Compras</p>
                       </div>
                     </div>
-                  )}
-
-                  {/* Saldo da Carteira */}
-                  {carteiraData && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Wallet className="w-4 h-4 text-green-600" />
-                        <span className="font-medium text-green-800">Carteira</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                        <div>
-                          <p className="font-bold text-green-600">{carteiraData.saldo_atual}</p>
-                          <p className="text-xs text-muted-foreground">Saldo</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-blue-600">{carteiraData.total_recebido}</p>
-                          <p className="text-xs text-muted-foreground">Recebido</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-red-600">{carteiraData.total_gasto}</p>
-                          <p className="text-xs text-muted-foreground">Gasto</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Reputação */}
-                  {userProfile?.reputacao && (
-                    <div className="flex items-center gap-2 justify-center">
-                      <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      <span className="font-medium">{userProfile.reputacao}</span>
-                      <span className="text-sm text-muted-foreground">de reputação</span>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -693,7 +646,6 @@ const ItemModeracaoCardCompleto: React.FC<ItemModeracaoCardCompletoProps> = ({
           onClose={() => setEditModalAberto(false)}
           onSuccess={() => {
             setEditModalAberto(false);
-            // Aqui poderia chamar um refetch se necessário
           }}
         />
       )}
