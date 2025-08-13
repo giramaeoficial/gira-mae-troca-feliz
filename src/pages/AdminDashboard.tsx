@@ -33,7 +33,7 @@ import MissoesAdmin from '@/components/admin/MissoesAdmin';
 import ConfigBonusDiario from '@/components/admin/ConfigBonusDiario';
 import ConfigIndicacoes from '@/components/admin/ConfigIndicacoes';
 import LiberacaoCidades from '@/components/admin/LiberacaoCidades';
-import ModeracaoItens from '@/components/admin/ModeracaoItens';
+import ModePanel from '@/components/admin/ModePanel';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -140,7 +140,7 @@ const AdminDashboard = () => {
               </TabsContent>
 
               <TabsContent value="moderacao" className="mt-0">
-                <ModeracaoItens />
+                <ModePanel />
               </TabsContent>
 
               <TabsContent value="users" className="mt-0">
