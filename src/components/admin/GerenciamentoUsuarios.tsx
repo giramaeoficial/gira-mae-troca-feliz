@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Users, Search, Shield, Activity, AlertTriangle, UserCheck } from 'lucide-react';
+import { Users, Search, Shield, Activity, AlertTriangle, UserCheck, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGerenciamentoUsuarios } from '@/hooks/useGerenciamentoUsuarios';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useGerenciamentoUsuarios, UsuarioAdmin } from '@/hooks/useGerenciamentoUsuarios';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { UserActionsModal } from './UserActionsModal';
 
 export const GerenciamentoUsuarios: React.FC = () => {
   const {
@@ -16,12 +18,15 @@ export const GerenciamentoUsuarios: React.FC = () => {
     estatisticas,
     loading,
     fetchUsuarios,
+    fetchEstatisticas,
     getStatusBadgeConfig,
     getReputationColor
   } = useGerenciamentoUsuarios();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [selectedUser, setSelectedUser] = useState<UsuarioAdmin | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -179,7 +184,19 @@ export const GerenciamentoUsuarios: React.FC = () => {
             <SelectItem value="active">Ativos</SelectItem>
             <SelectItem value="warned">Advertidos</SelectItem>
             <SelectItem value="suspenso">Suspensos</SelectItem>
+            <SelectItem value="banido">Banidos</SelectItem>
             <SelectItem value="inactive">Inativos</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value="data_cadastro" onValueChange={(value) => fetchUsuarios(searchTerm, statusFilter, value)}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Ordenar por" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="data_cadastro">Data de Cadastro</SelectItem>
+            <SelectItem value="ultima_atividade">Última Atividade</SelectItem>
+            <SelectItem value="penalidades">Penalidades Recentes</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -224,8 +241,8 @@ export const GerenciamentoUsuarios: React.FC = () => {
                           <p className="text-sm text-muted-foreground">{usuario.email}</p>
                           
                           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span>{usuario.total_itens_publicados} itens</span>
-                            <span>{usuario.total_reservas_feitas} reservas</span>
+                            <span>{usuario.total_itens_publicados || 0} itens</span>
+                            <span>{usuario.total_reservas_feitas || 0} reservas</span>
                             <span className={getReputationColor(usuario.pontuacao_reputacao)}>
                               {usuario.pontuacao_reputacao}% reputação
                             </span>
@@ -260,9 +277,24 @@ export const GerenciamentoUsuarios: React.FC = () => {
                           </span>
                         )}
                         
-                        <Button variant="outline" size="sm">
-                          Detalhes
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                setSelectedUser(usuario);
+                                setModalOpen(true);
+                              }}
+                            >
+                              <Shield className="w-4 h-4 mr-2" />
+                              Ações de Moderação
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </div>
@@ -272,6 +304,19 @@ export const GerenciamentoUsuarios: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <UserActionsModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedUser(null);
+        }}
+        usuario={selectedUser}
+        onRefresh={() => {
+          fetchUsuarios(searchTerm, statusFilter);
+          fetchEstatisticas();
+        }}
+      />
     </div>
   );
 };

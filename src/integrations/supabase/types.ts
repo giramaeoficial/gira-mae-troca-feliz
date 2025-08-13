@@ -3219,6 +3219,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      aplicar_banimento_permanente: {
+        Args: { p_usuario_id: string; p_motivo: string; p_admin_id: string }
+        Returns: Json
+      }
       aplicar_penalidade: {
         Args:
           | {
@@ -3235,6 +3239,15 @@ export type Database = {
               p_duracao_dias?: number
             }
         Returns: undefined
+      }
+      aplicar_suspensao_manual: {
+        Args: {
+          p_usuario_id: string
+          p_duracao_dias: number
+          p_motivo: string
+          p_admin_id: string
+        }
+        Returns: Json
       }
       atualizar_contadores_cidade: {
         Args: { p_cidade: string; p_estado: string }
@@ -3306,12 +3319,20 @@ export type Database = {
         }[]
       }
       buscar_usuarios_admin: {
-        Args: {
-          p_termo_busca?: string
-          p_status_filtro?: string
-          p_limite?: number
-          p_offset?: number
-        }
+        Args:
+          | {
+              p_termo_busca?: string
+              p_status_filtro?: string
+              p_limite?: number
+              p_offset?: number
+            }
+          | {
+              search_term?: string
+              status_filter?: string
+              ordenacao?: string
+              limite?: number
+              offset_val?: number
+            }
         Returns: {
           user_id: string
           nome: string
@@ -3837,6 +3858,10 @@ export type Database = {
       remover_penalidade: {
         Args: { p_penalidade_id: string }
         Returns: boolean
+      }
+      remover_penalidade_restaurar_usuario: {
+        Args: { p_penalidade_id: string; p_admin_id: string }
+        Returns: Json
       }
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }

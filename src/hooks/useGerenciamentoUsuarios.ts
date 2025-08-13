@@ -11,19 +11,19 @@ export interface UsuarioAdmin {
   telefone?: string;
   cidade?: string;
   estado?: string;
-  cadastro_status: string;
+  cadastro_status?: string;
   data_cadastro: string;
   ultima_atividade?: string;
-  total_itens_publicados: number;
-  total_reservas_feitas: number;
-  total_vendas_realizadas: number;
-  total_denuncias_feitas: number;
-  saldo_girinhas: number;
-  total_girinhas_recebidas: number;
-  total_girinhas_gastas: number;
+  total_itens_publicados?: number;
+  total_reservas_feitas?: number;
+  total_vendas_realizadas?: number;
+  total_denuncias_feitas?: number;
+  saldo_girinhas?: number;
+  total_girinhas_recebidas?: number;
+  total_girinhas_gastas?: number;
   penalidades_ativas: number;
   penalidade_mais_grave: number;
-  total_penalidades_historico: number;
+  total_penalidades_historico?: number;
   ultima_penalidade?: string;
   status: string;
   pontuacao_reputacao: number;
@@ -53,18 +53,20 @@ export const useGerenciamentoUsuarios = () => {
   const fetchUsuarios = async (
     searchTerm: string = '',
     statusFilter: string = 'todos',
+    ordenacao: string = 'data_cadastro',
     limit: number = 50,
     offset: number = 0
   ) => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('usuarios_admin')
-        .select('*')
-        .order('data_cadastro', { ascending: false })
-        .limit(limit)
-        .range(offset, offset + limit - 1);
+      const { data, error } = await supabase.rpc('buscar_usuarios_admin', {
+        search_term: searchTerm,
+        status_filter: statusFilter,
+        ordenacao: ordenacao,
+        limite: limit,
+        offset_val: offset
+      });
 
       if (error) throw error;
       setUsuarios(data || []);
