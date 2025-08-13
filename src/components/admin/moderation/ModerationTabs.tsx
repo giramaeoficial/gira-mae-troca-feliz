@@ -22,9 +22,9 @@ interface ModerationTabsProps {
   };
   itensFiltrados: ItemModeracaoData[];
   onAprovar: (moderacaoId: string) => Promise<void>;
-  onRejeitar: (moderacaoId: string, motivo: string, observacoes?: string) => Promise<void>;
-  onAceitarDenuncia: (denunciaId: string, comentario: string, observacoes?: string) => Promise<void>;
-  onRejeitarDenuncia: (denunciaId: string, observacoes: string) => Promise<void>;
+  onRejeitar: (moderacaoId: string) => Promise<void>;
+  onAceitarDenuncia: (denunciaId: string) => Promise<void>;
+  onRejeitarDenuncia: (denunciaId: string) => Promise<void>;
   loading: boolean;
 }
 
@@ -62,8 +62,7 @@ const ModerationTabs: React.FC<ModerationTabsProps> = ({
 
       <TabsContent value={activeTab} className="space-y-6">
         {itensFiltrados.length > 0 ? (
-          // Grid Layout - 3 cards por linha no desktop, 2 no tablet, 1 no mobile
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid gap-4">
             {itensFiltrados.map((item) => (
               <ItemModeracaoCardCompleto
                 key={item.item_id}
