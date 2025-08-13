@@ -8,7 +8,8 @@ import {
   Flag,
   Users,
   History,
-  Settings
+  Settings,
+  AlertTriangle
 } from 'lucide-react';
 
 interface ModerationSidebarProps {
@@ -27,6 +28,7 @@ const ModerationSidebar: React.FC<ModerationSidebarProps> = ({ stats, activeView
     { icon: BarChart3, label: 'Dashboard', value: 'dashboard' },
     { icon: Shield, label: 'Revisar Itens', value: 'revisar', count: stats.pendentes },
     { icon: Flag, label: 'Denúncias', value: 'denuncias', count: stats.reportados },
+    { icon: AlertTriangle, label: 'Penalidades', value: 'penalidades' },
     { icon: Users, label: 'Usuários', value: 'usuarios' },
     { icon: History, label: 'Histórico', value: 'historico' },
     { icon: Settings, label: 'Configurações', value: 'configuracoes' },
