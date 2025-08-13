@@ -35,55 +35,107 @@ const ModePanel = () => {
 
   // Buscar perfis dos usuários quando itens carregarem
   useEffect(() => {
+    console.log('📊 Itens carregados no ModePanel:', itens);
     if (itens.length > 0) {
       const userIds = itens.map(item => item.usuario_id).filter(Boolean);
+      console.log('👥 UserIds encontrados:', userIds);
       fetchMultipleProfiles(userIds);
     }
   }, [itens, fetchMultipleProfiles]);
 
   // Estatísticas
   const stats = useMemo(() => {
-    const pendentes = itens.filter(item => item.moderacao_status === 'pendente').length;
-    const reportados = itens.filter(item => item.tem_denuncia).length;
-    const aprovados = itens.filter(item => item.moderacao_status === 'aprovado').length;
-    const rejeitados = itens.filter(item => item.moderacao_status === 'rejeitado').length;
+    console.log('📈 Calculando estatísticas para itens:', itens);
     
-    return { pendentes, reportados, aprovados, rejeitados };
+    const pendentes = itens.filter(item => {
+      const isPendente = item.moderacao_status === 'pendente';
+      console.log(`Item ${item.item_id} - Status: ${item.moderacao_status}, É pendente: ${isPendente}`);
+      return isPendente;
+    }).length;
+    
+    const reportados = itens.filter(item => {
+      const isReportado = item.tem_denuncia;
+      console.log(`Item ${item.item_id} - Tem denúncia: ${isReportado}`);
+      return isReportado;
+    }).length;
+    
+    const aprovados = itens.filter(item => {
+      const isAprovado = item.moderacao_status === 'aprovado';
+      console.log(`Item ${item.item_id} - Status: ${item.moderacao_status}, É aprovado: ${isAprovado}`);
+      return isAprovado;
+    }).length;
+    
+    const rejeitados = itens.filter(item => {
+      const isRejeitado = item.moderacao_status === 'rejeitado';
+      console.log(`Item ${item.item_id} - Status: ${item.moderacao_status}, É rejeitado: ${isRejeitado}`);
+      return isRejeitado;
+    }).length;
+    
+    const stats = { pendentes, reportados, aprovados, rejeitados };
+    console.log('📊 Estatísticas calculadas:', stats);
+    
+    return stats;
   }, [itens]);
 
   // Filtrar itens por aba
   const itensFiltrados = useMemo(() => {
+    console.log('🔍 Iniciando filtros - Aba ativa:', activeTab);
+    console.log('🔍 Total de itens:', itens.length);
+    
     let resultado = [...itens];
 
     // Filtrar por aba
     switch (activeTab) {
       case 'pendentes':
-        resultado = resultado.filter(item => item.moderacao_status === 'pendente');
+        resultado = resultado.filter(item => {
+          const isPendente = item.moderacao_status === 'pendente';
+          console.log(`  🔍 Filtro pendentes - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isPendente}`);
+          return isPendente;
+        });
         break;
       case 'reportados':
-        resultado = resultado.filter(item => item.tem_denuncia);
+        resultado = resultado.filter(item => {
+          const isReportado = item.tem_denuncia;
+          console.log(`  🔍 Filtro reportados - Item ${item.item_id}: tem_denuncia=${item.tem_denuncia}, passou=${isReportado}`);
+          return isReportado;
+        });
         break;
       case 'aprovados':
-        resultado = resultado.filter(item => item.moderacao_status === 'aprovado');
+        resultado = resultado.filter(item => {
+          const isAprovado = item.moderacao_status === 'aprovado';
+          console.log(`  🔍 Filtro aprovados - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isAprovado}`);
+          return isAprovado;
+        });
         break;
       case 'rejeitados':
-        resultado = resultado.filter(item => item.moderacao_status === 'rejeitado');
+        resultado = resultado.filter(item => {
+          const isRejeitado = item.moderacao_status === 'rejeitado';
+          console.log(`  🔍 Filtro rejeitados - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isRejeitado}`);
+          return isRejeitado;
+        });
         break;
     }
 
+    console.log(`🔍 Após filtro por aba "${activeTab}": ${resultado.length} itens`);
+
     // Filtrar por busca
     if (searchTerm) {
+      const antesSearch = resultado.length;
       resultado = resultado.filter(item =>
         item.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.usuario_nome.toLowerCase().includes(searchTerm.toLowerCase())
       );
+      console.log(`🔍 Após filtro de busca "${searchTerm}": ${resultado.length} itens (antes: ${antesSearch})`);
     }
 
     // Filtrar por categoria
     if (selectedCategory !== 'todas') {
+      const antesCategoria = resultado.length;
       resultado = resultado.filter(item => item.categoria === selectedCategory);
+      console.log(`🔍 Após filtro de categoria "${selectedCategory}": ${resultado.length} itens (antes: ${antesCategoria})`);
     }
 
+    console.log('🔍 Resultado final:', resultado.length, 'itens');
     return resultado;
   }, [itens, activeTab, searchTerm, selectedCategory]);
 

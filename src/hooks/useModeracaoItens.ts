@@ -102,18 +102,17 @@ export const useModeracaoItens = () => {
 
       const itensFormatados: ItemModeracaoData[] = data?.map((item: any) => {
         const itemCompleto = itensCompletos.find(i => i.id === item.item_id);
-        const userData = usersData.find(u => u.id === item.usuario_id);
         
         console.log(`📋 Processando item ${item.item_id}:`, {
           original: item,
-          itemCompleto,
-          userData
+          itemCompleto
         });
 
+        // O usuario_id correto vem do publicado_por do item
         const calculatedUserId = itemCompleto?.publicado_por;
         const foundUserData = usersData.find(u => u.id === calculatedUserId);
         
-        return {
+        const resultado = {
           moderacao_id: item.moderacao_id,
           moderacao_status: item.moderacao_status || 'pendente',
           status: item.moderacao_status || 'pendente',
@@ -146,6 +145,14 @@ export const useModeracaoItens = () => {
           data_denuncia: item.data_denuncia,
           denuncia_aceita: item.denuncia_aceita
         };
+        
+        console.log(`✅ Item formatado ${item.item_id}:`, {
+          moderacao_status: resultado.moderacao_status,
+          usuario_id: resultado.usuario_id,
+          usuario_nome: resultado.usuario_nome
+        });
+        
+        return resultado;
       }) || [];
 
       console.log('✅ Itens formatados:', itensFormatados);
@@ -161,6 +168,8 @@ export const useModeracaoItens = () => {
 
   const aprovarItem = async (moderacaoId: string) => {
     try {
+      console.log('🟢 Aprovando item com moderacao_id:', moderacaoId);
+      
       const { error } = await supabase
         .from('moderacao_itens')
         .update({
@@ -171,7 +180,12 @@ export const useModeracaoItens = () => {
         })
         .eq('id', moderacaoId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao aprovar item:', error);
+        throw error;
+      }
+
+      console.log('✅ Item aprovado com sucesso');
 
       toast({
         title: "Item aprovado",
@@ -181,6 +195,7 @@ export const useModeracaoItens = () => {
       // Atualizar lista
       await fetchItensPendentes();
     } catch (err: any) {
+      console.error('💥 Erro geral ao aprovar:', err);
       toast({
         title: "Erro",
         description: "Falha ao aprovar item: " + err.message,
@@ -191,25 +206,56 @@ export const useModeracaoItens = () => {
 
   const rejeitarItem = async (moderacaoId: string, comentario: string, observacoes?: string) => {
     try {
-      const { error } = await supabase.rpc('inativar_item_com_feedback', {
-        p_item_id: itens.find(item => item.moderacao_id === moderacaoId)?.item_id,
+      console.log('🔴 Rejeitando item com moderacao_id:', moderacaoId);
+      
+      // Primeiro, atualizar o status na tabela de moderação
+      const { error: moderacaoError } = await supabase
+        .from('moderacao_itens')
+        .update({
+          status: 'rejeitado',
+          moderador_id: (await supabase.auth.getUser()).data.user?.id,
+          moderado_em: new Date().toISOString(),
+          observacoes: observacoes || comentario
+        })
+        .eq('id', moderacaoId);
+
+      if (moderacaoError) {
+        console.error('❌ Erro ao atualizar moderação:', moderacaoError);
+        throw moderacaoError;
+      }
+
+      // Encontrar o item para inativar
+      const item = itens.find(item => item.moderacao_id === moderacaoId);
+      if (!item) {
+        throw new Error('Item não encontrado');
+      }
+
+      // Inativar o item usando RPC
+      const { error: rpcError } = await supabase.rpc('inativar_item_com_feedback', {
+        p_item_id: item.item_id,
         p_moderador_id: (await supabase.auth.getUser()).data.user?.id,
         p_motivo: comentario,
         p_observacoes: observacoes
       });
 
-      if (error) throw error;
+      if (rpcError) {
+        console.error('❌ Erro no RPC:', rpcError);
+        throw rpcError;
+      }
+
+      console.log('✅ Item rejeitado com sucesso');
 
       toast({
-        title: "Item inativado",
-        description: "O item foi inativado e o usuário foi notificado para correção.",
+        title: "Item rejeitado",
+        description: "O item foi rejeitado e o usuário foi notificado para correção.",
       });
 
       await fetchItensPendentes();
     } catch (err: any) {
+      console.error('💥 Erro geral ao rejeitar:', err);
       toast({
         title: "Erro",
-        description: "Falha ao inativar item: " + err.message,
+        description: "Falha ao rejeitar item: " + err.message,
         variant: "destructive",
       });
     }
