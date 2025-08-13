@@ -2923,12 +2923,20 @@ export type Database = {
         Returns: boolean
       }
       aplicar_penalidade: {
-        Args: {
-          p_usuario_id: string
-          p_tipo: string
-          p_nivel: number
-          p_motivo: string
-        }
+        Args:
+          | {
+              p_usuario_id: string
+              p_tipo: string
+              p_nivel: number
+              p_motivo: string
+            }
+          | {
+              p_usuario_id: string
+              p_tipo: string
+              p_nivel: number
+              p_motivo: string
+              p_duracao_dias?: number
+            }
         Returns: undefined
       }
       atualizar_contadores_cidade: {
@@ -3310,6 +3318,10 @@ export type Database = {
         Args: { p_user_id: string; p_transacao_id: string }
         Returns: Json
       }
+      pode_usuario_agir: {
+        Args: { p_user_id: string; p_acao?: string }
+        Returns: boolean
+      }
       processar_bonus_diario: {
         Args:
           | { p_user_id: string }
@@ -3504,6 +3516,10 @@ export type Database = {
           acao_sistema: string
         }[]
       }
+      remover_penalidade: {
+        Args: { p_penalidade_id: string }
+        Returns: boolean
+      }
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
@@ -3547,6 +3563,10 @@ export type Database = {
       verificar_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      verificar_e_aplicar_penalidade_rejeicao: {
+        Args: { p_usuario_id: string }
+        Returns: undefined
       }
       verificar_metas_usuario: {
         Args: { p_user_id: string }
