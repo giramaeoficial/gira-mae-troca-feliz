@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useItensAdminModerado } from '@/hooks/useItensOptimizedModerado';
 import { useModeracaoItens } from '@/hooks/useModeracaoItens';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,12 @@ import ModerationFilters from './moderation/ModerationFilters';
 import ModerationTabs from './moderation/ModerationTabs';
 
 const ModePanel = () => {
-  const { itens, loading, aprovarItem, rejeitarItem, aceitarDenuncia, rejeitarDenuncia, refetch } = useModeracaoItens();
+  // CORREÇÃO: Usar hook que carrega TODOS os itens (incluindo aprovados e rejeitados)
+  const { data: itensAdmin, isLoading: loadingAdmin, refetch: refetchAdmin } = useItensAdminModerado(100);
+  
+  // Manter o hook original apenas para as funções de moderação
+  const { aprovarItem, rejeitarItem, aceitarDenuncia, rejeitarDenuncia } = useModeracaoItens();
+  
   const { profiles, fetchMultipleProfiles } = useUserProfiles();
   
   const [moderacaoLoading, setModeracaoLoading] = useState(false);
@@ -16,6 +22,29 @@ const ModePanel = () => {
   const [selectedCategory, setSelectedCategory] = useState('todas');
   const [activeTab, setActiveTab] = useState('pendentes');
   const [activeView, setActiveView] = useState('revisar');
+
+  // CORREÇÃO: Converter dados do admin para formato esperado
+  const itens = useMemo(() => {
+    if (!itensAdmin) return [];
+    
+    return itensAdmin.map(item => ({
+      item_id: item.id,
+      moderacao_id: `mod_${item.id}`, // Gerar ID temporário
+      titulo: item.titulo,
+      categoria: item.categoria,
+      valor_girinhas: item.valor_girinhas,
+      moderacao_status: item.moderacao_status,
+      usuario_id: item.publicado_por,
+      usuario_nome: item.vendedor_nome,
+      created_at: item.created_at,
+      moderado_em: item.moderado_em,
+      tem_denuncia: false, // Por enquanto false, pode ser melhorado depois
+      // ... outros campos necessários
+    }));
+  }, [itensAdmin]);
+
+  const loading = loadingAdmin;
+  const refetch = refetchAdmin;
 
   // Buscar perfis dos usuários quando itens carregarem
   useEffect(() => {
@@ -32,7 +61,7 @@ const ModePanel = () => {
     console.log('📈 Calculando estatísticas para itens:', itens);
     
     const pendentes = itens.filter(item => {
-      const isPendente = item.moderacao_status === 'pendente';
+      const isPendente = item.moderacao_status === 'pendente' || !item.moderacao_status;
       console.log(`Item ${item.item_id} - Status: ${item.moderacao_status}, É pendente: ${isPendente}`);
       return isPendente;
     }).length;
@@ -43,12 +72,14 @@ const ModePanel = () => {
       return isReportado;
     }).length;
     
+    // CORREÇÃO: Apenas itens com status 'aprovado'
     const aprovados = itens.filter(item => {
       const isAprovado = item.moderacao_status === 'aprovado';
       console.log(`Item ${item.item_id} - Status: ${item.moderacao_status}, É aprovado: ${isAprovado}`);
       return isAprovado;
     }).length;
     
+    // CORREÇÃO: Apenas itens com status 'rejeitado'
     const rejeitados = itens.filter(item => {
       const isRejeitado = item.moderacao_status === 'rejeitado';
       console.log(`Item ${item.item_id} - Status: ${item.moderacao_status}, É rejeitado: ${isRejeitado}`);
@@ -72,7 +103,7 @@ const ModePanel = () => {
     switch (activeTab) {
       case 'pendentes':
         resultado = resultado.filter(item => {
-          const isPendente = item.moderacao_status === 'pendente';
+          const isPendente = item.moderacao_status === 'pendente' || !item.moderacao_status;
           console.log(`  🔍 Filtro pendentes - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isPendente}`);
           return isPendente;
         });
@@ -85,15 +116,17 @@ const ModePanel = () => {
         });
         break;
       case 'aprovados':
+        // CORREÇÃO: Apenas status 'aprovado', removido 'em_analise'
         resultado = resultado.filter(item => {
-          const isAprovado = item.moderacao_status === 'aprovado' || item.moderacao_status === 'em_analise';
+          const isAprovado = item.moderacao_status === 'aprovado';
           console.log(`  🔍 Filtro aprovados - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isAprovado}`);
           return isAprovado;
         });
         break;
       case 'rejeitados':
+        // CORREÇÃO: Apenas status 'rejeitado', removido 'rejeitado_admin'
         resultado = resultado.filter(item => {
-          const isRejeitado = item.moderacao_status === 'rejeitado' || item.moderacao_status === 'rejeitado_admin';
+          const isRejeitado = item.moderacao_status === 'rejeitado';
           console.log(`  🔍 Filtro rejeitados - Item ${item.item_id}: status=${item.moderacao_status}, passou=${isRejeitado}`);
           return isRejeitado;
         });
