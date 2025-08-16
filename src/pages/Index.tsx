@@ -580,8 +580,8 @@ const LandingPageOptimized = () => {
           Economia circular, sustentabilidade e comunidade em um só lugar.
         </p>
         <div className="text-gray-400 space-y-1">
-          <p>contato@giramae.com.br</p>
-          <p>(51) 99999-9999</p>
+          <p>atendimento@giramae.com.br</p>
+          {/* <p>(51) 99999-9999</p> */}
           <p>Canoas, RS</p>
         </div>
       </div>
@@ -589,9 +589,10 @@ const LandingPageOptimized = () => {
       <div>
         <h3 className="font-semibold mb-4">Links Rápidos</h3>
         <div className="space-y-2 text-gray-400">
+          <p><Link to="/sobre" className="hover:text-white transition-colors">Sobre Nós</Link></p>
           <p><Link to="/como-funciona" className="hover:text-white transition-colors">Como Funciona</Link></p>
           <p><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></p>
-          <p><Link to="/sobre" className="hover:text-white transition-colors">Sobre Nós</Link></p>
+          
           <p><span className="text-gray-500 cursor-not-allowed">Blog (em breve)</span></p>
         </div>
       </div>

@@ -1,59 +1,72 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Heart, Users, Leaf, Target, Award, MapPin } from 'lucide-react';
-import SEOHead from '@/components/seo/SEOHead';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Heart, Users, Leaf, Target, Award, MapPin } from "lucide-react";
+import SEOHead from "@/components/seo/SEOHead";
 
 const Sobre = () => {
   const values = [
     {
       icon: <Heart className="h-6 w-6" />,
       title: "Comunidade",
-      description: "Acreditamos no poder das mães se ajudarem mutuamente, criando uma rede de apoio forte e solidária."
+      description:
+        "Acreditamos no poder das mães se ajudarem mutuamente, criando uma rede de apoio forte e solidária.",
     },
     {
       icon: <Leaf className="h-6 w-6" />,
       title: "Sustentabilidade",
-      description: "Promovemos a economia circular, dando nova vida às roupas infantis e cuidando do planeta."
+      description:
+        "Promovemos a economia circular, dando nova vida às roupas infantis e cuidando do planeta.",
     },
     {
       icon: <Users className="h-6 w-6" />,
       title: "Inclusão",
-      description: "Nossa plataforma é acessível a todas as mães, independente da condição socioeconômica."
+      description:
+        "Nossa plataforma é acessível a todas as mães, independente da condição socioeconômica.",
     },
     {
       icon: <Target className="h-6 w-6" />,
       title: "Praticidade",
-      description: "Facilitamos a vida das mães com uma plataforma simples, segura e intuitiva."
-    }
+      description:
+        "Facilitamos a vida das mães com uma plataforma simples, segura e intuitiva.",
+    },
   ];
 
   const stats = [
-    { number: "1000+", label: "Mães Cadastradas", icon: "👥" },
-    { number: "5000+", label: "Itens Trocados", icon: "👶" },
-    { number: "50K+", label: "Girinhas Circulando", icon: "🪙" },
-    { number: "85%", label: "Satisfação", icon: "⭐" }
+    {
+      number: "R$2.400",
+      label: "Gasto médio anual com roupas infantis",
+      icon: "💰",
+    },
+    { number: "6 meses", label: "Tempo médio de uso de cada peça", icon: "⏰" },
+    {
+      number: "40%",
+      label: "Das roupas infantis são pouco usadas",
+      icon: "👕",
+    },
+    { number: "Zero", label: "Custo para participar da solução", icon: "🆓" },
   ];
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "GiraMãe",
-    "description": "Plataforma de trocas sustentáveis entre mães, promovendo economia circular com roupas, brinquedos e calçados infantis.",
-    "url": "https://giramae.com.br",
-    "logo": "https://giramae.com.br/logo.png",
-    "address": {
+    name: "GiraMãe",
+    description:
+      "Plataforma de trocas sustentáveis entre mães, promovendo economia circular com roupas, brinquedos e calçados infantis.",
+    url: "https://giramae.com.br",
+    logo: "https://giramae.com.br/logo.png",
+    address: {
       "@type": "PostalAddress",
-      "addressLocality": "Canoas",
-      "addressRegion": "RS",
-      "addressCountry": "BR"
+      addressLocality: "Canoas",
+      addressRegion: "RS",
+      addressCountry: "BR",
     },
-    "areaServed": {
+    areaServed: {
       "@type": "Place",
-      "name": "Canoas, Rio Grande do Sul, Brasil"
+      name: "Canoas, Rio Grande do Sul, Brasil",
     },
-    "foundingDate": "2024",
-    "sameAs": []
+    foundingDate: "2024",
+    sameAs: [],
   };
 
   return (
@@ -64,7 +77,7 @@ const Sobre = () => {
         keywords="sobre giramae, história giramae, missão sustentabilidade, economia circular mães, comunidade materna canoas, valores giramae"
         structuredData={structuredData}
       />
-      
+
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
@@ -76,8 +89,9 @@ const Sobre = () => {
               Conectando Mães, Cuidando do Futuro
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              A GiraMãe nasceu do sonho de criar uma comunidade onde mães se ajudam mutuamente, 
-              promovendo sustentabilidade e economia no universo infantil.
+              A GiraMãe nasceu do sonho de criar uma comunidade onde mães se
+              ajudam mutuamente, promovendo sustentabilidade e economia no
+              universo infantil.
             </p>
           </div>
 
@@ -90,18 +104,23 @@ const Sobre = () => {
                     <h2 className="text-3xl font-bold mb-6">Nossa História</h2>
                     <div className="space-y-4 text-muted-foreground">
                       <p>
-                        A GiraMãe surgiu da necessidade real de mães que queriam uma alternativa sustentável 
-                        e econômica para o guarda-roupa dos filhos. Quantas vezes você comprou uma roupa 
-                        que foi usada apenas algumas vezes?
+                        A GiraMãe nasceu da observação de que roupas infantis
+                        são usadas por pouco tempo - uma criança cresce em média
+                        6 tamanhos nos primeiros 2 anos. Enquanto isso, milhares
+                        de peças em perfeito estado ficam guardadas em armários
+                        ou são descartadas.
                       </p>
                       <p>
-                        Em 2024, decidimos criar uma plataforma que não apenas resolvesse esse problema, 
-                        mas que também fortalecesse os laços entre mães da nossa comunidade. Assim nasceu 
-                        a GiraMãe, com nossa moeda virtual <strong>Girinhas</strong>.
+                        Em 2024, decidimos criar uma plataforma que não apenas
+                        resolvesse esse problema, mas que também fortalecesse os
+                        laços entre mães da nossa comunidade. Assim nasceu a
+                        GiraMãe, com nossa moeda virtual{" "}
+                        <strong>Girinhas</strong>.
                       </p>
                       <p>
-                        Começamos em Canoas/RS e nosso objetivo é expandir para toda a região metropolitana, 
-                        sempre mantendo o foco na comunidade local e nas relações de confiança.
+                        Começamos em Canoas/RS e nosso objetivo é expandir para
+                        toda a região metropolitana, sempre mantendo o foco na
+                        comunidade local e nas relações de confiança.
                       </p>
                     </div>
                   </div>
@@ -120,14 +139,17 @@ const Sobre = () => {
             <h2 className="text-3xl font-bold text-center mb-12">
               Nossa Missão e Valores
             </h2>
-            
+
             {/* Missão */}
             <Card className="mb-8">
               <CardContent className="p-8 text-center">
-                <h3 className="text-2xl font-bold mb-4 text-primary">Nossa Missão</h3>
+                <h3 className="text-2xl font-bold mb-4 text-primary">
+                  Nossa Missão
+                </h3>
                 <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                  Facilitar trocas sustentáveis entre mães, criando uma economia circular que 
-                  beneficia as famílias e o meio ambiente, fortalecendo nossa comunidade local.
+                  Criar uma plataforma 100% gratuita onde mães de Canoas possam
+                  trocar roupas, brinquedos e calçados infantis, gerando
+                  economia familiar e reduzindo desperdício.
                 </p>
               </CardContent>
             </Card>
@@ -135,13 +157,20 @@ const Sobre = () => {
             {/* Valores */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {values.map((value, index) => (
-                <Card key={index} className="text-center hover:shadow-lg transition-all duration-300 hover:scale-105">
+                <Card
+                  key={index}
+                  className="text-center hover:shadow-lg transition-all duration-300 hover:scale-105"
+                >
                   <CardContent className="p-6">
                     <div className="text-primary mb-4 flex justify-center">
                       {value.icon}
                     </div>
-                    <h3 className="text-lg font-semibold mb-3">{value.title}</h3>
-                    <p className="text-sm text-muted-foreground">{value.description}</p>
+                    <h3 className="text-lg font-semibold mb-3">
+                      {value.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {value.description}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -155,11 +184,18 @@ const Sobre = () => {
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, index) => (
-                <Card key={index} className="text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <Card
+                  key={index}
+                  className="text-center bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20"
+                >
                   <CardContent className="p-6">
                     <div className="text-4xl mb-2">{stat.icon}</div>
-                    <div className="text-3xl font-bold text-primary mb-2">{stat.number}</div>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <div className="text-3xl font-bold text-primary mb-2">
+                      {stat.number}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {stat.label}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -178,24 +214,32 @@ const Sobre = () => {
                     </h2>
                     <div className="space-y-4">
                       <p className="text-muted-foreground">
-                        Estamos orgulhosamente baseadas em <strong>Canoas, Rio Grande do Sul</strong>. 
-                        Nossa cidade é conhecida pelo espírito acolhedor e pela força da comunidade feminina.
+                        Estamos orgulhosamente baseadas em{" "}
+                        <strong>Canoas, Rio Grande do Sul</strong>. Nossa cidade
+                        é conhecida pelo espírito acolhedor e pela força da
+                        comunidade feminina.
                       </p>
                       <p className="text-muted-foreground">
-                        Escolhemos começar localmente porque acreditamos que as melhores trocas acontecem 
-                        quando existe proximidade e confiança entre as pessoas.
+                        Escolhemos começar localmente porque acreditamos que as
+                        melhores trocas acontecem quando existe proximidade e
+                        confiança entre as pessoas.
                       </p>
                       <div className="flex items-center gap-2 text-primary">
                         <MapPin className="h-5 w-5" />
-                        <span className="font-medium">Canoas - Rio Grande do Sul</span>
+                        <span className="font-medium">
+                          Canoas - Rio Grande do Sul
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div className="text-center">
                     <div className="bg-primary/10 rounded-lg p-8">
-                      <h3 className="text-xl font-bold mb-4">Expansão em Breve!</h3>
+                      <h3 className="text-xl font-bold mb-4">
+                        Expansão em Breve!
+                      </h3>
                       <p className="text-muted-foreground mb-4">
-                        Estamos planejando expandir para toda a região metropolitana
+                        Estamos planejando expandir para toda a região
+                        metropolitana
                       </p>
                       <div className="space-y-2 text-sm">
                         <div>🎯 Porto Alegre</div>
@@ -222,14 +266,16 @@ const Sobre = () => {
                     <div className="text-4xl mb-4">🌱</div>
                     <h3 className="text-xl font-bold mb-2">Sustentável</h3>
                     <p className="opacity-90">
-                      Cada troca é um passo em direção a um futuro mais verde para nossos filhos
+                      Cada troca é um passo em direção a um futuro mais verde
+                      para nossos filhos
                     </p>
                   </div>
                   <div>
                     <div className="text-4xl mb-4">💰</div>
                     <h3 className="text-xl font-bold mb-2">Econômica</h3>
                     <p className="opacity-90">
-                      Economize dinheiro enquanto oferece variedade no guarda-roupa dos pequenos
+                      Economize dinheiro enquanto oferece variedade no
+                      guarda-roupa dos pequenos
                     </p>
                   </div>
                   <div>
@@ -252,18 +298,18 @@ const Sobre = () => {
                   Quer Fazer Parte da Nossa História?
                 </h2>
                 <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-                  Junte-se a centenas de mães que já descobriram uma forma mais sustentável 
-                  e econômica de cuidar do guarda-roupa dos filhos.
+                  Junte-se a centenas de mães que já descobriram uma forma mais
+                  sustentável e econômica de cuidar do guarda-roupa dos filhos.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <a 
-                    href="/auth" 
+                  <a
+                    href="/auth"
                     className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
                   >
                     Começar Agora
                   </a>
-                  <a 
-                    href="/como-funciona" 
+                  <a
+                    href="/como-funciona"
                     className="border border-primary text-primary px-8 py-3 rounded-lg font-semibold hover:bg-primary/5 transition-colors"
                   >
                     Como Funciona

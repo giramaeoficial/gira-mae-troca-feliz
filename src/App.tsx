@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
-
+import Institucional from '@/pages/Institucional';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
 import Login from '@/pages/Login';
@@ -53,6 +53,7 @@ import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
 import ItensFavoritos from '@/pages/ItensFavoritos';
 
+
 //const queryClient = new QueryClient();
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,6 +92,8 @@ function App() {
            <Route path="/contato" element={<Contato />} />
            <Route path="/sobre" element={<Sobre />} />
            <Route path="/faq" element={<FAQ />} />
+           <Route path="/institucional" element={<Institucional />} />
+
           
           {/* ================================================ */}
           {/* NÍVEL 1: ROTAS DE ONBOARDING                    */}
