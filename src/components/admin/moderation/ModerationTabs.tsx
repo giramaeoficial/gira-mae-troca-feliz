@@ -22,9 +22,9 @@ interface ModerationTabsProps {
   };
   itensFiltrados: ItemModeracaoData[];
   onAprovar: (moderacaoId: string) => Promise<void>;
-  onRejeitar: (moderacaoId: string) => Promise<void>;
-  onAceitarDenuncia: (denunciaId: string) => Promise<void>;
-  onRejeitarDenuncia: (denunciaId: string) => Promise<void>;
+  onRejeitar: (moderacaoId: string, motivo: string, observacoes?: string) => Promise<void>;
+  onAceitarDenuncia: (denunciaId: string, comentario: string, observacoes?: string) => Promise<void>;
+  onRejeitarDenuncia: (denunciaId: string, observacoes: string) => Promise<void>;
   loading: boolean;
 }
 
