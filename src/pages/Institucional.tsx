@@ -6,11 +6,64 @@ import { Card, CardContent } from "@/components/ui/card";
 const Institucional: React.FC = () => {
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: "GiraMãe Institucional",
-    description:
-      "Conheça o problema, a solução e os impactos sociais da plataforma GiraMãe",
-    url: "https://giramae.com.br/parcerias-publicas",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://giramae.com.br/institucional",
+        name: "Institucional - GiraMãe",
+        description: "Página institucional da GiraMãe: problemas, soluções e impacto social. Apoie uma iniciativa local que beneficia famílias de Canoas sem custo para o município.",
+        url: "https://giramae.com.br/institucional",
+        isPartOf: {
+          "@id": "https://giramae.com.br/#website"
+        },
+        about: {
+          "@type": "Thing",
+          name: "Economia Circular e Sustentabilidade Infantil"
+        },
+        mainEntity: {
+          "@type": "SocialMediaPosting",
+          headline: "O Problema que Conhecemos",
+          text: "Roupas infantis custam em média R$ 2.400/ano por criança. Criança cresce 6 tamanhos nos primeiros 2 anos. 40% das roupas são usadas menos de 10 vezes.",
+          author: {
+            "@type": "Organization",
+            name: "GiraMãe"
+          }
+        }
+      },
+      {
+        "@type": "GovernmentService",
+        name: "Apoio Institucional GiraMãe",
+        description: "Programa de parceria com o poder público para apoiar famílias através da economia circular de roupas infantis",
+        provider: {
+          "@type": "Organization",
+          name: "GiraMãe"
+        },
+        areaServed: {
+          "@type": "Place",
+          name: "Canoas, Rio Grande do Sul"
+        },
+        audience: {
+          "@type": "Audience",
+          audienceType: "Famílias com crianças pequenas"
+        },
+        serviceType: "Economia Circular",
+        serviceOutput: [
+          "Redução de gastos familiares com vestuário infantil",
+          "Diminuição do descarte de roupas em bom estado",
+          "Fortalecimento da comunidade local",
+          "Promoção da sustentabilidade"
+        ]
+      },
+      {
+        "@type": "ContactPoint", 
+        "@id": "https://giramae.com.br/#partnerships-contact",
+        contactType: "partnerships",
+        email: "parcerias@giramae.com.br",
+        availableLanguage: "Portuguese",
+        contactOption: "TollFree",
+        description: "Contato para parcerias institucionais"
+      }
+    ]
   };
 
   return (

@@ -49,24 +49,77 @@ const Sobre = () => {
 
   const structuredData = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "GiraMãe",
-    description:
-      "Plataforma de trocas sustentáveis entre mães, promovendo economia circular com roupas, brinquedos e calçados infantis.",
-    url: "https://giramae.com.br",
-    logo: "https://giramae.com.br/logo.png",
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Canoas",
-      addressRegion: "RS",
-      addressCountry: "BR",
-    },
-    areaServed: {
-      "@type": "Place",
-      name: "Canoas, Rio Grande do Sul, Brasil",
-    },
-    foundingDate: "2024",
-    sameAs: [],
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://giramae.com.br/#organization",
+        name: "GiraMãe",
+        alternateName: "Gira Mae",
+        description: "Plataforma de trocas sustentáveis entre mães, promovendo economia circular com roupas, brinquedos e calçados infantis usando moeda virtual Girinhas.",
+        url: "https://giramae.com.br",
+        logo: {
+          "@type": "ImageObject",
+          url: "https://giramae.com.br/logo.png",
+          width: 512,
+          height: 512
+        },
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Canoas",
+          addressRegion: "RS",
+          addressCountry: "BR",
+          postalCode: "92000-000"
+        },
+        areaServed: [
+          {
+            "@type": "Place",
+            name: "Canoas, Rio Grande do Sul, Brasil",
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: -29.9177,
+              longitude: -51.1794
+            }
+          },
+          {
+            "@type": "Place", 
+            name: "Região Metropolitana de Porto Alegre"
+          }
+        ],
+        foundingDate: "2024",
+        founders: [{
+          "@type": "Person",
+          name: "Equipe GiraMãe"
+        }],
+        industry: "Economia Circular",
+        keywords: ["troca roupas infantis", "sustentabilidade", "economia circular", "mães", "brechó online", "moeda virtual"],
+        slogan: "Conectando Mães, Cuidando do Futuro",
+        mission: "Criar uma plataforma 100% gratuita onde mães de Canoas possam trocar roupas, brinquedos e calçados infantis, gerando economia familiar e reduzindo desperdício.",
+        serviceType: "Plataforma de Trocas Sustentáveis",
+        target: "Mães de crianças pequenas",
+        contactPoint: {
+          "@type": "ContactPoint",
+          contactType: "customer support",
+          email: "contato@giramae.com.br",
+          availableLanguage: "Portuguese"
+        },
+        sameAs: []
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://giramae.com.br/sobre",
+        name: "Sobre a GiraMãe - Nossa História e Missão",
+        description: "Conheça a GiraMãe! Somos uma plataforma que conecta mães para trocas sustentáveis de roupas infantis. Nossa missão é promover economia circular e fortalecer a comunidade materna.",
+        isPartOf: {
+          "@id": "https://giramae.com.br/#website"
+        },
+        about: {
+          "@id": "https://giramae.com.br/#organization"
+        },
+        mainEntity: {
+          "@id": "https://giramae.com.br/#organization"
+        }
+      }
+    ]
   };
 
   return (
