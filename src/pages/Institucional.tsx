@@ -356,6 +356,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import SEOHead from "@/components/seo/SEOHead";
 
 export default function ParceriaAssistenciaSocial() {
   // Dados de impacto estimado para gráfico profissional
@@ -364,7 +365,38 @@ export default function ParceriaAssistenciaSocial() {
     { name: "Com o GiraMãe", Gastos: 0 },
   ];
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "GiraMãe",
+    description: "Plataforma de troca de roupas infantis entre mães usando moeda virtual Girinhas. Economia circular sustentável para famílias de Canoas/RS.",
+    url: "https://giramae.com.br/institucional",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Canoas",
+      addressRegion: "RS",
+      addressCountry: "BR"
+    },
+    foundingDate: "2024",
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "parcerias@giramae.com.br",
+      contactType: "Parcerias Institucionais"
+    },
+    sameAs: [
+      "https://giramae.com.br"
+    ]
+  };
+
   return (
+    <>
+      <SEOHead
+        title="Institucional - GiraMãe | Parcerias Públicas e Assistência Social"
+        description="Conheça como a GiraMãe pode apoiar programas de assistência social em Canoas/RS. Parceria gratuita que beneficia famílias vulneráveis através da economia circular sustentável."
+        keywords="giramae institucional, parceria assistência social, economia circular canoas, sustentabilidade social, apoio famílias vulneráveis, prefeitura canoas, SMAS"
+        structuredData={structuredData}
+      />
+     
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 p-8">
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Título */}
@@ -576,5 +608,6 @@ export default function ParceriaAssistenciaSocial() {
         </section>
       </div>
     </div>
+    </>
   );
 }

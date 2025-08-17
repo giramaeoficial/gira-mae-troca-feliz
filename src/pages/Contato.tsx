@@ -49,9 +49,41 @@ const Contato = () => {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     name: "Contato - GiraMãe",
-    description:
-      "Entre em contato com a GiraMãe. Estamos aqui para ajudar você a aproveitar ao máximo nossa plataforma de trocas sustentáveis.",
+    description: "Entre em contato com a GiraMãe. Estamos aqui para ajudar você a aproveitar ao máximo nossa plataforma de trocas sustentáveis.",
     url: "https://giramae.com.br/contato",
+    mainEntity: {
+      "@type": "Organization",
+      name: "GiraMãe",
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          contactType: "Atendimento ao Cliente",
+          email: "atendimento@giramae.com.br",
+          availableLanguage: "Portuguese",
+          areaServed: "BR-RS",
+          hoursAvailable: [
+            {
+              "@type": "OpeningHoursSpecification",
+              dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+              opens: "09:00",
+              closes: "18:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification", 
+              dayOfWeek: "Saturday",
+              opens: "09:00",
+              closes: "14:00"
+            }
+          ]
+        }
+      ],
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Canoas",
+        addressRegion: "RS", 
+        addressCountry: "BR"
+      }
+    }
   };
 
   return (

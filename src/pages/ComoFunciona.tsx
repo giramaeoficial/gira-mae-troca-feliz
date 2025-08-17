@@ -47,14 +47,51 @@ const ComoFunciona = () => {
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "Como Funciona a GiraMãe - Plataforma de Trocas entre Mães",
-    description:
-      "Aprenda como usar a GiraMãe para trocar roupas, brinquedos e calçados infantis de forma sustentável usando nossa moeda virtual Girinhas.",
+    description: "Aprenda como usar a GiraMãe para trocar roupas, brinquedos e calçados infantis de forma sustentável usando nossa moeda virtual Girinhas.",
     step: steps.map((step, index) => ({
       "@type": "HowToStep",
       position: index + 1,
       name: step.title,
       text: step.description,
     })),
+    totalTime: "PT10M",
+    tool: [
+      {
+        "@type": "Thing",
+        name: "Smartphone ou Computador"
+      },
+      {
+        "@type": "Thing", 
+        name: "Girinhas (moeda virtual)"
+      }
+    ],
+    supply: [
+      {
+        "@type": "Thing",
+        name: "Roupas, brinquedos ou calçados infantis para trocar"
+      }
+    ],
+    mainEntity: {
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "O que são Girinhas?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Girinhas são nossa moeda virtual interna. 1 Girinha = R$ 1,00 em valor de referência. Você ganha vendendo itens e usa para comprar outros itens da comunidade."
+          }
+        },
+        {
+          "@type": "Question", 
+          name: "Como ganhar Girinhas?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Você pode ganhar Girinhas vendendo itens, completando missões, recebendo bônus diário, indicando outras mães ou comprando dentro da plataforma."
+          }
+        }
+      ]
+    }
   };
 
   return (
