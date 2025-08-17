@@ -1,46 +1,57 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Mail, MessageCircle, MapPin, Clock, Phone, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import SEOHead from '@/components/seo/SEOHead';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Mail, MessageCircle, MapPin, Clock, Phone, Send } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import SEOHead from "@/components/seo/SEOHead";
 
 const Contato = () => {
-  const [formData, setFormData] = useState({ nome: '', email: '', assunto: '', mensagem: '' });
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    assunto: "",
+    mensagem: "",
+  });
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Cria o link do WhatsApp com mensagem pré-preenchida
-    const numeroWhatsApp = '555198311780'; // substitua pelo número de atendimento com código do país e DDD
+    const numeroWhatsApp = "555198311780"; // substitua pelo número de atendimento com código do país e DDD
     const texto = `Olá! Meu nome é ${formData.nome}. Assunto: ${formData.assunto}. Mensagem: ${formData.mensagem}`;
-    const link = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(texto)}`;
+    const link = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(
+      texto
+    )}`;
 
     // Abre o WhatsApp em nova aba
-    window.open(link, '_blank');
+    window.open(link, "_blank");
 
     toast({
-      title: 'Mensagem iniciada no WhatsApp! 💕',
-      description: 'Você será direcionada para o WhatsApp para finalizar o envio.',
+      title: "Mensagem iniciada no WhatsApp! 💕",
+      description:
+        "Você será direcionada para o WhatsApp para finalizar o envio.",
     });
 
-    setFormData({ nome: '', email: '', assunto: '', mensagem: '' });
+    setFormData({ nome: "", email: "", assunto: "", mensagem: "" });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    "name": "Contato - GiraMãe",
-    "description": "Entre em contato com a GiraMãe. Estamos aqui para ajudar você a aproveitar ao máximo nossa plataforma de trocas sustentáveis.",
-    "url": "https://giramae.com.br/contato"
+    name: "Contato - GiraMãe",
+    description:
+      "Entre em contato com a GiraMãe. Estamos aqui para ajudar você a aproveitar ao máximo nossa plataforma de trocas sustentáveis.",
+    url: "https://giramae.com.br/contato",
   };
 
   return (
@@ -51,7 +62,7 @@ const Contato = () => {
         keywords="contato giramae, suporte giramae, fale conosco, dúvidas trocas infantis, atendimento mães, canoas rs contato"
         structuredData={structuredData}
       />
-      
+
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
@@ -63,8 +74,8 @@ const Contato = () => {
               Estamos Aqui para Você
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Tem dúvidas sobre como funciona? Precisa de suporte? Quer dar uma sugestão? 
-              Nossa equipe está pronta para ajudar! 💕
+              Tem dúvidas sobre como funciona? Precisa de suporte? Quer dar uma
+              sugestão? Nossa equipe está pronta para ajudar! 💕
             </p>
           </div>
 
@@ -109,7 +120,7 @@ const Contato = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <label htmlFor="assunto" className="text-sm font-medium">
                         Assunto *
@@ -163,15 +174,19 @@ const Contato = () => {
                     <Mail className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">E-mail</p>
-                      <p className="text-sm text-muted-foreground">atendimento@giramae.com.br</p>
+                      <p className="text-sm text-muted-foreground">
+                        atendimento@giramae.com.br
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-3">
                     <MessageCircle className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">WhatsApp</p>
-                      <p className="text-sm text-muted-foreground">Em breve disponível</p>
+                      <p className="text-sm text-muted-foreground">
+                        Em breve disponível
+                      </p>
                     </div>
                   </div>
 
@@ -179,7 +194,9 @@ const Contato = () => {
                     <MapPin className="h-5 w-5 text-primary mt-1" />
                     <div>
                       <p className="font-medium">Localização</p>
-                      <p className="text-sm text-muted-foreground">Canoas, Rio Grande do Sul</p>
+                      <p className="text-sm text-muted-foreground">
+                        Canoas, Rio Grande do Sul
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -205,7 +222,9 @@ const Contato = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Domingos</span>
-                      <span className="text-sm text-muted-foreground">Fechado</span>
+                      <span className="text-sm text-muted-foreground">
+                        Fechado
+                      </span>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-4">
@@ -221,7 +240,8 @@ const Contato = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Antes de entrar em contato, que tal dar uma olhada nas perguntas mais frequentes?
+                    Antes de entrar em contato, que tal dar uma olhada nas
+                    perguntas mais frequentes?
                   </p>
                   <Button variant="outline" asChild className="w-full">
                     <a href="/faq">Ver FAQ Completo</a>
@@ -242,7 +262,9 @@ const Contato = () => {
                   <div className="text-primary mb-4 flex justify-center">
                     <MessageCircle className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Suporte Técnico</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Suporte Técnico
+                  </h3>
                   <p className="text-sm text-muted-foreground">
                     Problemas para usar a plataforma? Estamos aqui para ajudar!
                   </p>
@@ -254,9 +276,12 @@ const Contato = () => {
                   <div className="text-primary mb-4 flex justify-center">
                     <Mail className="h-8 w-8" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Dúvidas sobre Trocas</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Dúvidas sobre Trocas
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    Como funciona? Como trocar? Tire todas as suas dúvidas conosco.
+                    Como funciona? Como trocar? Tire todas as suas dúvidas
+                    conosco.
                   </p>
                 </CardContent>
               </Card>
@@ -268,7 +293,8 @@ const Contato = () => {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">Sugestões</h3>
                   <p className="text-sm text-muted-foreground">
-                    Sua opinião é muito importante! Conte suas ideias para melhorarmos.
+                    Sua opinião é muito importante! Conte suas ideias para
+                    melhorarmos.
                   </p>
                 </CardContent>
               </Card>

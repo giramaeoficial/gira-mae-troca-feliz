@@ -342,12 +342,20 @@
 //   );
 // }
 
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Handshake, BarChart3 } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 export default function ParceriaAssistenciaSocial() {
   // Dados de impacto estimado para gráfico profissional
@@ -365,7 +373,8 @@ export default function ParceriaAssistenciaSocial() {
             Parceria: Secretaria de Assistência Social + GiraMãe
           </h1>
           <p className="text-lg text-blue-700 max-w-2xl mx-auto">
-            Unindo forças para reduzir a vulnerabilidade social em Canoas e apoiar milhares de famílias.
+            Unindo forças para reduzir a vulnerabilidade social em Canoas e
+            apoiar milhares de famílias.
           </p>
         </header>
 
@@ -384,19 +393,25 @@ export default function ParceriaAssistenciaSocial() {
             <Card className="shadow-lg rounded-2xl">
               <CardContent className="p-6 text-center">
                 <h3 className="text-2xl font-bold">116.859</h3>
-                <p className="text-sm text-gray-600">pessoas em vulnerabilidade (CadÚnico)</p>
+                <p className="text-sm text-gray-600">
+                  pessoas em vulnerabilidade (CadÚnico)
+                </p>
               </CardContent>
             </Card>
             <Card className="shadow-lg rounded-2xl">
               <CardContent className="p-6 text-center">
                 <h3 className="text-2xl font-bold">5 CRAS</h3>
-                <p className="text-sm text-gray-600">Centros de Referência em Assistência Social</p>
+                <p className="text-sm text-gray-600">
+                  Centros de Referência em Assistência Social
+                </p>
               </CardContent>
             </Card>
             <Card className="shadow-lg rounded-2xl">
               <CardContent className="p-6 text-center">
                 <h3 className="text-2xl font-bold">2 CREAS</h3>
-                <p className="text-sm text-gray-600">Proteção Social Especial</p>
+                <p className="text-sm text-gray-600">
+                  Proteção Social Especial
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -412,21 +427,27 @@ export default function ParceriaAssistenciaSocial() {
               <CardContent className="p-6 flex flex-col items-center text-center">
                 <Users className="h-10 w-10 text-blue-600 mb-2" />
                 <h3 className="text-2xl font-bold">52.316 famílias</h3>
-                <p className="text-sm text-gray-600">inscritas no CadÚnico (33% da população)</p>
+                <p className="text-sm text-gray-600">
+                  inscritas no CadÚnico (33% da população)
+                </p>
               </CardContent>
             </Card>
             <Card className="shadow-lg rounded-2xl">
               <CardContent className="p-6 flex flex-col items-center text-center">
                 <Users className="h-10 w-10 text-blue-600 mb-2" />
                 <h3 className="text-2xl font-bold">20.075 famílias</h3>
-                <p className="text-sm text-gray-600">beneficiadas pelo Bolsa Família</p>
+                <p className="text-sm text-gray-600">
+                  beneficiadas pelo Bolsa Família
+                </p>
               </CardContent>
             </Card>
             <Card className="shadow-lg rounded-2xl">
               <CardContent className="p-6 flex flex-col items-center text-center">
                 <BarChart3 className="h-10 w-10 text-blue-600 mb-2" />
                 <h3 className="text-2xl font-bold">+154 mil atendimentos</h3>
-                <p className="text-sm text-gray-600">realizados pelos CRAS nos últimos 4 anos</p>
+                <p className="text-sm text-gray-600">
+                  realizados pelos CRAS nos últimos 4 anos
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -440,26 +461,61 @@ export default function ParceriaAssistenciaSocial() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="shadow-lg rounded-2xl">
               <CardContent className="p-6 space-y-2">
-                <h3 className="text-xl font-bold text-blue-700">Impacto direto nas famílias</h3>
+                <h3 className="text-xl font-bold text-blue-700">
+                  Impacto direto nas famílias
+                </h3>
                 <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                  <li>Redução de até R$ 1.800/ano em gastos com roupas e itens.</li>
-                  <li>Acesso rápido a itens essenciais sem depender apenas do CRAS.</li>
+                  <li>
+                    Redução de até R$ 1.800/ano em gastos com roupas e itens.
+                  </li>
+                  <li>
+                    Acesso rápido a itens essenciais sem depender apenas do
+                    CRAS.
+                  </li>
                   <li>Fortalecimento da rede de apoio comunitária.</li>
-                  <li>Mães em vulnerabilidade conseguem roupas e itens infantis sem depender apenas de doações emergenciais.</li>
-                  <li>Estimula redes de solidariedade entre vizinhos, criando um ambiente de apoio mútuo.</li>
-                  <li>Menos preocupação com roupas e itens básicos, mais energia para cuidar dos filhos e planejar o futuro.</li>
+                  <li>
+                    Mães em vulnerabilidade conseguem roupas e itens infantis
+                    sem depender apenas de doações emergenciais.
+                  </li>
+                  <li>
+                    Estimula redes de solidariedade entre vizinhos, criando um
+                    ambiente de apoio mútuo.
+                  </li>
+                  <li>
+                    Menos preocupação com roupas e itens básicos, mais energia
+                    para cuidar dos filhos e planejar o futuro.
+                  </li>
                 </ul>
               </CardContent>
             </Card>
             <Card className="shadow-lg rounded-2xl">
               <CardContent className="p-6 space-y-2">
-                <h3 className="text-xl font-bold text-blue-700">Benefício para a Secretaria</h3>
+                <h3 className="text-xl font-bold text-blue-700">
+                  Benefício para a Secretaria
+                </h3>
                 <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                  <li>Menos pedidos emergenciais, mais tempo e cuidado para cada família.</li>
-                  <li>Informações vivas sobre o que as famílias realmente precisam, no momento certo.</li>
-                  <li>Uma comunidade fortalecida que caminha junto com a secretaria no cuidado com as famílias.</li>
-                  <li>Essa parceria posiciona Canoas como referência em soluções criativas de combate à vulnerabilidade, fortalecendo a imagem da cidade e da gestão.</li>
-                  <li>Libera parte do orçamento que seria gasto com atendimento eventual de roupas/itens, podendo direcionar para outras políticas prioritárias.</li>
+                  <li>
+                    Menos pedidos emergenciais, mais tempo e cuidado para cada
+                    família.
+                  </li>
+                  <li>
+                    Informações vivas sobre o que as famílias realmente
+                    precisam, no momento certo.
+                  </li>
+                  <li>
+                    Uma comunidade fortalecida que caminha junto com a
+                    secretaria no cuidado com as famílias.
+                  </li>
+                  <li>
+                    Essa parceria posiciona Canoas como referência em soluções
+                    criativas de combate à vulnerabilidade, fortalecendo a
+                    imagem da cidade e da gestão.
+                  </li>
+                  <li>
+                    Libera parte do orçamento que seria gasto com atendimento
+                    eventual de roupas/itens, podendo direcionar para outras
+                    políticas prioritárias.
+                  </li>
                 </ul>
               </CardContent>
             </Card>
@@ -473,19 +529,32 @@ export default function ParceriaAssistenciaSocial() {
           </h2>
           <div className="bg-white p-6 rounded-2xl shadow-md">
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <BarChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
-                <YAxis label={{ value: "R$ (Reais)", angle: -90, position: "insideLeft" }} />
+                <YAxis
+                  label={{
+                    value: "R$ (Reais)",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
                 <Tooltip formatter={(value) => `R$ ${value},00`} />
                 <Legend />
                 <Bar dataKey="Gastos" fill="#2563eb" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
             <p className="text-sm text-gray-600 mt-4 text-center">
-              Famílias gastam em média <span className="font-bold">R$ 250,00/mês</span>com roupas e itens infantis.(Fonte:IBGE/2024)<br></br>
-              Com o GiraMãe, esse custo pode ser praticamente <span className="text-green-600 font-bold">eliminado</span>,
-              gerando economia anual de até <span className="font-bold">R$ 1.800,00</span>. 
+              Famílias gastam em média{" "}
+              <span className="font-bold">R$ 250,00/mês</span>com roupas e itens
+              infantis.(Fonte:IBGE/2024)<br></br>
+              Com o GiraMãe, esse custo pode ser praticamente{" "}
+              <span className="text-green-600 font-bold">eliminado</span>,
+              gerando economia anual de até{" "}
+              <span className="font-bold">R$ 1.800,00</span>.
             </p>
           </div>
         </section>
@@ -497,7 +566,9 @@ export default function ParceriaAssistenciaSocial() {
             Juntos, podemos transformar a realidade de milhares de famílias
           </h2>
           <p className="text-gray-700 max-w-2xl mx-auto">
-            A parceria entre a Secretaria de Assistência Social e o GiraMãe é um passo importante para fortalecer a economia solidária, reduzir vulnerabilidades e garantir mais dignidade às famílias de Canoas.
+            A parceria entre a Secretaria de Assistência Social e o GiraMãe é um
+            passo importante para fortalecer a economia solidária, reduzir
+            vulnerabilidades e garantir mais dignidade às famílias de Canoas.
           </p>
           {/* <Button size="lg" className="bg-blue-700 hover:bg-blue-800 text-white rounded-2xl px-6 py-3 text-lg shadow-md">
             Apoiar a Parceria

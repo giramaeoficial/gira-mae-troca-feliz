@@ -142,7 +142,6 @@ const ComoFunciona = () => {
             </Card>
           </section>
 
-
           {/* Como obter Girinhas? */}
           <section className="mb-20">
             <Card className="bg-blue-50">
@@ -164,8 +163,7 @@ const ComoFunciona = () => {
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
                         <ChevronRight className="h-5 w-5 text-primary" />
-                        <span>
-                          Ganhando vendendo itens</span>
+                        <span>Ganhando vendendo itens</span>
                       </div>
                       <div className="flex items-center gap-3">
                         <ChevronRight className="h-5 w-5 text-primary" />
@@ -185,8 +183,6 @@ const ComoFunciona = () => {
                       </div>
                     </div>
                   </div>
-                  
-                  
                 </div>
               </CardContent>
             </Card>
