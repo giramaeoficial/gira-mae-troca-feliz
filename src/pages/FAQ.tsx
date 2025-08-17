@@ -294,16 +294,16 @@ const FAQ = () => {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <a
                     href="/contato"
-                    className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+                    className="bg-primary text-primary-foreground px-12 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
                   >
                     Falar Conosco
                   </a>
-                  <a
+                  {/* <a
                     href="/como-funciona"
                     className="border border-primary text-primary px-8 py-3 rounded-lg font-semibold hover:bg-primary/5 transition-colors"
                   >
                     Como Funciona
-                  </a>
+                  </a> */}
                 </div>
               </CardContent>
             </Card>

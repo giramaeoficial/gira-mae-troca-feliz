@@ -9,29 +9,30 @@ import { useToast } from '@/hooks/use-toast';
 import SEOHead from '@/components/seo/SEOHead';
 
 const Contato = () => {
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    assunto: '',
-    mensagem: ''
-  });
+  const [formData, setFormData] = useState({ nome: '', email: '', assunto: '', mensagem: '' });
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Por enquanto só mostra toast de sucesso
+    
+    // Cria o link do WhatsApp com mensagem pré-preenchida
+    const numeroWhatsApp = '555198311780'; // substitua pelo número de atendimento com código do país e DDD
+    const texto = `Olá! Meu nome é ${formData.nome}. Assunto: ${formData.assunto}. Mensagem: ${formData.mensagem}`;
+    const link = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(texto)}`;
+
+    // Abre o WhatsApp em nova aba
+    window.open(link, '_blank');
+
     toast({
-      title: "Mensagem enviada com sucesso! 💕",
-      description: "Obrigada pelo contato! Responderemos em breve.",
+      title: 'Mensagem iniciada no WhatsApp! 💕',
+      description: 'Você será direcionada para o WhatsApp para finalizar o envio.',
     });
+
     setFormData({ nome: '', email: '', assunto: '', mensagem: '' });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const structuredData = {
