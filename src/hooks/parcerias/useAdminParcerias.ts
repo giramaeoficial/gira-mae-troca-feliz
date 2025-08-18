@@ -190,8 +190,16 @@ export function useAdminParcerias() {
 
   const downloadDocumento = async (validacao: ValidacaoPendente, documento: any) => {
     try {
-      // Path do documento no Storage: user_id/programa_id/timestamp_filename
-      const filePath = `${validacao.user_id}/${validacao.programa_id}/${documento.path}`;
+      // Verificar se documento tem path ou nome do arquivo
+      const fileName = documento.path || documento.nome || documento.filename;
+      if (!fileName) {
+        throw new Error('Arquivo não encontrado');
+      }
+      
+      // Path do documento no Storage: user_id/programa_id/filename
+      const filePath = `${validacao.user_id}/${validacao.programa_id}/${fileName}`;
+      
+      console.log('Tentando baixar arquivo:', filePath);
       
       // Como admin, temos acesso a todos os documentos via RLS
       const { data, error } = await supabase.storage
