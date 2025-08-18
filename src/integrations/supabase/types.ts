@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1915,6 +1915,324 @@ export type Database = {
           },
         ]
       }
+      parcerias_historico_creditos: {
+        Row: {
+          created_at: string | null
+          data_creditacao: string | null
+          data_expiracao: string | null
+          expirado: boolean | null
+          id: string
+          mes_referencia: string
+          processamento_id: string | null
+          programa_id: string | null
+          user_id: string | null
+          validacao_id: string | null
+          valor_creditado: number
+        }
+        Insert: {
+          created_at?: string | null
+          data_creditacao?: string | null
+          data_expiracao?: string | null
+          expirado?: boolean | null
+          id?: string
+          mes_referencia: string
+          processamento_id?: string | null
+          programa_id?: string | null
+          user_id?: string | null
+          validacao_id?: string | null
+          valor_creditado: number
+        }
+        Update: {
+          created_at?: string | null
+          data_creditacao?: string | null
+          data_expiracao?: string | null
+          expirado?: boolean | null
+          id?: string
+          mes_referencia?: string
+          processamento_id?: string | null
+          programa_id?: string | null
+          user_id?: string | null
+          validacao_id?: string | null
+          valor_creditado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcerias_historico_creditos_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "parcerias_programas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcerias_historico_creditos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcerias_historico_creditos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "parcerias_historico_creditos_validacao_id_fkey"
+            columns: ["validacao_id"]
+            isOneToOne: false
+            referencedRelation: "parcerias_usuarios_validacao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parcerias_logs_processamento: {
+        Row: {
+          executado_em: string | null
+          funcao_executada: string
+          id: string
+          mes_referencia: string
+          programa_id: string | null
+          resultado: Json | null
+          tempo_execucao_ms: number | null
+          usuarios_com_erro: number | null
+          usuarios_processados: number | null
+        }
+        Insert: {
+          executado_em?: string | null
+          funcao_executada: string
+          id?: string
+          mes_referencia: string
+          programa_id?: string | null
+          resultado?: Json | null
+          tempo_execucao_ms?: number | null
+          usuarios_com_erro?: number | null
+          usuarios_processados?: number | null
+        }
+        Update: {
+          executado_em?: string | null
+          funcao_executada?: string
+          id?: string
+          mes_referencia?: string
+          programa_id?: string | null
+          resultado?: Json | null
+          tempo_execucao_ms?: number | null
+          usuarios_com_erro?: number | null
+          usuarios_processados?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcerias_logs_processamento_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "parcerias_programas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parcerias_organizacoes: {
+        Row: {
+          ativo: boolean | null
+          cidade: string | null
+          codigo: string
+          contato_email: string | null
+          contato_telefone: string | null
+          created_at: string | null
+          estado: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cidade?: string | null
+          codigo: string
+          contato_email?: string | null
+          contato_telefone?: string | null
+          created_at?: string | null
+          estado?: string | null
+          id?: string
+          logo_url?: string | null
+          nome: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cidade?: string | null
+          codigo?: string
+          contato_email?: string | null
+          contato_telefone?: string | null
+          created_at?: string | null
+          estado?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      parcerias_programas: {
+        Row: {
+          ativo: boolean | null
+          campos_obrigatorios: string[] | null
+          codigo: string
+          cor_tema: string | null
+          created_at: string | null
+          descricao: string | null
+          dia_creditacao: number | null
+          documentos_aceitos: string[] | null
+          icone: string | null
+          id: string
+          instrucoes_usuario: string | null
+          nome: string
+          organizacao_id: string | null
+          regex_validacao: Json | null
+          updated_at: string | null
+          validade_meses: number | null
+          valor_mensal: number
+        }
+        Insert: {
+          ativo?: boolean | null
+          campos_obrigatorios?: string[] | null
+          codigo: string
+          cor_tema?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          dia_creditacao?: number | null
+          documentos_aceitos?: string[] | null
+          icone?: string | null
+          id?: string
+          instrucoes_usuario?: string | null
+          nome: string
+          organizacao_id?: string | null
+          regex_validacao?: Json | null
+          updated_at?: string | null
+          validade_meses?: number | null
+          valor_mensal?: number
+        }
+        Update: {
+          ativo?: boolean | null
+          campos_obrigatorios?: string[] | null
+          codigo?: string
+          cor_tema?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          dia_creditacao?: number | null
+          documentos_aceitos?: string[] | null
+          icone?: string | null
+          id?: string
+          instrucoes_usuario?: string | null
+          nome?: string
+          organizacao_id?: string | null
+          regex_validacao?: Json | null
+          updated_at?: string | null
+          validade_meses?: number | null
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcerias_programas_organizacao_id_fkey"
+            columns: ["organizacao_id"]
+            isOneToOne: false
+            referencedRelation: "parcerias_organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parcerias_usuarios_validacao: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          dados_usuario: Json
+          data_solicitacao: string | null
+          data_validacao: string | null
+          documentos: Json
+          id: string
+          motivo_rejeicao: string | null
+          programa_id: string | null
+          status: string | null
+          total_creditos_recebidos: number | null
+          ultima_creditacao: string | null
+          updated_at: string | null
+          user_id: string | null
+          validado_por: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          dados_usuario: Json
+          data_solicitacao?: string | null
+          data_validacao?: string | null
+          documentos?: Json
+          id?: string
+          motivo_rejeicao?: string | null
+          programa_id?: string | null
+          status?: string | null
+          total_creditos_recebidos?: number | null
+          ultima_creditacao?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          validado_por?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          dados_usuario?: Json
+          data_solicitacao?: string | null
+          data_validacao?: string | null
+          documentos?: Json
+          id?: string
+          motivo_rejeicao?: string | null
+          programa_id?: string | null
+          status?: string | null
+          total_creditos_recebidos?: number | null
+          ultima_creditacao?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          validado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcerias_usuarios_validacao_programa_id_fkey"
+            columns: ["programa_id"]
+            isOneToOne: false
+            referencedRelation: "parcerias_programas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcerias_usuarios_validacao_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcerias_usuarios_validacao_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "parcerias_usuarios_validacao_validado_por_fkey"
+            columns: ["validado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcerias_usuarios_validacao_validado_por_fkey"
+            columns: ["validado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios_admin"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       penalidades_usuario: {
         Row: {
           ativo: boolean | null
@@ -3182,9 +3500,9 @@ export type Database = {
     Functions: {
       aceitar_denuncia: {
         Args: {
+          p_comentario?: string
           p_denuncia_id: string
           p_moderador_id: string
-          p_comentario?: string
           p_observacoes?: string
         }
         Returns: Json
@@ -3192,60 +3510,60 @@ export type Database = {
       admin_buscar_todos_itens: {
         Args: { p_limite?: number; p_offset?: number }
         Returns: {
-          id: string
-          titulo: string
           categoria: string
-          valor_girinhas: number
-          status: string
-          moderacao_status: string
-          publicado_por: string
-          vendedor_nome: string
-          created_at: string
-          moderado_em: string
           comentario_predefinido: string
+          created_at: string
+          id: string
+          moderacao_status: string
+          moderado_em: string
+          publicado_por: string
+          status: string
+          titulo: string
+          valor_girinhas: number
+          vendedor_nome: string
         }[]
       }
       admin_update_item_basico: {
         Args: {
-          p_item_id: string
-          p_titulo: string
-          p_descricao: string
           p_categoria: string
-          p_subcategoria: string
-          p_valor_girinhas: number
+          p_descricao: string
           p_estado_conservacao: string
           p_genero: string
+          p_item_id: string
+          p_subcategoria: string
           p_tamanho_valor: string
+          p_titulo: string
+          p_valor_girinhas: number
         }
         Returns: boolean
       }
       aplicar_banimento_permanente: {
-        Args: { p_usuario_id: string; p_motivo: string; p_admin_id: string }
+        Args: { p_admin_id: string; p_motivo: string; p_usuario_id: string }
         Returns: Json
       }
       aplicar_penalidade: {
         Args:
           | {
-              p_usuario_id: string
-              p_tipo: string
-              p_nivel: number
+              p_duracao_dias?: number
               p_motivo: string
+              p_nivel: number
+              p_tipo: string
+              p_usuario_id: string
             }
           | {
-              p_usuario_id: string
-              p_tipo: string
-              p_nivel: number
               p_motivo: string
-              p_duracao_dias?: number
+              p_nivel: number
+              p_tipo: string
+              p_usuario_id: string
             }
         Returns: undefined
       }
       aplicar_suspensao_manual: {
         Args: {
-          p_usuario_id: string
+          p_admin_id: string
           p_duracao_dias: number
           p_motivo: string
-          p_admin_id: string
+          p_usuario_id: string
         }
         Returns: Json
       }
@@ -3254,47 +3572,47 @@ export type Database = {
         Returns: undefined
       }
       atualizar_reputacao: {
-        Args: { p_usuario_id: string; p_nova_nota: number }
+        Args: { p_nova_nota: number; p_usuario_id: string }
         Returns: undefined
       }
       buscar_escolas_proximas_por_cep: {
         Args: { cep_usuario: string; limite?: number }
         Returns: {
-          codigo_inep: number
-          escola: string
-          endereco: string
           cep: string
-          municipio: string
-          uf: string
+          codigo_inep: number
+          distancia_cep: number
+          endereco: string
+          escola: string
           latitude: string
           longitude: string
-          distancia_cep: number
+          municipio: string
+          uf: string
         }[]
       }
       buscar_itens_com_moderacao: {
         Args: {
-          p_user_id?: string
           p_categoria?: string
           p_limite?: number
           p_offset?: number
+          p_user_id?: string
         }
         Returns: {
-          id: string
-          titulo: string
-          descricao: string
-          categoria: string
-          subcategoria: string
-          valor_girinhas: number
-          status: string
-          fotos: string[]
-          created_at: string
-          publicado_por: string
-          moderacao_status: string
           aguardando_moderacao: boolean
-          vendedor_nome: string
+          categoria: string
+          created_at: string
+          descricao: string
+          fotos: string[]
+          id: string
+          moderacao_status: string
+          publicado_por: string
+          status: string
+          subcategoria: string
+          titulo: string
+          valor_girinhas: number
           vendedor_avatar: string
           vendedor_cidade: string
           vendedor_estado: string
+          vendedor_nome: string
         }[]
       }
       buscar_itens_mesma_escola: {
@@ -3312,39 +3630,46 @@ export type Database = {
       buscar_usuario_por_username: {
         Args: { p_username: string }
         Returns: {
+          avatar_url: string
           id: string
           nome: string
           username: string
-          avatar_url: string
         }[]
       }
       buscar_usuarios_admin: {
-        Args:
-          | {
-              p_termo_busca?: string
-              p_status_filtro?: string
-              p_limite?: number
-              p_offset?: number
-            }
-          | {
-              search_term?: string
-              status_filter?: string
-              ordenacao?: string
-              limite?: number
-              offset_val?: number
-            }
+        Args: {
+          limite?: number
+          offset_val?: number
+          ordenacao?: string
+          search_term?: string
+          status_filter?: string
+        }
         Returns: {
-          user_id: string
-          nome: string
-          email: string
-          username: string
-          status: string
-          pontuacao_reputacao: number
-          total_violacoes: number
-          penalidades_ativas: number
-          penalidade_mais_grave: number
+          avatar_url: string
+          cadastro_status: string
+          cidade: string
           data_cadastro: string
+          email: string
+          estado: string
+          nome: string
+          penalidade_mais_grave: number
+          penalidades_ativas: number
+          pontuacao_reputacao: number
+          saldo_girinhas: number
+          status: string
+          telefone: string
+          total_denuncias_feitas: number
+          total_girinhas_gastas: number
+          total_girinhas_recebidas: number
+          total_itens_publicados: number
+          total_penalidades_historico: number
+          total_reservas_feitas: number
+          total_vendas_realizadas: number
+          total_violacoes: number
           ultima_atividade: string
+          ultima_penalidade: string
+          user_id: string
+          username: string
         }[]
       }
       calcular_custo_extensao: {
@@ -3369,46 +3694,46 @@ export type Database = {
       }
       cancelar_reserva_v2: {
         Args: {
-          p_reserva_id: string
-          p_usuario_id: string
           p_motivo_codigo: string
           p_observacoes?: string
+          p_reserva_id: string
+          p_usuario_id: string
         }
         Returns: boolean
       }
       carregar_dados_feed_paginado: {
         Args: {
-          p_user_id: string
-          p_page?: number
-          p_limit?: number
           p_busca?: string
-          p_cidade?: string
           p_categoria?: string
-          p_subcategoria?: string
+          p_cidade?: string
           p_genero?: string
-          p_tamanho?: string
-          p_preco_min?: number
-          p_preco_max?: number
-          p_mostrar_reservados?: boolean
           p_item_id?: string
+          p_limit?: number
           p_modalidade_logistica?: string
+          p_mostrar_reservados?: boolean
+          p_page?: number
+          p_preco_max?: number
+          p_preco_min?: number
+          p_subcategoria?: string
+          p_tamanho?: string
+          p_user_id: string
         }
         Returns: Json
       }
       carregar_itens_usuario_especifico: {
         Args: {
-          p_user_id: string
-          p_target_user_id: string
-          p_page?: number
-          p_limit?: number
           p_busca?: string
           p_categoria?: string
-          p_subcategoria?: string
           p_genero?: string
-          p_tamanho?: string
-          p_preco_min?: number
-          p_preco_max?: number
+          p_limit?: number
           p_mostrar_reservados?: boolean
+          p_page?: number
+          p_preco_max?: number
+          p_preco_min?: number
+          p_subcategoria?: string
+          p_tamanho?: string
+          p_target_user_id: string
+          p_user_id: string
         }
         Returns: Json
       }
@@ -3417,29 +3742,29 @@ export type Database = {
         Returns: Json
       }
       carregar_maes_seguidas_paginado: {
-        Args: { p_user_id: string; p_page?: number; p_limit?: number }
+        Args: { p_limit?: number; p_page?: number; p_user_id: string }
         Returns: Json
       }
       check_database_status: {
         Args: Record<PropertyKey, never>
         Returns: {
-          table_name: string
-          rls_enabled: boolean
-          policy_count: number
           insert_policy_exists: boolean
+          policy_count: number
+          rls_enabled: boolean
+          table_name: string
         }[]
       }
       coletar_recompensa_missao: {
-        Args: { p_user_id: string; p_missao_id: string }
+        Args: { p_missao_id: string; p_user_id: string }
         Returns: Json
       }
       create_notification: {
         Args: {
-          p_user_id: string
-          p_type: string
-          p_title: string
-          p_message: string
           p_data?: Json
+          p_message: string
+          p_title: string
+          p_type: string
+          p_user_id: string
         }
         Returns: string
       }
@@ -3449,21 +3774,21 @@ export type Database = {
       }
       create_user_profile: {
         Args: {
-          p_user_id: string
+          p_avatar_url: string
           p_email: string
           p_nome: string
-          p_avatar_url: string
+          p_user_id: string
           p_username: string
         }
         Returns: undefined
       }
       criar_transacao_validada: {
         Args: {
-          p_user_id: string
-          p_tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
-          p_valor: number
           p_descricao: string
           p_metadados?: Json
+          p_tipo: Database["public"]["Enums"]["tipo_transacao_enum"]
+          p_user_id: string
+          p_valor: number
         }
         Returns: string
       }
@@ -3486,19 +3811,19 @@ export type Database = {
       diagnostico_banda_cambial: {
         Args: Record<PropertyKey, never>
         Returns: {
-          cotacao_marketplace: number
-          preco_venda: number
-          zona_atual: string
-          markup_aplicado: string
-          status_sistema: string
           acao_recomendada: string
+          cotacao_marketplace: number
+          markup_aplicado: string
+          preco_venda: number
+          status_sistema: string
+          zona_atual: string
         }[]
       }
       distribuir_girinhas_promocionais: {
         Args: {
-          p_valor: number
-          p_descricao: string
           p_apenas_ativas?: boolean
+          p_descricao: string
+          p_valor: number
         }
         Returns: number
       }
@@ -3512,14 +3837,14 @@ export type Database = {
       }
       estender_validade_girinhas: {
         Args: {
+          p_nova_data_expiracao: string
           p_user_id: string
           p_valor_expirando: number
-          p_nova_data_expiracao: string
         }
         Returns: boolean
       }
       estender_validade_girinhas_seguro: {
-        Args: { p_user_id: string; p_transacao_id: string }
+        Args: { p_transacao_id: string; p_user_id: string }
         Returns: Json
       }
       extrair_cep_endereco: {
@@ -3527,7 +3852,7 @@ export type Database = {
         Returns: string
       }
       finalizar_troca_com_codigo: {
-        Args: { p_reserva_id: string; p_codigo_confirmacao: string }
+        Args: { p_codigo_confirmacao: string; p_reserva_id: string }
         Returns: boolean
       }
       geocoding_queue_delete: {
@@ -3573,9 +3898,9 @@ export type Database = {
       }
       liberar_cidade_manual: {
         Args: {
+          p_admin_id: string
           p_cidade: string
           p_estado: string
-          p_admin_id: string
           p_notas?: string
         }
         Returns: Json
@@ -3586,10 +3911,10 @@ export type Database = {
       }
       log_debug: {
         Args: {
-          p_user_id: string
-          p_operation: string
-          p_message: string
           p_error_details?: Json
+          p_message: string
+          p_operation: string
+          p_user_id: string
         }
         Returns: undefined
       }
@@ -3597,8 +3922,8 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           configuracao: string
-          valor_atual: string
           descricao: string
+          valor_atual: string
         }[]
       }
       obter_cotacao_atual: {
@@ -3612,33 +3937,33 @@ export type Database = {
       obter_estatisticas_seguidor: {
         Args: { p_usuario_id: string }
         Returns: {
-          total_seguindo: number
           total_seguidores: number
+          total_seguindo: number
         }[]
       }
       obter_fila_espera: {
         Args: { p_item_id: string }
         Returns: {
-          total_fila: number
           posicao_usuario: number
+          total_fila: number
         }[]
       }
       obter_girinhas_expiracao: {
         Args: { p_user_id: string }
         Returns: {
-          total_expirando_7_dias: number
-          total_expirando_30_dias: number
-          proxima_expiracao: string
           detalhes_expiracao: Json
+          proxima_expiracao: string
+          total_expirando_30_dias: number
+          total_expirando_7_dias: number
         }[]
       }
       obter_girinhas_expiracao_seguro: {
         Args: { p_user_id: string }
         Returns: {
-          total_expirando_7_dias: number
-          total_expirando_30_dias: number
-          proxima_expiracao: string
           detalhes_expiracao: Json
+          proxima_expiracao: string
+          total_expirando_30_dias: number
+          total_expirando_7_dias: number
         }[]
       }
       obter_preco_manual: {
@@ -3654,11 +3979,11 @@ export type Database = {
         Returns: number
       }
       pode_estender_transacao: {
-        Args: { p_user_id: string; p_transacao_id: string }
+        Args: { p_transacao_id: string; p_user_id: string }
         Returns: Json
       }
       pode_usuario_agir: {
-        Args: { p_user_id: string; p_acao?: string }
+        Args: { p_acao?: string; p_user_id: string }
         Returns: boolean
       }
       processar_bonus_diario: {
@@ -3672,7 +3997,7 @@ export type Database = {
         Returns: undefined
       }
       processar_compra_girinhas: {
-        Args: { p_user_id: string; p_pacote_id: string; p_payment_id: string }
+        Args: { p_pacote_id: string; p_payment_id: string; p_user_id: string }
         Returns: string
       }
       processar_compra_girinhas_v2: {
@@ -3681,28 +4006,28 @@ export type Database = {
       }
       processar_compra_manual: {
         Args: {
-          p_user_id: string
-          p_quantidade: number
           p_idempotency_key?: string
+          p_quantidade: number
+          p_user_id: string
         }
         Returns: Json
       }
       processar_compra_segura: {
         Args: {
-          p_user_id: string
-          p_quantidade: number
           p_idempotency_key?: string
+          p_quantidade: number
+          p_user_id: string
         }
         Returns: Json
       }
       processar_compra_webhook_segura: {
         Args: {
-          p_user_id: string
-          p_quantidade: number
-          p_payment_id: string
           p_external_reference: string
+          p_payment_id: string
           p_payment_method?: string
           p_payment_status?: string
+          p_quantidade: number
+          p_user_id: string
         }
         Returns: Json
       }
@@ -3718,25 +4043,25 @@ export type Database = {
         Args: { p_item_id: string }
         Returns: {
           reserva_id_retorno: string
-          usuario_id_retorno: string
           sucesso_retorno: boolean
+          usuario_id_retorno: string
         }[]
       }
       processar_reserva: {
         Args:
           | {
               p_item_id: string
+              p_permitir_reservado?: boolean
               p_usuario_reservou: string
               p_valor: number
-              p_permitir_reservado?: boolean
             }
           | {
               p_item_id: string
+              p_permitir_reservado?: boolean
               p_usuario_reservou: string
               p_valor_girinhas: number
               p_valor_taxa: number
               p_valor_total: number
-              p_permitir_reservado?: boolean
             }
         Returns: string
       }
@@ -3763,7 +4088,7 @@ export type Database = {
         Returns: undefined
       }
       processar_transacao_atomica: {
-        Args: { p_operacao: string; p_dados: Json }
+        Args: { p_dados: Json; p_operacao: string }
         Returns: Json
       }
       processar_transferencia_p2p_v2: {
@@ -3771,7 +4096,7 @@ export type Database = {
         Returns: Json
       }
       queimar_girinhas: {
-        Args: { p_user_id: string; p_quantidade: number; p_motivo: string }
+        Args: { p_motivo: string; p_quantidade: number; p_user_id: string }
         Returns: boolean
       }
       re_enable_rls: {
@@ -3781,11 +4106,11 @@ export type Database = {
       read_geocoding_messages: {
         Args: { p_limit?: number }
         Returns: {
+          enqueued_at: string
+          message: Json
           msg_id: number
           read_ct: number
-          enqueued_at: string
           vt: string
-          message: Json
         }[]
       }
       reativar_item_corrigido: {
@@ -3794,10 +4119,10 @@ export type Database = {
       }
       registrar_analytics_missao: {
         Args: {
+          p_detalhes?: Json
+          p_evento: string
           p_missao_id: string
           p_user_id: string
-          p_evento: string
-          p_detalhes?: Json
         }
         Returns: string
       }
@@ -3808,7 +4133,7 @@ export type Database = {
         Returns: undefined
       }
       registrar_indicacao: {
-        Args: { p_indicador_id: string; p_indicado_id: string }
+        Args: { p_indicado_id: string; p_indicador_id: string }
         Returns: boolean
       }
       rejeitar_denuncia: {
@@ -3823,36 +4148,36 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           cotacao_real: number
-          preco_venda: number
-          preco_recompra: number
-          zona_atual: string
           markup_aplicado: string
+          preco_recompra: number
+          preco_venda: number
           status_sistema: string
+          zona_atual: string
         }[]
       }
       relatorio_sistema_admin: {
         Args: Record<PropertyKey, never>
         Returns: {
-          cotacao_real: number
-          preco_venda: number
-          preco_recompra: number
-          limite_min: number
-          limite_max: number
-          markup_atual: number
-          status_sistema: string
           configuracao_markup: string
+          cotacao_real: number
+          limite_max: number
+          limite_min: number
+          markup_atual: number
+          preco_recompra: number
+          preco_venda: number
+          status_sistema: string
         }[]
       }
       relatorio_sistema_cotacao: {
         Args: Record<PropertyKey, never>
         Returns: {
-          cotacao_real: number
-          preco_meta: number
-          preco_venda: number
-          preco_recompra: number
-          markup_aplicado: number
-          situacao_mercado: string
           acao_sistema: string
+          cotacao_real: number
+          markup_aplicado: number
+          preco_meta: number
+          preco_recompra: number
+          preco_venda: number
+          situacao_mercado: string
         }[]
       }
       remover_penalidade: {
@@ -3860,7 +4185,7 @@ export type Database = {
         Returns: boolean
       }
       remover_penalidade_restaurar_usuario: {
-        Args: { p_penalidade_id: string; p_admin_id: string }
+        Args: { p_admin_id: string; p_penalidade_id: string }
         Returns: Json
       }
       sair_fila_espera: {
@@ -3872,31 +4197,31 @@ export type Database = {
         Returns: boolean
       }
       save_verification_code: {
-        Args: { p_telefone: string; p_code: string }
+        Args: { p_code: string; p_telefone: string }
         Returns: boolean
       }
       send_admin_notification: {
         Args: {
-          p_title: string
+          p_action_text?: string
+          p_action_url?: string
           p_message: string
+          p_sent_by?: string
           p_target_type?: string
           p_target_users?: string[]
-          p_action_url?: string
-          p_action_text?: string
-          p_sent_by?: string
+          p_title: string
         }
         Returns: number
       }
       transferir_girinhas_p2p: {
         Args: {
-          p_remetente_id: string
           p_destinatario_id: string
           p_quantidade: number
+          p_remetente_id: string
         }
         Returns: string
       }
       usuario_elegivel_missao: {
-        Args: { user_id: string; missao_id: string }
+        Args: { missao_id: string; user_id: string }
         Returns: boolean
       }
       validar_valor_item_categoria: {
