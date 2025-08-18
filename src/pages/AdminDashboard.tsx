@@ -18,7 +18,8 @@ import {
   Gift,
   Target,
   UserPlus,
-  MapPin
+  MapPin,
+  Building2
 } from "lucide-react";
 import { useIsMobile } from '@/hooks/use-mobile';
 import UserManagement from '@/components/admin/UserManagement';
@@ -34,6 +35,7 @@ import ConfigBonusDiario from '@/components/admin/ConfigBonusDiario';
 import ConfigIndicacoes from '@/components/admin/ConfigIndicacoes';
 import LiberacaoCidades from '@/components/admin/LiberacaoCidades';
 import ModePanel from '@/components/admin/ModePanel';
+import AdminParcerias from '@/components/admin/AdminParcerias';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -53,6 +55,7 @@ const AdminDashboard = () => {
     { value: 'missoes', label: 'Missões', icon: Target },
     { value: 'indicacoes', label: 'Indicações', icon: UserPlus },
     { value: 'cidades', label: 'Cidades', icon: MapPin },
+    { value: 'parcerias', label: 'Parcerias', icon: Building2 },
   ];
 
   const currentTab = adminTabs.find(tab => tab.value === activeTab);
@@ -184,6 +187,10 @@ const AdminDashboard = () => {
 
               <TabsContent value="cidades" className="mt-0">
                 <LiberacaoCidades />
+              </TabsContent>
+
+              <TabsContent value="parcerias" className="mt-0">
+                <AdminParcerias />
               </TabsContent>
             </Tabs>
           </div>

@@ -52,6 +52,8 @@ import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
 import ItensFavoritos from '@/pages/ItensFavoritos';
+import ParceriasSociais from '@/pages/ParceriasSociais';
+import ProgramaDetalhes from '@/pages/ProgramaDetalhes';
 
 
 //const queryClient = new QueryClient();
@@ -282,6 +284,26 @@ function App() {
               <AuthGuard>
                 <AcessoTotalGuard>
                   <Configuracoes />
+                </AcessoTotalGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/parcerias" 
+            element={
+              <AuthGuard>
+                <AcessoTotalGuard>
+                  <ParceriasSociais />
+                </AcessoTotalGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/parcerias/:organizacao_codigo/:programa_codigo" 
+            element={
+              <AuthGuard>
+                <AcessoTotalGuard>
+                  <ProgramaDetalhes />
                 </AcessoTotalGuard>
               </AuthGuard>
             } 

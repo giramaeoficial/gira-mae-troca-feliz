@@ -6,18 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Bell, User, Shield, TestTube } from 'lucide-react';
+import { Settings, Bell, User, Shield, TestTube, Building2 } from 'lucide-react';
 import { NotificationPreferences } from '@/components/notifications/NotificationPreferences';
 import { OneSignalSettings } from '@/components/notifications/OneSignalSettings';
 import { useNotificationSystem } from '@/hooks/useNotificationSystem';
 import { toast } from 'sonner';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
+import { useParceriasSociais } from '@/hooks/parcerias/useParceriasSociais';
+import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Configuracoes: React.FC = () => {
   const { user } = useAuth();
   const { profile, loading } = useProfile();
   const { sendTestNotification } = useNotificationSystem();
+  const { organizacoes, loading: loadingParcerias } = useParceriasSociais();
   const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.replace('#', '');
     return hash || 'perfil';
@@ -76,7 +80,7 @@ const Configuracoes: React.FC = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
               <TabsTrigger value="perfil" className="flex items-center gap-2">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Perfil</span>
@@ -84,6 +88,10 @@ const Configuracoes: React.FC = () => {
               <TabsTrigger value="notificacoes" className="flex items-center gap-2">
                 <Bell className="w-4 h-4" />
                 <span className="hidden sm:inline">Notificações</span>
+              </TabsTrigger>
+              <TabsTrigger value="parcerias" className="flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Parcerias</span>
               </TabsTrigger>
               <TabsTrigger value="privacidade" className="flex items-center gap-2 hidden lg:flex">
                 <Shield className="w-4 h-4" />
@@ -153,6 +161,79 @@ const Configuracoes: React.FC = () => {
                     <TestTube className="w-4 h-4 mr-2" />
                     Enviar Notificação de Teste
                   </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="parcerias" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="w-5 h-5" />
+                    Parcerias Sociais
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Comprove sua participação em programas sociais e receba benefícios em Girinhas
+                  </p>
+                  
+                  {loadingParcerias ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                  ) : organizacoes.length > 0 ? (
+                    <div className="space-y-3">
+                      {organizacoes.slice(0, 3).map((org) => (
+                        <div key={org.id} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex items-center gap-3">
+                            {org.logo_url && (
+                              <img src={org.logo_url} alt={org.nome} className="w-8 h-8 rounded object-cover" />
+                            )}
+                            <div>
+                              <h4 className="font-medium text-sm">{org.nome}</h4>
+                              <p className="text-xs text-muted-foreground">{org.programas.length} programa(s)</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {org.programas.slice(0, 2).map((programa) => (
+                              <Badge key={programa.id} variant="outline" className="text-xs">
+                                {programa.nome}
+                                {programa.status_usuario === 'aprovado' && ' ✅'}
+                                {programa.status_usuario === 'pendente' && ' ⏳'}
+                              </Badge>
+                            ))}
+                            {org.programas.length > 2 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{org.programas.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <div className="pt-3 border-t">
+                        <Button asChild variant="outline" className="w-full">
+                          <Link to="/parcerias">
+                            Ver Todas as Parcerias
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6">
+                      <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">
+                        Nenhuma parceria disponível no momento
+                      </p>
+                      <Button asChild variant="outline" className="mt-3">
+                        <Link to="/parcerias">
+                          Explorar Parcerias
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
