@@ -52,7 +52,7 @@ export function useProgramaDetalhes(organizacaoCodigo: string, programaCodigo: s
 
       if (progError) throw progError;
 
-      setOrganizacao(orgData);
+      setOrganizacao({ ...orgData, programas: [] });
       setPrograma(progData);
 
       // Se usuário logado, buscar validação

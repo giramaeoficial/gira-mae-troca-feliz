@@ -151,8 +151,8 @@ export default function AdminParcerias() {
                         })}
                       </div>
                       <div className="text-sm">
-                        <strong>Dados:</strong> {Object.entries(validacao.dados_usuario).map(([key, value]) => (
-                          <span key={key} className="mr-4">{key}: {value}</span>
+                        <strong>Dados:</strong> {Object.entries(validacao.dados_usuario as Record<string, string>).map(([key, value]) => (
+                          <span key={key} className="mr-4">{key}: {String(value)}</span>
                         ))}
                       </div>
                       {validacao.documentos.length > 0 && (
