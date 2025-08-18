@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminParcerias() {
-  const { estatisticas, validacoesPendentes, loading, aprovarValidacao, rejeitarValidacao } = useAdminParcerias();
+  const { estatisticas, validacoesPendentes, loading, aprovarValidacao, rejeitarValidacao, downloadDocumento } = useAdminParcerias();
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const [validacaoSelecionada, setValidacaoSelecionada] = useState<string | null>(null);
   const { toast } = useToast();
@@ -160,7 +160,12 @@ export default function AdminParcerias() {
                           <strong>Documentos:</strong>
                           <div className="flex gap-2 mt-1">
                             {validacao.documentos.map((doc: any, index: number) => (
-                              <Badge key={index} variant="outline" className="cursor-pointer hover:bg-muted">
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="cursor-pointer hover:bg-muted transition-colors"
+                                onClick={() => downloadDocumento(validacao, doc)}
+                              >
                                 <Download className="w-3 h-3 mr-1" />
                                 {doc.nome}
                               </Badge>

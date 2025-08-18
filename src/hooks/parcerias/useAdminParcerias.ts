@@ -188,12 +188,48 @@ export function useAdminParcerias() {
     }
   };
 
+  const downloadDocumento = async (validacao: ValidacaoPendente, documento: any) => {
+    try {
+      // Path do documento no Storage: user_id/programa_id/timestamp_filename
+      const filePath = `${validacao.user_id}/${validacao.programa_id}/${documento.path}`;
+      
+      // Como admin, temos acesso a todos os documentos via RLS
+      const { data, error } = await supabase.storage
+        .from('documentos-parcerias')
+        .download(filePath);
+
+      if (error) throw error;
+
+      // Criar URL para download
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = documento.nome;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download iniciado",
+        description: `Baixando ${documento.nome}...`
+      });
+    } catch (err: any) {
+      toast({
+        title: "Erro no download",
+        description: err.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   return {
     estatisticas,
     validacoesPendentes,
     loading,
     aprovarValidacao,
     rejeitarValidacao,
+    downloadDocumento,
     refetch: loadDados
   };
 }
