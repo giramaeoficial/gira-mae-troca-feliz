@@ -1,7 +1,351 @@
+// // pages/institucional.tsx
+// import React from "react";
+// import SEOHead from "@/components/seo/SEOHead";
+// import { Card, CardContent } from "@/components/ui/card";
+
+// const Institucional: React.FC = () => {
+//   const structuredData = {
+//     "@context": "https://schema.org",
+//     "@type": "WebPage",
+//     name: "GiraMãe Institucional",
+//     description:
+//       "Conheça o problema, a solução e os impactos sociais da plataforma GiraMãe",
+//     url: "https://giramae.com.br/parcerias-publicas",
+//   };
+
+//   return (
+//     <>
+//       <SEOHead
+//         title="Institucional - GiraMãe"
+//         description="Página institucional da GiraMãe: problemas, soluções e impacto social."
+//         structuredData={structuredData}
+//       />
+
+//       <div className="bg-white">
+//         {/* Seção 1: O Problema */}
+//         <section className="py-16 bg-gradient-to-br from-pink-100 to-purple-100 ">
+//           <div className="container mx-auto px-4">
+//             <h2 className="text-4xl text-center md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+//               GiraMãe + SMAS
+//             </h2>
+//             <div className="grid md:grid-cols-2 gap-12 items-start">
+//               <div>
+//                 <h3 className="text-2xl font-bold mb-6 text-red-600">
+//                   Realidade das Famílias
+//                 </h3>
+//                 <ul className="space-y-4 text-lg">
+//                   <li className="flex items-start">
+//                     <span className="text-red-500 mr-3">•</span>Roupas infantis
+//                     custam em média R$ 2.400/ano por criança
+//                   </li>
+//                   <li className="flex items-start">
+//                     <span className="text-red-500 mr-3">•</span>Criança cresce 6
+//                     tamanhos nos primeiros 2 anos
+//                   </li>
+//                   <li className="flex items-start">
+//                     <span className="text-red-500 mr-3">•</span>40% das roupas
+//                     são usadas menos de 10 vezes
+//                   </li>
+//                   <li className="flex items-start">
+//                     <span className="text-red-500 mr-3">•</span>Mães descartam
+//                     ou guardam roupas em bom estado
+//                   </li>
+//                 </ul>
+//               </div>
+//               <div>
+//                 <h3 className="text-2xl font-bold mb-6 text-blue-600">
+//                   Impacto Social
+//                 </h3>
+//                 <ul className="space-y-4 text-lg">
+//                   <li className="flex items-start">
+//                     <span className="text-blue-500 mr-3">•</span>Famílias
+//                     vulneráveis priorizam alimentação sobre vestuário
+//                   </li>
+//                   <li className="flex items-start">
+//                     <span className="text-blue-500 mr-3">•</span>Crianças podem
+//                     ir à escola com roupas inadequadas
+//                   </li>
+//                   <li className="flex items-start">
+//                     <span className="text-blue-500 mr-3">•</span>Descarte gera
+//                     impacto ambiental desnecessário
+//                   </li>
+//                   <li className="flex items-start">
+//                     <span className="text-blue-500 mr-3">•</span>Mães se sentem
+//                     isoladas em suas dificuldades
+//                   </li>
+//                 </ul>
+//               </div>
+//             </div>
+//           </div>
+//         </section>
+
+//         {/* Seção 2: Solução */}
+//         <section className="py-16 ">
+//           <div className="container mx-auto px-4 ">
+//             <h2 className="text-4xl font-bold text-center mb-12">
+//               A Solução GiraMãe
+//             </h2>
+//             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+//               <Card className="text-center bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+//                 <CardContent className="p-6">
+//                   <div className="text-4xl mb-4">🆓</div>
+//                   <h3 className="text-xl font-bold mb-3">100% Gratuito</h3>
+//                   <p>
+//                     Mães usam sem pagar nada. Ganham créditos virtuais
+//                     (Girinhas) através de atividades simples
+//                   </p>
+//                 </CardContent>
+//               </Card>
+//               <Card className="text-center bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+//                 <CardContent className="p-6">
+//                   <div className="text-4xl mb-4">🏠</div>
+//                   <h3 className="text-xl font-bold mb-3">Local</h3>
+//                   <p>
+//                     Criado em Canoas, foca na comunidade local, priorizando
+//                     entregas na mesma região/escola
+//                   </p>
+//                 </CardContent>
+//               </Card>
+//               <Card className="text-center bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+//                 <CardContent className="p-6">
+//                   <div className="text-4xl mb-4">🔒</div>
+//                   <h3 className="text-xl font-bold mb-3">Seguro</h3>
+//                   <p>
+//                     Sistema de reputação, verificação por WhatsApp e moderação
+//                     ativa da comunidade
+//                   </p>
+//                 </CardContent>
+//               </Card>
+//               <Card className="text-center bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+//                 <CardContent className="p-6">
+//                   <div className="text-4xl mb-4">📱</div>
+//                   <h3 className="text-xl font-bold mb-3">Simples</h3>
+//                   <p>
+//                     Interface intuitiva, funciona no celular, não requer
+//                     conhecimento técnico avançado
+//                   </p>
+//                 </CardContent>
+//               </Card>
+//             </div>
+//           </div>
+//         </section>
+
+//         {/* Seção 3: Potencial de Parceria */}
+//         <section className="py-16 bg-blue-50">
+//           <div className="container mx-auto px-4">
+//             <h2 className="text-4xl font-bold text-center mb-12">
+//               Potencial de Apoio aos Programas Existentes
+//             </h2>
+//             <div className="grid md:grid-cols-2 gap-12">
+//               <Card>
+//                 <CardContent className="p-8">
+//                   <h3 className="text-2xl font-bold mb-4 text-blue-600">
+//                     🏫 Educação
+//                   </h3>
+//                   <h4 className="text-lg font-semibold mb-3">
+//                     Possibilidades:
+//                   </h4>
+//                   <ul className="space-y-2 list-disc list-inside">
+//                     <li>
+//                       Escolas e creches recebem créditos mensais em Girinhas
+//                     </li>
+//                     <li>Facilitar trocas entre mães da mesma escola</li>
+//                     <li>Reduzir impacto financeiro no material escolar</li>
+//                     <li>Promover educação ambiental na prática</li>
+//                   </ul>
+//                   <div className="mt-4 p-4 bg-green-100 rounded">
+//                     <strong>Sem custo:</strong> Apenas divulgação institucional
+//                   </div>
+//                 </CardContent>
+//               </Card>
+//               <Card>
+//                 <CardContent className="p-8">
+//                   <h3 className="text-2xl font-bold mb-4 text-green-600">
+//                     🤝 Assistência Social
+//                   </h3>
+//                   <h4 className="text-lg font-semibold mb-3">
+//                     Possibilidades:
+//                   </h4>
+//                   <ul className="space-y-2 list-disc list-inside">
+//                     <li>Indicar plataforma para famílias atendidas</li>
+//                     <li>Complementar programas de transferência</li>
+//                     <li>Promover autonomia e dignidade</li>
+//                     <li>Criar rede de apoio entre beneficiárias</li>
+//                   </ul>
+//                   <div className="mt-4 p-4 bg-green-100 rounded">
+//                     <strong>Sem custo:</strong> Orientação nos atendimentos
+//                   </div>
+//                 </CardContent>
+//               </Card>
+//             </div>
+//           </div>
+//         </section>
+
+//         {/* Seção 4: Por que Apoiar */}
+//         <section className="py-16">
+//           <div className="container mx-auto px-4">
+//             <h2 className="text-4xl font-bold text-center mb-12">
+//               Por que Apoiar a GiraMãe?
+//             </h2>
+//             <div className="grid md:grid-cols-3 gap-8">
+//               <Card>
+//                 <CardContent className="p-6 text-center bg-green-100">
+//                   <div className="text-4xl mb-4">🌟</div>
+//                   <h3 className="text-xl font-bold mb-3">Solução Pronta</h3>
+//                   <p>
+//                     Plataforma já desenvolvida e testada, pronta para uso
+//                     imediato
+//                   </p>
+//                 </CardContent>
+//               </Card>
+//               <Card>
+//                 <CardContent className="p-6 text-center bg-green-100">
+//                   <div className="text-4xl mb-4">💰</div>
+//                   <h3 className="text-xl font-bold mb-3">Custo Zero</h3>
+//                   <p>
+//                     Não requer investimento público, apenas apoio institucional
+//                   </p>
+//                 </CardContent>
+//               </Card>
+//               <Card>
+//                 <CardContent className="p-6 text-center bg-green-100">
+//                   <div className="text-4xl mb-4">📊</div>
+//                   <h3 className="text-xl font-bold mb-3">Transparência</h3>
+//                   <p>
+//                     Relatórios de impacto e transparência total sobre resultados
+//                   </p>
+//                 </CardContent>
+//               </Card>
+//             </div>
+//           </div>
+//         </section>
+
+//         {/* Seção 5: Call to Action */}
+//         <section className="py-16 bg-gradient-to-r from-blue-600 to-green-600 text-white">
+//           <div className="container mx-auto px-4 text-center">
+//             <h2 className="text-4xl font-bold mb-6">Vamos Conversar?</h2>
+//             <p className="text-xl mb-8 max-w-2xl mx-auto">
+//               Apoie uma iniciativa local que beneficia centenas de famílias de
+//               Canoas, sem custo para o município.
+//             </p>
+//             <div className="space-y-4 text-lg">
+//               <p>
+//                 📧{" "}
+//                 <a href="mailto:parcerias@giramae.com.br" className="underline">
+//                   parcerias@giramae.com.br
+//                 </a>
+//               </p>
+//               {/* <p>📱 (51) 99999-9999</p> */}
+//             </div>
+//           </div>
+//         </section>
+//       </div>
+//     </>
+//   );
+// };
+
+// export default Institucional;
+
+// import React from "react";
+// import { Card, CardContent } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Users, Handshake, BarChart3 } from "lucide-react";
+
+// export default function ParceriaAssistenciaSocial() {
+//   return (
+//     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 p-8">
+//       <div className="max-w-6xl mx-auto space-y-12">
+//         {/* Título */}
+//         <header className="text-center space-y-4">
+//           <h1 className="text-4xl font-bold text-blue-900">
+//             Parceria: Secretaria de Assistência Social + GiraMãe
+//           </h1>
+//           <p className="text-lg text-blue-700 max-w-2xl mx-auto">
+//             Unindo forças para reduzir a vulnerabilidade social em Canoas e apoiar milhares de famílias.
+//           </p>
+//         </header>
+
+//         {/* Dados atuais da Assistência Social */}
+//         <section>
+//           <h2 className="text-2xl font-semibold text-blue-800 mb-6 text-center">
+//             Números da Assistência Social em Canoas
+//           </h2>
+//           <div className="grid md:grid-cols-3 gap-6">
+//             <Card className="shadow-lg rounded-2xl">
+//               <CardContent className="p-6 flex flex-col items-center text-center">
+//                 <Users className="h-10 w-10 text-blue-600 mb-2" />
+//                 <h3 className="text-2xl font-bold">52.316 famílias</h3>
+//                 <p className="text-sm text-gray-600">inscritas no CadÚnico (33% da população)</p>
+//               </CardContent>
+//             </Card>
+//             <Card className="shadow-lg rounded-2xl">
+//               <CardContent className="p-6 flex flex-col items-center text-center">
+//                 <Users className="h-10 w-10 text-blue-600 mb-2" />
+//                 <h3 className="text-2xl font-bold">20.075 famílias</h3>
+//                 <p className="text-sm text-gray-600">beneficiadas pelo Bolsa Família</p>
+//               </CardContent>
+//             </Card>
+//             <Card className="shadow-lg rounded-2xl">
+//               <CardContent className="p-6 flex flex-col items-center text-center">
+//                 <BarChart3 className="h-10 w-10 text-blue-600 mb-2" />
+//                 <h3 className="text-2xl font-bold">+154 mil atendimentos</h3>
+//                 <p className="text-sm text-gray-600">realizados pelos CRAS nos últimos 4 anos</p>
+//               </CardContent>
+//             </Card>
+//           </div>
+//         </section>
+
+//         {/* Como o GiraMãe pode ajudar */}
+//         <section>
+//           <h2 className="text-2xl font-semibold text-blue-800 mb-6 text-center">
+//             Como o GiraMãe pode complementar esse trabalho
+//           </h2>
+//           <div className="grid md:grid-cols-2 gap-6">
+//             <Card className="shadow-lg rounded-2xl">
+//               <CardContent className="p-6 space-y-2">
+//                 <h3 className="text-xl font-bold text-blue-700">Impacto direto nas famílias</h3>
+//                 <ul className="list-disc pl-5 text-gray-700 space-y-1">
+//                   <li>Redução de gastos mensais com roupas e itens infantis</li>
+//                   <li>Acesso rápido a itens essenciais sem depender apenas do CRAS</li>
+//                   <li>Fortalecimento da rede de apoio comunitária</li>
+//                 </ul>
+//               </CardContent>
+//             </Card>
+//             <Card className="shadow-lg rounded-2xl">
+//               <CardContent className="p-6 space-y-2">
+//                 <h3 className="text-xl font-bold text-blue-700">Benefício para a Secretaria</h3>
+//                 <ul className="list-disc pl-5 text-gray-700 space-y-1">
+//                   <li>Alívio da demanda por benefícios eventuais</li>
+//                   <li>Dados em tempo real sobre necessidades locais</li>
+//                   <li>Rede parceira que amplia a proteção social</li>
+//                 </ul>
+//               </CardContent>
+//             </Card>
+//           </div>
+//         </section>
+
+//         {/* Chamada para ação */}
+//         <section className="text-center space-y-4">
+//           <Handshake className="h-12 w-12 text-blue-700 mx-auto" />
+//           <h2 className="text-2xl font-semibold text-blue-900">
+//             Juntos, podemos transformar a realidade de milhares de famílias
+//           </h2>
+//           <p className="text-gray-700 max-w-2xl mx-auto">
+//             A parceria entre a Secretaria de Assistência Social e o GiraMãe é um passo importante para fortalecer a economia solidária, reduzir vulnerabilidades e garantir mais dignidade às famílias de Canoas.
+//           </p>
+//           <Button size="lg" className="bg-blue-700 hover:bg-blue-800 text-white rounded-2xl px-6 py-3 text-lg shadow-md">
+//             Apoiar a Parceria
+//           </Button>
+//         </section>
+//       </div>
+//     </div>
+//   );
+// }
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Handshake, BarChart3, Heart, Target, TrendingUp, ArrowRight, Mail, Phone } from "lucide-react";
+import { Users, Handshake, BarChart3 } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -11,25 +355,14 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import SEOHead from "@/components/seo/SEOHead";
 
 export default function ParceriaAssistenciaSocial() {
   // Dados de impacto estimado para gráfico profissional
-  const economiaData = [
-    { name: "Gastos Tradicionais", valor: 250, fill: "#ef4444" },
-    { name: "Com GiraMãe", valor: 0, fill: "#10b981" },
-  ];
-
-  // Dados para o gráfico de pizza - distribuição de benefícios
-  const beneficiosData = [
-    { name: "Economia Familiar", value: 40, fill: "#3b82f6" },
-    { name: "Sustentabilidade", value: 25, fill: "#10b981" },
-    { name: "Rede Social", value: 20, fill: "#f59e0b" },
-    { name: "Dignidade", value: 15, fill: "#8b5cf6" },
+  const data = [
+    { name: "Antes do GiraMãe", Gastos: 250 },
+    { name: "Com o GiraMãe", Gastos: 0 },
   ];
 
   const structuredData = {
@@ -64,345 +397,214 @@ export default function ParceriaAssistenciaSocial() {
         structuredData={structuredData}
       />
      
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
-        <div className="max-w-6xl mx-auto px-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="bg-white/20 p-4 rounded-full">
-              <Handshake className="h-12 w-12" />
-            </div>
-          </div>
-          <h1 className="text-5xl font-bold mb-6">
-            Secretaria de Assistência Social + GiraMãe
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100 p-8">
+      <div className="max-w-6xl mx-auto space-y-12">
+        {/* Título */}
+        <header className="text-center space-y-4">
+          <h1 className="text-4xl font-bold text-blue-900">
+            Parceria: Secretaria de Assistência Social + GiraMãe
           </h1>
-          <p className="text-xl mb-8 max-w-3xl mx-auto leading-relaxed">
-            Uma parceria estratégica para fortalecer a proteção social em Canoas, 
-            conectando tecnologia social com políticas públicas efetivas.
+          <p className="text-lg text-blue-700 max-w-2xl mx-auto">
+            Unindo forças para reduzir a vulnerabilidade social em Canoas e
+            apoiar milhares de famílias.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <div className="bg-white/20 px-6 py-3 rounded-full">
-              <span className="font-semibold">100% Gratuito</span>
-            </div>
-            <div className="bg-white/20 px-6 py-3 rounded-full">
-              <span className="font-semibold">Impacto Imediato</span>
-            </div>
-            <div className="bg-white/20 px-6 py-3 rounded-full">
-              <span className="font-semibold">Solução Local</span>
-            </div>
-          </div>
-        </div>
-      </section>
+        </header>
 
-      <div className="max-w-6xl mx-auto px-8 space-y-16 py-12">
-        {/* Indicadores Sociais */}
+        {/* Indicadores Sociais Gerais */}
         <section>
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-blue-900 mb-4">
-              O Cenário Atual de Canoas
-            </h2>
-            <p className="text-lg text-blue-700 max-w-2xl mx-auto">
-              Dados que mostram a importância de soluções inovadoras na assistência social
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <Card className="shadow-lg rounded-2xl border-l-4 border-blue-500">
-              <CardContent className="p-6 text-center">
-                <Users className="h-8 w-8 text-blue-600 mx-auto mb-3" />
-                <h3 className="text-2xl font-bold text-blue-900">347 mil</h3>
-                <p className="text-sm text-gray-600">habitantes total</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg rounded-2xl border-l-4 border-orange-500">
-              <CardContent className="p-6 text-center">
-                <Target className="h-8 w-8 text-orange-600 mx-auto mb-3" />
-                <h3 className="text-2xl font-bold text-orange-900">116.859</h3>
-                <p className="text-sm text-gray-600">pessoas vulneráveis</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg rounded-2xl border-l-4 border-green-500">
-              <CardContent className="p-6 text-center">
-                <Heart className="h-8 w-8 text-green-600 mx-auto mb-3" />
-                <h3 className="text-2xl font-bold text-green-900">5 CRAS</h3>
-                <p className="text-sm text-gray-600">+ 2 CREAS ativos</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-lg rounded-2xl border-l-4 border-purple-500">
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-3" />
-                <h3 className="text-2xl font-bold text-purple-900">33%</h3>
-                <p className="text-sm text-gray-600">população no CadÚnico</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Destaque estatística principal */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-2xl text-center">
-            <h3 className="text-3xl font-bold mb-2">52.316 famílias</h3>
-            <p className="text-xl">inscritas no CadÚnico precisam de apoio contínuo</p>
-            <p className="text-blue-200 mt-2">20.075 dessas famílias recebem Bolsa Família</p>
-          </div>
-        </section>
-
-        {/* Como o GiraMãe Complementa */}
-        <section>
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-blue-900 mb-4">
-              Como o GiraMãe Fortalece o Trabalho da Secretaria
-            </h2>
-            <p className="text-lg text-blue-700 max-w-3xl mx-auto">
-              Uma ferramenta adicional que potencializa o impacto das políticas já existentes
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="shadow-lg rounded-2xl h-full">
-              <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-2xl">
-                <CardTitle className="flex items-center gap-3">
-                  <Heart className="h-6 w-6" />
-                  Benefícios Diretos para as Famílias
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Economia real:</strong> Até R$ 1.800/ano por família em roupas infantis
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Acesso imediato:</strong> Itens disponíveis 24h sem dependência de horários de atendimento
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Dignidade preservada:</strong> Sistema de troca, não doação
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Rede de apoio:</strong> Conexão entre mães da mesma região/escola
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg rounded-2xl h-full">
-              <CardHeader className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-2xl">
-                <CardTitle className="flex items-center gap-3">
-                  <Target className="h-6 w-6" />
-                  Vantagens para a Secretaria
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Redução de demanda:</strong> Menos solicitações de benefícios eventuais
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Dados em tempo real:</strong> Dashboard com necessidades e ofertas locais
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Otimização de recursos:</strong> Verbas liberadas para outras prioridades
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <p className="text-gray-700">
-                      <strong>Inovação reconhecida:</strong> Canoas como referência em tecnologia social
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Visualização de Dados */}
-        <section>
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-blue-900 mb-4">
-              Impacto Financeiro Projetado
-            </h2>
-            <p className="text-lg text-blue-700">
-              Economia real para as famílias cadastradas na assistência social
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Gráfico de Barras - Economia */}
-            <Card className="shadow-lg rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-center">Economia Mensal por Família</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={economiaData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" fontSize={12} />
-                    <YAxis 
-                      label={{ value: 'R$', angle: -90, position: 'insideLeft' }}
-                      fontSize={12}
-                    />
-                    <Tooltip formatter={(value) => [`R$ ${value}`, 'Valor']} />
-                    <Bar dataKey="valor" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-                <p className="text-sm text-center text-gray-600 mt-4">
-                  Redução de <span className="font-bold text-green-600">100%</span> nos gastos com roupas infantis
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Gráfico de Pizza - Benefícios */}
-            <Card className="shadow-lg rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-center">Distribuição dos Benefícios</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={beneficiosData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      dataKey="value"
-                      label={({ name, value }) => `${name}: ${value}%`}
-                      fontSize={10}
-                    >
-                      {beneficiosData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `${value}%`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Projeção de Impacto */}
-          <Card className="mt-8 shadow-lg rounded-2xl bg-gradient-to-r from-green-50 to-blue-50">
-            <CardContent className="p-8 text-center">
-              <h3 className="text-2xl font-bold text-blue-900 mb-4">
-                Projeção de Impacto Anual
-              </h3>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-3xl font-bold text-green-600">R$ 36 milhões</p>
-                  <p className="text-sm text-gray-600">economia total estimada para 20.075 famílias</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-blue-600">-30%</p>
-                  <p className="text-sm text-gray-600">redução em benefícios eventuais solicitados</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-purple-600">5.000+</p>
-                  <p className="text-sm text-gray-600">famílias beneficiadas no primeiro ano</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* Passos para Implementação */}
-        <section>
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-blue-900 mb-4">
-              Como Implementar a Parceria
-            </h2>
-            <p className="text-lg text-blue-700">
-              Processo simples e sem custos para a prefeitura
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="shadow-lg rounded-2xl text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-blue-600">1</span>
-                </div>
-                <h3 className="text-xl font-bold mb-3">Assinatura do Termo</h3>
-                <p className="text-gray-600">
-                  Formalização da parceria através de termo de cooperação técnica
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg rounded-2xl text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-green-600">2</span>
-                </div>
-                <h3 className="text-xl font-bold mb-3">Capacitação da Equipe</h3>
-                <p className="text-gray-600">
-                  Treinamento dos profissionais dos CRAS para orientar as famílias
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg rounded-2xl text-center">
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl font-bold text-purple-600">3</span>
-                </div>
-                <h3 className="text-xl font-bold mb-3">Lançamento</h3>
-                <p className="text-gray-600">
-                  Divulgação conjunta e início do atendimento às famílias cadastradas
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
-        {/* Call to Action */}
-        <section className="bg-gradient-to-r from-blue-600 to-green-600 text-white p-8 rounded-2xl text-center">
-          <Handshake className="h-16 w-16 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold mb-4">
-            Vamos Construir Essa Parceria Juntos?
+          <h2 className="text-2xl font-semibold text-blue-800 mb-6 text-center">
+            Indicadores Sociais de Canoas
           </h2>
-          <p className="text-xl mb-8 max-w-3xl mx-auto">
-            Uma oportunidade única de inovar na assistência social, 
-            fortalecendo a proteção às famílias de Canoas sem custos adicionais.
-          </p>
-          
-          <div className="flex flex-col md:flex-row justify-center gap-6 items-center">
-            <div className="flex items-center gap-3 bg-white/20 px-6 py-3 rounded-full">
-              <Mail className="h-5 w-5" />
-              <a href="mailto:parcerias@giramae.com.br" className="hover:underline">
-                parcerias@giramae.com.br
-              </a>
-            </div>
-            
-            <div className="flex items-center gap-3 bg-white/20 px-6 py-3 rounded-full">
-              <Phone className="h-5 w-5" />
-              <span>(51) 99999-9999</span>
-            </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-2xl font-bold">347 mil</h3>
+                <p className="text-sm text-gray-600">habitantes (IBGE)</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-2xl font-bold">116.859</h3>
+                <p className="text-sm text-gray-600">
+                  pessoas em vulnerabilidade (CadÚnico)
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-2xl font-bold">5 CRAS</h3>
+                <p className="text-sm text-gray-600">
+                  Centros de Referência em Assistência Social
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-2xl font-bold">2 CREAS</h3>
+                <p className="text-sm text-gray-600">
+                  Proteção Social Especial
+                </p>
+              </CardContent>
+            </Card>
           </div>
-          
-          <Button 
-            size="lg" 
-            className="mt-6 bg-white text-blue-600 hover:bg-blue-50 rounded-full px-8 py-3 text-lg font-semibold shadow-lg"
-          >
-            Agendar Reunião
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+        </section>
+
+        {/* Dados atuais da Assistência Social */}
+        <section>
+          <h2 className="text-2xl font-semibold text-blue-800 mb-6 text-center">
+            Números da Assistência Social em Canoas
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <Users className="h-10 w-10 text-blue-600 mb-2" />
+                <h3 className="text-2xl font-bold">52.316 famílias</h3>
+                <p className="text-sm text-gray-600">
+                  inscritas no CadÚnico (33% da população)
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <Users className="h-10 w-10 text-blue-600 mb-2" />
+                <h3 className="text-2xl font-bold">20.075 famílias</h3>
+                <p className="text-sm text-gray-600">
+                  beneficiadas pelo Bolsa Família
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <BarChart3 className="h-10 w-10 text-blue-600 mb-2" />
+                <h3 className="text-2xl font-bold">+154 mil atendimentos</h3>
+                <p className="text-sm text-gray-600">
+                  realizados pelos CRAS nos últimos 4 anos
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Como o GiraMãe pode ajudar */}
+        <section>
+          <h2 className="text-2xl font-semibold text-blue-800 mb-6 text-center">
+            Como o GiraMãe pode complementar esse trabalho
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 space-y-2">
+                <h3 className="text-xl font-bold text-blue-700">
+                  Impacto direto nas famílias
+                </h3>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                  <li>
+                    Redução de até R$ 1.800/ano em gastos com roupas e itens.
+                  </li>
+                  <li>
+                    Acesso rápido a itens essenciais sem depender apenas do
+                    CRAS.
+                  </li>
+                  <li>Fortalecimento da rede de apoio comunitária.</li>
+                  <li>
+                    Mães em vulnerabilidade conseguem roupas e itens infantis
+                    sem depender apenas de doações emergenciais.
+                  </li>
+                  <li>
+                    Estimula redes de solidariedade entre vizinhos, criando um
+                    ambiente de apoio mútuo.
+                  </li>
+                  <li>
+                    Menos preocupação com roupas e itens básicos, mais energia
+                    para cuidar dos filhos e planejar o futuro.
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+            <Card className="shadow-lg rounded-2xl">
+              <CardContent className="p-6 space-y-2">
+                <h3 className="text-xl font-bold text-blue-700">
+                  Benefício para a Secretaria
+                </h3>
+                <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                  <li>
+                    Menos pedidos emergenciais, mais tempo e cuidado para cada
+                    família.
+                  </li>
+                  <li>
+                    Informações vivas sobre o que as famílias realmente
+                    precisam, no momento certo.
+                  </li>
+                  <li>
+                    Uma comunidade fortalecida que caminha junto com a
+                    secretaria no cuidado com as famílias.
+                  </li>
+                  <li>
+                    Essa parceria posiciona Canoas como referência em soluções
+                    criativas de combate à vulnerabilidade, fortalecendo a
+                    imagem da cidade e da gestão.
+                  </li>
+                  <li>
+                    Libera parte do orçamento que seria gasto com atendimento
+                    eventual de roupas/itens, podendo direcionar para outras
+                    políticas prioritárias.
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Gráfico de impacto profissional */}
+        <section>
+          <h2 className="text-2xl font-semibold text-blue-800 mb-6 text-center">
+            Economia estimada com o GiraMãe
+          </h2>
+          <div className="bg-white p-6 rounded-2xl shadow-md">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart
+                data={data}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis
+                  label={{
+                    value: "R$ (Reais)",
+                    angle: -90,
+                    position: "insideLeft",
+                  }}
+                />
+                <Tooltip formatter={(value) => `R$ ${value},00`} />
+                <Legend />
+                <Bar dataKey="Gastos" fill="#2563eb" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <p className="text-sm text-gray-600 mt-4 text-center">
+              Famílias gastam em média{" "}
+              <span className="font-bold">R$ 250,00/mês</span>com roupas e itens
+              infantis.(Fonte:IBGE/2024)<br></br>
+              Com o GiraMãe, esse custo pode ser praticamente{" "}
+              <span className="text-green-600 font-bold">eliminado</span>,
+              gerando economia anual de até{" "}
+              <span className="font-bold">R$ 1.800,00</span>.
+            </p>
+          </div>
+        </section>
+
+        {/* Chamada para ação */}
+        <section className="text-center space-y-4">
+          <Handshake className="h-12 w-12 text-blue-700 mx-auto" />
+          <h2 className="text-2xl font-semibold text-blue-900">
+            Juntos, podemos transformar a realidade de milhares de famílias
+          </h2>
+          <p className="text-gray-700 max-w-2xl mx-auto">
+            A parceria entre a Secretaria de Assistência Social e o GiraMãe é um
+            passo importante para fortalecer a economia solidária, reduzir
+            vulnerabilidades e garantir mais dignidade às famílias de Canoas.
+          </p>
+          {/* <Button size="lg" className="bg-blue-700 hover:bg-blue-800 text-white rounded-2xl px-6 py-3 text-lg shadow-md">
+            Apoiar a Parceria
+          </Button> */}
         </section>
       </div>
     </div>
