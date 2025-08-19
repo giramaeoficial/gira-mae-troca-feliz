@@ -54,10 +54,7 @@ export const useCarteira = () => {
       // Buscar transações (limitadas às últimas 50 para performance)
       const { data: transacoesData, error: transacoesError } = await supabase
         .from('transacoes')
-        .select(`
-          *,
-          transacao_config(sinal, descricao_pt, cor_hex, icone)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -67,7 +64,17 @@ export const useCarteira = () => {
         throw transacoesError;
       }
 
-      const transacoes = transacoesData || [];
+      // Buscar configurações de tipos
+      const { data: configData } = await supabase
+        .from('transacao_config')
+        .select('tipo, sinal, descricao_pt, cor_hex, icone')
+        .eq('ativo', true);
+
+      // Combinar dados das transações com configurações
+      const transacoes = (transacoesData || []).map((t: any) => ({
+        ...t,
+        config: configData?.find((c: any) => c.tipo === t.tipo)
+      }));
 
       console.log('✅ [useCarteira] Dados carregados:', {
         carteira: carteira,

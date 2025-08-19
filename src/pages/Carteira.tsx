@@ -16,7 +16,7 @@ import BonusDiarioWidget from '@/components/carteira/BonusDiarioWidget';
 import { useConfigSistema } from "@/hooks/useConfigSistema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { formatarTipoTransacao } from '@/utils/transacaoUtils';
+
 
 const Carteira = () => {
   const { carteira, transacoes, loading, saldo, totalRecebido, totalGasto } = useCarteira();
@@ -188,11 +188,11 @@ const Carteira = () => {
                         >
                           <div className="flex items-center gap-3">
                             <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                              transacao.transacao_config?.sinal === 1
+                              transacao.config?.sinal === 1
                                 ? 'text-green-600 bg-green-50 border-green-200'
                                 : 'text-red-600 bg-red-50 border-red-200'
                             }`}>
-                              {transacao.transacao_config?.descricao_pt || formatarTipoTransacao(transacao.tipo)}
+                              {transacao.config?.descricao_pt || transacao.descricao || transacao.tipo}
                             </div>
                             <div>
                               <p className="font-medium text-gray-800">{transacao.descricao}</p>
@@ -210,11 +210,11 @@ const Carteira = () => {
                           </div>
                           <div className="text-right">
                             <p className={`font-bold ${
-                              transacao.transacao_config?.sinal === 1
+                              transacao.config?.sinal === 1
                                 ? 'text-green-600' 
                                 : 'text-red-600'
                             }`}>
-                              {transacao.transacao_config?.sinal === 1 ? '+' : '-'}
+                              {transacao.config?.sinal === 1 ? '+' : '-'}
                               {Number(transacao.valor).toFixed(2)}
                             </p>
                             {transacao.cotacao_utilizada && (
