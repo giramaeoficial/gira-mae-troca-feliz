@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { TipoTransacaoEnum } from '@/types/transacao.types';
 
 type Carteira = Tables<'carteiras'>;
-type Transacao = Tables<'transacoes'>;
+type Transacao = any; // Simplified for join queries
 
 interface CarteiraData {
   carteira: Carteira | null;
@@ -54,7 +54,10 @@ export const useCarteira = () => {
       // Buscar transações (limitadas às últimas 50 para performance)
       const { data: transacoesData, error: transacoesError } = await supabase
         .from('transacoes')
-        .select('*')
+        .select(`
+          *,
+          transacao_config(sinal, descricao_pt, cor_hex, icone)
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
