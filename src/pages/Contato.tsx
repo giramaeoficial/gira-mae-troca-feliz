@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, MessageCircle, MapPin, Clock, Phone, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SEOHead from "@/components/seo/SEOHead";
+import Header from "@/components/shared/Header";
+import Footer from "@/components/shared/Footer";
+import QuickNav from "@/components/shared/QuickNav";
 
 const Contato = () => {
   const [formData, setFormData] = useState({
@@ -94,8 +97,9 @@ const Contato = () => {
         keywords="contato giramae, suporte giramae, fale conosco, dúvidas trocas infantis, atendimento mães, canoas rs contato"
         structuredData={structuredData}
       />
-
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      
+      <Header />
+      <main className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pb-20 md:pb-4">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
           <div className="text-center mb-16">
@@ -333,7 +337,10 @@ const Contato = () => {
             </div>
           </section>
         </div>
-      </div>
+      </main>
+      
+      <Footer />
+      <QuickNav />
     </>
   );
 };
