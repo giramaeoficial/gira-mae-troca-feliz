@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Users, Leaf, Target, Award, MapPin } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import Header from "@/components/shared/Header";
+import Footer from "@/components/shared/Footer";
+import QuickNav from "@/components/shared/QuickNav";
 
 const Sobre = () => {
   const values = [
@@ -123,15 +126,17 @@ const Sobre = () => {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
       <SEOHead
         title="Sobre a GiraMãe - Nossa História e Missão"
         description="Conheça a GiraMãe! Somos uma plataforma que conecta mães para trocas sustentáveis de roupas infantis. Nossa missão é promover economia circular e fortalecer a comunidade materna."
         keywords="sobre giramae, história giramae, missão sustentabilidade, economia circular mães, comunidade materna canoas, valores giramae"
         structuredData={structuredData}
       />
+      
+      <Header />
 
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <main className="flex-grow pb-32 md:pb-8">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
           <div className="text-center mb-16">
@@ -372,8 +377,11 @@ const Sobre = () => {
             </Card>
           </section>
         </div>
-      </div>
-    </>
+      </main>
+
+      <QuickNav />
+      <Footer />
+    </div>
   );
 };
 

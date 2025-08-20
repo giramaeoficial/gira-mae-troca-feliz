@@ -16,6 +16,9 @@ import {
   Users,
 } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import Header from "@/components/shared/Header";
+import Footer from "@/components/shared/Footer";
+import QuickNav from "@/components/shared/QuickNav";
 
 const FAQ = () => {
   const faqCategories = [
@@ -224,15 +227,17 @@ const FAQ = () => {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
       <SEOHead
         title="FAQ - Perguntas Frequentes | GiraMãe"
         description="Tire suas dúvidas sobre a GiraMãe! Perguntas frequentes sobre trocas, Girinhas, segurança, pagamentos e como usar nossa plataforma de trocas sustentáveis."
         keywords="faq giramae, dúvidas girinhas, como funciona trocas, perguntas frequentes sustentabilidade, suporte giramae, ajuda trocas infantis"
         structuredData={structuredData}
       />
+      
+      <Header />
 
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <main className="flex-grow pb-32 md:pb-8">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
           <div className="text-center mb-16">
@@ -309,8 +314,11 @@ const FAQ = () => {
             </Card>
           </section>
         </div>
-      </div>
-    </>
+      </main>
+
+      <QuickNav />
+      <Footer />
+    </div>
   );
 };
 

@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Users, Recycle, Shield, ChevronRight } from "lucide-react";
 import SEOHead from "@/components/seo/SEOHead";
+import Header from "@/components/shared/Header";
+import Footer from "@/components/shared/Footer";
+import QuickNav from "@/components/shared/QuickNav";
 
 const ComoFunciona = () => {
   const steps = [
@@ -95,15 +98,17 @@ const ComoFunciona = () => {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex flex-col">
       <SEOHead
         title="Como Funciona a GiraMãe - Troca de Roupas Infantis"
         description="Descubra como funciona a GiraMãe! Plataforma que conecta mães para trocar roupas, brinquedos e calçados infantis usando nossa moeda virtual Girinhas. Economia circular sustentável."
         keywords="como funciona giramae, troca roupas infantis, economia circular mães, sustentabilidade infantil, girinhas moeda virtual, brechó online sustentável"
         structuredData={structuredData}
       />
+      
+      <Header />
 
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <main className="flex-grow pb-32 md:pb-8">
         <div className="container mx-auto px-4 py-12">
           {/* Header */}
           <div className="text-center mb-16">
@@ -874,8 +879,11 @@ const ComoFunciona = () => {
             </Card>
           </section>
         </div>
-      </div>
-    </>
+      </main>
+
+      <QuickNav />
+      <Footer />
+    </div>
   );
 };
 
