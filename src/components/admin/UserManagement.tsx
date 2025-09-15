@@ -57,26 +57,39 @@ const UserManagement = () => {
         return [];
       }
 
-      // Buscar carteiras separadamente
+      // Buscar saldos usando view ledger para cada usuário  
       const userIds = profiles.map(p => p.id);
-      const { data: carteiras } = await supabase
-        .from('carteiras')
-        .select('user_id, saldo_atual, total_recebido, total_gasto')
-        .in('user_id', userIds);
+      const saldosPromises = profiles.map(async (p) => {
+        const { data } = await (supabase as any)
+          .from('ledger_carteiras')
+          .select('user_id, saldo_atual, total_recebido, total_gasto')
+          .eq('user_id', p.id)
+          .single();
+        return data;
+      });
+      const saldosResults = await Promise.allSettled(saldosPromises);
 
-      // Buscar transações separadamente (apenas últimas para verificar atividade)
-      const { data: transacoes } = await supabase
-        .from('transacoes')
+      // Buscar transações usando view ledger
+      const { data: transacoes } = await (supabase as any)
+        .from('ledger_transacoes')
         .select('user_id, id, created_at')
         .in('user_id', userIds)
         .order('created_at', { ascending: false });
 
       // Combinar dados
-      const usersWithData: UserProfile[] = profiles.map(profile => ({
-        ...profile,
-        carteiras: carteiras?.filter(c => c.user_id === profile.id) || [],
-        transacoes: transacoes?.filter(t => t.user_id === profile.id).slice(0, 5) || []
-      }));
+      const usersWithData: UserProfile[] = profiles.map((profile, index) => {
+        const saldoResult = saldosResults[index];
+        const saldoData = saldoResult.status === 'fulfilled' ? saldoResult.value : null;
+        return {
+          ...profile,
+          carteiras: saldoData ? [{
+            saldo_atual: saldoData.saldo_atual || 0,
+            total_recebido: saldoData.total_recebido || 0,
+            total_gasto: saldoData.total_gasto || 0
+          }] : [],
+          transacoes: transacoes?.filter(t => t.user_id === profile.id).slice(0, 5) || []
+        };
+      });
 
       console.log('Users data fetched successfully:', usersWithData.length);
       return usersWithData;
@@ -94,8 +107,8 @@ const UserManagement = () => {
         { data: topUsers }
       ] = await Promise.all([
         supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase
-          .from('transacoes')
+        (supabase as any)
+          .from('ledger_transacoes')
           .select('user_id', { count: 'exact', head: true })
           .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
         supabase

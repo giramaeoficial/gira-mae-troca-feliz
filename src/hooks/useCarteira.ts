@@ -1,25 +1,46 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
 import { toast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 import { TipoTransacaoEnum } from '@/types/transacao.types';
 
-type Carteira = Tables<'carteiras'>;
-type Transacao = any; // Simplified for join queries
+// Interfaces para compatibilidade com sistema ledger
+interface CarteiraLedger {
+  id: string;
+  user_id: string;
+  saldo_atual: number;
+  total_recebido: number;
+  total_gasto: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TransacaoLedger {
+  id: string;
+  user_id: string;
+  tipo: string;
+  valor: number;
+  descricao: string;
+  created_at: string;
+  data_expiracao?: string;
+  metadados?: any;
+  valor_real?: number;
+  quantidade_girinhas?: number;
+  cotacao_utilizada?: number; // Adicionado para compatibilidade
+  config?: any;
+}
 
 interface CarteiraData {
-  carteira: Carteira | null;
-  transacoes: Transacao[];
+  carteira: CarteiraLedger | null;
+  transacoes: TransacaoLedger[];
 }
 
 export const useCarteira = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Query SIMPLIFICADA - Cache mínimo para garantir dados sempre frescos
+  // Query usando sistema ledger
   const {
     data: carteiraData,
     isLoading: loading,
@@ -30,38 +51,62 @@ export const useCarteira = () => {
     queryFn: async (): Promise<CarteiraData> => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('🔍 [useCarteira] Buscando dados da carteira para usuário:', user.id);
+      console.log('🔍 [useCarteira] Buscando dados ledger para usuário:', user.id);
 
-      // Buscar carteira
-      const { data: carteiraData, error: carteiraError } = await supabase
-        .from('carteiras')
+      // Buscar dados da carteira via view ledger
+      const { data: carteiraData, error: carteiraError } = await (supabase as any)
+        .from('ledger_carteiras')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
       if (carteiraError) {
-        console.error('❌ Erro ao buscar carteira:', carteiraError);
+        console.error('❌ Erro ao buscar carteira ledger:', carteiraError);
         throw carteiraError;
       }
 
-      // Se não existe carteira, criar uma
+      // Se não existe carteira, tentar criar usando função do sistema
       let carteira = carteiraData;
       if (!carteira) {
-        console.log('💡 Carteira não encontrada, criando nova...');
-        carteira = await criarCarteiraInicial(user.id);
+        console.log('💡 Carteira não encontrada, tentando criar...');
+        try {
+          // Tentar usar função de bônus para criar conta
+          await (supabase as any).rpc('ledger_bonus_cadastro', { p_user_id: user.id });
+          
+          // Buscar novamente
+          const { data: novaCarteira } = await (supabase as any)
+            .from('ledger_carteiras')
+            .select('*')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          carteira = novaCarteira;
+        } catch (createError) {
+          console.error('⚠️ Erro ao criar carteira:', createError);
+          // Fallback: criar carteira vazia
+          carteira = {
+            id: user.id,
+            user_id: user.id,
+            saldo_atual: 0,
+            total_recebido: 0,
+            total_gasto: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+        }
       }
 
-      // Buscar transações (limitadas às últimas 50 para performance)
-      const { data: transacoesData, error: transacoesError } = await supabase
-        .from('transacoes')
+      // Buscar transações via view ledger
+      const { data: transacoesData, error: transacoesError } = await (supabase as any)
+        .from('ledger_transacoes')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (transacoesError) {
-        console.error('❌ Erro ao buscar transações:', transacoesError);
-        throw transacoesError;
+        console.error('❌ Erro ao buscar transações ledger:', transacoesError);
+        // Não falhar se transações não carregarem
       }
 
       // Buscar configurações de tipos
@@ -76,7 +121,7 @@ export const useCarteira = () => {
         config: configData?.find((c: any) => c.tipo === t.tipo)
       }));
 
-      console.log('✅ [useCarteira] Dados carregados:', {
+      console.log('✅ [useCarteira] Dados ledger carregados:', {
         carteira: carteira,
         totalTransacoes: transacoes.length,
         saldoAtual: carteira?.saldo_atual
@@ -88,7 +133,6 @@ export const useCarteira = () => {
       };
     },
     enabled: !!user,
-    // CORREÇÃO: Cache mínimo para sempre buscar dados frescos
     staleTime: 0,
     gcTime: 0,
     refetchOnWindowFocus: true, 
@@ -98,7 +142,7 @@ export const useCarteira = () => {
     retryDelay: 1000
   });
 
-  // Tratamento de erros usando useEffect (otimizado com dependência específica)
+  // Tratamento de erros
   useEffect(() => {
     if (error) {
       console.error('❌ [useCarteira] Erro ao carregar carteira:', error);
@@ -127,7 +171,7 @@ export const useCarteira = () => {
     }
   }, [error?.message]);
 
-  // ✅ ATUALIZADO: Mutation usando novo sistema de tipos
+  // Mutation para transações
   const adicionarTransacaoMutation = useMutation({
     mutationFn: async ({
       tipo,
@@ -146,10 +190,10 @@ export const useCarteira = () => {
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('💳 [useCarteira] Adicionando transação com novo tipo:', { tipo, valor, descricao });
+      console.log('💳 [useCarteira] Adicionando transação ledger:', { tipo, valor, descricao });
 
-      // ✅ NOVO: Usar função validada do banco
-      const { data, error } = await supabase.rpc('criar_transacao_validada', {
+      // Usar função validada do banco (se disponível)
+      const { data, error } = await (supabase as any).rpc('criar_transacao_validada', {
         p_user_id: user.id,
         p_tipo: tipo,
         p_valor: valor,
@@ -165,7 +209,6 @@ export const useCarteira = () => {
       return data;
     },
     onSuccess: async () => {
-      // Invalidação simples
       await queryClient.invalidateQueries({ 
         queryKey: ['carteira', user?.id], 
         exact: true 
@@ -203,55 +246,6 @@ export const useCarteira = () => {
     }
   });
 
-  // Função auxiliar para criar carteira inicial
-  const criarCarteiraInicial = async (userId: string): Promise<Carteira> => {
-    console.log('🏦 [useCarteira] Criando carteira inicial para:', userId);
-    
-    // Criar carteira inicial
-    const { data: carteiraData, error: carteiraError } = await supabase
-      .from('carteiras')
-      .insert({
-        user_id: userId,
-        saldo_atual: 150.00,
-        total_recebido: 150.00,
-        total_gasto: 0.00
-      })
-      .select()
-      .single();
-
-    if (carteiraError) throw carteiraError;
-
-    // ✅ NOVO: Criar transações iniciais usando novos tipos
-    const transacoesIniciais = [
-      {
-        p_user_id: userId,
-        p_tipo: 'bonus_cadastro' as TipoTransacaoEnum,
-        p_valor: 50.00,
-        p_descricao: 'Bônus de boas-vindas',
-        p_metadados: { origem: 'sistema_inicial' }
-      },
-      {
-        p_user_id: userId,
-        p_tipo: 'bonus_cadastro' as TipoTransacaoEnum,
-        p_valor: 100.00,
-        p_descricao: 'Girinhas iniciais da comunidade',
-        p_metadados: { origem: 'sistema_inicial' }
-      }
-    ];
-
-    // Usar função validada para criar transações
-    for (const transacao of transacoesIniciais) {
-      try {
-        await supabase.rpc('criar_transacao_validada', transacao);
-      } catch (error) {
-        console.error('⚠️ Erro ao criar transação inicial:', error);
-      }
-    }
-
-    return carteiraData;
-  };
-
-  // ✅ ATUALIZADO: Função simplificada usando novos tipos
   const adicionarTransacao = async (
     tipo: TipoTransacaoEnum,
     valor: number,
@@ -292,7 +286,7 @@ export const useCarteira = () => {
     totalGasto: carteiraData?.carteira ? Number(carteiraData.carteira.total_gasto) : 0,
     isAddingTransaction: adicionarTransacaoMutation.isPending,
     
-    // ✅ MANTIDO: Métodos compatíveis usando novos tipos
+    // Métodos compatíveis
     transferirGirinhas: (valor: number, para: string, itemId: number, descricao: string): boolean => {
       if (!verificarSaldo(valor)) {
         return false;

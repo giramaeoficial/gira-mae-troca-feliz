@@ -13,8 +13,9 @@ export const useUserCarteira = (userId: string | null) => {
     queryFn: async (): Promise<CarteiraData | null> => {
       if (!userId) return null;
 
-      const { data, error } = await supabase
-        .from('carteiras')
+      // Usar view ledger_carteiras
+      const { data, error } = await (supabase as any)
+        .from('ledger_carteiras')
         .select('saldo_atual, total_recebido, total_gasto')
         .eq('user_id', userId)
         .maybeSingle();

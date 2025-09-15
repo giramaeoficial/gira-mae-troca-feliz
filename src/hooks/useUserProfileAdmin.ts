@@ -45,7 +45,7 @@ export const useUserProfileAdmin = (userId: string) => {
 
         if (profileError) throw profileError;
 
-        // Buscar estatísticas do usuário
+        // Buscar estatísticas do usuário usando views ledger
         const [
           { count: totalItens },
           { count: totalVendas },
@@ -65,19 +65,19 @@ export const useUserProfileAdmin = (userId: string) => {
             .eq('usuario_item', userId)
             .eq('status', 'confirmada'),
           
-          // Saldo atual
-          supabase
-            .from('carteiras')
+          // Saldo atual usando view ledger
+          (supabase as any)
+            .from('ledger_carteiras')
             .select('saldo_atual')
             .eq('user_id', userId)
             .single(),
           
-          // Total gasto em compras de Girinhas
-          supabase
-            .from('transacoes')
+          // Total gasto em compras usando view ledger
+          (supabase as any)
+            .from('ledger_transacoes')
             .select('valor_real')
             .eq('user_id', userId)
-            .eq('tipo', 'compra')
+            .eq('tipo', 'purchase')
         ]);
 
         const totalComprasGirinhas = comprasGirinhas?.reduce((acc, compra) => acc + (compra.valor_real || 0), 0) || 0;
