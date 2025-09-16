@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { useQuery } from "@tanstack/react-query";
@@ -7,31 +6,34 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const EmissionChart = () => {
-  // Query para dados de emissão de Girinhas
+  // Query para dados de emissão de Girinhas usando ledger_transacoes
   const { data: emissionData } = useQuery({
     queryKey: ['admin-emission-data'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('compras_girinhas')
-        .select('created_at, girinhas_recebidas, valor_pago')
-        .eq('status', 'aprovado')
-        .order('created_at', { ascending: true });
+        .from('ledger_transacoes')
+        .select('data_criacao, valor, tipo')
+        .eq('tipo', 'purchase')
+        .gt('valor', 0) // Apenas valores positivos (créditos)
+        .order('data_criacao', { ascending: true });
 
       if (error) throw error;
 
-      const groupedData = data?.reduce((acc, compra) => {
-        const date = format(new Date(compra.created_at), 'yyyy-MM-dd');
+      const groupedData = data?.reduce((acc, transacao) => {
+        const date = format(new Date(transacao.data_criacao), 'yyyy-MM-dd');
         
         if (!acc[date]) {
           acc[date] = {
-            data: format(new Date(compra.created_at), 'dd/MM', { locale: ptBR }),
+            data: format(new Date(transacao.data_criacao), 'dd/MM', { locale: ptBR }),
             girinhasEmitidas: 0,
             valorArrecadado: 0
           };
         }
         
-        acc[date].girinhasEmitidas += compra.girinhas_recebidas;
-        acc[date].valorArrecadado += Number(compra.valor_pago);
+        // Para compras (purchase), o valor representa as girinhas recebidas
+        acc[date].girinhasEmitidas += Number(transacao.valor);
+        // Assumindo que o valor em reais é igual ao valor em girinhas (1:1)
+        acc[date].valorArrecadado += Number(transacao.valor);
         
         return acc;
       }, {} as Record<string, any>);
@@ -40,23 +42,25 @@ const EmissionChart = () => {
     }
   });
 
-  // Query para proporção Girinhas/Mães
+  // Query para proporção Girinhas/Mães usando ledger_carteiras
   const { data: proportionData } = useQuery({
     queryKey: ['admin-girinhas-maes-proportion'],
     queryFn: async () => {
       const [
-        { data: compras },
+        { data: carteiras },
         { count: totalMaes }
       ] = await Promise.all([
-        supabase.from('compras_girinhas').select('girinhas_recebidas').eq('status', 'aprovado'),
+        supabase.from('ledger_carteiras').select('total_recebido, saldo_atual'),
         supabase.from('profiles').select('*', { count: 'exact', head: true })
       ]);
 
-      const totalGirinhas = compras?.reduce((sum, c) => sum + c.girinhas_recebidas, 0) || 0;
+      const totalGirinhas = carteiras?.reduce((sum, c) => sum + Number(c.total_recebido || 0), 0) || 0;
+      const totalEmCirculacao = carteiras?.reduce((sum, c) => sum + Number(c.saldo_atual || 0), 0) || 0;
       const proporacao = totalMaes ? (totalGirinhas / totalMaes).toFixed(2) : '0.00';
 
       return {
-        totalGirinhas,
+        totalGirinhas: Math.round(totalGirinhas),
+        totalEmCirculacao: Math.round(totalEmCirculacao),
         totalMaes: totalMaes || 0,
         proporacao: Number(proporacao)
       };
@@ -69,7 +73,7 @@ const EmissionChart = () => {
         <CardHeader>
           <CardTitle>Emissão de Girinhas (Admin)</CardTitle>
           <CardDescription>
-            Histórico de emissão e arrecadação nos últimos 30 dias
+            Histórico de emissão nos últimos 30 dias
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,8 +94,8 @@ const EmissionChart = () => {
                 />
                 <Tooltip 
                   formatter={(value, name) => [
-                    name === 'girinhasEmitidas' ? `${value} Girinhas` : `R$ ${Number(value).toFixed(2)}`,
-                    name === 'girinhasEmitidas' ? 'Girinhas Emitidas' : 'Valor Arrecadado'
+                    `${Number(value).toLocaleString()} Girinhas`,
+                    name === 'girinhasEmitidas' ? 'Girinhas Emitidas' : 'Valor Estimado'
                   ]}
                   labelFormatter={(label) => `Data: ${label}`}
                   contentStyle={{
@@ -118,9 +122,9 @@ const EmissionChart = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Girinhas por Mãe (Admin)</CardTitle>
+          <CardTitle>Estatísticas de Girinhas</CardTitle>
           <CardDescription>
-            Proporção de Girinhas em circulação por usuária
+            Proporção e distribuição de Girinhas por usuária
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -129,7 +133,7 @@ const EmissionChart = () => {
               <div className="text-4xl font-bold text-blue-600">
                 {proportionData?.proporacao || '0.00'}
               </div>
-              <p className="text-sm text-muted-foreground">Girinhas por Mãe</p>
+              <p className="text-sm text-muted-foreground">Girinhas por Mãe (média)</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -137,29 +141,55 @@ const EmissionChart = () => {
                 <div className="text-2xl font-bold text-blue-900">
                   {proportionData?.totalGirinhas?.toLocaleString() || '0'}
                 </div>
-                <p className="text-sm text-blue-600">Total de Girinhas</p>
+                <p className="text-sm text-blue-600">Total Recebido</p>
               </div>
 
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-900">
+                  {proportionData?.totalEmCirculacao?.toLocaleString() || '0'}
+                </div>
+                <p className="text-sm text-green-600">Em Circulação</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-900">
                   {proportionData?.totalMaes?.toLocaleString() || '0'}
                 </div>
-                <p className="text-sm text-green-600">Total de Mães</p>
+                <p className="text-sm text-purple-600">Total de Usuárias</p>
               </div>
             </div>
 
             <div className="p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-medium mb-2">Distribuição</h4>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Média por usuária</span>
-                  <span className="text-sm font-medium">{proportionData?.proporacao || '0.00'} Girinhas</span>
+              <h4 className="font-medium mb-3">Indicadores</h4>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Taxa de Circulação</span>
+                  <span className="text-sm font-medium">
+                    {proportionData?.totalGirinhas > 0 
+                      ? `${((proportionData?.totalEmCirculacao / proportionData?.totalGirinhas) * 100).toFixed(1)}%`
+                      : '0%'
+                    }
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{width: `${Math.min((proportionData?.proporacao || 0) / 100 * 100, 100)}%`}}
+                    className="bg-green-600 h-2 rounded-full transition-all" 
+                    style={{
+                      width: `${proportionData?.totalGirinhas > 0 
+                        ? Math.min(((proportionData?.totalEmCirculacao / proportionData?.totalGirinhas) * 100), 100)
+                        : 0
+                      }%`
+                    }}
                   ></div>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Girinhas Utilizadas</span>
+                  <span className="text-sm font-medium">
+                    {((proportionData?.totalGirinhas || 0) - (proportionData?.totalEmCirculacao || 0)).toLocaleString()} Girinhas
+                  </span>
                 </div>
               </div>
             </div>
