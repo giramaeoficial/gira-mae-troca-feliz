@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,23 +17,29 @@ import {
 import type { Database } from "@/integrations/supabase/types";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type Carteira = Database['public']['Tables']['carteiras']['Row'];
-type Transacao = Database['public']['Tables']['transacoes']['Row'];
 
+// Interfaces corrigidas para trabalhar com o sistema ledger
 interface UserProfile extends Profile {
-  carteiras?: Pick<Carteira, 'saldo_atual' | 'total_recebido' | 'total_gasto'>[];
-  transacoes?: Pick<Transacao, 'id' | 'created_at'>[];
+  carteiras?: {
+    saldo_atual: number;
+    total_recebido: number;
+    total_gasto: number;
+  }[];
+  transacoes?: {
+    transacao_id: string;
+    data_criacao: string;
+  }[];
 }
 
 const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  // Query para buscar usuárias
+  // Query para buscar usuárias - CORRIGIDA
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users', searchTerm, filterStatus],
     queryFn: async () => {
-      console.log('Fetching users data...');
+      console.log('🔍 Fetching users data with corrected ledger queries...');
       
       // Buscar profiles primeiro
       let profileQuery = supabase
@@ -49,32 +54,54 @@ const UserManagement = () => {
       const { data: profiles, error: profileError } = await profileQuery.limit(50);
       
       if (profileError) {
-        console.error('Error fetching profiles:', profileError);
+        console.error('❌ Error fetching profiles:', profileError);
         throw profileError;
       }
 
       if (!profiles || profiles.length === 0) {
+        console.log('ℹ️ No profiles found');
         return [];
       }
+
+      console.log(`✅ Found ${profiles.length} profiles`);
 
       // Buscar saldos usando view ledger para cada usuário  
       const userIds = profiles.map(p => p.id);
       const saldosPromises = profiles.map(async (p) => {
-        const { data } = await (supabase as any)
-          .from('ledger_carteiras')
-          .select('user_id, saldo_atual, total_recebido, total_gasto')
-          .eq('user_id', p.id)
-          .single();
-        return data;
+        try {
+          const { data, error } = await (supabase as any)
+            .from('ledger_carteiras')
+            .select('user_id, saldo_atual, total_recebido, total_gasto')
+            .eq('user_id', p.id)
+            .single();
+          
+          if (error) {
+            console.warn(`⚠️ No ledger data for user ${p.id}:`, error.message);
+            return null;
+          }
+          
+          return data;
+        } catch (err) {
+          console.warn(`⚠️ Error fetching ledger data for user ${p.id}:`, err);
+          return null;
+        }
       });
+      
       const saldosResults = await Promise.allSettled(saldosPromises);
 
-      // Buscar transações usando view ledger
-      const { data: transacoes } = await (supabase as any)
+      // Buscar transações usando view ledger - CORRIGIDO
+      const { data: transacoes, error: transacoesError } = await (supabase as any)
         .from('ledger_transacoes')
-        .select('user_id, id, created_at')
+        .select('user_id, transacao_id, data_criacao')
         .in('user_id', userIds)
-        .order('created_at', { ascending: false });
+        .order('data_criacao', { ascending: false })
+        .limit(100); // Limit para evitar queries muito pesadas
+
+      if (transacoesError) {
+        console.warn('⚠️ Error fetching transactions:', transacoesError);
+      } else {
+        console.log(`✅ Found ${transacoes?.length || 0} transactions`);
+      }
 
       // Combinar dados
       const usersWithData: UserProfile[] = profiles.map((profile, index) => {
@@ -91,44 +118,53 @@ const UserManagement = () => {
         };
       });
 
-      console.log('Users data fetched successfully:', usersWithData.length);
+      console.log('✅ Users data processed successfully:', usersWithData.length);
       return usersWithData;
     },
     refetchInterval: 30000,
   });
 
-  // Query para estatísticas de usuárias
+  // Query para estatísticas de usuárias - CORRIGIDA
   const { data: userStats } = useQuery({
     queryKey: ['user-stats'],
     queryFn: async () => {
-      const [
-        { count: totalUsers },
-        { count: activeUsers },
-        { data: topUsers }
-      ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        (supabase as any)
-          .from('ledger_transacoes')
-          .select('user_id', { count: 'exact', head: true })
-          .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
-        supabase
-          .from('profiles')
-          .select('nome')
-          .limit(5)
-      ]);
+      try {
+        const [
+          { count: totalUsers },
+          { count: activeUsers },
+          { data: topUsers }
+        ] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
+          (supabase as any)
+            .from('ledger_transacoes')
+            .select('user_id', { count: 'exact', head: true })
+            .gte('data_criacao', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
+          supabase
+            .from('profiles')
+            .select('nome')
+            .limit(5)
+        ]);
 
-      return {
-        total: totalUsers || 0,
-        active: activeUsers || 0,
-        topUsers: topUsers || []
-      };
+        return {
+          total: totalUsers || 0,
+          active: activeUsers || 0,
+          topUsers: topUsers || []
+        };
+      } catch (error) {
+        console.error('❌ Error fetching user stats:', error);
+        return {
+          total: 0,
+          active: 0,
+          topUsers: []
+        };
+      }
     }
   });
 
   const getStatusBadge = (user: UserProfile) => {
     const lastTransaction = user.transacoes?.[0];
     const isActive = lastTransaction && 
-      new Date(lastTransaction.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      new Date(lastTransaction.data_criacao) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
     return isActive ? 
       <Badge variant="default" className="bg-green-500">Ativa</Badge> :
