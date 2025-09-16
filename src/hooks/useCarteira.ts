@@ -17,17 +17,16 @@ interface CarteiraLedger {
 }
 
 interface TransacaoLedger {
-  id: string;
+  transacao_id: string; // Campo correto da view
   user_id: string;
   tipo: string;
   valor: number;
   descricao: string;
-  created_at: string;
+  data_criacao: string; // Campo correto da view
   data_expiracao?: string;
-  metadados?: any;
-  valor_real?: number;
-  quantidade_girinhas?: number;
-  cotacao_utilizada?: number; // Adicionado para compatibilidade
+  metadata?: any; // Campo correto da view
+  conta_origem?: string;
+  conta_destino?: string;
   config?: any;
 }
 
@@ -101,7 +100,7 @@ export const useCarteira = () => {
         .from('ledger_transacoes')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .order('data_criacao', { ascending: false }) // Campo correto
         .limit(50);
 
       if (transacoesError) {
@@ -118,6 +117,9 @@ export const useCarteira = () => {
       // Combinar dados das transações com configurações
       const transacoes = (transacoesData || []).map((t: any) => ({
         ...t,
+        // Mapear campos para compatibilidade
+        id: t.transacao_id,
+        created_at: t.data_criacao,
         config: configData?.find((c: any) => c.tipo === t.tipo)
       }));
 
