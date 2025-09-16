@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -89,10 +88,10 @@ export const useMissoes = () => {
         .from('limites_missoes_usuarios')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data as LimiteMissoes;
+      if (error) throw error;
+      return data as LimiteMissoes | null;
     },
     enabled: !!user?.id
   });
