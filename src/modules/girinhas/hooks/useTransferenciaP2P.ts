@@ -1,3 +1,4 @@
+// src/modules/girinhas/hooks/useTransferenciaP2P.ts
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,7 +76,7 @@ export const useTransferenciaP2P = () => {
         throw new Error('Sessão expirada. Faça login novamente.');
       }
 
-      const response = await fetch('/functions/v1/transferir-p2p', {
+      const response = await fetch('https://mkuuwnqiaeguuexeeicw.supabase.co/functions/v1/transferir-p2p', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
