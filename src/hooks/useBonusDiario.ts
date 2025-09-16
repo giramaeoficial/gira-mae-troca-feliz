@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -65,20 +64,20 @@ export const useBonusDiario = () => {
     queryFn: async (): Promise<StatusBonusDiario> => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      // ✅ CORREÇÃO: Usar novo tipo enum
-      const { data: ultimoBonus, error } = await supabase
-        .from('transacoes')
-        .select('created_at')
+      // CORREÇÃO: Usar view ledger_transacoes ao invés de transacoes
+      const { data: ultimoBonus, error } = await (supabase as any)
+        .from('ledger_transacoes')
+        .select('data_criacao')
         .eq('user_id', user.id)
-        .eq('tipo', 'bonus_diario' as TipoTransacaoEnum)
-        .order('created_at', { ascending: false })
+        .eq('tipo', 'bonus_diario')
+        .order('data_criacao', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (error) throw error;
 
       const agora = new Date();
-      const ultimoBonusData = ultimoBonus?.created_at ? new Date(ultimoBonus.created_at) : null;
+      const ultimoBonusData = ultimoBonus?.data_criacao ? new Date(ultimoBonus.data_criacao) : null;
       
       let pode_coletar = true;
       let horas_restantes = 0;
@@ -119,48 +118,16 @@ export const useBonusDiario = () => {
       const valorGirinhas = config.valor_girinhas;
       const validadeHoras = config.validade_horas;
       
-      // Calcular data de expiração
-      const dataExpiracao = new Date();
-      dataExpiracao.setHours(dataExpiracao.getHours() + validadeHoras);
-
-      // ✅ CORREÇÃO: Usar função validada do backend
-      const transacaoId = await supabase.rpc('criar_transacao_validada', {
+      // CORREÇÃO: Usar sistema ledger para criar bônus
+      const { data: result, error } = await (supabase as any).rpc('ledger_processar_bonus', {
         p_user_id: user.id,
-        p_tipo: 'bonus_diario' as TipoTransacaoEnum,
+        p_tipo: 'bonus_diario',
         p_valor: valorGirinhas,
-        p_descricao: `Bônus diário - ${valorGirinhas} Girinhas`,
-        p_metadados: {
-          validade_horas: validadeHoras,
-          tipo_bonus: 'diario'
-        }
+        p_descricao: `Bônus diário - ${valorGirinhas} Girinhas`
       });
 
-      if (!transacaoId) {
-        throw new Error('Falha ao criar transação de bônus');
-      }
-
-      // Buscar carteira atual
-      const { data: carteiraAtual } = await supabase
-        .from('carteiras')
-        .select('saldo_atual, total_recebido')
-        .eq('user_id', user.id)
-        .single();
-
-      const saldoAtual = carteiraAtual?.saldo_atual || 0;
-      const totalRecebidoAtual = carteiraAtual?.total_recebido || 0;
-
-      // Atualizar carteira
-      const { error: carteiraError } = await supabase
-        .from('carteiras')
-        .update({
-          saldo_atual: Number(saldoAtual) + valorGirinhas,
-          total_recebido: Number(totalRecebidoAtual) + valorGirinhas
-        })
-        .eq('user_id', user.id);
-
-      if (carteiraError) throw carteiraError;
-
-      return { transacao_id: transacaoId, valor: valorGirinhas };
+      if (error) throw error;
+      return result;
     },
     onSuccess: () => {
       const valorGirinhas = config?.valor_girinhas ?? 5;
