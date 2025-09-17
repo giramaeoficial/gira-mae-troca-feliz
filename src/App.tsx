@@ -54,6 +54,7 @@ import MaesSeguidas from '@/pages/MaesSeguidas';
 import ItensFavoritos from '@/pages/ItensFavoritos';
 import ParceriasSociais from '@/pages/ParceriasSociais';
 import ProgramaDetalhes from '@/pages/ProgramaDetalhes';
+import AdminLedger from '@/pages/AdminLedger';
 
 
 //const queryClient = new QueryClient();
@@ -365,6 +366,16 @@ function App() {
               <AuthGuard>
                 <AdminGuard>
                   <AdminDashboard />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/admin/ledger" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <AdminLedger />
                 </AdminGuard>
               </AuthGuard>
             } 

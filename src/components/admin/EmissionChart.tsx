@@ -5,12 +5,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+interface LedgerTransacao {
+  data_criacao: string;
+  valor: number;
+  tipo: string;
+}
+
+interface LedgerCarteira {
+  total_recebido: number;
+  saldo_atual: number;
+}
+
 const EmissionChart = () => {
   // Query para dados de emissão de Girinhas usando ledger_transacoes
   const { data: emissionData } = useQuery({
     queryKey: ['admin-emission-data'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('ledger_transacoes')
         .select('data_criacao, valor, tipo')
         .eq('tipo', 'purchase')
@@ -19,7 +30,7 @@ const EmissionChart = () => {
 
       if (error) throw error;
 
-      const groupedData = data?.reduce((acc, transacao) => {
+      const groupedData = (data as LedgerTransacao[])?.reduce((acc, transacao) => {
         const date = format(new Date(transacao.data_criacao), 'yyyy-MM-dd');
         
         if (!acc[date]) {
@@ -50,12 +61,12 @@ const EmissionChart = () => {
         { data: carteiras },
         { count: totalMaes }
       ] = await Promise.all([
-        supabase.from('ledger_carteiras').select('total_recebido, saldo_atual'),
+        (supabase as any).from('ledger_carteiras').select('total_recebido, saldo_atual'),
         supabase.from('profiles').select('*', { count: 'exact', head: true })
       ]);
 
-      const totalGirinhas = carteiras?.reduce((sum, c) => sum + Number(c.total_recebido || 0), 0) || 0;
-      const totalEmCirculacao = carteiras?.reduce((sum, c) => sum + Number(c.saldo_atual || 0), 0) || 0;
+      const totalGirinhas = (carteiras as LedgerCarteira[])?.reduce((sum, c) => sum + Number(c.total_recebido || 0), 0) || 0;
+      const totalEmCirculacao = (carteiras as LedgerCarteira[])?.reduce((sum, c) => sum + Number(c.saldo_atual || 0), 0) || 0;
       const proporacao = totalMaes ? (totalGirinhas / totalMaes).toFixed(2) : '0.00';
 
       return {

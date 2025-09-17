@@ -65,7 +65,7 @@ export const useExtensaoValidadeSegura = () => {
       console.log('🔒 [ExtensãoSegura] Chamando RPC server-side para transação:', transacaoId);
 
       // 🔒 Usar APENAS RPC que calcula tudo no servidor
-      const { data, error } = await supabase.rpc('ledger_estender_validade', {
+      const { data, error } = await (supabase as any).rpc('ledger_estender_validade', {
         p_user_id: user.id,
         p_transacao_id: transacaoId
       });

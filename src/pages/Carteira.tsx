@@ -26,14 +26,14 @@ const Carteira = () => {
   // ✅ Performance: Memoizar cálculos que dependem de transacoes
   const transacoesEsteMes = useMemo(() => 
     transacoes.filter(t => 
-      new Date(t.created_at).getMonth() === new Date().getMonth()
+      new Date(t.data_criacao).getMonth() === new Date().getMonth()
     ).length,
     [transacoes]
   );
 
   const ultimaMovimentacao = useMemo(() => 
     transacoes.length > 0 
-      ? format(new Date(transacoes[0].created_at), 'dd/MM/yyyy', { locale: ptBR })
+      ? format(new Date(transacoes[0].data_criacao), 'dd/MM/yyyy', { locale: ptBR })
       : 'Nenhuma',
     [transacoes]
   );
@@ -182,8 +182,8 @@ const Carteira = () => {
                   ) : (
                     <div className="space-y-3">
                       {transacoes.map((transacao) => (
-                        <div
-                          key={transacao.id}
+                         <div
+                          key={transacao.transacao_id}
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-center gap-3">
@@ -197,7 +197,7 @@ const Carteira = () => {
                             <div>
                               <p className="font-medium text-gray-800">{transacao.descricao}</p>
                               <p className="text-sm text-gray-500">
-                                {format(new Date(transacao.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                                {format(new Date(transacao.data_criacao), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
                               </p>
                               {/* Mostrar data de expiração para compras */}
                               {transacao.tipo === 'compra' && transacao.data_expiracao && (
@@ -217,9 +217,9 @@ const Carteira = () => {
                               {transacao.config?.sinal === 1 ? '+' : '-'}
                               {Number(transacao.valor).toFixed(2)}
                             </p>
-                            {transacao.cotacao_utilizada && (
+                            {transacao.metadata?.cotacao_utilizada && (
                               <p className="text-xs text-gray-500">
-                                Cotação: R$ {Number(transacao.cotacao_utilizada).toFixed(2)}
+                                Cotação: R$ {Number(transacao.metadata.cotacao_utilizada).toFixed(2)}
                               </p>
                             )}
                           </div>
