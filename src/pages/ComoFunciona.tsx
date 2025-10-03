@@ -151,7 +151,8 @@ const ComoFunciona = () => {
                 <div className="grid md:grid-cols-2 gap-8 items-center">
                   <div>
                     <h2 className="text-3xl font-bold mb-4">
-                      O que são as Girinhas? 🪙
+                      O que são as Girinhas?  
+                      
                     </h2>
                     <p className="text-lg mb-6 text-muted-foreground">
                       Girinhas são nossa moeda virtual interna.{" "}
@@ -174,11 +175,15 @@ const ComoFunciona = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-center">
-                    <div className="bg-primary/10 rounded-full w-48 h-48 mx-auto flex items-center justify-center text-6xl">
-                      🪙
-                    </div>
-                  </div>
+                 <div className="text-center">
+  <div className="bg-primary/20 rounded-full w-64 h-64 mx-auto flex items-center justify-center">
+    <img 
+      src="/girinha_sem_fundo.png" 
+      alt="Logo GiraMãe" 
+      className="w-48 h-48 object-cover" 
+    />
+  </div>
+</div>
                 </div>
               </CardContent>
             </Card>
@@ -190,13 +195,17 @@ const ComoFunciona = () => {
               <CardContent className="p-8">
                 <div className="grid md:grid-cols-2 gap-8 items-center">
                   <div className="text-center">
-                    <div className="bg-secondary/20 rounded-full w-48 h-48 mx-auto flex items-center justify-center text-6xl">
-                      🪙
+                    <div className="bg-primary/20 rounded-full w-64 h-64 mx-auto flex items-center justify-center text-6xl">
+                       <img 
+      src="/girinha_sem_fundo.png" 
+      alt="Logo GiraMãe" 
+      className="w-48 h-48 object-cover" 
+    />
                     </div>
                   </div>
                   <div>
                     <h2 className="text-3xl font-bold mb-4">
-                      Como obter Girinhas? 🪙
+                      Como obter Girinhas? 
                     </h2>
                     <p className="text-lg mb-6 text-muted-foreground">
                       Você pode ganhar Girinhas de várias formas, tornando sua

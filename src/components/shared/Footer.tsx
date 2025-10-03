@@ -9,8 +9,12 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center mb-4">
-              <Sparkles className="h-8 w-8 text-primary mr-2" />
-              <span className="text-2xl font-bold">GiraMãe</span>
+              <img
+                src="/giramae_logo.png"
+                alt="Logo GiraMãe"
+                className="h-12 w-auto mr-4"
+              />
+              {/* <span className="text-2xl font-bold">GiraMãe</span> */}
             </div>
             <p className="text-gray-400 mb-4">
               Trocas sustentáveis de roupas infantis entre mães.

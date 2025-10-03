@@ -178,15 +178,19 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex items-center justify-center mb-6">
-              <Sparkles className="h-12 md:h-16 w-12 md:w-16 text-primary mr-4" />
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
+              <img
+                src="/giramae_logo.png"
+                alt="Logo GiraMãe"
+                className="h-12 md:h-28 w-auto mr-4"
+              />
+              {/* <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
                 GiraMãe
-              </h1>
+              </h1> */}
             </div>
 
-            <h2 className="text-xl md:text-3xl font-bold text-gray-800 mb-4">
+            {/* <h2 className="text-xl md:text-3xl font-bold text-gray-800 mb-4">
               Onde mães cuidam de mães!
-            </h2>
+            </h2> */}
 
             <p className="text-lg md:text-2xl text-gray-700 mb-6 leading-relaxed max-w-3xl mx-auto italic">
               "Sabe aquele sentimento de ver o armário cheio de roupinhas que não servem mais? A gente entende. Por isso criamos um cantinho onde mães se ajudam de verdade."
@@ -572,8 +576,12 @@ const LandingPageOptimized = () => {
     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
       <div className="md:col-span-2">
         <div className="flex items-center mb-4">
-          <Sparkles className="h-8 w-8 text-primary mr-2" />
-          <span className="text-2xl font-bold">GiraMãe</span>
+          <img
+                src="/giramae_logo.png"
+                alt="Logo GiraMãe"
+                className="h-12 w-auto mr-4"
+              />
+          {/* <span className="text-2xl font-bold">GiraMãe</span> */}
         </div>
         <p className="text-gray-400 mb-4">
           Trocas sustentáveis de roupas infantis entre mães.
@@ -608,8 +616,12 @@ const LandingPageOptimized = () => {
 
     <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
       <div className="flex items-center justify-center mb-4">
-        <Sparkles className="h-6 w-6 text-primary mr-2" />
-        <span className="text-xl font-bold text-primary">GiraMãe</span>
+        <img
+                src="/logo.png"
+                alt="Logo GiraMãe"
+                className="h-12 w-auto mr-4"
+              />
+        {/* <span className="text-xl font-bold text-primary">GiraMãe</span> */}
       </div>
       <p className="mb-4">© 2025 GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
       <div className="flex flex-wrap justify-center gap-6 mt-4 text-sm">
