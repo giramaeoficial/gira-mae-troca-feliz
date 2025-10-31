@@ -397,6 +397,16 @@ function App() {
             } 
           />
           <Route 
+            path="/admin/parcerias/nova-parceria" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <NovaParceria />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
             path="/admin/parcerias/:programaId" 
             element={
               <AuthGuard>
