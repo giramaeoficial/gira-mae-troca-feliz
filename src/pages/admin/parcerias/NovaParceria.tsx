@@ -39,7 +39,8 @@ const etapa3Schema = z.object({
   dia_creditacao: z.number().min(1, 'Dia deve estar entre 1 e 28').max(28),
   validade_meses: z.number().min(1, 'Mínimo 1 mês').max(60).optional(),
   criterios_elegibilidade: z.string().min(10, 'Critérios são obrigatórios'),
-  documentos_necessarios: z.string().min(5, 'Documentos são obrigatórios').max(300),
+  documentos_aceitos: z.string().min(5, 'Documentos são obrigatórios').max(300),
+  campos_obrigatorios: z.string().min(3, 'Campos obrigatórios são necessários').max(300),
   instrucoes_usuario: z.string().optional()
 });
 
@@ -87,7 +88,8 @@ export default function NovaParceria() {
       dia_creditacao: 1,
       validade_meses: 12,
       criterios_elegibilidade: '',
-      documentos_necessarios: '',
+      documentos_aceitos: '',
+      campos_obrigatorios: 'nome, email, telefone',
       instrucoes_usuario: ''
     }
   });
@@ -120,7 +122,8 @@ export default function NovaParceria() {
       if (orgError) throw orgError;
 
       // 2. Criar Programa
-      const documentosArray = dados.etapa3.documentos_necessarios.split(',').map(d => d.trim()).filter(d => d);
+      const documentosArray = dados.etapa3.documentos_aceitos.split(',').map(d => d.trim()).filter(d => d);
+      const camposArray = dados.etapa3.campos_obrigatorios.split(',').map(c => c.trim()).filter(c => c);
       
       // Montar criterios_elegibilidade como texto
       const criteriosTexto = `Objetivo: ${dados.etapa2.prog_objetivo}\n\nPúblico-alvo: ${dados.etapa2.prog_publico_alvo}\n\nCritérios: ${dados.etapa3.criterios_elegibilidade}`;
@@ -136,9 +139,9 @@ export default function NovaParceria() {
           dia_creditacao: dados.etapa3.dia_creditacao,
           validade_meses: dados.etapa3.validade_meses || 12,
           criterios_elegibilidade: criteriosTexto,
-          campos_obrigatorios: ['nome', 'email', 'telefone'],
-          documentos_aceitos: documentosArray,
-          instrucoes_usuario: dados.etapa3.instrucoes_usuario || '',
+          campos_obrigatorios: camposArray.length > 0 ? camposArray : ['N/A'],
+          documentos_aceitos: documentosArray.length > 0 ? documentosArray : ['N/A'],
+          instrucoes_usuario: dados.etapa3.instrucoes_usuario || 'N/A',
           ativo: true
         })
         .select()
@@ -556,8 +559,8 @@ export default function NovaParceria() {
                         <FormLabel>Critérios de Elegibilidade*</FormLabel>
                         <FormControl>
                           <Textarea 
-                            placeholder="Quais os critérios para participar do programa?"
-                            rows={3}
+                            placeholder="Ex: Renda familiar até 2 salários mínimos, residir na cidade do programa..."
+                            className="min-h-[80px]"
                             {...field}
                           />
                         </FormControl>
@@ -568,17 +571,37 @@ export default function NovaParceria() {
 
                   <FormField
                     control={form3.control}
-                    name="documentos_necessarios"
+                    name="documentos_aceitos"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Documentos Necessários*</FormLabel>
+                        <FormLabel>Documentos Aceitos para Upload*</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="RG, CPF, Comprovante de residência (separados por vírgula)"
+                          <Textarea 
+                            placeholder="Ex: RG, CPF, Comprovante de Matrícula, Comprovante de Residência"
+                            className="min-h-[80px]"
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription>Separe os documentos por vírgula</FormDescription>
+                        <FormDescription>Documentos que o usuário deverá enviar (separar por vírgula)</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form3.control}
+                    name="campos_obrigatorios"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Campos Obrigatórios do Formulário*</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Ex: nome, email, telefone, data_nascimento, cpf"
+                            className="min-h-[80px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>Campos do formulário que serão obrigatórios (separar por vírgula)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -593,7 +616,7 @@ export default function NovaParceria() {
                         <FormControl>
                           <Textarea 
                             placeholder="Instruções adicionais para os beneficiários..."
-                            rows={3}
+                            className="min-h-[80px]"
                             {...field}
                           />
                         </FormControl>
