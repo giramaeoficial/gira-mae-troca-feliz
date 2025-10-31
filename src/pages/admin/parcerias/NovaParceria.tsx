@@ -35,9 +35,10 @@ const etapa2Schema = z.object({
 });
 
 const etapa3Schema = z.object({
-  valor_credito: z.number().min(1, 'Valor deve ser maior que 0').max(10000),
+  valor_mensal: z.number().min(1, 'Valor deve ser maior que 0').max(10000),
   dia_creditacao: z.number().min(1, 'Dia deve estar entre 1 e 28').max(28),
-  criterios_elegibilidade: z.string().min(10, 'Critérios são obrigatórios').max(500),
+  validade_meses: z.number().min(1, 'Mínimo 1 mês').max(60).optional(),
+  criterios_elegibilidade: z.string().min(10, 'Critérios são obrigatórios'),
   documentos_necessarios: z.string().min(5, 'Documentos são obrigatórios').max(300),
   instrucoes_usuario: z.string().optional()
 });
@@ -82,8 +83,9 @@ export default function NovaParceria() {
   const form3 = useForm<Etapa3Form>({
     resolver: zodResolver(etapa3Schema),
     defaultValues: {
-      valor_credito: 100,
+      valor_mensal: 100,
       dia_creditacao: 1,
+      validade_meses: 12,
       criterios_elegibilidade: '',
       documentos_necessarios: '',
       instrucoes_usuario: ''
@@ -120,6 +122,9 @@ export default function NovaParceria() {
       // 2. Criar Programa
       const documentosArray = dados.etapa3.documentos_necessarios.split(',').map(d => d.trim()).filter(d => d);
       
+      // Montar criterios_elegibilidade como texto
+      const criteriosTexto = `Objetivo: ${dados.etapa2.prog_objetivo}\n\nPúblico-alvo: ${dados.etapa2.prog_publico_alvo}\n\nCritérios: ${dados.etapa3.criterios_elegibilidade}`;
+      
       const { data: programa, error: progError } = await supabase
         .from('parcerias_programas')
         .insert({
@@ -127,16 +132,13 @@ export default function NovaParceria() {
           codigo: progCodigo,
           nome: dados.etapa2.prog_nome,
           descricao: dados.etapa2.prog_descricao,
-          valor_credito: dados.etapa3.valor_credito,
-          criterios_elegibilidade: JSON.stringify({
-            objetivo: dados.etapa2.prog_objetivo,
-            publico_alvo: dados.etapa2.prog_publico_alvo,
-            criterios: dados.etapa3.criterios_elegibilidade
-          }),
+          valor_mensal: dados.etapa3.valor_mensal,
+          dia_creditacao: dados.etapa3.dia_creditacao,
+          validade_meses: dados.etapa3.validade_meses || 12,
+          criterios_elegibilidade: criteriosTexto,
           campos_obrigatorios: ['nome', 'email', 'telefone'],
           documentos_aceitos: documentosArray,
           instrucoes_usuario: dados.etapa3.instrucoes_usuario || '',
-          dia_creditacao: dados.etapa3.dia_creditacao,
           ativo: true
         })
         .select()
@@ -482,13 +484,13 @@ export default function NovaParceria() {
             <CardContent>
               <Form {...form3}>
                 <form onSubmit={form3.handleSubmit(handleEtapa3)} className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <FormField
                       control={form3.control}
-                      name="valor_credito"
+                      name="valor_mensal"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Valor do Crédito Mensal*</FormLabel>
+                          <FormLabel>Valor Mensal*</FormLabel>
                           <FormControl>
                             <Input 
                               type="number" 
@@ -519,6 +521,27 @@ export default function NovaParceria() {
                             />
                           </FormControl>
                           <FormDescription>De 1 a 28</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form3.control}
+                      name="validade_meses"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Validade (meses)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min={1}
+                              max={60}
+                              placeholder="12"
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormDescription>Padrão: 12 meses</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
