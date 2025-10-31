@@ -40,8 +40,8 @@ const programaConfigSchema = z.object({
   valor_mensal: z.number().min(1, 'Valor deve ser maior que 0'),
   dia_creditacao: z.number().min(1).max(28),
   validade_meses: z.number().min(1).max(60).optional(),
-  documentos_aceitos: z.string().min(5, 'Documentos são obrigatórios'),
-  campos_obrigatorios: z.string().min(3, 'Campos obrigatórios são necessários'),
+  documentos_aceitos: z.string().optional(),
+  campos_obrigatorios: z.string().optional(),
   instrucoes_usuario: z.string().optional()
 });
 
@@ -101,16 +101,20 @@ export default function TabConfiguracoes({ programa, onUpdatePrograma, onUpdateO
   };
 
   const onSubmitProgConfig = (values: z.infer<typeof programaConfigSchema>) => {
-    const documentosArray = values.documentos_aceitos.split(',').map(d => d.trim()).filter(d => d);
-    const camposArray = values.campos_obrigatorios.split(',').map(c => c.trim()).filter(c => c);
+    const documentosArray = values.documentos_aceitos 
+      ? values.documentos_aceitos.split(',').map(d => d.trim()).filter(d => d)
+      : [];
+    const camposArray = values.campos_obrigatorios
+      ? values.campos_obrigatorios.split(',').map(c => c.trim()).filter(c => c)
+      : [];
     
     onUpdatePrograma({
       valor_mensal: values.valor_mensal,
       dia_creditacao: values.dia_creditacao,
       validade_meses: values.validade_meses || 12,
-      documentos_aceitos: documentosArray.length > 0 ? documentosArray : ['N/A'],
-      campos_obrigatorios: camposArray.length > 0 ? camposArray : ['N/A'],
-      instrucoes_usuario: values.instrucoes_usuario || 'N/A'
+      documentos_aceitos: documentosArray.length > 0 ? documentosArray : null,
+      campos_obrigatorios: camposArray.length > 0 ? camposArray : null,
+      instrucoes_usuario: values.instrucoes_usuario || null
     });
   };
 
@@ -438,7 +442,7 @@ export default function TabConfiguracoes({ programa, onUpdatePrograma, onUpdateO
                 name="documentos_aceitos"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Documentos Aceitos para Upload*</FormLabel>
+                    <FormLabel>Documentos Aceitos para Upload (opcional)</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Ex: RG, CPF, Comprovante de Matrícula, Comprovante de Residência"
@@ -446,7 +450,7 @@ export default function TabConfiguracoes({ programa, onUpdatePrograma, onUpdateO
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>Documentos que o usuário deverá enviar (separar por vírgula)</FormDescription>
+                    <FormDescription>Documentos que o usuário deverá enviar (separar por vírgula). Deixe em branco se não houver necessidade de upload.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -457,7 +461,7 @@ export default function TabConfiguracoes({ programa, onUpdatePrograma, onUpdateO
                 name="campos_obrigatorios"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Campos Obrigatórios do Formulário*</FormLabel>
+                    <FormLabel>Campos Obrigatórios do Formulário (opcional)</FormLabel>
                     <FormControl>
                       <Textarea 
                         placeholder="Ex: nome, email, telefone, data_nascimento, cpf"

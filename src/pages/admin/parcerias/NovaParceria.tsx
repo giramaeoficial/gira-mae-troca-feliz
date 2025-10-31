@@ -40,7 +40,7 @@ const etapa3Schema = z.object({
   validade_meses: z.number().min(1, 'Mínimo 1 mês').max(60).optional(),
   criterios_elegibilidade: z.string().min(10, 'Critérios são obrigatórios'),
   documentos_aceitos: z.string().optional(),
-  campos_obrigatorios: z.string().min(3, 'Campos obrigatórios são necessários').max(300),
+  campos_obrigatorios: z.string().optional(),
   instrucoes_usuario: z.string().optional()
 });
 
