@@ -58,6 +58,7 @@ import AdminLedger from '@/pages/AdminLedger';
 import ParceriasDashboard from '@/pages/admin/parcerias/ParceriasDashboard';
 import GestaoPrograma from '@/pages/admin/parcerias/GestaoPrograma';
 import PerfilBeneficiario from '@/pages/admin/parcerias/PerfilBeneficiario';
+import NovaParceria from '@/pages/admin/parcerias/NovaParceria';
 
 
 //const queryClient = new QueryClient();
