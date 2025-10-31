@@ -20,6 +20,9 @@ export interface Programa {
   nome: string;
   descricao: string;
   valor_mensal: number;
+  dia_creditacao?: number;
+  validade_meses?: number;
+  criterios_elegibilidade?: string;
   instrucoes_usuario: string;
   cor_tema: string;
   icone: string;
@@ -60,6 +63,8 @@ export function useParceriasSociais() {
             nome,
             descricao,
             valor_mensal,
+            dia_creditacao,
+            validade_meses,
             instrucoes_usuario,
             cor_tema,
             icone,
@@ -102,6 +107,8 @@ export function useParceriasSociais() {
             nome: prog.nome,
             descricao: prog.descricao,
             valor_mensal: prog.valor_mensal,
+            dia_creditacao: prog.dia_creditacao,
+            validade_meses: prog.validade_meses,
             instrucoes_usuario: prog.instrucoes_usuario,
             cor_tema: prog.cor_tema,
             icone: prog.icone,

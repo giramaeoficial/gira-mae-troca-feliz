@@ -39,7 +39,7 @@ const etapa3Schema = z.object({
   dia_creditacao: z.number().min(1, 'Dia deve estar entre 1 e 28').max(28),
   validade_meses: z.number().min(1, 'Mínimo 1 mês').max(60).optional(),
   criterios_elegibilidade: z.string().min(10, 'Critérios são obrigatórios'),
-  documentos_aceitos: z.string().min(5, 'Documentos são obrigatórios').max(300),
+  documentos_aceitos: z.string().optional(),
   campos_obrigatorios: z.string().min(3, 'Campos obrigatórios são necessários').max(300),
   instrucoes_usuario: z.string().optional()
 });
@@ -89,7 +89,7 @@ export default function NovaParceria() {
       validade_meses: 12,
       criterios_elegibilidade: '',
       documentos_aceitos: '',
-      campos_obrigatorios: 'nome, email, telefone',
+      campos_obrigatorios: 'nome, cpf, rg',
       instrucoes_usuario: ''
     }
   });
@@ -122,7 +122,9 @@ export default function NovaParceria() {
       if (orgError) throw orgError;
 
       // 2. Criar Programa
-      const documentosArray = dados.etapa3.documentos_aceitos.split(',').map(d => d.trim()).filter(d => d);
+      const documentosArray = dados.etapa3.documentos_aceitos 
+        ? dados.etapa3.documentos_aceitos.split(',').map(d => d.trim()).filter(d => d) 
+        : [];
       const camposArray = dados.etapa3.campos_obrigatorios.split(',').map(c => c.trim()).filter(c => c);
       
       // Montar criterios_elegibilidade como texto
@@ -140,8 +142,8 @@ export default function NovaParceria() {
           validade_meses: dados.etapa3.validade_meses || 12,
           criterios_elegibilidade: criteriosTexto,
           campos_obrigatorios: camposArray.length > 0 ? camposArray : ['N/A'],
-          documentos_aceitos: documentosArray.length > 0 ? documentosArray : ['N/A'],
-          instrucoes_usuario: dados.etapa3.instrucoes_usuario || 'N/A',
+          documentos_aceitos: documentosArray.length > 0 ? documentosArray : null,
+          instrucoes_usuario: dados.etapa3.instrucoes_usuario || null,
           ativo: true
         })
         .select()

@@ -44,7 +44,7 @@ export function useProgramaDetalhes(organizacaoCodigo: string, programaCodigo: s
       // Buscar programa
       const { data: progData, error: progError } = await supabase
         .from('parcerias_programas')
-        .select('*')
+        .select('id, codigo, nome, descricao, valor_mensal, dia_creditacao, validade_meses, instrucoes_usuario, cor_tema, icone, campos_obrigatorios, documentos_aceitos, organizacao_id')
         .eq('codigo', programaCodigo)
         .eq('organizacao_id', orgData.id)
         .eq('ativo', true)

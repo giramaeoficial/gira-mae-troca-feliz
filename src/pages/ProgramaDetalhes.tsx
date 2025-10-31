@@ -56,7 +56,9 @@ export default function ProgramaDetalhes() {
   }
 
   const handleSolicitacao = async () => {
-    if (!programa.campos_obrigatorios.every(campo => dadosUsuario[campo])) {
+    // Validar campos obrigatórios (exceto se for apenas 'N/A')
+    const camposValidos = programa.campos_obrigatorios.filter(c => c !== 'N/A');
+    if (camposValidos.length > 0 && !camposValidos.every(campo => dadosUsuario[campo])) {
       toast({
         title: "Campos obrigatórios",
         description: "Preencha todos os campos obrigatórios.",
@@ -65,7 +67,12 @@ export default function ProgramaDetalhes() {
       return;
     }
 
-    if (documentos.length === 0) {
+    // Validar documentos apenas se forem necessários
+    const documentosNecessarios = programa.documentos_aceitos && 
+                                   programa.documentos_aceitos.length > 0 && 
+                                   !programa.documentos_aceitos.includes('N/A');
+    
+    if (documentosNecessarios && documentos.length === 0) {
       toast({
         title: "Documentos necessários",
         description: "Envie pelo menos um documento.",
@@ -197,17 +204,31 @@ export default function ProgramaDetalhes() {
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
                     <Calendar className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                    <div className="font-bold text-lg">12</div>
+                    <div className="font-bold text-lg">{programa.validade_meses || 12}</div>
                     <div className="text-sm text-muted-foreground">Meses de validade</div>
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
                     <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                    <div className="font-bold text-lg">Automático</div>
-                    <div className="text-sm text-muted-foreground">Crédito mensal</div>
+                    <div className="font-bold text-lg">Dia {programa.dia_creditacao || 1}</div>
+                    <div className="text-sm text-muted-foreground">Creditação mensal</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Critérios de Elegibilidade */}
+            {programa.criterios_elegibilidade && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Critérios de Elegibilidade</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
+                    {programa.criterios_elegibilidade}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Formulário de Solicitação */}
             {(!validacao || validacao.status === 'rejeitado') && (
@@ -220,52 +241,56 @@ export default function ProgramaDetalhes() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Campos obrigatórios */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {programa.campos_obrigatorios.map((campo) => (
-                      <div key={campo}>
-                        <Label htmlFor={campo} className="capitalize">
-                          {campo.replace('_', ' ')} *
-                        </Label>
+                  {programa.campos_obrigatorios && programa.campos_obrigatorios.filter(c => c !== 'N/A').length > 0 && (
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {programa.campos_obrigatorios.filter(c => c !== 'N/A').map((campo) => (
+                        <div key={campo}>
+                          <Label htmlFor={campo} className="capitalize">
+                            {campo.replace(/_/g, ' ')} *
+                          </Label>
+                          <Input
+                            id={campo}
+                            value={dadosUsuario[campo] || ''}
+                            onChange={(e) => setDadosUsuario(prev => ({
+                              ...prev,
+                              [campo]: e.target.value
+                            }))}
+                            placeholder={`Digite seu ${campo.replace(/_/g, ' ')}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload de documentos - apenas se necessário */}
+                  {programa.documentos_aceitos && programa.documentos_aceitos.length > 0 && !programa.documentos_aceitos.includes('N/A') && (
+                    <div>
+                      <Label>Documentos * (aceitos: {programa.documentos_aceitos.join(', ')})</Label>
+                      <div className="mt-2">
                         <Input
-                          id={campo}
-                          value={dadosUsuario[campo] || ''}
-                          onChange={(e) => setDadosUsuario(prev => ({
-                            ...prev,
-                            [campo]: e.target.value
-                          }))}
-                          placeholder={`Digite seu ${campo.replace('_', ' ')}`}
+                          type="file"
+                          multiple
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={(e) => {
+                            if (e.target.files) {
+                              setDocumentos(Array.from(e.target.files));
+                            }
+                          }}
+                          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
                         />
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Upload de documentos */}
-                  <div>
-                    <Label>Documentos * (aceitos: {programa.documentos_aceitos.join(', ')})</Label>
-                    <div className="mt-2">
-                      <Input
-                        type="file"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => {
-                          if (e.target.files) {
-                            setDocumentos(Array.from(e.target.files));
-                          }
-                        }}
-                        className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/80"
-                      />
+                      {documentos.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {documentos.map((doc, index) => (
+                            <div key={index} className="text-sm text-muted-foreground flex items-center gap-2">
+                              <Upload className="w-4 h-4" />
+                              {doc.name} ({(doc.size / 1024 / 1024).toFixed(2)} MB)
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {documentos.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {documentos.map((doc, index) => (
-                          <div key={index} className="text-sm text-muted-foreground flex items-center gap-2">
-                            <Upload className="w-4 h-4" />
-                            {doc.name} ({(doc.size / 1024 / 1024).toFixed(2)} MB)
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   <Button 
                     onClick={handleSolicitacao}
