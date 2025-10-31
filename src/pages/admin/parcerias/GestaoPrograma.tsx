@@ -19,7 +19,7 @@ export default function GestaoPrograma() {
   const { programaId } = useParams<{ programaId: string }>();
   const navigate = useNavigate();
   
-  const { programa, metricas, loading } = useGestaoPrograma(programaId!);
+  const { programa, metricas, loading, updatePrograma, updateOrganizacao } = useGestaoPrograma(programaId!);
 
   if (loading) {
     return (
@@ -139,7 +139,7 @@ export default function GestaoPrograma() {
                   <div>
                     <h4 className="font-semibold mb-2">Valor do Crédito</h4>
                     <p className="text-muted-foreground">
-                      {programa.valor_credito ? `${programa.valor_credito} Girinhas` : 'Não definido'}
+                      {(programa.valor_mensal || programa.valor_credito) ? `${programa.valor_mensal || programa.valor_credito} Girinhas` : 'Não definido'}
                     </p>
                   </div>
                 </div>
@@ -172,10 +172,11 @@ export default function GestaoPrograma() {
           </TabsContent>
 
           <TabsContent value="configuracoes">
-            <TabConfiguracoes programa={programa} onUpdate={(config) => {
-              // TODO: Implementar atualização via mutation
-              console.log('Update programa:', config);
-            }} />
+            <TabConfiguracoes 
+              programa={programa} 
+              onUpdatePrograma={updatePrograma}
+              onUpdateOrganizacao={updateOrganizacao}
+            />
           </TabsContent>
         </Tabs>
       </div>

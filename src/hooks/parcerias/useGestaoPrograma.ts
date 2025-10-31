@@ -15,14 +15,7 @@ export function useGestaoPrograma(programaId: string) {
         .from('parcerias_programas')
         .select(`
           *,
-          parcerias_organizacoes (
-            id,
-            nome,
-            cidade,
-            estado,
-            contato_email,
-            contato_telefone
-          )
+          parcerias_organizacoes (*)
         `)
         .eq('id', programaId)
         .single();
@@ -105,8 +98,8 @@ export function useGestaoPrograma(programaId: string) {
     enabled: !!programaId,
   });
 
-  // Mutation: Atualizar Configurações
-  const updateConfigMutation = useMutation({
+  // Mutation: Atualizar Programa
+  const updateProgramaMutation = useMutation({
     mutationFn: async (config: Partial<Programa>) => {
       const { data, error } = await supabase
         .from('parcerias_programas')
@@ -121,13 +114,42 @@ export function useGestaoPrograma(programaId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programa-detalhes', programaId] });
       toast({
-        title: "Configurações atualizadas",
+        title: "Programa atualizado",
         description: "As alterações foram salvas com sucesso.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Erro ao salvar",
+        title: "Erro ao salvar programa",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation: Atualizar Organização
+  const updateOrganizacaoMutation = useMutation({
+    mutationFn: async ({ organizacaoId, data }: { organizacaoId: string; data: any }) => {
+      const { data: result, error } = await supabase
+        .from('parcerias_organizacoes')
+        .update(data)
+        .eq('id', organizacaoId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programa-detalhes', programaId] });
+      toast({
+        title: "Organização atualizada",
+        description: "As alterações foram salvas com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao salvar organização",
         description: error.message,
         variant: "destructive",
       });
@@ -138,6 +160,7 @@ export function useGestaoPrograma(programaId: string) {
     programa,
     metricas,
     loading: isLoading,
-    updateConfig: updateConfigMutation.mutate,
+    updatePrograma: updateProgramaMutation.mutate,
+    updateOrganizacao: updateOrganizacaoMutation.mutate,
   };
 }

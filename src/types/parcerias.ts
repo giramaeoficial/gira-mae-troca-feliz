@@ -25,13 +25,17 @@ export interface Programa {
   codigo: string;
   nome: string;
   descricao?: string;
-  valor_credito?: number;
+  valor_mensal?: number; // Antigo: valor_credito
+  valor_credito?: number; // Manter compatibilidade
+  dia_creditacao?: number;
+  validade_meses?: number;
   campos_obrigatorios: string[];
   documentos_aceitos: string[];
+  regex_validacao?: Record<string, any>;
+  criterios_elegibilidade?: string;
   instrucoes_usuario?: string;
   cor_tema?: string;
   icone?: string;
-  dia_creditacao?: number;
   ativo: boolean;
   created_at: string;
   updated_at: string;
