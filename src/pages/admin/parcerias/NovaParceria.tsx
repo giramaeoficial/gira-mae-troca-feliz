@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 // Schemas de validação
 const etapa1Schema = z.object({
@@ -52,9 +55,26 @@ export default function NovaParceria() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [etapa, setEtapa] = useState(1);
+  const [etapa, setEtapa] = useState(0); // 0 = seleção, 1 = org, 2 = programa, 3 = config
+  const [tipoOrganizacao, setTipoOrganizacao] = useState<'nova' | 'existente'>('nova');
+  const [organizacaoSelecionada, setOrganizacaoSelecionada] = useState<string>('');
   const [dadosEtapa1, setDadosEtapa1] = useState<Etapa1Form | null>(null);
   const [dadosEtapa2, setDadosEtapa2] = useState<Etapa2Form | null>(null);
+
+  // Buscar organizações existentes
+  const { data: organizacoes = [], isLoading: loadingOrgs } = useQuery({
+    queryKey: ['organizacoes-ativas'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('parcerias_organizacoes')
+        .select('id, codigo, nome, cidade, estado')
+        .eq('ativo', true)
+        .order('nome');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   const form1 = useForm<Etapa1Form>({
     resolver: zodResolver(etapa1Schema),
@@ -95,37 +115,45 @@ export default function NovaParceria() {
   });
 
   const criarParceriaMutation = useMutation({
-    mutationFn: async (dados: { etapa1: Etapa1Form; etapa2: Etapa2Form; etapa3: Etapa3Form }) => {
-      // Gerar códigos únicos
-      const orgCodigo = `ORG_${Date.now()}`;
-      const progCodigo = `PROG_${Date.now()}`;
+    mutationFn: async (dados: { etapa1: Etapa1Form | null; etapa2: Etapa2Form; etapa3: Etapa3Form; organizacaoId?: string }) => {
+      let orgId = dados.organizacaoId;
 
-      // 1. Criar Organização
-      const { data: org, error: orgError } = await supabase
-        .from('parcerias_organizacoes')
-        .insert({
-          codigo: orgCodigo,
-          nome: dados.etapa1.org_nome,
-          tipo: dados.etapa1.org_tipo,
-          cnpj: dados.etapa1.org_cnpj || null,
-          contato_responsavel: dados.etapa1.org_responsavel,
-          contato_email: dados.etapa1.org_email,
-          contato_telefone: dados.etapa1.org_telefone,
-          endereco: dados.etapa1.org_endereco,
-          cidade: dados.etapa1.org_cidade,
-          estado: dados.etapa1.org_estado,
-          ativo: true
-        })
-        .select()
-        .single();
+      // Se não tiver organização ID (nova organização), criar
+      if (!orgId && dados.etapa1) {
+        const orgCodigo = `ORG_${Date.now()}`;
+        
+        const { data: org, error: orgError } = await supabase
+          .from('parcerias_organizacoes')
+          .insert({
+            codigo: orgCodigo,
+            nome: dados.etapa1.org_nome,
+            tipo: dados.etapa1.org_tipo,
+            cnpj: dados.etapa1.org_cnpj || null,
+            contato_responsavel: dados.etapa1.org_responsavel,
+            contato_email: dados.etapa1.org_email,
+            contato_telefone: dados.etapa1.org_telefone,
+            endereco: dados.etapa1.org_endereco,
+            cidade: dados.etapa1.org_cidade,
+            estado: dados.etapa1.org_estado,
+            ativo: true
+          })
+          .select()
+          .single();
 
-      if (orgError) throw orgError;
+        if (orgError) throw orgError;
+        orgId = org.id;
+      }
+
+      if (!orgId) throw new Error('ID da organização não encontrado');
 
       // 2. Criar Programa
+      const progCodigo = `PROG_${Date.now()}`;
       const documentosArray = dados.etapa3.documentos_aceitos 
         ? dados.etapa3.documentos_aceitos.split(',').map(d => d.trim()).filter(d => d) 
         : [];
-      const camposArray = dados.etapa3.campos_obrigatorios.split(',').map(c => c.trim()).filter(c => c);
+      const camposArray = dados.etapa3.campos_obrigatorios 
+        ? dados.etapa3.campos_obrigatorios.split(',').map(c => c.trim()).filter(c => c)
+        : [];
       
       // Montar criterios_elegibilidade como texto
       const criteriosTexto = `Objetivo: ${dados.etapa2.prog_objetivo}\n\nPúblico-alvo: ${dados.etapa2.prog_publico_alvo}\n\nCritérios: ${dados.etapa3.criterios_elegibilidade}`;
@@ -133,7 +161,7 @@ export default function NovaParceria() {
       const { data: programa, error: progError } = await supabase
         .from('parcerias_programas')
         .insert({
-          organizacao_id: org.id,
+          organizacao_id: orgId,
           codigo: progCodigo,
           nome: dados.etapa2.prog_nome,
           descricao: dados.etapa2.prog_descricao,
@@ -141,7 +169,7 @@ export default function NovaParceria() {
           dia_creditacao: dados.etapa3.dia_creditacao,
           validade_meses: dados.etapa3.validade_meses || 12,
           criterios_elegibilidade: criteriosTexto,
-          campos_obrigatorios: camposArray.length > 0 ? camposArray : ['N/A'],
+          campos_obrigatorios: camposArray.length > 0 ? camposArray : null,
           documentos_aceitos: documentosArray.length > 0 ? documentosArray : null,
           instrucoes_usuario: dados.etapa3.instrucoes_usuario || null,
           ativo: true
@@ -170,13 +198,28 @@ export default function NovaParceria() {
     }
   });
 
-  const etapas = [
-    'Dados da Organização',
-    'Dados do Programa',
-    'Configurações'
-  ];
+  const etapas = tipoOrganizacao === 'nova' 
+    ? ['Seleção', 'Dados da Organização', 'Dados do Programa', 'Configurações']
+    : ['Seleção', 'Dados do Programa', 'Configurações'];
 
-  const progresso = (etapa / etapas.length) * 100;
+  const progresso = (etapa / (etapas.length - 1)) * 100;
+
+  const handleSelecao = () => {
+    if (tipoOrganizacao === 'existente' && !organizacaoSelecionada) {
+      toast({
+        title: 'Selecione uma organização',
+        description: 'Escolha uma organização existente para continuar.',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (tipoOrganizacao === 'existente') {
+      setEtapa(2); // Pula direto para programa
+    } else {
+      setEtapa(1); // Vai para dados da organização
+    }
+  };
 
   const handleEtapa1 = (data: Etapa1Form) => {
     setDadosEtapa1(data);
@@ -189,12 +232,13 @@ export default function NovaParceria() {
   };
 
   const handleEtapa3 = (data: Etapa3Form) => {
-    if (!dadosEtapa1 || !dadosEtapa2) return;
+    if (!dadosEtapa2) return;
     
     criarParceriaMutation.mutate({
-      etapa1: dadosEtapa1,
+      etapa1: tipoOrganizacao === 'nova' ? dadosEtapa1 : null,
       etapa2: dadosEtapa2,
-      etapa3: data
+      etapa3: data,
+      organizacaoId: tipoOrganizacao === 'existente' ? organizacaoSelecionada : undefined
     });
   };
 
@@ -236,6 +280,75 @@ export default function NovaParceria() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Etapa 0: Seleção */}
+        {etapa === 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Tipo de Parceria</CardTitle>
+              <CardDescription>Escolha se deseja criar uma nova organização ou adicionar um programa a uma organização existente</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <Label>Escolha uma opção:</Label>
+                <RadioGroup value={tipoOrganizacao} onValueChange={(value) => {
+                  setTipoOrganizacao(value as 'nova' | 'existente');
+                  setOrganizacaoSelecionada('');
+                }}>
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="nova" id="nova" />
+                    <Label htmlFor="nova" className="flex-1 cursor-pointer">
+                      <div className="font-medium">Nova Organização</div>
+                      <div className="text-sm text-muted-foreground">Criar uma nova organização e seu primeiro programa</div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent cursor-pointer">
+                    <RadioGroupItem value="existente" id="existente" />
+                    <Label htmlFor="existente" className="flex-1 cursor-pointer">
+                      <div className="font-medium">Organização Existente</div>
+                      <div className="text-sm text-muted-foreground">Adicionar um novo programa a uma organização já cadastrada</div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {tipoOrganizacao === 'existente' && (
+                <div className="space-y-2">
+                  <Label htmlFor="organizacao">Selecione a Organização</Label>
+                  <Select value={organizacaoSelecionada} onValueChange={setOrganizacaoSelecionada}>
+                    <SelectTrigger id="organizacao">
+                      <SelectValue placeholder="Escolha uma organização..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingOrgs ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Carregando organizações...
+                        </div>
+                      ) : organizacoes.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          Nenhuma organização cadastrada
+                        </div>
+                      ) : (
+                        organizacoes.map((org) => (
+                          <SelectItem key={org.id} value={org.id}>
+                            {org.nome} - {org.cidade}/{org.estado}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button onClick={handleSelecao}>
+                  Próximo
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Etapa 1: Organização */}
         {etapa === 1 && (
@@ -464,7 +577,7 @@ export default function NovaParceria() {
                   />
 
                   <div className="flex justify-between">
-                    <Button type="button" variant="outline" onClick={() => setEtapa(1)}>
+                    <Button type="button" variant="outline" onClick={() => setEtapa(tipoOrganizacao === 'nova' ? 1 : 0)}>
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Voltar
                     </Button>
@@ -576,7 +689,7 @@ export default function NovaParceria() {
                     name="documentos_aceitos"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Documentos Aceitos para Upload*</FormLabel>
+                        <FormLabel>Documentos Aceitos para Upload (opcional)</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Ex: RG, CPF, Comprovante de Matrícula, Comprovante de Residência"
@@ -595,7 +708,7 @@ export default function NovaParceria() {
                     name="campos_obrigatorios"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Campos Obrigatórios do Formulário*</FormLabel>
+                        <FormLabel>Campos Obrigatórios do Formulário (opcional)</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Ex: nome, email, telefone, data_nascimento, cpf"
@@ -634,7 +747,7 @@ export default function NovaParceria() {
                     </Button>
                     <Button type="submit" disabled={criarParceriaMutation.isPending}>
                       {criarParceriaMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Criar Parceria
+                      Criar {tipoOrganizacao === 'nova' ? 'Parceria' : 'Programa'}
                     </Button>
                   </div>
                 </form>
