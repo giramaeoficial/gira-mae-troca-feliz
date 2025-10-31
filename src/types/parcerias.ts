@@ -160,13 +160,18 @@ export interface PerfilBeneficiario {
   email: string;
   telefone?: string;
   avatar_url?: string;
+  data_cadastro: string;
   status: 'ativo' | 'suspenso';
   data_aprovacao: string;
   ultima_atividade?: string;
+  dados_solicitacao: Record<string, any>;
   resumo_financeiro: {
     total_creditos_recebidos: number;
     creditos_mes_atual: number;
     media_mensal: number;
+    saldo_atual: number;
+    total_recebido: number;
+    total_gasto: number;
     proxima_data_credito?: string;
   };
   historico_creditos: HistoricoCredito[];
@@ -175,7 +180,27 @@ export interface PerfilBeneficiario {
     percentual_transferido_p2p: number;
     saldo_atual: number;
     categorias_favoritas: string[];
+    total_itens_publicados: number;
+    total_compras: number;
+    total_vendas: number;
+    compras_confirmadas: number;
+    vendas_confirmadas: number;
+    ultimos_itens: any[];
   };
+  expiracao_girinhas: {
+    total_expirando_7_dias: number;
+    total_expirando_30_dias: number;
+    proxima_expiracao: string | null;
+    detalhes: any[];
+  };
+  ultimas_transacoes: Array<{
+    id: string;
+    tipo: string;
+    valor: number;
+    descricao: string;
+    data: string;
+    metadata?: any;
+  }>;
   documentos: Documento[];
   observacoes: ObservacaoInterna[];
 }

@@ -93,68 +93,203 @@ export default function PerfilBeneficiario() {
         </Card>
 
         {/* Resumo Financeiro */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Saldo Atual</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-yellow-500" />
+                <p className="text-2xl font-bold">
+                  {perfil.resumo_financeiro.saldo_atual.toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Total Recebido (Programa)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-green-500" />
+                <p className="text-2xl font-bold">
+                  {perfil.resumo_financeiro.total_creditos_recebidos.toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Total Recebido (Geral)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-blue-500" />
+                <p className="text-2xl font-bold">
+                  {perfil.resumo_financeiro.total_recebido.toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Total Gasto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-red-500" />
+                <p className="text-2xl font-bold">
+                  {perfil.resumo_financeiro.total_gasto.toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Créditos Mês Atual</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-green-500" />
+                <p className="text-2xl font-bold">
+                  {perfil.resumo_financeiro.creditos_mes_atual.toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Média Mensal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-500" />
+                <p className="text-2xl font-bold">
+                  {perfil.resumo_financeiro.media_mensal.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Estatísticas de Uso */}
         <Card>
           <CardHeader>
-            <CardTitle>Resumo Financeiro</CardTitle>
+            <CardTitle>Estatísticas de Uso da Plataforma</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Total Recebido</p>
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-yellow-500" />
-                  <p className="text-2xl font-bold">
-                    {perfil.resumo_financeiro.total_creditos_recebidos.toLocaleString('pt-BR')}
-                  </p>
-                </div>
+              <div className="border rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-1">Itens Publicados</p>
+                <p className="text-2xl font-bold">{perfil.padrao_uso.total_itens_publicados}</p>
               </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Créditos Mês Atual</p>
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-green-500" />
-                  <p className="text-2xl font-bold">
-                    {perfil.resumo_financeiro.creditos_mes_atual.toLocaleString('pt-BR')}
-                  </p>
-                </div>
+              <div className="border rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-1">Compras Realizadas</p>
+                <p className="text-2xl font-bold">
+                  {perfil.padrao_uso.compras_confirmadas} / {perfil.padrao_uso.total_compras}
+                </p>
+                <p className="text-xs text-muted-foreground">confirmadas / total</p>
               </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Média Mensal</p>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
-                  <p className="text-2xl font-bold">
-                    {perfil.resumo_financeiro.media_mensal.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
-                  </p>
-                </div>
+              <div className="border rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-1">Vendas Realizadas</p>
+                <p className="text-2xl font-bold">
+                  {perfil.padrao_uso.vendas_confirmadas} / {perfil.padrao_uso.total_vendas}
+                </p>
+                <p className="text-xs text-muted-foreground">confirmadas / total</p>
               </div>
-              
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Saldo Atual</p>
-                <div className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-purple-500" />
-                  <p className="text-2xl font-bold">
-                    {perfil.padrao_uso.saldo_atual.toLocaleString('pt-BR')}
-                  </p>
-                </div>
+              <div className="border rounded-lg p-4">
+                <p className="text-sm text-muted-foreground mb-1">Membro Desde</p>
+                <p className="text-sm font-medium">
+                  {new Date(perfil.data_cadastro).toLocaleDateString('pt-BR')}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Expiração de Girinhas */}
+        {perfil.expiracao_girinhas.total_expirando_30_dias > 0 && (
+          <Card className="border-orange-500">
+            <CardHeader>
+              <CardTitle className="text-orange-600">⚠️ Girinhas Expirando</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Expirando em 7 dias:</span>
+                  <strong className="text-red-600">
+                    {perfil.expiracao_girinhas.total_expirando_7_dias} Girinhas
+                  </strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>Expirando em 30 dias:</span>
+                  <strong className="text-orange-600">
+                    {perfil.expiracao_girinhas.total_expirando_30_dias} Girinhas
+                  </strong>
+                </div>
+                {perfil.expiracao_girinhas.proxima_expiracao && (
+                  <div className="flex justify-between">
+                    <span>Próxima expiração:</span>
+                    <strong>
+                      {new Date(perfil.expiracao_girinhas.proxima_expiracao).toLocaleDateString('pt-BR')}
+                    </strong>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabs */}
-        <Tabs defaultValue="historico" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <Tabs defaultValue="solicitacao" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+            <TabsTrigger value="solicitacao">Solicitação</TabsTrigger>
             <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="transacoes">Transações</TabsTrigger>
+            <TabsTrigger value="itens">Itens</TabsTrigger>
             <TabsTrigger value="documentos">Documentos</TabsTrigger>
-            <TabsTrigger value="padrao-uso">Padrão de Uso</TabsTrigger>
             <TabsTrigger value="observacoes">Observações</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="solicitacao">
+            <Card>
+              <CardHeader>
+                <CardTitle>Dados da Solicitação</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {Object.keys(perfil.dados_solicitacao).length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum dado adicional fornecido na solicitação
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(perfil.dados_solicitacao).map(([key, value]) => (
+                      <div key={key} className="flex justify-between items-start p-3 rounded-lg border">
+                        <span className="font-medium capitalize">
+                          {key.replace(/_/g, ' ')}:
+                        </span>
+                        <span className="text-right max-w-md">
+                          {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="historico">
             <Card>
               <CardHeader>
-                <CardTitle>Histórico de Créditos ({perfil.historico_creditos.length})</CardTitle>
+                <CardTitle>Histórico de Créditos do Programa ({perfil.historico_creditos.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 {perfil.historico_creditos.length === 0 ? (
@@ -192,12 +327,101 @@ export default function PerfilBeneficiario() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="documentos">
-            <DocumentosValidados programaId={programaId!} userId={userId!} />
+          <TabsContent value="transacoes">
+            <Card>
+              <CardHeader>
+                <CardTitle>Últimas Transações (10 mais recentes)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {perfil.ultimas_transacoes.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhuma transação encontrada
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {perfil.ultimas_transacoes.map((transacao) => (
+                      <div 
+                        key={transacao.id}
+                        className="flex justify-between items-center p-3 rounded-lg border"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{transacao.descricao}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(transacao.data).toLocaleString('pt-BR')}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            Tipo: {transacao.tipo.replace(/_/g, ' ')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-lg font-bold ${
+                            transacao.tipo.includes('entrada') || 
+                            transacao.tipo === 'bonus' || 
+                            transacao.tipo === 'compra' || 
+                            transacao.tipo === 'recebido_item'
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            {transacao.tipo.includes('entrada') || 
+                             transacao.tipo === 'bonus' || 
+                             transacao.tipo === 'compra' || 
+                             transacao.tipo === 'recebido_item' ? '+' : '-'}
+                            {transacao.valor.toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="padrao-uso">
-            <PadraoUso userId={userId!} />
+          <TabsContent value="itens">
+            <Card>
+              <CardHeader>
+                <CardTitle>Últimos Itens Publicados ({perfil.padrao_uso.total_itens_publicados} total)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {perfil.padrao_uso.ultimos_itens.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum item publicado ainda
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {perfil.padrao_uso.ultimos_itens.map((item: any) => (
+                      <div 
+                        key={item.id}
+                        className="flex justify-between items-center p-3 rounded-lg border"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium">{item.titulo}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Publicado em {new Date(item.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                          <Badge variant={
+                            item.status === 'disponivel' ? 'default' : 
+                            item.status === 'reservado' ? 'secondary' : 
+                            'outline'
+                          } className="mt-1">
+                            {item.status}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-green-600">
+                            {item.valor_girinhas.toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documentos">
+            <DocumentosValidados programaId={programaId!} userId={userId!} />
           </TabsContent>
 
           <TabsContent value="observacoes">
