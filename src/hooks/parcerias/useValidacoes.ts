@@ -132,8 +132,12 @@ export function useValidacoes(programaId: string) {
   // Function: Download Documento
   const downloadDocumento = async (validacao: ValidacaoUsuario, documento: Documento) => {
     try {
-      const fileName = documento.path || documento.nome;
-      const filePath = `${validacao.user_id}/${programaId}/${fileName}`;
+      // Usar o caminho exato salvo no documento
+      const filePath = documento.url || documento.path;
+      
+      if (!filePath) {
+        throw new Error('Caminho do documento não encontrado');
+      }
       
       const { data, error } = await supabase.storage
         .from('documentos-parcerias')

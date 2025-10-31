@@ -82,34 +82,45 @@ export function useProgramaDetalhes(organizacaoCodigo: string, programaCodigo: s
     if (!user || !programa) return;
 
     try {
-      // Upload dos documentos
-      const documentosUpload = await Promise.all(
-        documentos.map(async (file) => {
-          const fileName = `${user.id}/${programa.id}/${Date.now()}_${file.name}`;
-          const { data, error } = await supabase.storage
-            .from('documentos-parcerias')
-            .upload(fileName, file);
-          
-          if (error) throw error;
-          
-          return {
-            nome: file.name,
-            tipo: file.name.split('.').pop(),
-            url: data.path,
-            size: file.size
-          };
-        })
-      );
+      // Upload dos documentos apenas se novos arquivos foram anexados
+      let documentosUpload;
+      
+      if (documentos.length > 0) {
+        documentosUpload = await Promise.all(
+          documentos.map(async (file) => {
+            const fileName = `${user.id}/${programa.id}/${Date.now()}_${file.name}`;
+            const { data, error } = await supabase.storage
+              .from('documentos-parcerias')
+              .upload(fileName, file);
+            
+            if (error) throw error;
+            
+            return {
+              nome: file.name,
+              tipo: file.name.split('.').pop(),
+              url: data.path,
+              size: file.size
+            };
+          })
+        );
+      } else {
+        // Reutilizar documentos existentes se não houver novos uploads
+        documentosUpload = validacao?.documentos || [];
+      }
 
-      // Criar validação
+      // Usar upsert para permitir reenvio após rejeição
       const { error } = await supabase
         .from('parcerias_usuarios_validacao')
-        .insert({
+        .upsert({
           user_id: user.id,
           programa_id: programa.id,
           dados_usuario: dadosUsuario,
           documentos: documentosUpload,
-          status: 'pendente'
+          status: 'pendente',
+          motivo_rejeicao: null,
+          data_solicitacao: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,programa_id'
         });
 
       if (error) throw error;

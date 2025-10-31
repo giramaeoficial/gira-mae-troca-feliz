@@ -69,7 +69,8 @@ export interface ValidacaoUsuario {
 export interface Documento {
   nome: string;
   tipo: string;
-  path: string;
+  path?: string;
+  url?: string;
   size?: number;
   uploaded_at?: string;
 }

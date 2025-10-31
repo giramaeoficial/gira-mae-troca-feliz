@@ -27,6 +27,13 @@ export default function ProgramaDetalhes() {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
+  // Prefill automático do formulário após rejeição
+  React.useEffect(() => {
+    if (validacao?.status === 'rejeitado' && validacao.dados_usuario) {
+      setDadosUsuario(validacao.dados_usuario);
+    }
+  }, [validacao]);
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto p-6 space-y-6">
