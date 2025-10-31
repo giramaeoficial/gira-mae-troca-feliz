@@ -1,33 +1,76 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { ShoppingBag, Users, Wallet } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PadraoUsoProps {
-  dados: {
-    percentual_gasto_itens: number;
-    percentual_transferido_p2p: number;
-    saldo_atual: number;
-    categorias_favoritas: string[];
-  };
+  userId: string;
 }
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--muted))'];
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))'];
 
-export default function PadraoUso({ dados }: PadraoUsoProps) {
+export default function PadraoUso({ userId }: PadraoUsoProps) {
+  const { data: carteira, isLoading } = useQuery({
+    queryKey: ['padrao-uso', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('carteiras')
+        .select('saldo_atual, total_gasto, total_recebido')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Padrão de Uso</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-64 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!carteira) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Padrão de Uso</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground py-8">
+            Dados não disponíveis
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const totalRecebido = carteira.total_recebido || 0;
+  const totalGasto = carteira.total_gasto || 0;
+  const saldoAtual = carteira.saldo_atual || 0;
+
   const dadosGrafico = [
-    { name: 'Itens', value: dados.percentual_gasto_itens },
-    { name: 'Transferências P2P', value: dados.percentual_transferido_p2p },
-    { name: 'Saldo', value: 100 - dados.percentual_gasto_itens - dados.percentual_transferido_p2p }
+    { name: 'Gasto', value: totalGasto },
+    { name: 'Saldo', value: saldoAtual },
   ];
 
   return (
-    <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-      {/* Gráfico de Pizza */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribuição de Uso</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <Card>
+      <CardHeader>
+        <CardTitle>Padrão de Uso</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Gráfico */}
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -50,60 +93,42 @@ export default function PadraoUso({ dados }: PadraoUsoProps) {
               </PieChart>
             </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Detalhes */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalhes de Uso</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Saldo Atual */}
-          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-            <Wallet className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm text-muted-foreground">Saldo Atual</p>
-              <p className="text-lg font-semibold">{dados.saldo_atual} Girinhas</p>
-            </div>
-          </div>
-
-          {/* Gasto em Itens */}
-          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-            <ShoppingBag className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm text-muted-foreground">Gasto em Itens</p>
-              <p className="text-lg font-semibold">{dados.percentual_gasto_itens.toFixed(1)}%</p>
-            </div>
-          </div>
-
-          {/* Transferências P2P */}
-          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-            <Users className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm text-muted-foreground">Transferências P2P</p>
-              <p className="text-lg font-semibold">{dados.percentual_transferido_p2p.toFixed(1)}%</p>
-            </div>
-          </div>
-
-          {/* Categorias Favoritas */}
-          {dados.categorias_favoritas && dados.categorias_favoritas.length > 0 && (
-            <div>
-              <p className="text-sm font-medium mb-2">Categorias Favoritas</p>
-              <div className="flex flex-wrap gap-2">
-                {dados.categorias_favoritas.map((categoria, idx) => (
-                  <span 
-                    key={idx}
-                    className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
-                  >
-                    {categoria}
-                  </span>
-                ))}
+          {/* Estatísticas */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 border rounded-lg">
+              <Wallet className="h-8 w-8 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Recebido</p>
+                <p className="text-2xl font-bold">{totalRecebido.toLocaleString('pt-BR')}</p>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            
+            <div className="flex items-center gap-3 p-4 border rounded-lg">
+              <ShoppingBag className="h-8 w-8 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Gasto</p>
+                <p className="text-2xl font-bold">{totalGasto.toLocaleString('pt-BR')}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 p-4 border rounded-lg">
+              <Wallet className="h-8 w-8 text-purple-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Saldo Atual</p>
+                <p className="text-2xl font-bold">{saldoAtual.toLocaleString('pt-BR')}</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-1">Taxa de Utilização</p>
+              <p className="text-xl font-bold">
+                {totalRecebido > 0 ? ((totalGasto / totalRecebido) * 100).toFixed(1) : 0}%
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

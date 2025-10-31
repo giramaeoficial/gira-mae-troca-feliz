@@ -5,16 +5,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Users, Clock, Coins, TrendingUp, CheckCircle, UserPlus } from 'lucide-react';
 import { useGestaoPrograma } from '@/hooks/parcerias/useGestaoPrograma';
-import { useValidacoes } from '@/hooks/parcerias/useValidacoes';
 import CardMetrica from '@/components/admin/parcerias/shared/CardMetrica';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import TabValidacoes from '@/components/admin/parcerias/gestao/tabs/TabValidacoes';
+import TabParticipantes from '@/components/admin/parcerias/gestao/tabs/TabParticipantes';
+import TabDistribuicao from '@/components/admin/parcerias/gestao/tabs/TabDistribuicao';
+import TabConfiguracoes from '@/components/admin/parcerias/gestao/tabs/TabConfiguracoes';
+import TabRelatorios from '@/components/admin/parcerias/gestao/tabs/TabRelatorios';
+import TabDocumentos from '@/components/admin/parcerias/gestao/tabs/TabDocumentos';
+import TabAuditoria from '@/components/admin/parcerias/gestao/tabs/TabAuditoria';
 
 export default function GestaoPrograma() {
   const { programaId } = useParams<{ programaId: string }>();
   const navigate = useNavigate();
   
   const { programa, metricas, loading } = useGestaoPrograma(programaId!);
-  const { validacoesPendentes, loading: loadingValidacoes } = useValidacoes(programaId!);
 
   if (loading) {
     return (
@@ -107,12 +112,16 @@ export default function GestaoPrograma() {
 
         {/* Tabs */}
         <Tabs defaultValue="visao-geral" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsList className="w-full overflow-x-auto flex lg:grid lg:grid-cols-8">
             <TabsTrigger value="visao-geral">Visão Geral</TabsTrigger>
             <TabsTrigger value="validacoes">
               Validações {metricas?.validacoes_pendentes! > 0 && `(${metricas?.validacoes_pendentes})`}
             </TabsTrigger>
             <TabsTrigger value="participantes">Participantes</TabsTrigger>
+            <TabsTrigger value="distribuicao">Distribuição</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+            <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
+            <TabsTrigger value="auditoria">Auditoria</TabsTrigger>
             <TabsTrigger value="configuracoes">Configurações</TabsTrigger>
           </TabsList>
 
@@ -138,68 +147,35 @@ export default function GestaoPrograma() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="validacoes" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Validações Pendentes ({validacoesPendentes.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingValidacoes ? (
-                  <div className="flex justify-center py-8">
-                    <LoadingSpinner />
-                  </div>
-                ) : validacoesPendentes.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nenhuma validação pendente no momento
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {validacoesPendentes.map((validacao) => (
-                      <Card key={validacao.id}>
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">{validacao.profiles?.nome}</p>
-                              <p className="text-sm text-muted-foreground">{validacao.profiles?.email}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Solicitado em {new Date(validacao.data_solicitacao).toLocaleDateString('pt-BR')}
-                              </p>
-                            </div>
-                            <Badge variant="secondary">Pendente</Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          <TabsContent value="validacoes">
+            <TabValidacoes programaId={programaId!} />
           </TabsContent>
 
           <TabsContent value="participantes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Participantes Ativos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center text-muted-foreground py-8">
-                  Em desenvolvimento
-                </p>
-              </CardContent>
-            </Card>
+            <TabParticipantes programaId={programaId!} />
+          </TabsContent>
+
+          <TabsContent value="distribuicao">
+            <TabDistribuicao programaId={programaId!} />
+          </TabsContent>
+
+          <TabsContent value="documentos">
+            <TabDocumentos programaId={programaId!} />
+          </TabsContent>
+
+          <TabsContent value="relatorios">
+            <TabRelatorios programaId={programaId!} />
+          </TabsContent>
+
+          <TabsContent value="auditoria">
+            <TabAuditoria programaId={programaId!} />
           </TabsContent>
 
           <TabsContent value="configuracoes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações do Programa</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center text-muted-foreground py-8">
-                  Em desenvolvimento
-                </p>
-              </CardContent>
-            </Card>
+            <TabConfiguracoes programa={programa} onUpdate={(config) => {
+              // TODO: Implementar atualização via mutation
+              console.log('Update programa:', config);
+            }} />
           </TabsContent>
         </Tabs>
       </div>

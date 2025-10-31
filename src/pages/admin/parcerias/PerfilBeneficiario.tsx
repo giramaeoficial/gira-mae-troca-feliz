@@ -3,9 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Mail, Phone, Calendar, Coins, TrendingUp } from 'lucide-react';
 import { usePerfilBeneficiario } from '@/hooks/parcerias/usePerfilBeneficiario';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import DocumentosValidados from '@/components/admin/parcerias/beneficiario/DocumentosValidados';
+import ObservacoesInternas from '@/components/admin/parcerias/beneficiario/ObservacoesInternas';
+import PadraoUso from '@/components/admin/parcerias/beneficiario/PadraoUso';
 
 export default function PerfilBeneficiario() {
   const { programaId, userId } = useParams<{ programaId: string; userId: string }>();
@@ -138,45 +142,68 @@ export default function PerfilBeneficiario() {
           </CardContent>
         </Card>
 
-        {/* Histórico de Créditos */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Histórico de Créditos ({perfil.historico_creditos.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {perfil.historico_creditos.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                Nenhum crédito recebido ainda
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {perfil.historico_creditos.map((credito) => (
-                  <div 
-                    key={credito.id}
-                    className="flex justify-between items-center p-3 rounded-lg border"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        {new Date(credito.mes_referencia).toLocaleDateString('pt-BR', { 
-                          year: 'numeric', 
-                          month: 'long' 
-                        })}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Creditado em {credito.data_creditacao ? new Date(credito.data_creditacao).toLocaleDateString('pt-BR') : 'N/A'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-green-600">
-                        +{credito.valor_creditado.toLocaleString('pt-BR')}
-                      </p>
-                    </div>
+        {/* Tabs */}
+        <Tabs defaultValue="historico" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="documentos">Documentos</TabsTrigger>
+            <TabsTrigger value="padrao-uso">Padrão de Uso</TabsTrigger>
+            <TabsTrigger value="observacoes">Observações</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="historico">
+            <Card>
+              <CardHeader>
+                <CardTitle>Histórico de Créditos ({perfil.historico_creditos.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {perfil.historico_creditos.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum crédito recebido ainda
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {perfil.historico_creditos.map((credito) => (
+                      <div 
+                        key={credito.id}
+                        className="flex justify-between items-center p-3 rounded-lg border"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            {new Date(credito.mes_referencia).toLocaleDateString('pt-BR', { 
+                              year: 'numeric', 
+                              month: 'long' 
+                            })}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Creditado em {credito.data_creditacao ? new Date(credito.data_creditacao).toLocaleDateString('pt-BR') : 'N/A'}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-green-600">
+                            +{credito.valor_creditado.toLocaleString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="documentos">
+            <DocumentosValidados programaId={programaId!} userId={userId!} />
+          </TabsContent>
+
+          <TabsContent value="padrao-uso">
+            <PadraoUso userId={userId!} />
+          </TabsContent>
+
+          <TabsContent value="observacoes">
+            <ObservacoesInternas programaId={programaId!} userId={userId!} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
