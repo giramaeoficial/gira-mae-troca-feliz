@@ -55,6 +55,9 @@ import ItensFavoritos from '@/pages/ItensFavoritos';
 import ParceriasSociais from '@/pages/ParceriasSociais';
 import ProgramaDetalhes from '@/pages/ProgramaDetalhes';
 import AdminLedger from '@/pages/AdminLedger';
+import ParceriasDashboard from '@/pages/admin/parcerias/ParceriasDashboard';
+import GestaoPrograma from '@/pages/admin/parcerias/GestaoPrograma';
+import PerfilBeneficiario from '@/pages/admin/parcerias/PerfilBeneficiario';
 
 
 //const queryClient = new QueryClient();
@@ -376,6 +379,38 @@ function App() {
               <AuthGuard>
                 <AdminGuard>
                   <AdminLedger />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
+          
+          {/* Sistema de Parcerias - 3 Níveis */}
+          <Route 
+            path="/admin/parcerias" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <ParceriasDashboard />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/admin/parcerias/:programaId" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <GestaoPrograma />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/admin/parcerias/:programaId/beneficiario/:userId" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <PerfilBeneficiario />
                 </AdminGuard>
               </AuthGuard>
             } 
