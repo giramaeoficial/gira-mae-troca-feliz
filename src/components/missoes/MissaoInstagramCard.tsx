@@ -5,11 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Instagram, CheckCircle, Clock, ExternalLink, Gift } from 'lucide-react';
 import { useMissaoInstagram } from '@/hooks/useMissaoInstagram';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const MissaoInstagramCard: React.FC<{
   onColetar?: (missaoId: string) => void;
   isCollecting?: boolean;
 }> = ({ onColetar, isCollecting }) => {
+  const queryClient = useQueryClient();
   const {
     verification,
     missao,
@@ -45,6 +47,18 @@ export const MissaoInstagramCard: React.FC<{
     window.open('https://instagram.com/giramaeoficial', '_blank');
   };
 
+  const handleColetar = async () => {
+    if (!onColetar || !missao?.id) return;
+    
+    // Executar coleta
+    await onColetar(missao.id);
+    
+    // Invalidar queries para atualizar UI
+    queryClient.invalidateQueries({ queryKey: ['missao-instagram'] });
+    queryClient.invalidateQueries({ queryKey: ['missoes'] });
+    queryClient.invalidateQueries({ queryKey: ['instagram-verification'] });
+  };
+
   return (
     <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
       <CardHeader>
@@ -73,7 +87,7 @@ export const MissaoInstagramCard: React.FC<{
         <p className="text-sm text-muted-foreground">{missao.descricao}</p>
 
         {/* Status: Não Conectado */}
-        {!isConnected && (
+        {!isConnected && !isMissaoColetada && (
           <div className="space-y-3">
             <div className="bg-card/80 rounded-lg p-4 space-y-3 border">
               <p className="font-semibold text-sm">📱 Passo 1: Informe seu Instagram</p>
@@ -97,7 +111,7 @@ export const MissaoInstagramCard: React.FC<{
         )}
 
         {/* Status: Conectado mas não verificado */}
-        {isConnected && !isVerified && !isMissaoCompleta && (
+        {isConnected && !isVerified && !isMissaoCompleta && !isMissaoColetada && (
           <div className="space-y-3">
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -158,7 +172,7 @@ export const MissaoInstagramCard: React.FC<{
               {onColetar && (
                 <Button
                   size="sm"
-                  onClick={() => onColetar(missao.id)}
+                  onClick={handleColetar}
                   disabled={isCollecting}
                   className="w-full"
                 >
