@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trophy, Target, Users, Sparkles, Gift, Clock, CheckCircle, Star, Zap } from 'lucide-react';
+import { Trophy, Target, Users, Sparkles, Gift, Clock, CheckCircle, Star, Zap, Eye, EyeOff } from 'lucide-react';
 import { useMissoes } from '@/hooks/useMissoes';
 import { useMissoesSegmentadas } from '@/hooks/useMissoesSegmentadas';
 import { useAuth } from '@/hooks/useAuth';
@@ -41,6 +41,7 @@ const MissionCard: React.FC<{ missao: any; onColetar: (id: string) => void; isCo
   };
 
   const progressPercentual = Math.round((missao.progresso_atual / missao.progresso_necessario) * 100);
+  const isColetada = missao.status === 'coletada';
 
   const handleColetar = async () => {
     console.log('🎯 Clique no botão coletar - Missão:', missao.id, missao.titulo);
@@ -48,7 +49,7 @@ const MissionCard: React.FC<{ missao: any; onColetar: (id: string) => void; isCo
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className={`hover:shadow-md transition-shadow ${isColetada ? 'opacity-60' : ''}`}>
       <CardContent className="p-4">
         <div className="flex items-center space-x-3">
           <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
@@ -130,9 +131,10 @@ const MissaoSegmentadaCard: React.FC<{ missao: any; onColetar: (id: string) => v
 }) => {
   const progressPercentual = Math.round((missao.progresso_atual / missao.progresso_necessario) * 100);
   const temEventos = missao.acoes_eventos && missao.acoes_eventos.length > 0;
+  const isColetada = missao.status === 'coletada';
 
   return (
-    <Card className="hover:shadow-md transition-shadow border-l-4 border-l-purple-500">
+    <Card className={`hover:shadow-md transition-shadow border-l-4 border-l-purple-500 ${isColetada ? 'opacity-60' : ''}`}>
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
           <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
@@ -146,7 +148,7 @@ const MissaoSegmentadaCard: React.FC<{ missao: any; onColetar: (id: string) => v
             </div>
             <p className="text-xs text-gray-500 mb-2">{missao.descricao}</p>
             
-            {temEventos && (
+            {temEventos && !isColetada && (
               <div className="flex flex-wrap gap-1 mb-2">
                 {missao.acoes_eventos.slice(0, 2).map((evento: any, index: number) => (
                   <Button
@@ -224,6 +226,8 @@ const MissaoSegmentadaCard: React.FC<{ missao: any; onColetar: (id: string) => v
 };
 
 const Missoes: React.FC = () => {
+  const [mostrarColetadas, setMostrarColetadas] = useState(false);
+
   const { 
     missoes: missoesSimples, 
     isLoading: loadingSimples, 
@@ -239,10 +243,19 @@ const Missoes: React.FC = () => {
 
   // Combinar missões
   const todasMissoes = [...missoesSimples, ...missoesSegmentadas];
+  
+  // Filtrar missões baseado no toggle
+  const missoesFiltradas = mostrarColetadas 
+    ? todasMissoes 
+    : todasMissoes.filter(m => m.status !== 'coletada');
+
+  // Contar missões
+  const totalAtivas = todasMissoes.filter(m => m.status !== 'coletada').length;
+  const totalColetadas = todasMissoes.filter(m => m.status === 'coletada').length;
+
   const isLoading = loadingSimples || loadingSegmentadas;
 
   const handleColetarRecompensa = async (missaoId: string) => {
-    // Verificar se é missão segmentada ou simples
     const missaoSegmentada = missoesSegmentadas.find(m => m.id === missaoId);
     
     if (missaoSegmentada) {
@@ -274,19 +287,64 @@ const Missoes: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-6 space-y-6 pb-32 md:pb-8">
-          {/* Header simples */}
+          {/* Header com contador e toggle */}
           <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-0">
             <CardHeader className="text-center pb-4">
               <CardTitle className="text-xl font-bold text-gray-800 flex items-center justify-center gap-2">
                 <Trophy className="w-6 h-6 text-purple-500" />
                 Missões GiraMãe
               </CardTitle>
+              
+              {/* Contador de missões */}
+              <div className="flex items-center justify-center gap-4 mt-4 text-sm">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                  <span className="text-gray-600">
+                    {totalAtivas} {totalAtivas === 1 ? 'Ativa' : 'Ativas'}
+                  </span>
+                </div>
+                {totalColetadas > 0 && (
+                  <>
+                    <div className="w-px h-4 bg-gray-300" />
+                    <div className="flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-500">
+                        {totalColetadas} {totalColetadas === 1 ? 'Completada' : 'Completadas'}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Toggle para mostrar coletadas */}
+              {totalColetadas > 0 && (
+                <div className="mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMostrarColetadas(!mostrarColetadas)}
+                    className="text-xs"
+                  >
+                    {mostrarColetadas ? (
+                      <>
+                        <EyeOff className="w-4 h-4 mr-2" />
+                        Ocultar Completadas
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4 mr-2" />
+                        Mostrar Completadas ({totalColetadas})
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardHeader>
           </Card>
 
-          {/* Lista de missões */}
+          {/* Lista de missões filtradas */}
           <div className="space-y-3">
-            {todasMissoes.map(missao => {
+            {missoesFiltradas.map(missao => {
               const isSegmentada = missoesSegmentadas.some(m => m.id === missao.id);
               const isInstagram = missao.titulo?.toLowerCase().includes('instagram') || 
                                   missao.tipo_missao === 'social';
@@ -327,11 +385,34 @@ const Missoes: React.FC = () => {
             })}
           </div>
 
+          {/* Estados vazios */}
+          {missoesFiltradas.length === 0 && !mostrarColetadas && totalColetadas > 0 && (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trophy className="w-10 h-10 text-green-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Parabéns! 🎉
+              </h3>
+              <p className="text-gray-500 text-sm mb-4">
+                Você completou todas as missões disponíveis
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMostrarColetadas(true)}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Ver Missões Completadas
+              </Button>
+            </div>
+          )}
+
           {todasMissoes.length === 0 && (
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900">Nenhuma missão disponível</h3>
-              <p className="text-gray-500">Todas as missões foram completadas!</p>
+              <p className="text-gray-500">Novas missões em breve!</p>
             </div>
           )}
         </main>
