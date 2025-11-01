@@ -38,11 +38,16 @@ export const useMissaoInstagram = () => {
 
       return data as InstagramVerification | null;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: (query) => {
+      // Auto-refetch a cada 5 segundos se estiver pending
+      const data = query.state.data as InstagramVerification | null;
+      return data?.verification_status === 'pending' ? 5000 : false;
+    }
   });
 
   const { data: missao, isLoading: isLoadingMissao } = useQuery({
-    queryKey: ['missao-instagram'],
+    queryKey: ['missao-instagram', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
 
@@ -50,13 +55,14 @@ export const useMissaoInstagram = () => {
         .from('missoes')
         .select(`
           *,
-          missoes_usuarios!left(
+          missoes_usuarios!inner(
             progresso_atual,
             progresso_necessario,
             status,
             data_completada
           )
         `)
+        .eq('missoes_usuarios.user_id', user.id)
         .ilike('titulo', '%Instagram%')
         .eq('tipo_missao', 'social')
         .eq('ativo', true)
