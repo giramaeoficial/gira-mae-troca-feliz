@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
+import { MissaoInstagramCard } from '@/components/missoes/MissaoInstagramCard';
 
 const MissionCard: React.FC<{ missao: any; onColetar: (id: string) => void; isCollecting: boolean }> = ({ 
   missao, 
@@ -287,7 +288,21 @@ const Missoes: React.FC = () => {
           <div className="space-y-3">
             {todasMissoes.map(missao => {
               const isSegmentada = missoesSegmentadas.some(m => m.id === missao.id);
+              const isInstagram = missao.titulo?.toLowerCase().includes('instagram') || 
+                                  missao.tipo_missao === 'social';
               
+              // Missão Instagram - Card específico
+              if (isInstagram && missao.titulo?.toLowerCase().includes('instagram')) {
+                return (
+                  <MissaoInstagramCard 
+                    key={missao.id}
+                    onColetar={handleColetarRecompensa}
+                    isCollecting={coletarRecompensa.isPending || coletarRecompensaSegmentada.isPending}
+                  />
+                );
+              }
+              
+              // Missão Segmentada
               if (isSegmentada) {
                 return (
                   <MissaoSegmentadaCard 
@@ -298,16 +313,17 @@ const Missoes: React.FC = () => {
                     isCollecting={coletarRecompensaSegmentada.isPending}
                   />
                 );
-              } else {
-                return (
-                  <MissionCard 
-                    key={missao.id} 
-                    missao={missao} 
-                    onColetar={handleColetarRecompensa}
-                    isCollecting={coletarRecompensa.isPending}
-                  />
-                );
               }
+              
+              // Missão Simples
+              return (
+                <MissionCard 
+                  key={missao.id} 
+                  missao={missao} 
+                  onColetar={handleColetarRecompensa}
+                  isCollecting={coletarRecompensa.isPending}
+                />
+              );
             })}
           </div>
 
