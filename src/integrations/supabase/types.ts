@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
@@ -1372,6 +1372,47 @@ export type Database = {
         }
         Relationships: []
       }
+      limites_avaliacoes_usuarios: {
+        Row: {
+          created_at: string | null
+          id: string
+          limite_maximo: number | null
+          periodo_inicio: string | null
+          proximo_reset: string | null
+          total_avaliacoes_bonificadas: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          limite_maximo?: number | null
+          periodo_inicio?: string | null
+          proximo_reset?: string | null
+          total_avaliacoes_bonificadas?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          limite_maximo?: number | null
+          periodo_inicio?: string | null
+          proximo_reset?: string | null
+          total_avaliacoes_bonificadas?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "limites_avaliacoes_usuarios_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       limites_missoes_usuarios: {
         Row: {
           created_at: string | null
@@ -2610,6 +2651,7 @@ export type Database = {
           prorrogavel: boolean
           sinal: number
           tipo: string
+          transferivel: boolean | null
           updated_at: string | null
           validade_dias: number | null
           valor_padrao: number | null
@@ -2626,6 +2668,7 @@ export type Database = {
           prorrogavel?: boolean
           sinal: number
           tipo: string
+          transferivel?: boolean | null
           updated_at?: string | null
           validade_dias?: number | null
           valor_padrao?: number | null
@@ -2642,6 +2685,7 @@ export type Database = {
           prorrogavel?: boolean
           sinal?: number
           tipo?: string
+          transferivel?: boolean | null
           updated_at?: string | null
           validade_dias?: number | null
           valor_padrao?: number | null
@@ -3523,6 +3567,14 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
+      ledger_bonus_avaliacao: {
+        Args: {
+          p_avaliacao_id: string
+          p_avaliado_id: string
+          p_avaliador_id: string
+        }
+        Returns: string
+      }
       ledger_bonus_cadastro: { Args: { p_user_id: string }; Returns: string }
       ledger_bonus_diario: { Args: { p_user_id: string }; Returns: string }
       ledger_bonus_indicacao: {
@@ -3642,6 +3694,10 @@ export type Database = {
       }
       obter_preco_manual: { Args: never; Returns: number }
       obter_resultado_cancelamento: { Args: { p_data: Json }; Returns: boolean }
+      obter_status_limite_avaliacoes: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
       obter_valor_bonus: { Args: { p_tipo_bonus: string }; Returns: number }
       pode_usuario_agir: {
         Args: { p_acao?: string; p_user_id: string }
@@ -3795,6 +3851,7 @@ export type Database = {
         Args: { p_admin_id: string; p_penalidade_id: string }
         Returns: Json
       }
+      resetar_limites_avaliacoes_mensais: { Args: never; Returns: number }
       sair_fila_espera: {
         Args: { p_item_id: string; p_usuario_id: string }
         Returns: boolean
