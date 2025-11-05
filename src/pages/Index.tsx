@@ -219,7 +219,7 @@ const LandingPageOptimized = () => {
         <section className="py-12 md:py-20 px-4 bg-white/50">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-8">
-              O que  GiraMãe faz diferente para facilitar as trocas infantis
+              O que o GiraMãe faz diferente para facilitar as trocas infantis
             </h2>
             <p className="text-lg md:text-xl text-gray-600 mb-10">
               Entenda como facilitamos a vida das mães na hora das trocas:
