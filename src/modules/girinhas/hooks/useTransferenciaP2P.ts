@@ -8,15 +8,17 @@ import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { useCarteira } from '@/hooks/useCarteira';
 
 interface DadosTransferencia {
-  destinatario_id: string;
+  email_destinatario: string;  // ✅ MUDOU: era destinatario_id
   quantidade: number;
 }
 
 interface ResultadoTransferencia {
-  sucesso: boolean;
+  success: boolean;
   transferencia_id?: string;
   mensagem?: string;
   erro?: string;
+  destinatario_nome?: string;
+  destinatario_email?: string;
 }
 
 export const useTransferenciaP2P = () => {
@@ -26,18 +28,18 @@ export const useTransferenciaP2P = () => {
   const { taxaTransferencia, isLoadingConfig } = useConfigSistema();
   const { saldo } = useCarteira();
 
-  // Estados locais do formulário
+  // ✅ MUDOU: Estados locais do formulário
   const [quantidade, setQuantidade] = useState('');
-  const [usuarioSelecionado, setUsuarioSelecionado] = useState<any>(null);
+  const [emailDestinatario, setEmailDestinatario] = useState('');  // ✅ NOVO
 
   // Cálculos derivados
   const valorQuantidade = parseFloat(quantidade) || 0;
   const taxa = (valorQuantidade * taxaTransferencia) / 100;
   const valorLiquido = valorQuantidade - taxa;
 
-  // Validações
+  // ✅ MUDOU: Validações
   const podeTransferir = 
-    usuarioSelecionado && 
+    emailDestinatario.trim().length > 0 &&  // ✅ NOVO: valida email
     valorQuantidade > 0 && 
     valorQuantidade <= saldo &&
     !isLoadingConfig;
@@ -51,9 +53,9 @@ export const useTransferenciaP2P = () => {
         throw new Error('Usuário não autenticado');
       }
 
-      // Validações finais
-      if (!dados.destinatario_id || !dados.quantidade) {
-        throw new Error('Dados obrigatórios não informados');
+      // ✅ MUDOU: Validações finais
+      if (!dados.email_destinatario || !dados.quantidade) {
+        throw new Error('Email e quantidade são obrigatórios');
       }
 
       if (dados.quantidade <= 0) {
@@ -70,23 +72,27 @@ export const useTransferenciaP2P = () => {
 
       console.log('🔄 Iniciando transferência P2P:', dados);
 
-      // Usar Edge Function que já implementa toda a lógica
+      // Usar Edge Function atualizada
       const { data: authData } = await supabase.auth.getSession();
       if (!authData.session?.access_token) {
         throw new Error('Sessão expirada. Faça login novamente.');
       }
 
-      const response = await fetch('https://mkuuwnqiaeguuexeeicw.supabase.co/functions/v1/transferir-p2p', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authData.session.access_token}`,
-        },
-        body: JSON.stringify({
-          destinatario_id: dados.destinatario_id,
-          quantidade: dados.quantidade
-        })
-      });
+      // ✅ MUDOU: Envia email ao invés de UUID
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/transferir-p2p`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authData.session.access_token}`,
+          },
+          body: JSON.stringify({
+            email_destinatario: dados.email_destinatario,  // ✅ MUDOU
+            quantidade: dados.quantidade
+          })
+        }
+      );
 
       const result = await response.json();
 
@@ -99,15 +105,15 @@ export const useTransferenciaP2P = () => {
     onSuccess: (resultado) => {
       // Limpar formulário
       setQuantidade('');
-      setUsuarioSelecionado(null);
+      setEmailDestinatario('');  // ✅ MUDOU
 
-      // Invalidar apenas os caches necessários
+      // Invalidar caches
       queryClient.invalidateQueries({ queryKey: ['carteira', user?.id] });
 
       // Toast de sucesso
       toast({
         title: "✅ Transferência realizada!",
-        description: resultado.mensagem || `${valorQuantidade.toFixed(2)} Girinhas transferidas com sucesso.`,
+        description: resultado.mensagem || `Transferência para ${resultado.destinatario_nome} concluída com sucesso.`,
       });
 
       console.log('✅ Transferência concluída:', resultado);
@@ -115,17 +121,21 @@ export const useTransferenciaP2P = () => {
     onError: (error: any) => {
       console.error('❌ Erro na transferência:', error);
       
-      // Mapeamento de erros específicos
+      // Mapeamento de erros
       let mensagemErro = "Erro na transferência. Tente novamente.";
       
       if (error.message?.includes('Saldo insuficiente')) {
         mensagemErro = "Saldo insuficiente para esta transferência.";
-      } else if (error.message?.includes('não encontrado')) {
-        mensagemErro = "Destinatário não encontrado.";
+      } else if (error.message?.includes('não encontrado') || error.message?.includes('Destinatário não encontrado')) {
+        mensagemErro = "Não encontramos nenhuma mãe cadastrada com este email.";
       } else if (error.message?.includes('Muitas transferências')) {
         mensagemErro = "Muitas transferências recentes. Aguarde um momento.";
       } else if (error.message?.includes('Sessão expirada')) {
         mensagemErro = "Sua sessão expirou. Faça login novamente.";
+      } else if (error.message?.includes('Email inválido')) {
+        mensagemErro = "Por favor, informe um email válido.";
+      } else if (error.message?.includes('bloqueadas')) {
+        mensagemErro = error.message; // Mensagem completa sobre bônus bloqueados
       } else if (error.message) {
         mensagemErro = error.message;
       }
@@ -138,35 +148,35 @@ export const useTransferenciaP2P = () => {
     },
   });
 
-  // Função para executar transferência
+  // ✅ MUDOU: Função para executar transferência
   const executarTransferencia = () => {
-    if (!usuarioSelecionado || !quantidade) {
+    if (!emailDestinatario || !quantidade) {
       toast({
         title: "Dados incompletos",
-        description: "Selecione um destinatário e informe a quantidade.",
+        description: "Informe o email da destinatária e a quantidade.",
         variant: "destructive",
       });
       return;
     }
 
     transferirMutation.mutate({
-      destinatario_id: usuarioSelecionado.id,
+      email_destinatario: emailDestinatario,  // ✅ MUDOU
       quantidade: valorQuantidade,
     });
   };
 
-  // Função para limpar formulário
+  // ✅ MUDOU: Função para limpar formulário
   const limparFormulario = () => {
     setQuantidade('');
-    setUsuarioSelecionado(null);
+    setEmailDestinatario('');  // ✅ MUDOU
   };
 
   return {
-    // === DADOS DO FORMULÁRIO ===
+    // ✅ MUDOU: DADOS DO FORMULÁRIO
     quantidade,
     setQuantidade,
-    usuarioSelecionado, 
-    setUsuarioSelecionado,
+    emailDestinatario,      // ✅ NOVO
+    setEmailDestinatario,   // ✅ NOVO
 
     // === CÁLCULOS ===
     valorQuantidade,
