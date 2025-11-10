@@ -184,35 +184,14 @@ const ModalItemDetalhes: React.FC<ModalItemDetalhesProps> = ({
                 isModal={true} // ✅ Prop para indicar que está em modal
               />
 
-              {/* ✅ Ações Específicas do Modal */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={abrirDetalhesCompletos}
-                    className="flex-1"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Ver página completa
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={onClose}
-                    className="flex-1"
-                  >
-                    Fechar
-                  </Button>
-                </div>
-              </div>
-
               {/* ✅ Contexto da Reserva */}
               {contextType && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600">
-                    {contextType === 'reserva' && "✅ Você reservou este item"}
-                    {contextType === 'fila' && "⏳ Você está na fila de espera"}
-                    {contextType === 'venda' && "🏷️ Este é seu item publicado"}
-                    {contextType === 'concluida' && "🎉 Troca concluída com sucesso"}
+                    {contextType === 'reserva' && "Você reservou este item"}
+                    {contextType === 'fila' && "Você está na fila de espera"}
+                    {contextType === 'venda' && "Este é seu item publicado"}
+                    {contextType === 'concluida' && "Troca concluída com sucesso"}
                   </p>
                 </div>
               )}
