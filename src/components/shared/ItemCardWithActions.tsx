@@ -167,11 +167,6 @@ const ItemCardWithActions: React.FC<ItemCardWithActionsProps> = ({ item }) => {
                 {item.valor_girinhas}
               </span>
             </div>
-            <Button size="sm" variant="outline" asChild>
-              <Link to={`/item/${item.id}`}>
-                Ver Detalhes
-              </Link>
-            </Button>
           </div>
         </CardContent>
       </Card>
