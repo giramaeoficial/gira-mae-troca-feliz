@@ -124,26 +124,6 @@ const ModalItemDetalhes: React.FC<ModalItemDetalhesProps> = ({
             <DialogTitle className="text-lg font-semibold">
               Detalhes do Item
             </DialogTitle>
-            <div className="flex items-center gap-2">
-              {/* Botão para abrir página completa */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={abrirDetalhesCompletos}
-                className="text-primary hover:text-primary-dark"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </Button>
-              {/* Botão fechar */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
           </div>
         </DialogHeader>
 
