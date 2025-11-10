@@ -1,4 +1,3 @@
-
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -10,18 +9,22 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    // ✅ componentTagger adiciona data-component automaticamente em dev
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
+  
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  
   // Garantir que arquivos públicos sejam servidos corretamente
   publicDir: 'public',
+  
   build: {
     rollupOptions: {
       output: {
@@ -31,12 +34,14 @@ export default defineConfig(({ mode }) => ({
           'vendor-router': ['react-router-dom'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-ui': ['lucide-react'],
+          
           // Separar páginas pesadas
-          'page-perfil': ['src/pages/Perfil.tsx'],
-          'page-publicar': ['src/pages/PublicarItem.tsx'],
-          'page-feed': ['src/pages/FeedOptimized.tsx']
+          'page-perfil': ['/src/pages/Perfil.tsx'],
+          'page-publicar': ['/src/pages/PublicarItem.tsx'],
+          'page-feed': ['/src/pages/FeedOptimized.tsx'],
         }
       },
+      
       // Garantir que service workers sejam copiados
       external: [
         '/OneSignalSDK.sw.js',
@@ -44,14 +49,23 @@ export default defineConfig(({ mode }) => ({
         '/sw.js'
       ]
     },
+    
     // Otimizações básicas
     target: 'esnext',
     minify: 'esbuild',
-    sourcemap: false,
+    
+    // ✅ Habilitar sourcemap em desenvolvimento para melhor debug
+    sourcemap: mode === 'development' ? 'inline' : false,
+    
     chunkSizeWarningLimit: 1000,
-    // Copiar arquivos públicos
     copyPublicDir: true,
   },
+  
+  // ✅ Source maps para CSS também
+  css: {
+    devSourcemap: mode === 'development',
+  },
+  
   // Otimizações de desenvolvimento
   optimizeDeps: {
     include: [
@@ -61,5 +75,11 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
       'lucide-react'
     ],
-  }
+  },
+  
+  // ✅ Configurações adicionais para melhor debugging
+  define: {
+    // Permite usar import.meta.env.DEV no código
+    __DEV__: mode === 'development',
+  },
 }));
