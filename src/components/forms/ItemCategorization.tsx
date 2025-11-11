@@ -1,4 +1,4 @@
-// src/components/forms/ItemCategorization.tsx - CORREÇÃO COMPLETA
+// src/components/forms/ItemCategorization.tsx - CORREÇÃO DEFINITIVA
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -51,45 +51,65 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     onFieldChange('tamanho_valor', valor);
   };
 
-  // Filtrar subcategorias sem duplicação
+  // ✅ FIX 1: Proteção completa no filtro de subcategorias
   const subcategoriasFiltradas = React.useMemo(() => {
-    if (!subcategorias || !formData.categoria_id) return [];
+    if (!Array.isArray(subcategorias) || !formData.categoria_id) return [];
     
-    const filtradas = subcategorias.filter(sub => sub.categoria_pai === formData.categoria_id);
-    
-    // Remover duplicatas baseado no nome
-    const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
-      if (!acc.some(item => item.nome === sub.nome)) {
-        acc.push(sub);
-      }
-      return acc;
-    }, [] as typeof filtradas);
-    
-    return subcategoriasUnicas;
+    try {
+      const filtradas = subcategorias.filter(sub => 
+        sub && sub.categoria_pai === formData.categoria_id
+      );
+      
+      if (!Array.isArray(filtradas)) return [];
+      
+      const subcategoriasUnicas = filtradas.reduce((acc, sub) => {
+        if (sub && sub.nome && !acc.some(item => item && item.nome === sub.nome)) {
+          acc.push(sub);
+        }
+        return acc;
+      }, [] as typeof filtradas);
+      
+      return subcategoriasUnicas;
+    } catch (error) {
+      console.error('Erro ao filtrar subcategorias:', error);
+      return [];
+    }
   }, [subcategorias, formData.categoria_id]);
 
-  // ✅ CORREÇÃO CRÍTICA: Tipo explícito no reduce para evitar crash
+  // ✅ FIX 2: Proteção completa no processamento de tamanhos
   const tamanhosDisponiveis = React.useMemo(() => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
-    // Combinar tamanhos de TODOS os tipos, não apenas o primeiro
-    const todosTamanhos: any[] = [];
-    
-    Object.keys(tiposTamanho).forEach(tipoKey => {
-      const tamanhosDoTipo = tiposTamanho[tipoKey] || [];
-      todosTamanhos.push(...tamanhosDoTipo);
-    });
-    
-    // ✅ FIX: Array inicial tipado explicitamente (evita undefined em mobile)
-    const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
-      if (!acc.some(item => item.valor === tamanho.valor)) {
-        acc.push(tamanho);
-      }
-      return acc;
-    }, [] as any[]);
-    
-    // Ordenar pelos campos ordem para manter ordem correta
-    return tamanhosUnicos.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+    try {
+      const todosTamanhos: any[] = [];
+      
+      Object.keys(tiposTamanho).forEach(tipoKey => {
+        const tamanhosDoTipo = tiposTamanho[tipoKey];
+        if (Array.isArray(tamanhosDoTipo)) {
+          todosTamanhos.push(...tamanhosDoTipo);
+        }
+      });
+      
+      if (!Array.isArray(todosTamanhos) || todosTamanhos.length === 0) return [];
+      
+      const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
+        if (tamanho && tamanho.valor && !acc.some(item => item && item.valor === tamanho.valor)) {
+          acc.push(tamanho);
+        }
+        return acc;
+      }, [] as any[]);
+      
+      if (!Array.isArray(tamanhosUnicos)) return [];
+      
+      return tamanhosUnicos.sort((a, b) => {
+        const ordemA = a && typeof a.ordem === 'number' ? a.ordem : 0;
+        const ordemB = b && typeof b.ordem === 'number' ? b.ordem : 0;
+        return ordemA - ordemB;
+      });
+    } catch (error) {
+      console.error('Erro ao processar tamanhos:', error);
+      return [];
+    }
   }, [tiposTamanho]);
 
   return (
