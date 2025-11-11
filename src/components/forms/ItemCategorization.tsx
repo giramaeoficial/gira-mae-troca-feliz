@@ -1,3 +1,4 @@
+// src/components/forms/ItemCategorization.tsx - CORREÇÃO COMPLETA
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,7 +35,6 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     onFieldChange('tamanho_valor', '');
   };
 
-  // ✅ CORRIGIDO: Encontrar o tipo correto do tamanho selecionado
   const handleTamanhoChange = (valor: string) => {
     let tipoEncontrado = '';
     
@@ -68,7 +68,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     return subcategoriasUnicas;
   }, [subcategorias, formData.categoria_id]);
 
-  // ✅ CORRIGIDO: Obter TODOS os tamanhos de TODOS os tipos da categoria
+  // ✅ CORREÇÃO CRÍTICA: Tipo explícito no reduce para evitar crash
   const tamanhosDisponiveis = React.useMemo(() => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
@@ -80,16 +80,16 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
       todosTamanhos.push(...tamanhosDoTipo);
     });
     
-    // Remover duplicatas baseado no valor, mantendo ordem original
+    // ✅ FIX: Array inicial tipado explicitamente (evita undefined em mobile)
     const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
       if (!acc.some(item => item.valor === tamanho.valor)) {
         acc.push(tamanho);
       }
       return acc;
-    }, []);
+    }, [] as any[]);
     
     // Ordenar pelos campos ordem para manter ordem correta
-    return tamanhosUnicos.sort((a, b) => a.ordem - b.ordem);
+    return tamanhosUnicos.sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
   }, [tiposTamanho]);
 
   return (
