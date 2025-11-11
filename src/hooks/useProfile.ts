@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -22,6 +22,10 @@ export const useProfile = () => {
   const [filhos, setFilhos] = useState<FilhoComEscola[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // ✅ CORREÇÃO: Usar ref para evitar refetch desnecessário ao trocar abas
+  const hasFetchedRef = useRef(false);
+  const currentUserIdRef = useRef<string | undefined>(undefined);
 
   const fetchProfile = useCallback(async () => {
     if (!user) {
@@ -249,9 +253,46 @@ export const useProfile = () => {
     }
   }, []);
 
+  // ✅ CORREÇÃO: useEffect melhorado para evitar refetch ao trocar abas
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    // Se não tem usuário, limpar tudo
+    if (!user) {
+      hasFetchedRef.current = false;
+      currentUserIdRef.current = undefined;
+      setProfile(null);
+      setFilhos([]);
+      setLoading(false);
+      return;
+    }
+
+    // Se mudou de usuário, resetar
+    if (currentUserIdRef.current !== user.id) {
+      hasFetchedRef.current = false;
+      currentUserIdRef.current = user.id;
+    }
+
+    // Só fazer fetch se ainda não buscou para este usuário
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchProfile();
+    }
+  }, [user, fetchProfile]);
+
+  // ✅ CORREÇÃO: Listener para visibility - não fazer nada quando trocar abas
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // Não fazer nada quando a aba ficar visível novamente
+      if (!document.hidden) {
+        console.log('⚠️ Aba voltou ao foco - mantendo dados do perfil em cache');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   return {
     profile,
