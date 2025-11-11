@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -90,8 +91,7 @@ export const useMeusItens = (userId: string) => {
     },
     enabled: !!userId,
     staleTime: 120000, // 2 minutos
-    gcTime: 300000,
-    refetchOnWindowFocus: false // ✅ CORRIGIDO: Evita recarregar ao trocar de aba
+    gcTime: 300000
   });
 };
 
@@ -120,8 +120,7 @@ export const useItensUsuario = (userId: string) => {
     },
     enabled: !!userId,
     staleTime: 120000,
-    gcTime: 300000,
-    refetchOnWindowFocus: false // ✅ CORRIGIDO: Evita recarregar ao trocar de aba
+    gcTime: 300000
   });
 };
 
@@ -152,8 +151,7 @@ export const useItem = (itemId: string) => {
     },
     enabled: !!itemId,
     staleTime: 180000, // 3 minutos
-    gcTime: 300000,
-    refetchOnWindowFocus: false // ✅ CORRIGIDO: Evita recarregar ao trocar de aba
+    gcTime: 300000
   });
 };
 
