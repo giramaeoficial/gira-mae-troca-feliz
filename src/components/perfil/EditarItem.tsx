@@ -34,6 +34,14 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
     }
   }, [isOpen, item, resetForm]);
 
+  // Prevenir fechamento automático ao trocar de aba
+  const handleOpenChange = (open: boolean) => {
+    // Só permite fechar se o usuário clicar explicitamente (não por eventos de visibilidade)
+    if (!open && !loading) {
+      onClose();
+    }
+  };
+
   const handleFieldChange = (field: string, value: any) => {
     updateFormData({ [field]: value });
   };
@@ -51,7 +59,7 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
   // Mostrar loading enquanto as opções estão carregando ou o formulário não foi inicializado
   if (isLoadingOptions || !isFormInitialized) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange} modal={true}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
           <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white p-6 rounded-t-lg">
             <DialogTitle className="text-xl font-semibold text-center flex items-center justify-center gap-2">
@@ -70,7 +78,7 @@ const EditarItem: React.FC<EditarItemProps> = ({ item, isOpen, onClose, onSucces
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange} modal={true}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <div className="bg-gradient-to-r from-pink-500 to-purple-500 text-white p-6 rounded-t-lg">
           <DialogTitle className="text-xl font-semibold text-center flex items-center justify-center gap-2">
