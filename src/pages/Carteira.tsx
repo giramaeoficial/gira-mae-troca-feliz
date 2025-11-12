@@ -188,7 +188,7 @@ const Carteira = () => {
                         >
                           <div className="flex items-center gap-3">
                             <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                              transacao.config?.sinal === 1
+                              Number(transacao.valor) >= 0
                                 ? 'text-green-600 bg-green-50 border-green-200'
                                 : 'text-red-600 bg-red-50 border-red-200'
                             }`}>
@@ -215,7 +215,7 @@ const Carteira = () => {
                                 : 'text-red-600'
                             }`}>
                               {transacao.config?.sinal === 1 ? '+' : '-'}
-                              {Number(transacao.valor).toFixed(2)}
+                              {Math.abs(Number(transacao.valor)).toFixed(2)}
                             </p>
                             {transacao.metadata?.cotacao_utilizada && (
                               <p className="text-xs text-gray-500">
