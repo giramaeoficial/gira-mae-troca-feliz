@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
@@ -187,6 +186,7 @@ const Carteira = () => {
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-center gap-3">
+                            {/* ✅ CORREÇÃO 1: Badge usa valor >= 0 */}
                             <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
                               Number(transacao.valor) >= 0
                                 ? 'text-green-600 bg-green-50 border-green-200'
@@ -209,12 +209,14 @@ const Carteira = () => {
                             </div>
                           </div>
                           <div className="text-right">
+                            {/* ✅ CORREÇÃO 2: Cor e sinal usam valor >= 0 */}
                             <p className={`font-bold ${
-                              transacao.config?.sinal === 1
+                              Number(transacao.valor) >= 0
                                 ? 'text-green-600' 
                                 : 'text-red-600'
                             }`}>
-                              {transacao.config?.sinal === 1 ? '+' : '-'}
+                              {/* ✅ CORREÇÃO 3: Sinal baseado no valor */}
+                              {Number(transacao.valor) >= 0 ? '+' : '-'}
                               {Math.abs(Number(transacao.valor)).toFixed(2)}
                             </p>
                             {transacao.metadata?.cotacao_utilizada && (
