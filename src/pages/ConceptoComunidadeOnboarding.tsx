@@ -9,7 +9,7 @@ const ConceptoComunidadeOnboarding = () => {
 
   // Simulating dynamic values from hooks, as they would be available in a real app
   // For this single-screen onboarding, these are hardcoded for demonstration.
-  const recompensaPacto = 100; // Example value, would come from useMissoes
+  const recompensaPacto = 25; // Example value, would come from useMissoes
   const itensNecessarios = 2; // Example value, would come from useMissoes
 
   const handleStartMission = () => {
