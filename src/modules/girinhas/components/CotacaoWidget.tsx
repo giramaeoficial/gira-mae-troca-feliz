@@ -28,7 +28,7 @@ const CotacaoWidget = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-purple-500" />
+          <img src="/girinha_sem_fundo.png" alt="girinha" className="h-5 w-5"/>
           Preço das Girinhas
         </CardTitle>
         <CardDescription>
