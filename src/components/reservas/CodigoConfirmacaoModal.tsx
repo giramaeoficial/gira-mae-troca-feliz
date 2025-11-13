@@ -82,9 +82,19 @@ const CodigoConfirmacaoModal = ({
           </DialogTitle>
           <DialogDescription>
             {isVendedor ? (
-              "Para finalizar a troca, digite o código que o comprador irá te mostrar."
+              <>
+                Para finalizar a troca, digite o código de 6 dígitos que o comprador irá te mostrar.
+                <span className="block mt-1 text-xs text-amber-600">
+                  ⚠️ Este é o código de confirmação da entrega, diferente do código do item (GRM-XXXXX).
+                </span>
+              </>
             ) : (
-              "Mostre este código para o vendedor na hora da troca."
+              <>
+                Mostre este código de 6 dígitos para o vendedor na hora da troca.
+                <span className="block mt-1 text-xs text-muted-foreground">
+                  ℹ️ Este código é diferente do código do item (GRM-XXXXX).
+                </span>
+              </>
             )}
           </DialogDescription>
         </DialogHeader>

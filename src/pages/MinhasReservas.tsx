@@ -16,11 +16,12 @@ const MinhasReservas = () => {
   const { user } = useAuth();
   const { reservas, filasEspera, loading, confirmarEntrega, cancelarReserva, sairDaFila, refetch } = useReservas();
   
-  // ✅ NOVOS ESTADOS PARA FILTRO E MODAL
+  // ✅ NOVOS ESTADOS PARA FILTRO, MODAL E BUSCA POR CÓDIGO
   const [filtroStatus, setFiltroStatus] = useState<string>('todas');
   const [modalItemAberto, setModalItemAberto] = useState(false);
   const [itemSelecionado, setItemSelecionado] = useState<string | null>(null);
   const [contextType, setContextType] = useState<'reserva' | 'fila' | 'venda' | 'concluida'>('reserva');
+  const [codigoBusca, setCodigoBusca] = useState<string>(''); // ✅ BUSCA POR CÓDIGO
 
   const minhasReservasAtivas = reservas.filter(r => 
     r.usuario_reservou === user?.id && 
@@ -44,20 +45,36 @@ const MinhasReservas = () => {
     setModalItemAberto(true);
   };
 
-  // ✅ FUNÇÃO PARA FILTRAR RESERVAS
+  // ✅ FUNÇÃO PARA FILTRAR RESERVAS (com busca por código)
   const getReservasFiltradas = () => {
+    let reservasFiltradas: any[] = [];
+    
     switch (filtroStatus) {
       case 'ativas':
-        return minhasReservasAtivas;
+        reservasFiltradas = minhasReservasAtivas;
+        break;
       case 'fila':
-        return filasEspera;
+        return filasEspera.filter(fila => 
+          !codigoBusca || fila.itens?.codigo_unico?.toLowerCase().includes(codigoBusca.toLowerCase())
+        );
       case 'vendas':
-        return meusItensReservados;
+        reservasFiltradas = meusItensReservados;
+        break;
       case 'concluidas':
-        return reservasConcluidas;
+        reservasFiltradas = reservasConcluidas;
+        break;
       default:
         return []; // Quando 'todas', mostra seções separadas
     }
+    
+    // ✅ APLICAR FILTRO DE CÓDIGO (busca pelos 5 caracteres sem GRM-)
+    if (codigoBusca) {
+      return reservasFiltradas.filter(reserva => 
+        reserva.itens?.codigo_unico?.toLowerCase().includes(codigoBusca.toLowerCase())
+      );
+    }
+    
+    return reservasFiltradas;
   };
 
   // ✅ ESTATÍSTICAS COM FILTRO
@@ -140,20 +157,44 @@ const MinhasReservas = () => {
           ))}
         </div>
 
-        {/* ✅ INDICADOR DE FILTRO ATIVO */}
+        {/* ✅ BUSCA POR CÓDIGO E INDICADOR DE FILTRO */}
         {filtroStatus !== 'todas' && (
-          <div className="mb-6 flex items-center gap-2">
-            <Badge variant="secondary" className="text-sm">
-              Filtro: {stats.find(s => s.filtro === filtroStatus)?.title}
-            </Badge>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setFiltroStatus('todas')}
-              className="text-sm"
-            >
-              Limpar filtro
-            </Button>
+          <div className="mb-6 space-y-3">
+            {/* Input de busca por código */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                <span className="text-sm font-mono text-gray-500">GRM-</span>
+              </div>
+              <input
+                type="text"
+                placeholder="Digite o código (ex: 8X4Z2)"
+                value={codigoBusca}
+                onChange={(e) => setCodigoBusca(e.target.value.toUpperCase())}
+                maxLength={5}
+                className="w-full pl-16 pr-4 py-2 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              🔍 Busque pelo código do item (não confunda com o código de confirmação de 6 dígitos)
+            </p>
+            
+            {/* Indicador de filtro */}
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-sm">
+                Filtro: {stats.find(s => s.filtro === filtroStatus)?.title}
+              </Badge>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setFiltroStatus('todas');
+                  setCodigoBusca('');
+                }}
+                className="text-sm"
+              >
+                Limpar filtros
+              </Button>
+            </div>
           </div>
         )}
 
