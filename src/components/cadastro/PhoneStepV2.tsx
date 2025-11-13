@@ -143,12 +143,40 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
     try {
       console.log('📱 Salvando telefone e gerando código:', cleanPhone);
       
-      // ✅ CORREÇÃO: Forçar telefone_verificado = false ao salvar telefone
+      // ✅ Verificar se o telefone já existe em outra conta
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('telefone', cleanPhone)
+        .neq('id', user?.id)
+        .maybeSingle();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('❌ Erro ao verificar telefone:', checkError);
+        toast({
+          title: "Erro de verificação",
+          description: "Não foi possível verificar o número.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (existingProfile) {
+        console.log('❌ Telefone já existe em outra conta');
+        toast({
+          title: "WhatsApp já cadastrado",
+          description: "Este número já está sendo usado por outra conta. Tente fazer login ou use outro número.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // ✅ Salvar telefone
       const { data, error } = await supabase
         .from('profiles')
         .update({
           telefone: cleanPhone,
-          telefone_verificado: false, // ✅ GARANTIR que está FALSE até verificar código
+          telefone_verificado: false,
           verification_code: Math.floor(1000 + Math.random() * 9000).toString(),
           verification_code_expires: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
           cadastro_step: 'code'
@@ -159,6 +187,17 @@ const PhoneStepV2: React.FC<PhoneStepV2Props> = ({ onComplete }) => {
 
       if (error) {
         console.error('❌ Erro ao salvar telefone:', error);
+        
+        // Tratar erro de duplicata
+        if (error.code === '23505') {
+          toast({
+            title: "WhatsApp já cadastrado",
+            description: "Este número já está sendo usado por outra conta. Tente fazer login ou use outro número.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         toast({
           title: "Erro ao salvar telefone",
           description: error.message || "Não foi possível salvar o telefone.",

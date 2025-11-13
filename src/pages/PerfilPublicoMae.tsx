@@ -1,5 +1,5 @@
-// src/pages/PerfilPublicoMae.tsx - EXATAMENTE IGUAL AO FEED
-import React, { useState, useCallback, useMemo } from 'react';
+// src/pages/PerfilPublicoMae.tsx - CORREÇÃO DOS ERROS DE RENDERIZAÇÃO
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -45,7 +45,7 @@ const PerfilPublicoMae = () => {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [errorProfile, setErrorProfile] = useState<string | null>(null);
 
-  // ✅ ESTADOS DE FILTROS IDÊNTICOS AO FEED
+  // ✅ ESTADOS DE FILTROS
   const [busca, setBusca] = useState('');
   const [categoria, setCategoria] = useState('todas');
   const [subcategoria, setSubcategoria] = useState('todas');
@@ -56,13 +56,10 @@ const PerfilPublicoMae = () => {
   const [mostrarReservados, setMostrarReservados] = useState(true);
   const [actionStates, setActionStates] = useState<Record<string, 'loading' | 'success' | 'error' | 'idle'>>({});
 
-  // ✅ HOOKS IDÊNTICOS AO FEED
+  // ✅ HOOKS
   const { tiposTamanho, isLoading: loadingTamanhos } = useTiposTamanho(categoria === 'todas' ? '' : categoria);
   const debouncedBusca = useDebounce(busca, 500);
   
-  // ✅ DELETAR filtrosCompletos - não precisamos mais
-  
-  // ✅ HOOK ESPECÍFICO PARA PERFIL
   const {
     data: paginasFeed,
     fetchNextPage,
@@ -82,13 +79,14 @@ const PerfilPublicoMae = () => {
     targetUserId: id
   });
   
-  // ✅ EXTRAIR DADOS IDÊNTICO AO FEED
+  // ✅ EXTRAIR DADOS
   const itens = useMemo(() => {
     return paginasFeed?.pages?.flatMap(page => page?.itens || []) || [];
   }, [paginasFeed]);
 
   const { taxaTransacao } = useConfigSistema();
-  // ✅ DADOS CONSOLIDADOS IDÊNTICOS AO FEED
+  
+  // ✅ DADOS CONSOLIDADOS
   const feedData = useMemo(() => {
     const primeiraPagina = paginasFeed?.pages?.[0];
     return {
@@ -97,15 +95,15 @@ const PerfilPublicoMae = () => {
       filas_espera: primeiraPagina?.filas_espera || {},
       configuracoes: primeiraPagina?.configuracoes,
       profile_essencial: primeiraPagina?.profile_essencial,
-      taxaTransacao:taxaTransacao
+      taxaTransacao: taxaTransacao
     };
   }, [paginasFeed, taxaTransacao]);
   
-  const categorias = feedData.configuracoes?.categorias || [];
-  const todasSubcategorias = feedData.configuracoes?.subcategorias || [];
+  const categorias = useMemo(() => feedData.configuracoes?.categorias || [], [feedData.configuracoes]);
+  const todasSubcategorias = useMemo(() => feedData.configuracoes?.subcategorias || [], [feedData.configuracoes]);
   
-  // ✅ LÓGICAS IDÊNTICAS AO FEED
-  const getSubcategoriasFiltradas = () => {
+  // ✅ CORREÇÃO 1: MEMOIZAR subcategoriasFiltradas com useMemo
+  const subcategoriasFiltradas = useMemo(() => {
     if (!Array.isArray(todasSubcategorias) || categoria === 'todas') return [];
     
     const filtradas = todasSubcategorias.filter(sub => sub.categoria_pai === categoria);
@@ -117,9 +115,10 @@ const PerfilPublicoMae = () => {
     }, [] as typeof filtradas);
     
     return subcategoriasUnicas;
-  };
+  }, [todasSubcategorias, categoria]);
 
-  const getTamanhosDisponiveis = () => {
+  // ✅ CORREÇÃO 2: MEMOIZAR tamanhosDisponiveis com useMemo
+  const tamanhosDisponiveis = useMemo(() => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
     
     const tipos = Object.keys(tiposTamanho);
@@ -134,17 +133,22 @@ const PerfilPublicoMae = () => {
     }, [] as typeof tamanhos);
     
     return tamanhosUnicos;
-  };
+  }, [tiposTamanho]);
 
-  const subcategoriasFiltradas = getSubcategoriasFiltradas();
-  const tamanhosDisponiveis = getTamanhosDisponiveis();
+  // ✅ CORREÇÃO 3: Reset automático de subcategoria e tamanho quando categoria muda
+  useEffect(() => {
+    setSubcategoria('todas');
+    setTamanho('todos');
+  }, [categoria]);
 
-  // ✅ FILTRAR ITENS IDÊNTICO AO FEED
-  const itensFiltrados = mostrarReservados 
-    ? itens 
-    : itens.filter(item => item.status === 'disponivel');
+  // ✅ FILTRAR ITENS
+  const itensFiltrados = useMemo(() => {
+    return mostrarReservados 
+      ? itens 
+      : itens.filter(item => item.status === 'disponivel');
+  }, [itens, mostrarReservados]);
 
-  // ✅ SCROLL INFINITO IDÊNTICO AO FEED
+  // ✅ SCROLL INFINITO
   const { ref: infiniteRef } = useInfiniteScroll({
     loading: isFetchingNextPage,
     hasNextPage: hasNextPage || false,
@@ -154,7 +158,7 @@ const PerfilPublicoMae = () => {
   });
 
   // ✅ Carregar perfil separadamente
-  React.useEffect(() => {
+  useEffect(() => {
     const carregarPerfil = async () => {
       if (!id) return;
       
@@ -191,7 +195,6 @@ const PerfilPublicoMae = () => {
     navigate(`/item/${itemId}`);
   }, [navigate]);
 
-  // ✅ FUNÇÃO entrarNaFila IDÊNTICA AO FEED
   const entrarNaFila = async (itemId: string) => {
     if (!user) return;
     
@@ -250,7 +253,6 @@ const PerfilPublicoMae = () => {
     }
   };
 
-  // ✅ FUNÇÃO toggleFavorito IDÊNTICA AO FEED
   const toggleFavorito = async (itemId: string) => {
     if (!user) return;
     
@@ -297,7 +299,6 @@ const PerfilPublicoMae = () => {
     }
   };
 
-  // ✅ HANDLERS IDÊNTICOS AO FEED
   const handleReservarItem = async (itemId: string) => {
     try {
       await entrarNaFila(itemId);
@@ -322,7 +323,6 @@ const PerfilPublicoMae = () => {
     }
   };
 
-  // ✅ HANDLERS DE FILTROS IDÊNTICOS AO FEED
   const handleAplicarFiltros = () => {
     refetch();
   };
@@ -343,26 +343,13 @@ const PerfilPublicoMae = () => {
     setMostrarFiltrosAvancados(!mostrarFiltrosAvancados);
   };
 
+  // ✅ CORREÇÃO 4: handleCategoriaChange agora só muda a categoria, os resets são automáticos via useEffect
   const handleCategoriaChange = (novaCategoria: string) => {
     setCategoria(novaCategoria);
-    setSubcategoria('todas');
-    setTamanho('todos');
   };
 
   const handleTamanhoChange = (valor: string) => {
     setTamanho(valor);
-  };
-
-  const calcularIdade = (dataNascimento: string | null) => {
-    if (!dataNascimento) return null;
-    const hoje = new Date();
-    const nascimento = new Date(dataNascimento);
-    let idade = hoje.getFullYear() - nascimento.getFullYear();
-    const m = hoje.getMonth() - nascimento.getMonth();
-    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-      idade--;
-    }
-    return idade;
   };
 
   if (loadingProfile) {
@@ -407,7 +394,6 @@ const PerfilPublicoMae = () => {
       <Header />
       
       <main className="container mx-auto px-4 py-6">
-        {/* Botão Voltar */}
         <div className="mb-6">
           <Button
             variant="ghost"
@@ -420,9 +406,7 @@ const PerfilPublicoMae = () => {
           </Button>
         </div>
 
-        {/* ✅ LAYOUT EM DUAS COLUNAS PARA DESKTOP */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ✅ COLUNA ESQUERDA - CARD DO PERFIL */}
           <div className="lg:col-span-1">
             <div className="sticky top-6">
               <MaeSeguidaCard
@@ -446,9 +430,9 @@ const PerfilPublicoMae = () => {
                     total_itens: itensFiltrados.length,
                     itens_ativos: itensFiltrados.filter(item => item.status === 'disponivel').length,
                     itens_disponiveis: itensFiltrados.filter(item => item.status === 'disponivel').length,
-                    total_seguidores: 0, // Pode ser implementado depois
-                    total_seguindo: 0,   // Pode ser implementado depois
-                    avaliacoes_recebidas: 0, // Pode ser implementado depois
+                    total_seguidores: 0,
+                    total_seguindo: 0,
+                    avaliacoes_recebidas: 0,
                     media_avaliacao: (profile.reputacao || 0) / 20,
                     ultima_atividade: profile.ultima_atividade,
                     membro_desde: profile.created_at,
@@ -477,9 +461,7 @@ const PerfilPublicoMae = () => {
             </div>
           </div>
 
-          {/* ✅ COLUNA DIREITA - FILTROS E ITENS */}
           <div className="lg:col-span-2">
-            {/* ✅ FILTROS E BUSCA IDÊNTICOS AO FEED */}
             <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -498,10 +480,8 @@ const PerfilPublicoMae = () => {
                 </button>
               </div>
 
-              {/* ✅ FILTROS AVANÇADOS IDÊNTICOS AO FEED */}
               {mostrarFiltrosAvancados && (
                 <div className="space-y-6 border-t pt-4">
-                  {/* Mostrar itens reservados */}
                   <div>
                     <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">OPÇÕES DE VISUALIZAÇÃO</h3>
                     <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
@@ -522,7 +502,6 @@ const PerfilPublicoMae = () => {
                     </div>
                   </div>
 
-                  {/* Categoria e Subcategoria */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">CATEGORIA</h3>
@@ -573,7 +552,6 @@ const PerfilPublicoMae = () => {
                     </div>
                   </div>
 
-                  {/* Gênero e Tamanho */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">GÊNERO</h3>
@@ -637,7 +615,6 @@ const PerfilPublicoMae = () => {
                     </div>
                   </div>
 
-                  {/* Faixa de Preço */}
                   <div>
                     <h3 className="font-medium mb-3 text-gray-700 uppercase text-sm tracking-wide">
                       PREÇO: {precoRange[0]} - {precoRange[1]} G
@@ -654,7 +631,6 @@ const PerfilPublicoMae = () => {
                     </div>
                   </div>
 
-                  {/* Botões de ação */}
                   <div className="flex gap-3 pt-4">
                     <Button
                       onClick={handleLimparFiltros}
@@ -674,7 +650,6 @@ const PerfilPublicoMae = () => {
               )}
             </div>
 
-            {/* ✅ LOADING STATE IDÊNTICO AO FEED */}
             {loadingFeed && itensFiltrados.length === 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Array.from({ length: 10 }).map((_, i) => (
@@ -683,7 +658,6 @@ const PerfilPublicoMae = () => {
               </div>
             )}
 
-            {/* ✅ EMPTY STATE IDÊNTICO AO FEED */}
             {!loadingFeed && itensFiltrados.length === 0 && (
               <EmptyState
                 type="search"
@@ -698,7 +672,6 @@ const PerfilPublicoMae = () => {
               />
             )}
 
-            {/* ✅ GRID DE ITENS IDÊNTICO AO FEED */}
             {itensFiltrados.length > 0 && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -719,7 +692,6 @@ const PerfilPublicoMae = () => {
                   ))}
                 </div>
 
-                {/* ✅ SCROLL INFINITO IDÊNTICO AO FEED */}
                 {hasNextPage && (
                   <div ref={infiniteRef}>
                     <InfiniteScrollIndicator 
