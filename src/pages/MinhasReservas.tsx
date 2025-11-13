@@ -131,11 +131,31 @@ const MinhasReservas = () => {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col pb-24 md:pb-8">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8 pb-32 md:pb-8">
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent mb-2">
             Minhas Reservas
           </h1>
           <p className="text-gray-600">Gerencie suas reservas ativas, vendas e histórico de trocas</p>
+        </div>
+
+        {/* ✅ BUSCA POR CÓDIGO - SEMPRE VISÍVEL */}
+        <div className="mb-6 space-y-2">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <span className="text-sm font-mono text-gray-500">GRM-</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Digite o código do item (ex: 8X4Z2)"
+              value={codigoBusca}
+              onChange={(e) => setCodigoBusca(e.target.value.toUpperCase())}
+              maxLength={5}
+              className="w-full pl-16 pr-4 py-2.5 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white shadow-sm"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            🔍 Busque pelo código único do item (não confunda com o código de confirmação de 6 dígitos)
+          </p>
         </div>
 
         {/* ✅ ESTATÍSTICAS COM FILTRO CLICÁVEL */}
@@ -157,44 +177,23 @@ const MinhasReservas = () => {
           ))}
         </div>
 
-        {/* ✅ BUSCA POR CÓDIGO E INDICADOR DE FILTRO */}
+        {/* ✅ INDICADOR DE FILTRO ATIVO */}
         {filtroStatus !== 'todas' && (
-          <div className="mb-6 space-y-3">
-            {/* Input de busca por código */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <span className="text-sm font-mono text-gray-500">GRM-</span>
-              </div>
-              <input
-                type="text"
-                placeholder="Digite o código (ex: 8X4Z2)"
-                value={codigoBusca}
-                onChange={(e) => setCodigoBusca(e.target.value.toUpperCase())}
-                maxLength={5}
-                className="w-full pl-16 pr-4 py-2 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              🔍 Busque pelo código do item (não confunda com o código de confirmação de 6 dígitos)
-            </p>
-            
-            {/* Indicador de filtro */}
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-sm">
-                Filtro: {stats.find(s => s.filtro === filtroStatus)?.title}
-              </Badge>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => {
-                  setFiltroStatus('todas');
-                  setCodigoBusca('');
-                }}
-                className="text-sm"
-              >
-                Limpar filtros
-              </Button>
-            </div>
+          <div className="mb-6 flex items-center gap-2">
+            <Badge variant="secondary" className="text-sm">
+              Filtro: {stats.find(s => s.filtro === filtroStatus)?.title}
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => {
+                setFiltroStatus('todas');
+                setCodigoBusca('');
+              }}
+              className="text-sm"
+            >
+              Limpar filtros
+            </Button>
           </div>
         )}
 
