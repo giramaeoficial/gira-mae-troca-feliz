@@ -47,6 +47,15 @@ const MinhasReservas = () => {
 
   // ✅ FUNÇÃO PARA FILTRAR RESERVAS (com busca por código)
   const getReservasFiltradas = () => {
+    // Se houver busca por código, buscar em TODAS as reservas e filas
+    if (codigoBusca) {
+      const todasReservas = [...minhasReservasAtivas, ...meusItensReservados, ...reservasConcluidas];
+      return todasReservas.filter(reserva => 
+        reserva.itens?.codigo_unico?.toLowerCase().includes(codigoBusca.toLowerCase())
+      );
+    }
+    
+    // Sem busca, aplicar filtro de status
     let reservasFiltradas: any[] = [];
     
     switch (filtroStatus) {
@@ -54,9 +63,7 @@ const MinhasReservas = () => {
         reservasFiltradas = minhasReservasAtivas;
         break;
       case 'fila':
-        return filasEspera.filter(fila => 
-          !codigoBusca || fila.itens?.codigo_unico?.toLowerCase().includes(codigoBusca.toLowerCase())
-        );
+        return filasEspera;
       case 'vendas':
         reservasFiltradas = meusItensReservados;
         break;
@@ -64,17 +71,20 @@ const MinhasReservas = () => {
         reservasFiltradas = reservasConcluidas;
         break;
       default:
-        return []; // Quando 'todas', mostra seções separadas
-    }
-    
-    // ✅ APLICAR FILTRO DE CÓDIGO (busca pelos 5 caracteres sem GRM-)
-    if (codigoBusca) {
-      return reservasFiltradas.filter(reserva => 
-        reserva.itens?.codigo_unico?.toLowerCase().includes(codigoBusca.toLowerCase())
-      );
+        return []; // Quando 'todas' e sem busca, mostra seções separadas
     }
     
     return reservasFiltradas;
+  };
+
+  // ✅ FUNÇÃO PARA FILTRAR FILAS DE ESPERA
+  const getFilasFiltradas = () => {
+    if (codigoBusca) {
+      return filasEspera.filter(fila => 
+        fila.itens?.codigo_unico?.toLowerCase().includes(codigoBusca.toLowerCase())
+      );
+    }
+    return filasEspera;
   };
 
   // ✅ ESTATÍSTICAS COM FILTRO
@@ -150,12 +160,27 @@ const MinhasReservas = () => {
               value={codigoBusca}
               onChange={(e) => setCodigoBusca(e.target.value.toUpperCase())}
               maxLength={5}
-              className="w-full pl-16 pr-4 py-2.5 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white shadow-sm"
+              className="w-full pl-16 pr-10 py-2.5 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white shadow-sm"
             />
+            {codigoBusca && (
+              <button
+                onClick={() => setCodigoBusca('')}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            🔍 Busque pelo código único do item (não confunda com o código de confirmação de 6 dígitos)
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              🔍 Busque pelo código único do item (não confunda com o código de confirmação de 6 dígitos)
+            </p>
+            {codigoBusca && (
+              <p className="text-xs font-medium text-primary">
+                {getReservasFiltradas().length + getFilasFiltradas().length} resultado(s)
+              </p>
+            )}
+          </div>
         </div>
 
         {/* ✅ ESTATÍSTICAS COM FILTRO CLICÁVEL */}
@@ -197,13 +222,69 @@ const MinhasReservas = () => {
           </div>
         )}
 
+        {/* ✅ MODO BUSCA ATIVA - RESULTADOS UNIFICADOS */}
+        {codigoBusca && (
+          <div className="space-y-6">
+            {getReservasFiltradas().length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  Reservas encontradas ({getReservasFiltradas().length})
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {getReservasFiltradas().map(reserva => (
+                    <ReservaCard
+                      key={reserva.id}
+                      reserva={reserva}
+                      onConfirmarEntrega={confirmarEntrega}
+                      onCancelarReserva={cancelarReserva}
+                      onRefresh={refetch}
+                      onVerDetalhes={(itemId) => abrirModalItem(itemId, 'reserva')}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+            
+            {getFilasFiltradas().length > 0 && (
+              <section>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  Filas de espera encontradas ({getFilasFiltradas().length})
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {getFilasFiltradas().map(fila => (
+                    <FilaEsperaCard
+                      key={fila.id}
+                      fila={fila}
+                      onSairDaFila={sairDaFila}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {getReservasFiltradas().length === 0 && getFilasFiltradas().length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Package className="w-12 h-12 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                  Nenhum resultado para "{codigoBusca}"
+                </h3>
+                <p className="text-gray-600">
+                  Não encontramos nenhuma reserva ou fila com esse código.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ✅ MODO FILTRADO - LISTA UNIFICADA */}
-        {filtroStatus !== 'todas' && (
+        {!codigoBusca && filtroStatus !== 'todas' && (
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filtroStatus === 'fila' ? (
                 // Filas de espera usam FilaEsperaCard
-                filasEspera.map(fila => (
+                getFilasFiltradas().map(fila => (
                   <FilaEsperaCard
                     key={fila.id}
                     fila={fila}
@@ -228,7 +309,7 @@ const MinhasReservas = () => {
         )}
 
         {/* ✅ MODO PADRÃO - SEÇÕES SEPARADAS */}
-        {filtroStatus === 'todas' && (
+        {!codigoBusca && filtroStatus === 'todas' && (
           <div className="space-y-8">
             {/* Suas Reservas Ativas */}
             {minhasReservasAtivas.length > 0 && (
