@@ -77,7 +77,7 @@ const Carteira = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   
-                  <img src="/girinha_sem_fundo.png" alt="Logo GiraMãe" className="h-5 w-5"/>
+                  <img src="/girinha_sem_fundo.png" alt="Logo GiraMãe" className="h-8 w-auto"/>
                   
                   Saldo Atual
                 </CardTitle>
