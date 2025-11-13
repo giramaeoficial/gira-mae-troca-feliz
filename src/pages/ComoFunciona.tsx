@@ -179,8 +179,8 @@ const ComoFunciona = () => {
   <div className="bg-primary/20 rounded-full w-64 h-64 mx-auto flex items-center justify-center">
     <img 
       src="/girinha_sem_fundo.png" 
-      alt="Logo GiraMãe" 
-      className="w-30 h-30 object-cover" 
+      alt="Girinha" 
+      className="w-28 h-28 object-cover" 
     />
   </div>
 </div>
@@ -198,8 +198,8 @@ const ComoFunciona = () => {
                     <div className="bg-primary/20 rounded-full w-64 h-64 mx-auto flex items-center justify-center text-6xl">
                        <img 
       src="/girinha_sem_fundo.png" 
-      alt="Logo GiraMãe" 
-      className="w-30 h-30 object-cover" 
+      alt="Girinha" 
+      className="w-28 h-28 object-cover" 
     />
                     </div>
                   </div>
