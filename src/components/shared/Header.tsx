@@ -175,7 +175,7 @@ const Header: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/feed" className="flex items-center gap-2">
-              <img src="/public/icon-192.png" alt="Sparkles" className="h-12 w-12 text-primary" />
+              <img src="/public/icon-192.png" alt="Logo" className="h-12 w-12 text-primary" />
               <span className="text-2xl font-bold text-primary">GiraMãe</span>
             </Link>
 
