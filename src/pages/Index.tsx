@@ -579,7 +579,7 @@ const LandingPageOptimized = () => {
           <img
                 src="/giramae_logo.png"
                 alt="Logo GiraMãe"
-                className="h-12 w-auto mr-4"
+                className="h-16 w-auto mr-4"
               />
           {/* <span className="text-2xl font-bold">GiraMãe</span> */}
         </div>
