@@ -180,7 +180,7 @@ const ComoFunciona = () => {
     <img 
       src="/girinha_sem_fundo.png" 
       alt="Logo GiraMãe" 
-      className="w-48 h-48 object-cover" 
+      className="w-auto h-40 object-cover" 
     />
   </div>
 </div>
