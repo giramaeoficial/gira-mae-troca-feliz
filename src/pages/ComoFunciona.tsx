@@ -180,7 +180,7 @@ const ComoFunciona = () => {
     <img 
       src="/girinha_sem_fundo.png" 
       alt="Girinha" 
-      className="w-28 h-28 object-cover" 
+      className="w-28 h-28 object-contain mx-auto" 
     />
   </div>
 </div>
@@ -199,7 +199,7 @@ const ComoFunciona = () => {
                        <img 
       src="/girinha_sem_fundo.png" 
       alt="Girinha" 
-      className="w-28 h-28 object-cover" 
+      className="w-28 h-28 object-contain mx-auto" 
     />
                     </div>
                   </div>
