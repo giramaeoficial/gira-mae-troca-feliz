@@ -56,7 +56,7 @@ const Auth = () => {
         <Card className="mx-auto max-w-sm w-full bg-white/80 backdrop-blur-sm border-0 shadow-xl">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
-                            <img src="/public/icon-192.png" className="w-14 h-14"></img>
+                            <img src="/icon-192.png" className="w-14 h-14"></img>
 
               <CardTitle className="text-2xl bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
                 Cadastrar no GiraMãe
