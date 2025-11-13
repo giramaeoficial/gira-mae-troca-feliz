@@ -97,7 +97,6 @@ const Auth = () => {
           <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
             <Link to="/" className="flex items-center text-primary">
                             <img src="/giramae_logo.png" className="w-auto h-10"></img>
-              GiraMãe
             </Link>
           </div>
           <p>&copy; {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
