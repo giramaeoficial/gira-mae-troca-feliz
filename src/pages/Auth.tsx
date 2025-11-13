@@ -96,7 +96,7 @@ const Auth = () => {
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
             <Link to="/" className="flex items-center text-primary">
-                            <img src="/icon-192.png" className="w-auto h-8"></img>
+                            <img src="/giramae_logo.png" className="w-auto h-10"></img>
               GiraMãe
             </Link>
           </div>
