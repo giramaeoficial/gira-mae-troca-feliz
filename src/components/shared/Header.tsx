@@ -179,7 +179,7 @@ const Header: React.FC = () => {
               <img
   src="/giramae_logo.png"
   alt="Logo GiraMãe"
-  className="h-16 w-auto object-contain"
+  className="h-14 w-auto object-contain"
   style={{ maxHeight: '64px', maxWidth: '240px' }}
 />
               
