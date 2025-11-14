@@ -175,7 +175,11 @@ const Header: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/feed" className="flex items-center gap-2">
-              <img src="/icon-192.png" alt="Logo" className="h-12 w-12" />
+              <img
+                src="/giramae_logo.png"
+                alt="Logo GiraMãe"
+                className="h-12 w-auto mr-4"
+              />
               <span className="text-2xl font-bold text-primary">GiraMãe</span>
             </Link>
 
