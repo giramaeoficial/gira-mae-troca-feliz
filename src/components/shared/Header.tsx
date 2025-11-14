@@ -180,7 +180,7 @@ const Header: React.FC = () => {
                 alt="Logo GiraMãe"
                 className="h-12 w-auto mr-4"
               />
-              <span className="text-2xl font-bold text-primary">GiraMãe</span>
+              
             </Link>
 
             {/* Desktop Navigation - Hidden on mobile and during signup */}
