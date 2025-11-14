@@ -183,7 +183,7 @@ const PaginaIndicacoes = () => {
               <p className="font-bold text-black-900">ATENÇÃO:</p>
             </div>
             <p className="text-black-700">
-              O bônus de indicação pode demorar até <span className="font-bold">10min</span> para estar disponível em sua carteira.
+              O bônus de indicação estará disponivel em sua carteira em até <span className="font-bold">10min</span>.
             </p>
           </div>
 
