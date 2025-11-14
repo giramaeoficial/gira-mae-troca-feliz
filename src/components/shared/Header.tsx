@@ -178,7 +178,7 @@ const Header: React.FC = () => {
               <img
                 src="/giramae_logo.png"
                 alt="Logo GiraMãe"
-                className="h-12 w-auto"
+                className="h-12 w-auto object-contain"
               />
               
             </Link>
