@@ -147,10 +147,11 @@ const Header: React.FC = () => {
                 <path d="M5 18H3"></path>
               </svg> */}
               <img
-                src="/giramae_logo.png"
-                alt="Logo GiraMãe"
-                className="h-12 w-auto mr-4"
-              />
+  src="/giramae_logo.png"
+  alt="Logo GiraMãe"
+  className="h-10 w-auto object-contain"
+  style={{ maxHeight: '40px', maxWidth: '150px' }}
+/>
               {/* <span className="text-2xl font-bold text-primary">GiraMãe</span> */}
             </Link>
             
