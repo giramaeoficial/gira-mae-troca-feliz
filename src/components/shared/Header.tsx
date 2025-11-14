@@ -177,10 +177,11 @@ const Header: React.FC = () => {
             {/* Logo */}
             <Link to="/feed" className="flex items-center gap-2">
               <img
-                src="/giramae_logo.png"
-                alt="Logo GiraMãe"
-                className="h-16 w-auto object-contain"
-              />
+  src="/giramae_logo.png"
+  alt="Logo GiraMãe"
+  className="h-16 w-auto object-contain"
+  style={{ maxHeight: '64px', maxWidth: '240px' }}
+/>
               
             </Link>
 
