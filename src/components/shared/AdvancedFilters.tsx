@@ -63,30 +63,22 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
     ? allSubcategorias.filter(sub => sub.categoria_pai === filters.categoria).map(sub => sub.nome)
     : [];
 
-  // ✅ CORRIGIDO: Obter TODOS os tamanhos disponíveis (não só o primeiro tipo)
+  // ✅ CORRIGIDO: Obter TODOS os tamanhos de TODOS os tipos (roupa_bebe, roupa_crianca, tamanho_letra, etc)
   const tamanhosDisponiveis = React.useMemo(() => {
-    console.log('🔍 [AdvancedFilters] tiposTamanho recebido:', tiposTamanho);
-    console.log('🔍 [AdvancedFilters] Tipo do objeto:', typeof tiposTamanho);
-    console.log('🔍 [AdvancedFilters] Keys do objeto:', Object.keys(tiposTamanho || {}));
-    
     if (!tiposTamanho || typeof tiposTamanho !== 'object') {
-      console.log('⚠️ [AdvancedFilters] tiposTamanho inválido');
       return [];
     }
 
     try {
-      // Pegar todos os tamanhos de todos os tipos (roupas, calçados, etc)
+      // 🔥 IMPORTANTE: Object.values() pega TODOS os arrays de todos os tipos
+      // Em vez de só types[0], isso pega roupa_bebe + roupa_crianca + tamanho_letra
       const todosTamanhos = Object.values(tiposTamanho).flat();
       
-      console.log('📦 [AdvancedFilters] Todos os tamanhos (flat):', todosTamanhos);
-      console.log('📊 [AdvancedFilters] Quantidade total:', todosTamanhos.length);
-      
       if (!Array.isArray(todosTamanhos) || todosTamanhos.length === 0) {
-        console.log('⚠️ [AdvancedFilters] Array vazio ou inválido');
         return [];
       }
 
-      // Remover duplicatas baseado no valor E ordenar por 'ordem'
+      // Remover duplicatas baseado no valor (alguns valores podem repetir entre tipos)
       const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
         if (tamanho && tamanho.valor && !acc.some(item => item?.valor === tamanho.valor)) {
           acc.push(tamanho);
@@ -94,21 +86,14 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
         return acc;
       }, [] as typeof todosTamanhos);
 
-      console.log('✅ [AdvancedFilters] Tamanhos únicos:', tamanhosUnicos.length);
-      console.log('📋 [AdvancedFilters] Valores:', tamanhosUnicos.map(t => t.valor));
-
-      // Ordenar pelos campos 'ordem' do banco de dados
-      const tamanhosOrdenados = tamanhosUnicos.sort((a, b) => {
+      // Ordenar pela ordem do banco de dados (1, 2, 3...)
+      return tamanhosUnicos.sort((a, b) => {
         const ordemA = a && typeof a.ordem === 'number' ? a.ordem : 999;
         const ordemB = b && typeof b.ordem === 'number' ? b.ordem : 999;
         return ordemA - ordemB;
       });
-
-      console.log('🎯 [AdvancedFilters] Tamanhos finais ordenados:', tamanhosOrdenados.map(t => `${t.valor} (ordem: ${t.ordem})`));
-      
-      return tamanhosOrdenados;
     } catch (error) {
-      console.error('❌ [AdvancedFilters] Erro ao processar tamanhos:', error);
+      console.error('❌ Erro ao processar tamanhos:', error);
       return [];
     }
   }, [tiposTamanho]);
