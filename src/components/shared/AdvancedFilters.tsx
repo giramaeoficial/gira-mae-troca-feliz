@@ -18,7 +18,8 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
   const { filters, updateFilter, updateFilters, getActiveFiltersCount, setLocationDetected } = useFeedFilters();
   const { configuracoes } = useConfigCategorias();
   const { subcategorias: allSubcategorias } = useSubcategorias();
-  // ✅ ADICIONADO: Hook para buscar tamanhos baseado na categoria
+  
+  // ✅ Hook para buscar tamanhos baseado na categoria
   const { tiposTamanho } = useTiposTamanho(filters.categoria !== 'todas' ? filters.categoria : undefined);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -45,7 +46,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
       apenasSeguidoras: false,
       precoMin: 0,
       precoMax: 200,
-      // ✅ ADICIONADO: Reset para gênero e tamanho
       genero: 'todos',
       tamanho: 'todos',
     });
@@ -63,29 +63,57 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
     ? allSubcategorias.filter(sub => sub.categoria_pai === filters.categoria).map(sub => sub.nome)
     : [];
 
-  // ✅ ADICIONADO: Obter tamanhos disponíveis
+  // ✅ CORRIGIDO: Obter TODOS os tamanhos disponíveis (não só o primeiro tipo)
   const tamanhosDisponiveis = React.useMemo(() => {
-    const tipos = Object.keys(tiposTamanho || {});
-    const tipoUnico = tipos[0];
-    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
-    
-    // Remover duplicatas baseado no valor
-    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
-      if (!acc.some(item => item.valor === tamanho.valor)) {
-        acc.push(tamanho);
+    if (!tiposTamanho || typeof tiposTamanho !== 'object') {
+      return [];
+    }
+
+    try {
+      // Pegar todos os tamanhos de todos os tipos (roupas, calçados, etc)
+      const todosTamanhos = Object.values(tiposTamanho).flat();
+      
+      if (!Array.isArray(todosTamanhos) || todosTamanhos.length === 0) {
+        return [];
       }
-      return acc;
-    }, [] as typeof tamanhos);
-    
-    return tamanhosUnicos;
+
+      // Remover duplicatas baseado no valor E ordenar por 'ordem'
+      const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
+        if (tamanho && tamanho.valor && !acc.some(item => item?.valor === tamanho.valor)) {
+          acc.push(tamanho);
+        }
+        return acc;
+      }, [] as typeof todosTamanhos);
+
+      // Ordenar pelos campos 'ordem' do banco de dados
+      return tamanhosUnicos.sort((a, b) => {
+        const ordemA = a && typeof a.ordem === 'number' ? a.ordem : 999;
+        const ordemB = b && typeof b.ordem === 'number' ? b.ordem : 999;
+        return ordemA - ordemB;
+      });
+    } catch (error) {
+      console.error('❌ Erro ao processar tamanhos:', error);
+      return [];
+    }
   }, [tiposTamanho]);
 
-  // ✅ ADICIONADO: Reset tamanho quando categoria muda
+  // ✅ Reset tamanho quando categoria muda para 'todas'
   React.useEffect(() => {
     if (filters.categoria === 'todas') {
       updateFilter('tamanho', 'todos');
     }
   }, [filters.categoria, updateFilter]);
+
+  // ✅ Reset tamanho se o valor selecionado não existe mais nos tamanhos disponíveis
+  React.useEffect(() => {
+    if (filters.tamanho && filters.tamanho !== 'todos' && tamanhosDisponiveis.length > 0) {
+      const tamanhoExiste = tamanhosDisponiveis.some(t => t.valor === filters.tamanho);
+      if (!tamanhoExiste) {
+        console.log('⚠️ Tamanho selecionado não existe na nova categoria, resetando...');
+        updateFilter('tamanho', 'todos');
+      }
+    }
+  }, [tamanhosDisponiveis, filters.tamanho, updateFilter]);
 
   const activeFiltersCount = getActiveFiltersCount();
 
@@ -107,17 +135,14 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
           categoria={filters.categoria}
           ordem={filters.ordem}
           subcategoria={filters.subcategoria}
-          // ✅ ADICIONADO: Props para gênero e tamanho
           genero={filters.genero}
           tamanho={filters.tamanho}
           categorias={categorias}
           subcategorias={subcategorias}
-          // ✅ ADICIONADO: Tamanhos disponíveis
           tamanhosDisponiveis={tamanhosDisponiveis}
           onCategoriaChange={(value) => updateFilter('categoria', value)}
           onOrdemChange={(value) => updateFilter('ordem', value)}
           onSubcategoriaChange={(value) => updateFilter('subcategoria', value === "todas_sub" ? '' : value)}
-          // ✅ ADICIONADO: Handlers para gênero e tamanho
           onGeneroChange={(value) => updateFilter('genero', value)}
           onTamanhoChange={(value) => updateFilter('tamanho', value)}
         />
