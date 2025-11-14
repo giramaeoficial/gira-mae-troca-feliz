@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import SaldoHeader from './SaldoHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -139,20 +140,12 @@ const Header: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/" className="flex items-center gap-2">
-              {/* <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sparkles h-8 w-8 text-primary">
-                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
-                <path d="M20 3v4"></path>
-                <path d="M22 5h-4"></path>
-                <path d="M4 17v2"></path>
-                <path d="M5 18H3"></path>
-              </svg> */}
               <img
-  src="/giramae_logo.png"
-  alt="Logo GiraMãe"
-  className="h-10 w-auto object-contain"
-  style={{ maxHeight: '40px', maxWidth: '150px' }}
-/>
-              {/* <span className="text-2xl font-bold text-primary">GiraMãe</span> */}
+                src="/giramae_logo.png"
+                alt="Logo GiraMãe"
+                className="h-16 w-auto object-contain"
+                style={{ maxHeight: '64px', maxWidth: '240px' }}
+              />
             </Link>
             
             <div className="flex items-center space-x-4">
@@ -176,13 +169,12 @@ const Header: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/feed" className="flex items-center gap-2">
-              <img
-  src="/giramae_logo.png"
-  alt="Logo GiraMãe"
-  className="h-14 w-auto object-contain"
-  style={{ maxHeight: '64px', maxWidth: '240px' }}
-/>
-              
+              <img 
+                src="/icon-192.png" 
+                alt="GiraMãe Logo" 
+                className="h-10 w-10 object-contain" 
+              />
+              <span className="text-2xl font-bold text-primary">GiraMãe</span>
             </Link>
 
             {/* Desktop Navigation - Hidden on mobile and during signup */}
@@ -194,6 +186,9 @@ const Header: React.FC = () => {
 
             {/* Right side - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
+              {/* ✅ SALDO - NOVO */}
+              {!shouldHideMenus && <SaldoHeader />}
+              
               {/* Notification Bell - Hide during signup */}
               {!shouldHideMenus && <NotificationBell />}
               
@@ -236,6 +231,9 @@ const Header: React.FC = () => {
 
             {/* Mobile menu button and notification */}
             <div className="md:hidden flex items-center space-x-2">
+              {/* ✅ SALDO MOBILE - Fixo no header */}
+              {!shouldHideMenus && <SaldoHeader />}
+              
               {/* ✅ FIX: Só mostrar NotificationBell quando não estiver em /cadastro */}
               {!shouldHideMenus && <NotificationBell />}
               {!shouldHideMenus ? (
