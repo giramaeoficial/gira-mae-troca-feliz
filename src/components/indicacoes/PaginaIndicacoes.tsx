@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Users, 
-  Gift, 
-  Share2, 
-  TrendingUp, 
+import {
+  Users,
+  Gift,
+  Share2,
+  TrendingUp,
   Calendar,
   Trophy,
   Copy,
@@ -21,13 +21,13 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 const PaginaIndicacoes = () => {
-  const { 
-    indicacoes, 
-    indicados, 
-    loading, 
-    error, 
+  const {
+    indicacoes,
+    indicados,
+    loading,
+    error,
     compartilharIndicacao,
-    obterEstatisticas 
+    obterEstatisticas
   } = useIndicacoes();
 
   const { obterConfigTipo } = useTiposTransacao();
@@ -86,7 +86,7 @@ const PaginaIndicacoes = () => {
             Mãe, vem ver que vantagem! 💜
           </CardTitle>
         </CardHeader>
-        <CardContent>       
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Para você que indica */}
             <div className="bg-white rounded-lg p-4 border border-purple-100">
@@ -127,8 +127,8 @@ const PaginaIndicacoes = () => {
                 <p className="text-sm font-medium text-purple-700">
                   Total possível: até {
                     (parseFloat(String(obterConfigTipo('bonus_indicacao_cadastro')?.valor_padrao || '10')) +
-                     parseFloat(String(obterConfigTipo('bonus_indicacao_primeiro_item')?.valor_padrao || '10')) +
-                     parseFloat(String(obterConfigTipo('bonus_indicacao_primeira_compra')?.valor_padrao || '30'))).toFixed(0)
+                      parseFloat(String(obterConfigTipo('bonus_indicacao_primeiro_item')?.valor_padrao || '10')) +
+                      parseFloat(String(obterConfigTipo('bonus_indicacao_primeira_compra')?.valor_padrao || '30'))).toFixed(0)
                   } Girinhas por amiga!
                 </p>
               </div>
@@ -163,19 +163,31 @@ const PaginaIndicacoes = () => {
                   Ela já começa com {obterConfigTipo('bonus_indicacao_cadastro_indicado')?.valor_padrao || 25} Girinhas! 💖
                 </p>
               </div>
+              
             </div>
           </div>
 
           <div className="mt-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
             <div className="flex items-center gap-2 mb-2">
               <div className="text-2xl">✨</div>
-              <p className="font-semibold text-orange-800">Dica de mãe experiente:</p>
+              <p className="font-semibold text-orange-900">Dica de mãe experiente:</p>
             </div>
             <p className="text-orange-700">
               Quanto mais amigas você indicar, mais Girinhas você ganha!
               Compartilha nos grupos das mães, no WhatsApp da escola...
             </p>
           </div>
+
+          <div className="mt-6 p-4 bg-gray-400 rounded-lg border border-black-500">
+            <div className="flex items-center gap-2 mb-2">
+              <p className="font-bold text-black-900">ATENÇÃO:</p>
+            </div>
+            <p className="text-black-700">
+              O bônus de indicação pode demorar até <span className="font-bold">10min</span> para estar disponível em sua carteira.
+            </p>
+          </div>
+
+          
         </CardContent>
       </Card>
 
