@@ -65,7 +65,12 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
 
   // ✅ CORRIGIDO: Obter TODOS os tamanhos disponíveis (não só o primeiro tipo)
   const tamanhosDisponiveis = React.useMemo(() => {
+    console.log('🔍 [AdvancedFilters] tiposTamanho recebido:', tiposTamanho);
+    console.log('🔍 [AdvancedFilters] Tipo do objeto:', typeof tiposTamanho);
+    console.log('🔍 [AdvancedFilters] Keys do objeto:', Object.keys(tiposTamanho || {}));
+    
     if (!tiposTamanho || typeof tiposTamanho !== 'object') {
+      console.log('⚠️ [AdvancedFilters] tiposTamanho inválido');
       return [];
     }
 
@@ -73,7 +78,11 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
       // Pegar todos os tamanhos de todos os tipos (roupas, calçados, etc)
       const todosTamanhos = Object.values(tiposTamanho).flat();
       
+      console.log('📦 [AdvancedFilters] Todos os tamanhos (flat):', todosTamanhos);
+      console.log('📊 [AdvancedFilters] Quantidade total:', todosTamanhos.length);
+      
       if (!Array.isArray(todosTamanhos) || todosTamanhos.length === 0) {
+        console.log('⚠️ [AdvancedFilters] Array vazio ou inválido');
         return [];
       }
 
@@ -85,14 +94,21 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({ onSearch }) => {
         return acc;
       }, [] as typeof todosTamanhos);
 
+      console.log('✅ [AdvancedFilters] Tamanhos únicos:', tamanhosUnicos.length);
+      console.log('📋 [AdvancedFilters] Valores:', tamanhosUnicos.map(t => t.valor));
+
       // Ordenar pelos campos 'ordem' do banco de dados
-      return tamanhosUnicos.sort((a, b) => {
+      const tamanhosOrdenados = tamanhosUnicos.sort((a, b) => {
         const ordemA = a && typeof a.ordem === 'number' ? a.ordem : 999;
         const ordemB = b && typeof b.ordem === 'number' ? b.ordem : 999;
         return ordemA - ordemB;
       });
+
+      console.log('🎯 [AdvancedFilters] Tamanhos finais ordenados:', tamanhosOrdenados.map(t => `${t.valor} (ordem: ${t.ordem})`));
+      
+      return tamanhosOrdenados;
     } catch (error) {
-      console.error('❌ Erro ao processar tamanhos:', error);
+      console.error('❌ [AdvancedFilters] Erro ao processar tamanhos:', error);
       return [];
     }
   }, [tiposTamanho]);
