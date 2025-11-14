@@ -12,6 +12,7 @@ type ReservaComRelacionamentos = Tables<'reservas'> & {
     titulo: string;
     fotos: string[] | null;
     valor_girinhas: number;
+    codigo_unico: string; // ✅ ADICIONADO CAMPO CODIGO_UNICO
   } | null;
   profiles_reservador?: {
     nome: string;
@@ -33,6 +34,7 @@ type FilaEsperaComRelacionamentos = Tables<'fila_espera'> & {
     fotos: string[] | null;
     valor_girinhas: number;
     publicado_por: string;
+    codigo_unico: string; // ✅ ADICIONADO CAMPO CODIGO_UNICO
   } | null;
   profiles_vendedor?: {
     nome: string;
@@ -70,19 +72,19 @@ export const useReservas = () => {
       setLoading(true);
       setError(null);
       
-      // ✅ BUSCAR RESERVAS
+      // ✅ BUSCAR RESERVAS (incluindo codigo_unico do item)
       const { data: reservasData, error: reservasError } = await supabase
         .from('reservas')
-        .select(`*, codigo_confirmacao, itens (titulo, fotos, valor_girinhas)`)
+        .select(`*, codigo_confirmacao, itens (titulo, fotos, valor_girinhas, codigo_unico)`)
         .or(`usuario_reservou.eq.${user.id},usuario_item.eq.${user.id}`)
         .order('created_at', { ascending: false })
         .limit(20);
       if (reservasError) throw reservasError;
 
-      // ✅ BUSCAR FILAS DE ESPERA
+      // ✅ BUSCAR FILAS DE ESPERA (incluindo codigo_unico do item)
       const { data: filasData, error: filasError } = await supabase
         .from('fila_espera')
-        .select(`*, itens (titulo, fotos, valor_girinhas, publicado_por)`)
+        .select(`*, itens (titulo, fotos, valor_girinhas, publicado_por, codigo_unico)`)
         .eq('usuario_id', user.id)
         .order('created_at', { ascending: false })
         .limit(10);

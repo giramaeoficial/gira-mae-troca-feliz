@@ -30,6 +30,7 @@ interface ReservaCardProps {
       titulo: string;
       fotos: string[] | null;
       valor_girinhas: number;
+      codigo_unico?: string; // ✅ CÓDIGO DO ITEM
     } | null;
     profiles_reservador?: {
       nome: string;
@@ -124,16 +125,17 @@ const ReservaCard = ({
 
     const nomeOutraPessoa = outraPessoa.nome;
     const tituloItem = reserva.itens?.titulo || "item";
+    const codigoItem = reserva.itens?.codigo_unico || '';
     
-    // ✅ MENSAGEM PERSONALIZADA BASEADA NO PAPEL DO USUÁRIO
+    // ✅ MENSAGEM PERSONALIZADA BASEADA NO PAPEL DO USUÁRIO (incluindo código do item)
     let mensagem = "";
     
     if (isReservador) {
-      // Você reservou - vai falar com o vendedor
-      mensagem = `Olá ${nomeOutraPessoa}! Sobre o item "${tituloItem}" que reservei. Quando podemos combinar a entrega? 😊`;
+      // Você reservou - vai falar com o vendedor (incluindo código do item)
+      mensagem = `Olá ${nomeOutraPessoa}! Sobre o item *${tituloItem}* ${codigoItem ? `(Código: *${codigoItem}*)` : ''} que reservei. Quando podemos combinar a entrega? 😊`;
     } else {
-      // Reservaram seu item - vai falar com o comprador
-      mensagem = `Olá ${nomeOutraPessoa}! Sobre o item "${tituloItem}" que você reservou. Quando podemos combinar a entrega? 😊`;
+      // Reservaram seu item - vai falar com o comprador (incluindo código do item)
+      mensagem = `Olá ${nomeOutraPessoa}! Sobre o item *${tituloItem}* ${codigoItem ? `(Código: *${codigoItem}*)` : ''} que você reservou. Quando podemos combinar a entrega? 😊`;
     }
     
     // ✅ CONSTRUIR URL DO WHATSAPP (SEM 55 DUPLICADO)
@@ -266,13 +268,21 @@ const ReservaCard = ({
                 />
               </div>
               <div className="flex-grow">
-                {/* ✅ TÍTULO CLICÁVEL */}
-                <h3 
-                  className="font-semibold text-gray-800 line-clamp-1 cursor-pointer hover:text-primary transition-colors"
-                  onClick={handleVerDetalhes}
-                >
-                  {reserva.itens?.titulo || "Item não encontrado"}
-                </h3>
+                {/* ✅ TÍTULO CLICÁVEL COM CÓDIGO DO ITEM */}
+                <div className="flex items-center gap-2">
+                  <h3 
+                    className="font-semibold text-gray-800 line-clamp-1 cursor-pointer hover:text-primary transition-colors"
+                    onClick={handleVerDetalhes}
+                  >
+                    {reserva.itens?.titulo || "Item não encontrado"}
+                  </h3>
+                  {/* ✅ BADGE AZUL COM CÓDIGO DO ITEM */}
+                  {reserva.itens?.codigo_unico && (
+                    <Badge variant="outline" className="text-xs font-mono bg-blue-50 text-blue-700 border-blue-200 shrink-0">
+                      {reserva.itens.codigo_unico}
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 mt-1">
                   {getStatusBadge()}
                   <span className="text-sm text-primary font-medium">

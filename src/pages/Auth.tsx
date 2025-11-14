@@ -56,7 +56,8 @@ const Auth = () => {
         <Card className="mx-auto max-w-sm w-full bg-white/80 backdrop-blur-sm border-0 shadow-xl">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center mb-4">
-              <Sparkles className="h-8 w-8 text-primary mr-2" />
+                            <img src="/icon-192.png" className="w-14 h-14"></img>
+
               <CardTitle className="text-2xl bg-gradient-to-r from-primary to-pink-500 bg-clip-text text-transparent">
                 Cadastrar no GiraMãe
               </CardTitle>
@@ -95,8 +96,7 @@ const Auth = () => {
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           <div className="text-2xl font-bold text-primary flex items-center justify-center mb-4">
             <Link to="/" className="flex items-center text-primary">
-              <Sparkles className="h-6 w-6 mr-2" />
-              GiraMãe
+                            <img src="/giramae_logo.png" className="w-auto h-10"></img>
             </Link>
           </div>
           <p>&copy; {new Date().getFullYear()} GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
