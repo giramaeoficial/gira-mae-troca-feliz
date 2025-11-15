@@ -110,13 +110,12 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
       
       if (todosTamanhos.length === 0) return [];
       
-      const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
-        // CORREÇÃO AQUI: Checa pelo 'label_display' único
-        if (tamanho && tamanho.label_display && !acc.some(item => item && item.label_display === tamanho.label_display)) {
-          acc.push(tamanho);
-        }
-        return acc;
-      }, [] as Tamanho[]);
+      const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
+        if (tamanho && tamanho.label_display && !acc.some(item => item && item.label_display === tamanho.label_display)) {
+          acc.push(tamanho);
+        }
+        return acc;
+      }, [] as Tamanho[]);
       
       // Ordena pela 'ordem' definida na API
       return tamanhosUnicos.sort((a, b) => {
