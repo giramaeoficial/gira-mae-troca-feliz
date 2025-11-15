@@ -1,4 +1,4 @@
-// src/components/forms/ItemCategorization.tsx - VERSÃO COMPLETA CORRIGIDA
+// src/components/forms/ItemCategorization.tsx - VERSÃO COM LOGS DE DEBUG
 
 import React from 'react';
 import { Label } from "@/components/ui/label";
@@ -46,13 +46,11 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
   };
 
   // ✅ CORREÇÃO 1: Handler de tamanho reescrito
-  // Recebe o 'label_display' (único) e encontra o 'valor' e 'tipo' corretos
   const handleTamanhoChange = (label: string) => {
     let tipoEncontrado = '';
     let valorEncontrado = '';
     
     if (tiposTamanho) {
-      // Usamos 'for...of' e 'break' para performance, parando assim que acha
       for (const tipoKey of Object.keys(tiposTamanho)) {
         const tamanhosDoTipo = tiposTamanho[tipoKey] || [];
         const tamanho = tamanhosDoTipo.find((t: Tamanho) => t.label_display === label);
@@ -60,7 +58,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
         if (tamanho) {
           tipoEncontrado = tipoKey;
           valorEncontrado = tamanho.valor;
-          break; // Para o loop, achamos o item correto!
+          break; 
         }
       }
     }
@@ -69,7 +67,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     onFieldChange('tamanho_valor', valorEncontrado);
   };
 
-  // Lógica de subcategorias (estava OK, apenas com checagens extras)
+  // Lógica de subcategorias
   const subcategoriasFiltradas = React.useMemo(() => {
     if (!Array.isArray(subcategorias) || !formData.categoria_id) return [];
     
@@ -94,11 +92,22 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     }
   }, [subcategorias, formData.categoria_id]);
 
-  // ✅ CORREÇÃO 2: 'reduce' de tamanhos agora usa 'label_display'
+  // ✅ CORREÇÃO 2: 'reduce' de tamanhos com LOGS DE DEBUG
   const tamanhosDisponiveis = React.useMemo(() => {
-    if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
+    if (!tiposTamanho || typeof tiposTamanho !== 'object' || Object.keys(tiposTamanho).length === 0) {
+      // Log se os dados do hook estiverem vazios ou inválidos
+      console.warn("useTiposTamanho retornou dados nulos ou vazios:", tiposTamanho);
+      return [];
+    }
     
     try {
+      // ***** DEBUG 1: O QUE VEIO DO HOOK? *****
+      console.log(
+        "--- DEBUG TAMANHOS (1/3): DADOS CRUS DO HOOK (tiposTamanho) ---", 
+        // Usamos JSON.parse(stringify) para "desembrulhar" o objeto e facilitar a leitura no console
+        JSON.parse(JSON.stringify(tiposTamanho)) 
+      );
+
       const todosTamanhos: Tamanho[] = [];
       
       Object.keys(tiposTamanho).forEach(tipoKey => {
@@ -108,14 +117,27 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
         }
       });
       
+      // ***** DEBUG 2: O QUE TEMOS ANTES DE FILTRAR? *****
+      console.log(
+        "--- DEBUG TAMANHOS (2/3): ARRAY COMPLETO (todosTamanhos) ANTES DO REDUCE ---",
+        todosTamanhos.map(t => t.label_display)
+      );
+
       if (todosTamanhos.length === 0) return [];
       
-      const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
-        if (tamanho && tamanho.label_display && !acc.some(item => item && item.label_display === tamanho.label_display)) {
-          acc.push(tamanho);
-        }
-        return acc;
-      }, [] as Tamanho[]);
+      const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
+        // Esta é a lógica corrigida
+        if (tamanho && tamanho.label_display && !acc.some(item => item && item.label_display === tamanho.label_display)) {
+          acc.push(tamanho);
+        }
+        return acc;
+      }, [] as Tamanho[]);
+      
+      // ***** DEBUG 3: O QUE SOBROU DEPOIS DE FILTRAR? *****
+      console.log(
+        "--- DEBUG TAMANHOS (3/3): ARRAY FINAL (tamanhosUnicos) APÓS O REDUCE ---",
+        tamanhosUnicos.map(t => t.label_display)
+      );
       
       // Ordena pela 'ordem' definida na API
       return tamanhosUnicos.sort((a, b) => {
@@ -130,26 +152,21 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
   }, [tiposTamanho]);
 
   // ✅ CORREÇÃO 3: Nova função para encontrar o 'label' salvo no formulário
-  // Necessário para o 'value' do <Select> de tamanho
   const getSelectedLabel = () => {
-    // Se não houver dados, o 'value' é 'undefined' (mostra o placeholder)
     if (!formData.tamanho_valor || !formData.tamanho_categoria || !tiposTamanho) {
       return undefined;
     }
     
-    // Procura o tipo (ex: 'roupa_bebe')
     const tamanhosDoTipo = tiposTamanho[formData.tamanho_categoria];
     if (!Array.isArray(tamanhosDoTipo)) {
       return undefined;
     }
     
-    // Procura o valor (ex: 'P') dentro daquele tipo
     const tamanho = tamanhosDoTipo.find((t: Tamanho) => t.valor === formData.tamanho_valor);
     
-    // Retorna o 'label_display' (ex: 'P (3,5-5kg)')
     return tamanho ? tamanho.label_display : undefined;
   };
-  
+  
   const selectedLabel = getSelectedLabel();
 
   return (
@@ -194,7 +211,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
                 isLoadingSubcategorias ? "Carregando..." : 
                 subcategoriasFiltradas.length === 0 ? "Nenhuma subcategoria disponível" :
                 "Selecione uma subcategoria"
-            _} />
+            } />
             </SelectTrigger>
             <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60">
               {subcategoriasFiltradas.map(sub => (
@@ -202,13 +219,13 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
                   <span className="flex items-center gap-2">
                     <span className="text-sm">{sub.icone}</span>
                     {sub.nome}
-                  </span>
+                	</span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.subcategoria && <p className="text-red-500 text-xs mt-1">{errors.subcategoria}</p>}
-        </div>
+  	    {errors.subcategoria && <p className="text-red-500 text-xs mt-1">{errors.subcategoria}</p>}
+      </div>
       )}
 
       <div className="grid grid-cols-2 gap-4">
@@ -223,7 +240,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
           <Select 
             // ✅ CORREÇÃO 4a: Usar o label único como 'value'
             value={selectedLabel} 
-            onValueChange={handleTamanhoChange}
+          	onValueChange={handleTamanhoChange}
             disabled={isLoadingTamanhos || !formData.categoria_id}
           >
             <SelectTrigger className="border-gray-200 focus:border-pink-300 focus:ring-pink-200 rounded-lg text-sm">
@@ -238,12 +255,12 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
               {tamanhosDisponiveis?.map((t) => (
                 // ✅ CORREÇÃO 4b: Usar 'label_display' como o valor
                 <SelectItem key={t.id} value={t.label_display} className="text-sm hover:bg-pink-50">
-        T           {t.label_display}
+                  {t.label_display}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.tamanho && <p className="text-red-500 text-xs mt-1">{errors.tamanho}</p>}
+  	    {errors.tamanho && <p className="text-red-500 text-xs mt-1">{errors.tamanho}</p>}
         </div>
 
         {/* Gênero */}
@@ -258,26 +275,26 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
             </SelectTrigger>
             <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg">
               <SelectItem value="menino" className="text-sm hover:bg-pink-50">
-                <span className="flex items-center gap-2">
-                  <span className="text-sm">👦</span>
-                  Menino
-                </span>
+              	<span className="flex items-center gap-2">
+                	<span className="text-sm">👦</span>
+                	Menino
+              	</span>
               </SelectItem>
               <SelectItem value="menina" className="text-sm hover:bg-pink-50">
-                <span className="flex items-center gap-2">
-                  <span className="text-sm">👧</span>
-                  Menina
-                </span>
+              	<span className="flex items-center gap-2">
+                	<span className="text-sm">👧</span>
+                	Menina
+              	</span>
               </SelectItem>
               <SelectItem value="unissex" className="text-sm hover:bg-pink-50">
-                <span className="flex items-center gap-2">
-                  <span className="text-sm">👶</span>
-                  Unissex
-                </span>
+              	<span className="flex items-center gap-2">
+  	             	<span className="text-sm">👶</span>
+              	   	Unissex
+              	</span>
               </SelectItem>
-            </SelectContent>
-          </Select>
-          {errors.genero && <p className="text-red-500 text-xs mt-1">{errors.genero}</p>}
+          	</SelectContent>
+        	</Select>
+  	    {errors.genero && <p className="text-red-500 text-xs mt-1">{errors.genero}</p>}
         </div>
       </div>
 
@@ -290,7 +307,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
         <Select value={formData.estado_conservacao} onValueChange={(value) => onFieldChange('estado_conservacao', value)}>
           <SelectTrigger className="w-full border-gray-200 focus:border-pink-300 focus:ring-pink-200 rounded-lg text-sm">
             <SelectValue placeholder="Selecione o estado" />
-        _</SelectTrigger>
+          </SelectTrigger>
           <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg">
             <SelectItem value="novo" className="text-sm hover:bg-pink-50">
               <span className="flex items-center gap-2">
@@ -299,27 +316,27 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
               </span>
             </SelectItem>
             <SelectItem value="seminovo" className="text-sm hover:bg-pink-50">
-              <span className="flex items-center gap-2">
-                <span className="text-sm">⭐</span>
-                Seminovo
-              </span>
-        _   </SelectItem>
+            	<span className="flex items-center gap-2">
+  	           	<span className="text-sm">⭐</span>
+              	Seminovo
+            	</span>
+            </SelectItem>
             <SelectItem value="usado" className="text-sm hover:bg-pink-50">
-              <span className="flex items-center gap-2">
-                <span className="text-sm">👍</span>
-                Usado
-              </span>
+            	<span className="flex items-center gap-2">
+  	           	<span className="text-sm">👍</span>
+              	Usado
+            	</span>
             </SelectItem>
             <SelectItem value="muito_usado" className="text-sm hover:bg-pink-50">
-              <span className="flex items-center gap-2">
-                <span className="text-sm">🔄</span>
-                Muito Usado
-              </span>
+            	<span className="flex items-center gap-2">
+  	   	       	<span className="text-sm">🔄</span>
+              	 	Muito Usado
+            	</span>
             </SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.estado_conservacao && <p className="text-red-500 text-xs mt-1">{errors.estado_conservacao}</p>}
-      </div>
+        	</SelectContent>
+      	</Select>
+  	    {errors.estado_conservacao && <p className="text-red-500 text-xs mt-1">{errors.estado_conservacao}</p>}
+    	</div>
     </div>
   );
 };
