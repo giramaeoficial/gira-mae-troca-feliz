@@ -128,21 +128,24 @@ const FeedOptimized = () => {
     return subcategoriasUnicas;
   };
 
-  // ✅ Lógica de tamanhos
   const getTamanhosDisponiveis = () => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object') return [];
-    
+
     const tipos = Object.keys(tiposTamanho);
-    const tipoUnico = tipos[0];
-    const tamanhos = tipoUnico ? (tiposTamanho[tipoUnico] || []) : [];
-    
-    const tamanhosUnicos = tamanhos.reduce((acc, tamanho) => {
-      if (!acc.some(item => item.valor === tamanho.valor)) {
+
+    // 1. CORREÇÃO: Juntar TODOS os arrays de tamanhos em um só,
+    // usando flatMap, em vez de pegar apenas o primeiro.
+    const todosTamanhos = tipos.flatMap(tipo => tiposTamanho[tipo] || []);
+
+    // 2. CORREÇÃO: Deduzir usando 'label_display' (que é único)
+    // em vez de 'valor' (que é repetido).
+    const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
+      if (!acc.some(item => item.label_display === tamanho.label_display)) {
         acc.push(tamanho);
       }
       return acc;
-    }, [] as typeof tamanhos);
-    
+    }, [] as typeof todosTamanhos);
+
     return tamanhosUnicos;
   };
 
