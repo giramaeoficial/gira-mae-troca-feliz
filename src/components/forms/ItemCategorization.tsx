@@ -1,4 +1,4 @@
-// src/components/forms/ItemCategorization.tsx - VERSÃO COM LOGS DE DEBUG
+// src/components/forms/ItemCategorization.tsx
 
 import React from 'react';
 import { Label } from "@/components/ui/label";
@@ -45,7 +45,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     onFieldChange('tamanho_valor', '');
   };
 
-  // ✅ CORREÇÃO 1: Handler de tamanho reescrito
+  // Handler de tamanho reescrito
   const handleTamanhoChange = (label: string) => {
     let tipoEncontrado = '';
     let valorEncontrado = '';
@@ -92,7 +92,6 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     }
   }, [subcategorias, formData.categoria_id]);
 
-  // ✅ CORREÇÃO 2: 'reduce' de tamanhos com LOGS DE DEBUG
   const tamanhosDisponiveis = React.useMemo(() => {
     if (!tiposTamanho || typeof tiposTamanho !== 'object' || Object.keys(tiposTamanho).length === 0) {
       // Log se os dados do hook estiverem vazios ou inválidos
@@ -101,13 +100,6 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     }
     
     try {
-      // ***** DEBUG 1: O QUE VEIO DO HOOK? *****
-      console.log(
-        "--- DEBUG TAMANHOS (1/3): DADOS CRUS DO HOOK (tiposTamanho) ---", 
-        // Usamos JSON.parse(stringify) para "desembrulhar" o objeto e facilitar a leitura no console
-        JSON.parse(JSON.stringify(tiposTamanho)) 
-      );
-
       const todosTamanhos: Tamanho[] = [];
       
       Object.keys(tiposTamanho).forEach(tipoKey => {
@@ -117,12 +109,6 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
         }
       });
       
-      // ***** DEBUG 2: O QUE TEMOS ANTES DE FILTRAR? *****
-      console.log(
-        "--- DEBUG TAMANHOS (2/3): ARRAY COMPLETO (todosTamanhos) ANTES DO REDUCE ---",
-        todosTamanhos.map(t => t.label_display)
-      );
-
       if (todosTamanhos.length === 0) return [];
       
       const tamanhosUnicos = todosTamanhos.reduce((acc, tamanho) => {
@@ -132,13 +118,7 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
         }
         return acc;
       }, [] as Tamanho[]);
-      
-      // ***** DEBUG 3: O QUE SOBROU DEPOIS DE FILTRAR? *****
-      console.log(
-        "--- DEBUG TAMANHOS (3/3): ARRAY FINAL (tamanhosUnicos) APÓS O REDUCE ---",
-        tamanhosUnicos.map(t => t.label_display)
-      );
-      
+         
       // Ordena pela 'ordem' definida na API
       return tamanhosUnicos.sort((a, b) => {
         const ordemA = a && typeof a.ordem === 'number' ? a.ordem : 0;
@@ -151,7 +131,6 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
     }
   }, [tiposTamanho]);
 
-  // ✅ CORREÇÃO 3: Nova função para encontrar o 'label' salvo no formulário
   const getSelectedLabel = () => {
     if (!formData.tamanho_valor || !formData.tamanho_categoria || !tiposTamanho) {
       return undefined;
@@ -253,7 +232,6 @@ export const ItemCategorization: React.FC<ItemCategorizationProps> = ({
             </SelectTrigger>
             <SelectContent className="bg-white border-gray-200 rounded-lg shadow-lg max-h-60">
               {tamanhosDisponiveis?.map((t) => (
-                // ✅ CORREÇÃO 4b: Usar 'label_display' como o valor
                 <SelectItem key={t.id} value={t.label_display} className="text-sm hover:bg-pink-50">
                   {t.label_display}
                 </SelectItem>
