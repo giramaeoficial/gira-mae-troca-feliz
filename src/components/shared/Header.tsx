@@ -161,7 +161,7 @@ const Header = () => {
           <div className="flex justify-between items-center h-16">
 
             {/* -------------- LOGO -------------- */}
-            <Link to="/feed" className="flex items-center gap-2">
+            <Link to="/feed" className="flex items-center gap-2 mr-4">
               <img src="/giramae_logo.png" alt="Logo GiraMãe"
                 className="h-12 w-auto object-contain" />
               
