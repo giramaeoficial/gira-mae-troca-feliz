@@ -162,8 +162,9 @@ const Header = () => {
 
             {/* -------------- LOGO -------------- */}
             <Link to="/feed" className="flex items-center gap-2">
-              <img src="/icon-192.png" alt="Logo" className="h-10 w-10" />
-              <span className="text-2xl font-bold text-primary">GiraMãe</span>
+              <img src="/giramae_logo.png" alt="Logo GiraMãe"
+                className="h-16 w-auto object-contain" />
+              
             </Link>
 
             {/* -------------- MENU CENTRAL -------------- */}
