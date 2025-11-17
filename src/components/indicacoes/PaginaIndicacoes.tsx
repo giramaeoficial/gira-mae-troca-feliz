@@ -298,17 +298,32 @@ const PaginaIndicacoes = () => {
                   </div>
 
                   {/* Badges (AQUI É A MODIFICAÇÃO) */}
-                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    {indicacao.bonus_cadastro_pago && (
-                      <Badge variant="default">Cadastro ✓</Badge>
-                    )}
-                    {indicacao.bonus_primeiro_item_pago && (
-                      <Badge variant="secondary">1º Item ✓</Badge>
-                    )}
-                    {indicacao.bonus_primeira_compra_pago && (
-                      <Badge variant="outline">1ª Compra ✓</Badge>
-                    )}
-                  </div>
+                  <div className="flex flex-col items-start gap-1">
+                      {indicacao.bonus_cadastro_pago && (
+                        <Badge 
+                          variant="default" 
+                          className="w-fit text-[11px] px-2 py-1 flex items-center gap-1">
+                          Cadastro<span>✓</span>
+                        </Badge>
+                      )}
+                    
+                      {indicacao.bonus_primeiro_item_pago && (
+                        <Badge 
+                          variant="secondary" 
+                          className="w-fit text-[11px] px-2 py-1 flex items-center gap-1">
+                          1º Item<span>✓</span>
+                        </Badge>
+                      )}
+                    
+                      {indicacao.bonus_primeira_compra_pago && (
+                        <Badge 
+                          variant="outline" 
+                          className="w-fit text-[11px] px-2 py-1 flex items-center gap-1">
+                          1ª Compra<span>✓</span>
+                        </Badge>
+                      )}
+                    </div>
+
                 </div>
               ))}
             </div>
