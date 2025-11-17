@@ -48,7 +48,6 @@ const DesktopNav = () => {
 
         <div className="border-l h-5 border-gray-300 mx-2"></div>
 
-        <NavLink to="/parcerias" icon={HeartHandshake}>Parcerias</NavLink>
         <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
         <NavLink to="/favoritos" icon={Heart}>Favoritos</NavLink>
         <NavLink to="/maes-seguidas" icon={UserCheck}>Mães Seguidas</NavLink>
@@ -125,8 +124,8 @@ const Header = () => {
     { label: 'Favoritos', path: '/favoritos', icon: Heart },
     { label: 'Mães Seguidas', path: '/maes-seguidas', icon: UserCheck },
     { label: 'Missões', path: '/missoes', icon: Trophy },
-    { label: 'Reservas', path: '/minhas-reservas', icon: Package }
-  ];
+    { label: 'Reservas', path: '/minhas-reservas', icon: Package },
+    { label: 'Parcerias', path: '/parcerias', icon: HeartHandshake }  ];
 
   /* ------------------ HEADER DESLOGADO ------------------ */
 
