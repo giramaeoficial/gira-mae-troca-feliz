@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { getIndicacoesDoUsuario } from "@/services/indicacoesService";
 import { Loader2 } from "lucide-react";
 
 interface Indicacao {
