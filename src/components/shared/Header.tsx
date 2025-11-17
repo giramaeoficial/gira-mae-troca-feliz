@@ -50,7 +50,7 @@ const DesktopNav = () => {
 
         <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
         <NavLink to="/favoritos" icon={Heart}>Favoritos</NavLink>
-        <NavLink to="/maes-seguidas" icon={UserCheck}>Mães Seguidas</NavLink>
+        <NavLink to="/maes-seguidas" icon={UserCheck}>Seguindo</NavLink>
 
         <div className="border-l h-5 border-gray-300 mx-2"></div>
 
@@ -122,7 +122,7 @@ const Header = () => {
     { label: 'Publicar', path: '/publicar', icon: Plus },
     { label: 'Carteira', path: '/carteira', icon: Wallet },
     { label: 'Favoritos', path: '/favoritos', icon: Heart },
-    { label: 'Mães Seguidas', path: '/maes-seguidas', icon: UserCheck },
+    { label: 'Seguindo', path: '/maes-seguidas', icon: UserCheck },
     { label: 'Missões', path: '/missoes', icon: Trophy },
     { label: 'Reservas', path: '/minhas-reservas', icon: Package },
     { label: 'Parcerias', path: '/parcerias', icon: HeartHandshake }  ];
