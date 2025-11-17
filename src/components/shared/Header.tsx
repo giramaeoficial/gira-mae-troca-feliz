@@ -195,7 +195,7 @@ const Header = () => {
                   {!shouldHideMenus && (
                     <>
                       <DropdownMenuItem onClick={() => navigate('/perfil')}>Meu Perfil</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/perfil/editar')}>Editar Perfil</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/parcerias')}>Parcerias</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate('/configuracoes')}>Configurações</DropdownMenuItem>
                     </>
                   )}
