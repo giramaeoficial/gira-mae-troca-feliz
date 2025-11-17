@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, Heart, UserCheck } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, HeartHandshake, Heart, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -48,6 +48,7 @@ const DesktopNav = () => {
 
         <div className="border-l h-5 border-gray-300 mx-2"></div>
 
+        <NavLink to="/parcerias" icon={HeartHandshake}>Parcerias</NavLink>
         <NavLink to="/carteira" icon={Wallet}>Carteira</NavLink>
         <NavLink to="/favoritos" icon={Heart}>Favoritos</NavLink>
         <NavLink to="/maes-seguidas" icon={UserCheck}>Mães Seguidas</NavLink>
