@@ -158,8 +158,8 @@ const Header: React.FC = () => {
               <Link to="/login">
                 <Button variant="outline">Entrar</Button>
               </Link>
-              <Link to="/auth">
-                <Button>Cadastrar</Button>
+              /*<Link to="/auth">
+                <Button>Cadastrar</Button>*/
               </Link>
             </div>
           </div>
