@@ -322,7 +322,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
  return (
    <Card className={cn(
-     "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full",
+     "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full flex flex-col h-full",
      itemIsReservado && "opacity-75"
    )}>
       <div className="absolute top-2 right-2 flex gap-2 z-10">
@@ -365,21 +365,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         )}
       </div>
 
-     <CardContent className="p-0" onClick={handleClick}>
-       {/* ✅ CORREÇÃO: Container com altura fixa e object-contain */}
-       <div className="relative w-full bg-gray-50">
-         <div className="relative h-[420px] cursor-pointer" onClick={(e) => handleImageClick(e, 0)}>
+     <CardContent className="p-0 flex flex-col h-full" onClick={handleClick}>
+       {/* MUDANÇA AQUI: aspect-[4/3] para forçar horizontal e object-cover para preencher */}
+       <div className="relative w-full aspect-[4/3] bg-gray-50 overflow-hidden">
+         <div className="relative w-full h-full cursor-pointer" onClick={(e) => handleImageClick(e, 0)}>
            {hasMultiplePhotos ? (
              <Carousel className="w-full h-full">
-               <CarouselContent className="h-full">
+               <CarouselContent className="h-full ml-0">
                  {item.fotos!.map((foto, index) => (
-                   <CarouselItem key={index} className="h-full">
-                     <div onClick={(e) => handleImageClick(e, index)}>
+                   <CarouselItem key={index} className="h-full pl-0">
+                     <div className="w-full h-full" onClick={(e) => handleImageClick(e, index)}>
                        <LazyImage
                          src={foto}
                          alt={`${item.titulo} - Foto ${index + 1}`}
                          className={cn(
-                           "w-full h-full object-contain",
+                           "w-full h-full object-cover",
                            itemIsReservado && "filter grayscale-[20%]"
                          )}
                        />
@@ -393,7 +393,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                  <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
                </div>
 
-               <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+               <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm z-10">
                  {item.fotos!.length} fotos
                </div>
              </Carousel>
@@ -402,28 +402,29 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                src={item.fotos?.[0] || '/placeholder-item.jpg'}
                alt={item.titulo}
                className={cn(
-                 "w-full h-full object-contain",
+                 "w-full h-full object-cover",
                  itemIsReservado && "filter grayscale-[20%]"
                )}
              />
            )}
            
            {item.logistica?.distancia_km !== null && item.logistica?.distancia_km !== undefined && (
-             <div className="absolute bottom-2 left-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
+             <div className="absolute bottom-2 left-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm z-10">
                <MapPin className="w-3 h-3 inline mr-1" />
                {item.logistica.distancia_km}km
              </div>
            )}
            
            {item.genero && getGeneroIcon(item.genero) && (
-             <div className="absolute bottom-2 right-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
+             <div className="absolute bottom-2 right-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm z-10">
                {getGeneroIcon(item.genero)}
              </div>
            )}
          </div>
        </div>
 
-       <div className="p-3">
+       {/* MUDANÇA AQUI: flex-1 para o conteúdo ocupar o espaço restante */}
+       <div className="p-3 flex flex-col flex-1">
          <div className="flex flex-wrap gap-2 mb-2">
            {itemIsReservado && (
              <Badge className="bg-red-500 text-white">
@@ -474,387 +475,390 @@ export const ItemCard: React.FC<ItemCardProps> = ({
          {hasLocationData && (
            <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
              <MapPin className="w-4 h-4" />
-             <span>{getLocationText()}</span>
+             <span className="truncate">{getLocationText()}</span>
            </div>
          )}
 
-         <div className="mb-3">
-           <div className="flex items-center justify-between mb-1">
-             <div className="flex items-center gap-2">
-               <Sparkles className="w-4 h-4 text-primary" />
-               <span className="text-lg font-bold text-primary">
-                 {valores.total} Girinhas
-               </span>
-             </div>
-             
-             <button
-               onClick={(e) => {
-                 e.stopPropagation();
-                 setShowDetails(!showDetails);
-               }}
-               className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
-               title="Ver detalhes do item"
-             >
-               <Info className="w-3 h-3" />
-               Ver detalhes
-             </button>
+         {/* MUDANÇA AQUI: mt-auto para empurrar o restante para o fundo do card */}
+         <div className="mt-auto">
+             <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-lg font-bold text-primary">
+                    {valores.total} Girinhas
+                </span>
+                </div>
+                
+                <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetails(!showDetails);
+                }}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                title="Ver detalhes do item"
+                >
+                <Info className="w-3 h-3" />
+                Ver detalhes
+                </button>
+            </div>
+            
+            {showDetails && (
+                <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-sm space-y-2">
+                {item.descricao && (
+                    <div>
+                    <span className="font-medium text-gray-700">Descrição:</span>
+                    <p className="text-gray-600 mt-1 text-xs line-clamp-3">{item.descricao}</p>
+                    </div>
+                )}
+                
+                <div className="flex items-center gap-2 text-gray-600">
+                    <span className="font-medium">Categoria:</span>
+                    <span className="capitalize">{item.categoria}</span>
+                    {item.subcategoria && (
+                    <>
+                        <span>•</span>
+                        <span>{item.subcategoria}</span>
+                    </>
+                    )}
+                </div>
+
+                {item.tamanho_valor && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                    <span className="font-medium">Tamanho:</span>
+                    <span>{item.tamanho_valor}</span>
+                    {item.tamanho_categoria && (
+                        <span className="text-xs">({item.tamanho_categoria})</span>
+                    )}
+                    </div>
+                )}
+
+                <div className="flex items-center gap-2 text-gray-600">
+                    <span className="font-medium">Publicado em:</span>
+                    <span>{formatDate(item.created_at)}</span>
+                </div>
+                
+                {taxaTransacao > 0 && valores.taxa > 0 && (
+                    <>
+                    <div className="border-t pt-2">
+                        <div className="flex justify-between">
+                        <span className="text-gray-600">Item:</span>
+                        <span className="font-medium">{valores.valorItem} Girinhas</span>
+                        </div>
+                        <div className="flex justify-between">
+                        <span className="text-gray-600">Taxa ({taxaTransacao}%):</span>
+                        <span className="font-medium">+{valores.taxa} Girinhas</span>
+                        </div>
+                        <div className="border-t pt-1 flex justify-between font-bold text-primary">
+                        <span>Total:</span>
+                        <span>{valores.total} Girinhas</span>
+                        </div>
+                    </div>
+                    </>
+                )}
+                </div>
+            )}
+            </div>
+
+            {showAuthor && item.publicado_por_profile && (
+            <button
+                onClick={handleProfileClick}
+                className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors group/profile"
+            >
+                <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                {item.publicado_por_profile.avatar_url ? (
+                    <img 
+                    src={item.publicado_por_profile.avatar_url} 
+                    alt={item.publicado_por_profile.nome}
+                    className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <User className="w-3 h-3 text-white" />
+                )}
+                </div>
+                <div className="flex-1 text-left overflow-hidden">
+                <div className="text-xs text-gray-600 truncate">
+                    {item.publicado_por_profile.nome}
+                </div>
+                <div className="text-xs text-blue-600 group-hover/profile:text-blue-700 font-medium">
+                    Ver perfil →
+                </div>
+                </div>
+                {item.publicado_por_profile.reputacao && (
+                <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-xs text-yellow-600">
+                    {item.publicado_por_profile.reputacao.toFixed(1)}
+                    </span>
+                    <span className="text-yellow-500 text-xs">⭐</span>
+                </div>
+                )}
+            </button>
+            )}
+
+            {canShowWhatsApp && (
+            <div className="bg-green-50 border border-green-200 rounded-lg px-2 py-1.5 mb-2">
+                <div className="text-xs text-green-800 mb-1 text-center">
+                Combine a entrega
+                </div>
+                <div className="flex items-center justify-center">
+                <Button 
+                    size="sm" 
+                    className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs h-6"
+                    onClick={handleWhatsAppClick}
+                >
+                    <MessageCircle className="w-3 h-3 mr-1" />
+                    WhatsApp
+                </Button>
+                </div>
+            </div>
+            )}
+
+            {shouldShowActionButton && (
+            <Button 
+                size="default"
+                className={cn(
+                "w-full h-10",
+                itemIsReservado 
+                    ? "bg-orange-500 hover:bg-orange-600" 
+                    : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
+                )}
+                onClick={handleActionClick}
+                disabled={actionState === 'loading' || (!itemIsDisponivel && !itemIsReservado)}
+            >
+                {actionState === 'loading' ? (
+                <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 animate-spin" />
+                    {itemIsReservado ? 'Entrando...' : 'Reservando...'}
+                </div>
+                ) : itemIsReservado ? (
+                <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Entrar na Fila
+                </div>
+                ) : (
+                <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Reservar Item
+                </div>
+                )}
+            </Button>
+            )}
+
+            {(isUserInQueue || hasActiveReservation) && !canShowWhatsApp && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                {hasActiveReservation ? (
+                <div>
+                    <div className="flex items-center justify-center gap-2 text-green-600 mb-1">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Item Reservado</span>
+                    </div>
+                    <p className="text-xs text-gray-600">
+                    Você tem uma reserva ativa. Aguarde o vendedor entrar em contato ou combine a entrega.
+                    </p>
+                </div>
+                ) : (
+                <div>
+                    <div className="flex items-center justify-center gap-2 text-blue-600 mb-1">
+                    <Users className="w-4 h-4" />
+                    <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
+                    </div>
+                    <p className="text-xs text-gray-600">
+                    {filaInfo?.total_fila && filaInfo.total_fila > 1 
+                        ? `Há ${filaInfo.total_fila - (filaInfo.posicao_usuario || 0)} pessoas na sua frente.`
+                        : 'Você será notificado se o item ficar disponível.'
+                    }
+                    </p>
+                </div>
+                )}
+            </div>
+            )}
+
+            {actionState !== 'idle' && actionState !== 'loading' && (
+            <ActionFeedback
+                state={actionState}
+                successMessage={itemIsReservado ? "Adicionado à fila!" : "Item reservado!"}
+                errorMessage={itemIsReservado ? "Erro ao entrar na fila" : "Erro ao reservar"}
+                className="mt-2"
+            />
+            )}
+         </div>
+       </div>
+     </CardContent>
+
+     <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+       <DialogContent className="sm:max-w-md">
+         <DialogHeader>
+           <DialogTitle>Reportar Item</DialogTitle>
+           <DialogDescription>
+             Descreva o motivo da sua denúncia. Nossa equipe irá analisar.
+           </DialogDescription>
+         </DialogHeader>
+         
+         <div className="space-y-4">
+           <div>
+             <label className="text-sm font-medium">Motivo</label>
+             <Select value={reportMotivo} onValueChange={setReportMotivo}>
+               <SelectTrigger>
+                 <SelectValue placeholder="Selecione o motivo" />
+               </SelectTrigger>
+               <SelectContent>
+                 <SelectItem value="conteudo_inapropriado">Conteúdo inapropriado</SelectItem>
+                 <SelectItem value="preco_abusivo">Preço abusivo</SelectItem>
+                 <SelectItem value="informacoes_falsas">Informações falsas</SelectItem>
+                 <SelectItem value="item_danificado">Item danificado</SelectItem>
+                 <SelectItem value="spam">Spam</SelectItem>
+                 <SelectItem value="outro">Outro</SelectItem>
+               </SelectContent>
+             </Select>
            </div>
            
-           {showDetails && (
-             <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-sm space-y-2">
-               {item.descricao && (
-                 <div>
-                   <span className="font-medium text-gray-700">Descrição:</span>
-                   <p className="text-gray-600 mt-1 text-xs">{item.descricao}</p>
-                 </div>
-               )}
-               
-               <div className="flex items-center gap-2 text-gray-600">
-                 <span className="font-medium">Categoria:</span>
-                 <span className="capitalize">{item.categoria}</span>
-                 {item.subcategoria && (
-                   <>
-                     <span>•</span>
-                     <span>{item.subcategoria}</span>
-                   </>
-                 )}
-               </div>
+           <div>
+             <label className="text-sm font-medium">Descrição (opcional)</label>
+             <Textarea
+               placeholder="Descreva mais detalhes sobre o problema..."
+               value={reportDescricao}
+               onChange={(e) => setReportDescricao(e.target.value)}
+               className="mt-1"
+             />
+           </div>
+         </div>
 
+         <DialogFooter>
+           <Button variant="outline" onClick={() => setShowReportDialog(false)}>
+             Cancelar
+           </Button>
+           <Button 
+             onClick={handleReportSubmit}
+             disabled={!reportMotivo}
+             className="bg-red-500 hover:bg-red-600"
+           >
+             Reportar
+           </Button>
+         </DialogFooter>
+       </DialogContent>
+     </Dialog>
+
+     {/* Modal de Imagem com Zoom */}
+     <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+       <DialogContent className="max-w-[100vw] w-full h-screen max-h-screen p-0 bg-black/95 border-0 rounded-none">
+         {/* Header com controles */}
+         <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 bg-gradient-to-b from-black/80 to-transparent">
+           <div className="flex items-center gap-2 text-white">
+             <span className="text-xs font-medium">
+               {selectedImageIndex + 1} / {item.fotos?.length || 1}
+             </span>
+           </div>
+           
+           {/* Controles de Zoom */}
+           <div className="flex items-center gap-1">
+             <Button
+               variant="ghost"
+               size="sm"
+               onClick={handleZoomOut}
+               disabled={imageZoom <= 1}
+               className="text-white hover:bg-white/20 h-8 w-8 p-0"
+             >
+               <ZoomOut className="w-4 h-4" />
+             </Button>
+             <span className="text-white text-xs font-medium min-w-[45px] text-center">
+               {Math.round(imageZoom * 100)}%
+             </span>
+             <Button
+               variant="ghost"
+               size="sm"
+               onClick={handleZoomIn}
+               disabled={imageZoom >= 3}
+               className="text-white hover:bg-white/20 h-8 w-8 p-0"
+             >
+               <ZoomIn className="w-4 h-4" />
+             </Button>
+           </div>
+
+           <Button
+             variant="ghost"
+             size="sm"
+             onClick={() => setShowImageModal(false)}
+             className="text-white hover:bg-white/20 h-8 w-8 p-0"
+           >
+             <X className="w-5 h-5" />
+           </Button>
+         </div>
+
+         {/* Container da imagem com scroll */}
+         <div className="relative w-full h-full overflow-auto flex items-center justify-center pt-14 pb-32 px-4">
+           <div 
+             className="transition-transform duration-200 origin-center"
+             style={{ 
+               transform: `scale(${imageZoom})`,
+               maxWidth: '100%',
+               maxHeight: '100%'
+             }}
+           >
+             <img
+               src={item.fotos?.[selectedImageIndex] || '/placeholder-item.jpg'}
+               alt={`${item.titulo} - Foto ${selectedImageIndex + 1}`}
+               className="max-w-full max-h-[calc(100vh-200px)] w-auto h-auto object-contain"
+               style={{ 
+                 cursor: imageZoom > 1 ? 'grab' : 'default'
+               }}
+             />
+           </div>
+         </div>
+
+         {/* Navegação entre fotos */}
+         {hasMultiplePhotos && (
+           <>
+             {selectedImageIndex > 0 && (
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 onClick={handlePrevImage}
+                 className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 p-0 rounded-full"
+               >
+                 <ChevronLeft className="w-6 h-6" />
+               </Button>
+             )}
+             
+             {item.fotos && selectedImageIndex < item.fotos.length - 1 && (
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 onClick={handleNextImage}
+                 className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 p-0 rounded-full"
+               >
+                 <ChevronRight className="w-6 h-6" />
+               </Button>
+             )}
+           </>
+         )}
+
+         {/* Footer com informações do item */}
+         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+           <div className="text-white">
+             <h3 className="font-semibold text-lg mb-1">{item.titulo}</h3>
+             <div className="flex items-center gap-3 text-sm text-gray-300">
+               <span className="flex items-center gap-1">
+                 <Sparkles className="w-4 h-4" />
+                 {valores.total} Girinhas
+               </span>
+               <span>•</span>
+               <span className="capitalize">{item.estado_conservacao}</span>
                {item.tamanho_valor && (
-                 <div className="flex items-center gap-2 text-gray-600">
-                   <span className="font-medium">Tamanho:</span>
-                   <span>{item.tamanho_valor}</span>
-                   {item.tamanho_categoria && (
-                     <span className="text-xs">({item.tamanho_categoria})</span>
-                   )}
-                 </div>
-               )}
-
-               <div className="flex items-center gap-2 text-gray-600">
-                 <span className="font-medium">Publicado em:</span>
-                 <span>{formatDate(item.created_at)}</span>
-               </div>
-               
-               {taxaTransacao > 0 && valores.taxa > 0 && (
                  <>
-                   <div className="border-t pt-2">
-                     <div className="flex justify-between">
-                       <span className="text-gray-600">Item:</span>
-                       <span className="font-medium">{valores.valorItem} Girinhas</span>
-                     </div>
-                     <div className="flex justify-between">
-                       <span className="text-gray-600">Taxa ({taxaTransacao}%):</span>
-                       <span className="font-medium">+{valores.taxa} Girinhas</span>
-                     </div>
-                     <div className="border-t pt-1 flex justify-between font-bold text-primary">
-                       <span>Total:</span>
-                       <span>{valores.total} Girinhas</span>
-                     </div>
-                   </div>
+                   <span>•</span>
+                   <span>Tamanho {item.tamanho_valor}</span>
                  </>
                )}
              </div>
-           )}
+           </div>
          </div>
 
-         {showAuthor && item.publicado_por_profile && (
-           <button
-             onClick={handleProfileClick}
-             className="flex items-center gap-2 pt-2 border-t border-gray-100 mb-3 w-full text-left hover:bg-gray-50 -mx-1 px-1 py-1 rounded transition-colors group/profile"
-           >
-             <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center overflow-hidden">
-               {item.publicado_por_profile.avatar_url ? (
-                 <img 
-                   src={item.publicado_por_profile.avatar_url} 
-                   alt={item.publicado_por_profile.nome}
-                   className="w-full h-full object-cover"
-                 />
-               ) : (
-                 <User className="w-3 h-3 text-white" />
-               )}
-             </div>
-             <div className="flex-1 text-left">
-               <div className="text-xs text-gray-600 truncate">
-                 {item.publicado_por_profile.nome}
-               </div>
-               <div className="text-xs text-blue-600 group-hover/profile:text-blue-700 font-medium">
-                 Ver perfil →
-               </div>
-             </div>
-             {item.publicado_por_profile.reputacao && (
-               <div className="flex items-center gap-1">
-                 <span className="text-xs text-yellow-600">
-                   {item.publicado_por_profile.reputacao.toFixed(1)}
-                 </span>
-                 <span className="text-yellow-500 text-xs">⭐</span>
-               </div>
-             )}
-           </button>
-         )}
-
-         {canShowWhatsApp && (
-           <div className="bg-green-50 border border-green-200 rounded-lg px-2 py-1.5 mb-2">
-             <div className="text-xs text-green-800 mb-1 text-center">
-               Combine a entrega
-             </div>
-             <div className="flex items-center justify-center">
-               <Button 
-                 size="sm" 
-                 className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 text-xs h-6"
-                 onClick={handleWhatsAppClick}
-               >
-                 <MessageCircle className="w-3 h-3 mr-1" />
-                 WhatsApp
-               </Button>
-             </div>
-           </div>
-         )}
-
-         {shouldShowActionButton && (
-           <Button 
-             size="default"
-             className={cn(
-               "w-full h-10",
-               itemIsReservado 
-                 ? "bg-orange-500 hover:bg-orange-600" 
-                 : "bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90"
-             )}
-             onClick={handleActionClick}
-             disabled={actionState === 'loading' || (!itemIsDisponivel && !itemIsReservado)}
-           >
-             {actionState === 'loading' ? (
-               <div className="flex items-center gap-2">
-                 <Clock className="w-4 h-4 animate-spin" />
-                 {itemIsReservado ? 'Entrando...' : 'Reservando...'}
-               </div>
-             ) : itemIsReservado ? (
-               <div className="flex items-center gap-2">
-                 <Users className="w-4 h-4" />
-                 Entrar na Fila
-               </div>
-             ) : (
-               <div className="flex items-center gap-2">
-                 <Sparkles className="w-4 h-4" />
-                 Reservar Item
-               </div>
-             )}
-           </Button>
-         )}
-
-         {(isUserInQueue || hasActiveReservation) && !canShowWhatsApp && (
-           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-             {hasActiveReservation ? (
-               <div>
-                 <div className="flex items-center justify-center gap-2 text-green-600 mb-1">
-                   <CheckCircle className="w-4 h-4" />
-                   <span className="text-sm font-medium">Item Reservado</span>
-                 </div>
-                 <p className="text-xs text-gray-600">
-                   Você tem uma reserva ativa. Aguarde o vendedor entrar em contato ou combine a entrega.
-                 </p>
-               </div>
-             ) : (
-               <div>
-                 <div className="flex items-center justify-center gap-2 text-blue-600 mb-1">
-                   <Users className="w-4 h-4" />
-                   <span className="text-sm font-medium">Na fila - Posição {filaInfo?.posicao_usuario}</span>
-                 </div>
-                 <p className="text-xs text-gray-600">
-                   {filaInfo?.total_fila && filaInfo.total_fila > 1 
-                     ? `Há ${filaInfo.total_fila - (filaInfo.posicao_usuario || 0)} pessoas na sua frente.`
-                     : 'Você será notificado se o item ficar disponível.'
-                   }
-                 </p>
-               </div>
-             )}
-           </div>
-         )}
-
-         {actionState !== 'idle' && actionState !== 'loading' && (
-           <ActionFeedback
-             state={actionState}
-             successMessage={itemIsReservado ? "Adicionado à fila!" : "Item reservado!"}
-             errorMessage={itemIsReservado ? "Erro ao entrar na fila" : "Erro ao reservar"}
-             className="mt-2"
-           />
-         )}
-        </div>
-      </CardContent>
-
-      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reportar Item</DialogTitle>
-            <DialogDescription>
-              Descreva o motivo da sua denúncia. Nossa equipe irá analisar.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Motivo</label>
-              <Select value={reportMotivo} onValueChange={setReportMotivo}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o motivo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="conteudo_inapropriado">Conteúdo inapropriado</SelectItem>
-                  <SelectItem value="preco_abusivo">Preço abusivo</SelectItem>
-                  <SelectItem value="informacoes_falsas">Informações falsas</SelectItem>
-                  <SelectItem value="item_danificado">Item danificado</SelectItem>
-                  <SelectItem value="spam">Spam</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium">Descrição (opcional)</label>
-              <Textarea
-                placeholder="Descreva mais detalhes sobre o problema..."
-                value={reportDescricao}
-                onChange={(e) => setReportDescricao(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowReportDialog(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleReportSubmit}
-              disabled={!reportMotivo}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              Reportar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Imagem com Zoom */}
-      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogContent className="max-w-[100vw] w-full h-screen max-h-screen p-0 bg-black/95 border-0 rounded-none">
-          {/* Header com controles */}
-          <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 bg-gradient-to-b from-black/80 to-transparent">
-            <div className="flex items-center gap-2 text-white">
-              <span className="text-xs font-medium">
-                {selectedImageIndex + 1} / {item.fotos?.length || 1}
-              </span>
-            </div>
-            
-            {/* Controles de Zoom */}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleZoomOut}
-                disabled={imageZoom <= 1}
-                className="text-white hover:bg-white/20 h-8 w-8 p-0"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </Button>
-              <span className="text-white text-xs font-medium min-w-[45px] text-center">
-                {Math.round(imageZoom * 100)}%
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleZoomIn}
-                disabled={imageZoom >= 3}
-                className="text-white hover:bg-white/20 h-8 w-8 p-0"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowImageModal(false)}
-              className="text-white hover:bg-white/20 h-8 w-8 p-0"
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
-
-          {/* Container da imagem com scroll */}
-          <div className="relative w-full h-full overflow-auto flex items-center justify-center pt-14 pb-32 px-4">
-            <div 
-              className="transition-transform duration-200 origin-center"
-              style={{ 
-                transform: `scale(${imageZoom})`,
-                maxWidth: '100%',
-                maxHeight: '100%'
-              }}
-            >
-              <img
-                src={item.fotos?.[selectedImageIndex] || '/placeholder-item.jpg'}
-                alt={`${item.titulo} - Foto ${selectedImageIndex + 1}`}
-                className="max-w-full max-h-[calc(100vh-200px)] w-auto h-auto object-contain"
-                style={{ 
-                  cursor: imageZoom > 1 ? 'grab' : 'default'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Navegação entre fotos */}
-          {hasMultiplePhotos && (
-            <>
-              {selectedImageIndex > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handlePrevImage}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 p-0 rounded-full"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </Button>
-              )}
-              
-              {item.fotos && selectedImageIndex < item.fotos.length - 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleNextImage}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 p-0 rounded-full"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </Button>
-              )}
-            </>
-          )}
-
-          {/* Footer com informações do item */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
-            <div className="text-white">
-              <h3 className="font-semibold text-lg mb-1">{item.titulo}</h3>
-              <div className="flex items-center gap-3 text-sm text-gray-300">
-                <span className="flex items-center gap-1">
-                  <Sparkles className="w-4 h-4" />
-                  {valores.total} Girinhas
-                </span>
-                <span>•</span>
-                <span className="capitalize">{item.estado_conservacao}</span>
-                {item.tamanho_valor && (
-                  <>
-                    <span>•</span>
-                    <span>Tamanho {item.tamanho_valor}</span>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Dica de uso */}
-          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white/60 text-xs text-center">
-            Use os botões + / - para zoom • {hasMultiplePhotos ? 'Setas para navegar' : ''}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
+         {/* Dica de uso */}
+         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white/60 text-xs text-center">
+           Use os botões + / - para zoom • {hasMultiplePhotos ? 'Setas para navegar' : ''}
+         </div>
+       </DialogContent>
+     </Dialog>
+   </Card>
+ );
 };
