@@ -637,7 +637,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 </div>
                 ) : (
                 <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
+                    {/* <Sparkles className="w-4 h-4" /> */}
                     Reservar Item
                 </div>
                 )}
