@@ -10,7 +10,7 @@ import {
   CarouselNext, 
   CarouselPrevious 
 } from '@/components/ui/carousel';
-import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User, MoreVertical, Flag } from 'lucide-react';
+import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User, MoreVertical, Flag, ZoomIn, ZoomOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
 import ActionFeedback from '@/components/loading/ActionFeedback';
@@ -125,8 +125,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [reportMotivo, setReportMotivo] = useState('');
   const [reportDescricao, setReportDescricao] = useState('');
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [imageZoom, setImageZoom] = useState(1);
  
- // ✅ CALCULAR STATUS DOS DADOS CONSOLIDADOS (sem hooks externos)
  const isFavorito = feedData.favoritos.includes(item.id);
  
  const hasActiveReservation = feedData.reservas_usuario.some(r => 
@@ -138,22 +140,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({
  const filaInfo = feedData.filas_espera[item.id];
  const isUserInQueue = filaInfo?.posicao_usuario && filaInfo.posicao_usuario > 0;
 
- // ✅ VERIFICAR MESMA ESCOLA (agora vem do backend)
  const hasCommonSchool = Boolean(item.escola_comum);
 
- // Status do item
  const itemIsReservado = item.status === 'reservado';
  const itemIsDisponivel = item.status === 'disponivel';
 
- // ✅ VERIFICAR SE PODE MOSTRAR WHATSAPP
  const canShowWhatsApp = item.publicado_por_profile?.whatsapp && 
    hasActiveReservation && 
    item.publicado_por !== currentUserId;
 
-  // ✅ VERIFICAR SE TEM MÚLTIPLAS FOTOS
   const hasMultiplePhotos = item.fotos && item.fotos.length > 1;
 
-  // ✅ DENÚNCIA
   const handleReportSubmit = async () => {
     try {
       const { error } = await supabase
@@ -180,7 +177,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
- // ✅ CALCULAR VALORES COM TAXA
  const calcularValores = () => {
    const valorItem = item.valor_girinhas;
    const taxa = taxaTransacao > 0 ? valorItem * (taxaTransacao / 100) : 0;
@@ -195,16 +191,43 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
  const valores = calcularValores();
 
- // ✅ DETERMINAR SE DEVE MOSTRAR BOTÃO DE AÇÃO
  const shouldShowActionButton = showActions && 
    (onEntrarFila || onReservar) && 
    !isUserInQueue && 
    !hasActiveReservation &&
    item.publicado_por !== currentUserId;
 
- // Event handlers
  const handleClick = () => {
    // Removido - não navega mais para página separada
+ };
+
+ const handleImageClick = (e: React.MouseEvent, index: number = 0) => {
+   e.stopPropagation();
+   setSelectedImageIndex(index);
+   setShowImageModal(true);
+   setImageZoom(1);
+ };
+
+ const handleZoomIn = () => {
+   setImageZoom(prev => Math.min(prev + 0.5, 3));
+ };
+
+ const handleZoomOut = () => {
+   setImageZoom(prev => Math.max(prev - 0.5, 1));
+ };
+
+ const handleNextImage = () => {
+   if (item.fotos && selectedImageIndex < item.fotos.length - 1) {
+     setSelectedImageIndex(prev => prev + 1);
+     setImageZoom(1);
+   }
+ };
+
+ const handlePrevImage = () => {
+   if (selectedImageIndex > 0) {
+     setSelectedImageIndex(prev => prev - 1);
+     setImageZoom(1);
+   }
  };
 
  const handleFavoriteClick = (e: React.MouseEvent) => {
@@ -230,7 +253,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    }
  };
 
- // ✅ HANDLER WHATSAPP COM REGISTRO NO BANCO
  const handleWhatsAppClick = async (e: React.MouseEvent) => {
    e.stopPropagation();
    if (!item.publicado_por_profile?.whatsapp) return;
@@ -261,7 +283,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
    window.open(whatsappUrl, '_blank');
  };
 
- // Helper functions
  const getGeneroIcon = (genero?: string) => {
    switch (genero) {
      case 'menino': return '👦';
@@ -304,9 +325,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
      "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full",
      itemIsReservado && "opacity-75"
    )}>
-      {/* Botões sobre a imagem */}
       <div className="absolute top-2 right-2 flex gap-2 z-10">
-        {/* Menu de opções */}
         {item.publicado_por !== currentUserId && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -327,7 +346,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </DropdownMenu>
         )}
         
-        {/* Botão de favorito */}
         {showActions && onToggleFavorito && (
           <Button
             variant="ghost"
@@ -348,80 +366,75 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       </div>
 
      <CardContent className="p-0" onClick={handleClick}>
-       {/* ✅ SEÇÃO DE IMAGEM COM CARROUSEL */}
-       <div className="relative aspect-[4/3]">
-         {hasMultiplePhotos ? (
-           <Carousel className="w-full h-full">
-             <CarouselContent>
-               {item.fotos!.map((foto, index) => (
-                 <CarouselItem key={index}>
-                   <LazyImage
-                     src={foto}
-                     alt={`${item.titulo} - Foto ${index + 1}`}
-                     className={cn(
-                       "w-full h-full object-cover",
-                       itemIsReservado && "filter grayscale-[20%]"
-                     )}
-                   />
-                 </CarouselItem>
-               ))}
-             </CarouselContent>
-             
-             {/* Controles só aparecem no hover do grupo */}
-             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-               <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
-               <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
-             </div>
+       {/* ✅ CORREÇÃO: Container com altura fixa e object-contain */}
+       <div className="relative w-full bg-gray-50">
+         <div className="relative h-[420px] cursor-pointer" onClick={(e) => handleImageClick(e, 0)}>
+           {hasMultiplePhotos ? (
+             <Carousel className="w-full h-full">
+               <CarouselContent className="h-full">
+                 {item.fotos!.map((foto, index) => (
+                   <CarouselItem key={index} className="h-full">
+                     <div onClick={(e) => handleImageClick(e, index)}>
+                       <LazyImage
+                         src={foto}
+                         alt={`${item.titulo} - Foto ${index + 1}`}
+                         className={cn(
+                           "w-full h-full object-contain",
+                           itemIsReservado && "filter grayscale-[20%]"
+                         )}
+                       />
+                     </div>
+                   </CarouselItem>
+                 ))}
+               </CarouselContent>
+               
+               <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                 <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
+                 <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white border-0" />
+               </div>
 
-             {/* Indicador de múltiplas fotos */}
-             <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-               {item.fotos!.length} fotos
+               <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                 {item.fotos!.length} fotos
+               </div>
+             </Carousel>
+           ) : (
+             <LazyImage
+               src={item.fotos?.[0] || '/placeholder-item.jpg'}
+               alt={item.titulo}
+               className={cn(
+                 "w-full h-full object-contain",
+                 itemIsReservado && "filter grayscale-[20%]"
+               )}
+             />
+           )}
+           
+           {item.logistica?.distancia_km !== null && item.logistica?.distancia_km !== undefined && (
+             <div className="absolute bottom-2 left-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
+               <MapPin className="w-3 h-3 inline mr-1" />
+               {item.logistica.distancia_km}km
              </div>
-           </Carousel>
-         ) : (
-           <LazyImage
-             src={item.fotos?.[0] || '/placeholder-item.jpg'}
-             alt={item.titulo}
-             className={cn(
-               "w-full h-full object-cover",
-               itemIsReservado && "filter grayscale-[20%]"
-             )}
-           />
-         )}
-         
-         {/* Distância no canto esquerdo inferior */}
-         {item.logistica?.distancia_km !== null && item.logistica?.distancia_km !== undefined && (
-           <div className="absolute bottom-2 left-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
-             <MapPin className="w-3 h-3 inline mr-1" />
-             {item.logistica.distancia_km}km
-           </div>
-         )}
-         
-         {/* Badge de gênero no canto direito inferior */}
-         {item.genero && getGeneroIcon(item.genero) && (
-           <div className="absolute bottom-2 right-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
-             {getGeneroIcon(item.genero)}
-           </div>
-         )}
+           )}
+           
+           {item.genero && getGeneroIcon(item.genero) && (
+             <div className="absolute bottom-2 right-2 bg-white/90 rounded-full px-2 py-1 text-xs backdrop-blur-sm">
+               {getGeneroIcon(item.genero)}
+             </div>
+           )}
+         </div>
        </div>
 
-       {/* Conteúdo do card */}
        <div className="p-3">
-         {/* Status, estado e tamanho - JUNTOS */}
          <div className="flex flex-wrap gap-2 mb-2">
-           {/* Badge de status reservado */}
            {itemIsReservado && (
              <Badge className="bg-red-500 text-white">
                Reservado
              </Badge>
            )}
            
-           {/* Badge de estado de conservação */}
            <Badge className={getEstadoColor(item.estado_conservacao)}>
              {item.estado_conservacao.charAt(0).toUpperCase() + item.estado_conservacao.slice(1)}
            </Badge>
 
-           {/* Badge de tamanho */}
            {item.tamanho_valor && (
              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                Tam. {item.tamanho_valor}
@@ -429,10 +442,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            )}
          </div>
 
-         {/* ✅ BADGES DE LOGÍSTICA (sem distância) */}
          {(hasCommonSchool || item.logistica?.entrega_disponivel || item.logistica?.busca_disponivel) && (
            <div className="flex flex-wrap gap-1 mb-2">
-             {/* Escola em comum */}
              {hasCommonSchool && (
                <Badge className="text-xs px-2 py-1 flex items-center gap-1 bg-purple-100 text-purple-800 border-purple-200">
                  <School className="w-3 h-3" />
@@ -440,7 +451,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                </Badge>
              )}
              
-             {/* Entrega disponível */}
              {item.logistica?.entrega_disponivel && (
                <Badge className="text-xs px-2 py-1 flex items-center gap-1 bg-green-100 text-green-800 border-green-200">
                  <Truck className="w-3 h-3" />
@@ -448,7 +458,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                </Badge>
              )}
              
-             {/* Busca disponível (só se não tem entrega) */}
              {!item.logistica?.entrega_disponivel && item.logistica?.busca_disponivel && (
                <Badge className="text-xs px-2 py-1 flex items-center gap-1 bg-blue-100 text-blue-800 border-blue-200">
                  <Car className="w-3 h-3" />
@@ -458,12 +467,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </div>
          )}
 
-         {/* Título */}
          <h3 className="font-medium leading-tight line-clamp-2 mb-1 text-base min-h-[2.5rem]">
            {item.titulo}
          </h3>
 
-         {/* Localização */}
          {hasLocationData && (
            <div className="flex items-center gap-1 text-sm text-gray-500 mb-1">
              <MapPin className="w-4 h-4" />
@@ -471,7 +478,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </div>
          )}
 
-         {/* Preço com botão Ver Detalhes */}
          <div className="mb-3">
            <div className="flex items-center justify-between mb-1">
              <div className="flex items-center gap-2">
@@ -481,7 +487,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                </span>
              </div>
              
-             {/* Botão Ver Detalhes */}
              <button
                onClick={(e) => {
                  e.stopPropagation();
@@ -495,10 +500,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
              </button>
            </div>
            
-           {/* Detalhes expandidos */}
            {showDetails && (
              <div className="border border-gray-200 rounded-lg p-3 bg-gray-50 text-sm space-y-2">
-               {/* Descrição */}
                {item.descricao && (
                  <div>
                    <span className="font-medium text-gray-700">Descrição:</span>
@@ -506,7 +509,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                  </div>
                )}
                
-               {/* Categoria e subcategoria */}
                <div className="flex items-center gap-2 text-gray-600">
                  <span className="font-medium">Categoria:</span>
                  <span className="capitalize">{item.categoria}</span>
@@ -518,7 +520,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                  )}
                </div>
 
-               {/* Tamanho completo */}
                {item.tamanho_valor && (
                  <div className="flex items-center gap-2 text-gray-600">
                    <span className="font-medium">Tamanho:</span>
@@ -529,13 +530,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                  </div>
                )}
 
-               {/* Data de publicação */}
                <div className="flex items-center gap-2 text-gray-600">
                  <span className="font-medium">Publicado em:</span>
                  <span>{formatDate(item.created_at)}</span>
                </div>
                
-               {/* Preços se houver taxa */}
                {taxaTransacao > 0 && valores.taxa > 0 && (
                  <>
                    <div className="border-t pt-2">
@@ -558,7 +557,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            )}
          </div>
 
-         {/* ✅ PERFIL DO AUTOR MELHORADO - COM NAVEGAÇÃO */}
          {showAuthor && item.publicado_por_profile && (
            <button
              onClick={handleProfileClick}
@@ -594,7 +592,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </button>
          )}
 
-         {/* WhatsApp */}
          {canShowWhatsApp && (
            <div className="bg-green-50 border border-green-200 rounded-lg px-2 py-1.5 mb-2">
              <div className="text-xs text-green-800 mb-1 text-center">
@@ -613,7 +610,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </div>
          )}
 
-         {/* Botão de ação principal */}
          {shouldShowActionButton && (
            <Button 
              size="default"
@@ -645,7 +641,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </Button>
          )}
 
-         {/* Status de reserva/fila */}
          {(isUserInQueue || hasActiveReservation) && !canShowWhatsApp && (
            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
              {hasActiveReservation ? (
@@ -675,7 +670,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
            </div>
          )}
 
-         {/* Feedback de ação */}
          {actionState !== 'idle' && actionState !== 'loading' && (
            <ActionFeedback
              state={actionState}
@@ -687,7 +681,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </div>
       </CardContent>
 
-      {/* Modal de Denúncia */}
       <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -738,6 +731,120 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               Reportar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Imagem com Zoom */}
+      <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-0">
+          {/* Header com controles */}
+          <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+            <div className="flex items-center gap-2 text-white">
+              <span className="text-sm font-medium">
+                {selectedImageIndex + 1} / {item.fotos?.length || 1}
+              </span>
+            </div>
+            
+            {/* Controles de Zoom */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleZoomOut}
+                disabled={imageZoom <= 1}
+                className="text-white hover:bg-white/20 h-8 w-8 p-0"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </Button>
+              <span className="text-white text-sm font-medium min-w-[50px] text-center">
+                {Math.round(imageZoom * 100)}%
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleZoomIn}
+                disabled={imageZoom >= 3}
+                className="text-white hover:bg-white/20 h-8 w-8 p-0"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowImageModal(false)}
+              className="text-white hover:bg-white/20 h-8 w-8 p-0"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Container da imagem com scroll */}
+          <div className="relative w-full h-[85vh] overflow-auto flex items-center justify-center p-8">
+            <img
+              src={item.fotos?.[selectedImageIndex] || '/placeholder-item.jpg'}
+              alt={`${item.titulo} - Foto ${selectedImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain transition-transform duration-200"
+              style={{ 
+                transform: `scale(${imageZoom})`,
+                cursor: imageZoom > 1 ? 'grab' : 'default'
+              }}
+            />
+          </div>
+
+          {/* Navegação entre fotos */}
+          {hasMultiplePhotos && (
+            <>
+              {selectedImageIndex > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePrevImage}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 p-0 rounded-full"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </Button>
+              )}
+              
+              {item.fotos && selectedImageIndex < item.fotos.length - 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNextImage}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 p-0 rounded-full"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </Button>
+              )}
+            </>
+          )}
+
+          {/* Footer com informações do item */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+            <div className="text-white">
+              <h3 className="font-semibold text-lg mb-1">{item.titulo}</h3>
+              <div className="flex items-center gap-3 text-sm text-gray-300">
+                <span className="flex items-center gap-1">
+                  <Sparkles className="w-4 h-4" />
+                  {valores.total} Girinhas
+                </span>
+                <span>•</span>
+                <span className="capitalize">{item.estado_conservacao}</span>
+                {item.tamanho_valor && (
+                  <>
+                    <span>•</span>
+                    <span>Tamanho {item.tamanho_valor}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Dica de uso */}
+          <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-white/60 text-xs text-center">
+            Use os botões + / - para zoom • {hasMultiplePhotos ? 'Setas para navegar' : ''}
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
