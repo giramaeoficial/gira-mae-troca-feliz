@@ -736,17 +736,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
       {/* Modal de Imagem com Zoom */}
       <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-0">
+        <DialogContent className="max-w-[100vw] w-full h-screen max-h-screen p-0 bg-black/95 border-0 rounded-none">
           {/* Header com controles */}
-          <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+          <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between p-3 bg-gradient-to-b from-black/80 to-transparent">
             <div className="flex items-center gap-2 text-white">
-              <span className="text-sm font-medium">
+              <span className="text-xs font-medium">
                 {selectedImageIndex + 1} / {item.fotos?.length || 1}
               </span>
             </div>
             
             {/* Controles de Zoom */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
@@ -756,7 +756,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               >
                 <ZoomOut className="w-4 h-4" />
               </Button>
-              <span className="text-white text-sm font-medium min-w-[50px] text-center">
+              <span className="text-white text-xs font-medium min-w-[45px] text-center">
                 {Math.round(imageZoom * 100)}%
               </span>
               <Button
@@ -781,16 +781,24 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </div>
 
           {/* Container da imagem com scroll */}
-          <div className="relative w-full h-[85vh] overflow-auto flex items-center justify-center p-8">
-            <img
-              src={item.fotos?.[selectedImageIndex] || '/placeholder-item.jpg'}
-              alt={`${item.titulo} - Foto ${selectedImageIndex + 1}`}
-              className="max-w-full max-h-full object-contain transition-transform duration-200"
+          <div className="relative w-full h-full overflow-auto flex items-center justify-center pt-14 pb-32 px-4">
+            <div 
+              className="transition-transform duration-200 origin-center"
               style={{ 
                 transform: `scale(${imageZoom})`,
-                cursor: imageZoom > 1 ? 'grab' : 'default'
+                maxWidth: '100%',
+                maxHeight: '100%'
               }}
-            />
+            >
+              <img
+                src={item.fotos?.[selectedImageIndex] || '/placeholder-item.jpg'}
+                alt={`${item.titulo} - Foto ${selectedImageIndex + 1}`}
+                className="max-w-full max-h-[calc(100vh-200px)] w-auto h-auto object-contain"
+                style={{ 
+                  cursor: imageZoom > 1 ? 'grab' : 'default'
+                }}
+              />
+            </div>
           </div>
 
           {/* Navegação entre fotos */}
