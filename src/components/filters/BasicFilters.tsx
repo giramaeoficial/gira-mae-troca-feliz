@@ -18,17 +18,14 @@ interface BasicFiltersProps {
   categoria: string;
   ordem: string;
   subcategoria: string;
-  // ✅ ADICIONADO: Props para gênero e tamanho
   genero: string;
   tamanho: string;
   categorias: Categoria[];
   subcategorias: string[];
-  // ✅ ADICIONADO: Tamanhos disponíveis
   tamanhosDisponiveis: TamanhoDisponivel[];
   onCategoriaChange: (value: string) => void;
   onOrdemChange: (value: string) => void;
   onSubcategoriaChange: (value: string) => void;
-  // ✅ ADICIONADO: Handlers para gênero e tamanho
   onGeneroChange: (value: string) => void;
   onTamanhoChange: (value: string) => void;
 }
@@ -48,8 +45,8 @@ export const BasicFilters: React.FC<BasicFiltersProps> = ({
   onGeneroChange,
   onTamanhoChange
 }) => {
-  // ✅ ADICIONADO: Hook para buscar gêneros
   const { data: generos = [] } = useGeneros();
+  
   return (
     <div className="space-y-4">
       {/* Filtros Básicos - Layout em grid compacto */}
@@ -88,7 +85,7 @@ export const BasicFilters: React.FC<BasicFiltersProps> = ({
         </div>
       </div>
 
-      {/* ✅ ADICIONADO: Segunda linha com Subcategoria, Gênero, Tamanho */}
+      {/* Segunda linha com Subcategoria, Gênero, Tamanho */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Subcategoria */}
         <div>
@@ -97,7 +94,7 @@ export const BasicFilters: React.FC<BasicFiltersProps> = ({
             <SelectTrigger>
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[300px]">
               <SelectItem value="">Todas as subcategorias</SelectItem>
               {subcategorias.map((sub) => (
                 <SelectItem key={sub} value={sub}>
@@ -108,7 +105,7 @@ export const BasicFilters: React.FC<BasicFiltersProps> = ({
           </Select>
         </div>
 
-        {/* ✅ ADICIONADO: Gênero */}
+        {/* Gênero */}
         <div>
           <Label className="text-sm font-medium text-gray-700 mb-1 block">Gênero</Label>
           <Select value={genero} onValueChange={onGeneroChange}>
@@ -126,14 +123,19 @@ export const BasicFilters: React.FC<BasicFiltersProps> = ({
           </Select>
         </div>
 
-        {/* ✅ ADICIONADO: Tamanho */}
+        {/* ✅ CORRIGIDO: Tamanho com altura máxima maior */}
         <div>
           <Label className="text-sm font-medium text-gray-700 mb-1 block">Tamanho</Label>
-          <Select value={tamanho} onValueChange={onTamanhoChange}>
+          <Select 
+            value={tamanho} 
+            onValueChange={onTamanhoChange}
+            disabled={categoria === 'todas'}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="Todos" />
+              <SelectValue placeholder={categoria === 'todas' ? 'Selecione uma categoria' : 'Todos'} />
             </SelectTrigger>
-            <SelectContent>
+            {/* 🔥 ALTURA AUMENTADA + SCROLL EXPLÍCITO */}
+            <SelectContent className="max-h-[min(400px,80vh)] overflow-y-auto">
               <SelectItem value="todos">Todos os tamanhos</SelectItem>
               {tamanhosDisponiveis.map((tam) => (
                 <SelectItem key={tam.valor} value={tam.valor}>

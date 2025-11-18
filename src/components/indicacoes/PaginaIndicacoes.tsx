@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,6 +76,7 @@ const PaginaIndicacoes = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
+
       {/* Header */}
       {/* Como funciona o sistema de indicações */}
       <Card className="bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 border-purple-200 mb-6">
@@ -88,6 +88,7 @@ const PaginaIndicacoes = () => {
         </CardHeader>
         <CardContent>       
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
             {/* Para você que indica */}
             <div className="bg-white rounded-lg p-4 border border-purple-100">
               <h3 className="font-semibold text-purple-700 mb-3 flex items-center gap-2">
@@ -104,6 +105,7 @@ const PaginaIndicacoes = () => {
                     <p className="text-sm text-gray-600">quando ela se cadastrar</p>
                   </div>
                 </div>
+
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">📦</div>
                   <div>
@@ -113,6 +115,7 @@ const PaginaIndicacoes = () => {
                     <p className="text-sm text-gray-600">quando ela publicar o primeiro item</p>
                   </div>
                 </div>
+
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">🛍️</div>
                   <div>
@@ -123,6 +126,7 @@ const PaginaIndicacoes = () => {
                   </div>
                 </div>
               </div>
+
               <div className="mt-4 p-3 bg-purple-50 rounded-lg">
                 <p className="text-sm font-medium text-purple-700">
                   Total possível: até {
@@ -140,6 +144,7 @@ const PaginaIndicacoes = () => {
                 <Gift className="w-5 h-5" />
                 Para sua amiga:
               </h3>
+
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">🎁</div>
@@ -150,6 +155,7 @@ const PaginaIndicacoes = () => {
                     <p className="text-sm text-gray-600">de boas-vindas no cadastro</p>
                   </div>
                 </div>
+
                 <div className="flex items-start gap-3">
                   <div className="text-2xl">💝</div>
                   <div>
@@ -158,6 +164,7 @@ const PaginaIndicacoes = () => {
                   </div>
                 </div>
               </div>
+
               <div className="mt-4 p-3 bg-pink-50 rounded-lg">
                 <p className="text-sm font-medium text-pink-700">
                   Ela já começa com {obterConfigTipo('bonus_indicacao_cadastro_indicado')?.valor_padrao || 25} Girinhas! 💖
@@ -259,6 +266,7 @@ const PaginaIndicacoes = () => {
             Minhas Indicações ({indicacoes.length})
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           {indicacoes.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -269,7 +277,11 @@ const PaginaIndicacoes = () => {
           ) : (
             <div className="space-y-4">
               {indicacoes.map((indicacao) => (
-                <div key={indicacao.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div 
+                  key={indicacao.id} 
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-3 sm:gap-0"
+                >
+                  {/* Avatar + Nome */}
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={indicacao.profiles?.avatar_url || ''} />
@@ -284,17 +296,34 @@ const PaginaIndicacoes = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    {indicacao.bonus_cadastro_pago && (
-                      <Badge variant="default">Cadastro ✓</Badge>
-                    )}
-                    {indicacao.bonus_primeiro_item_pago && (
-                      <Badge variant="secondary">1º Item ✓</Badge>
-                    )}
-                    {indicacao.bonus_primeira_compra_pago && (
-                      <Badge variant="outline">1ª Compra ✓</Badge>
-                    )}
-                  </div>
+
+                  {/* Badges (AQUI É A MODIFICAÇÃO) */}
+                  <div className="flex flex-col items-start gap-1">
+                      {indicacao.bonus_cadastro_pago && (
+                        <Badge 
+                          variant="default" 
+                          className="w-fit text-[11px] px-2 py-1 flex items-center gap-1">
+                          Cadastro<span>✓</span>
+                        </Badge>
+                      )}
+                    
+                      {indicacao.bonus_primeiro_item_pago && (
+                        <Badge 
+                          variant="secondary" 
+                          className="w-fit text-[11px] px-2 py-1 flex items-center gap-1">
+                          1º Item<span>✓</span>
+                        </Badge>
+                      )}
+                    
+                      {indicacao.bonus_primeira_compra_pago && (
+                        <Badge 
+                          variant="outline" 
+                          className="w-fit text-[11px] px-2 py-1 flex items-center gap-1">
+                          1ª Compra<span>✓</span>
+                        </Badge>
+                      )}
+                    </div>
+
                 </div>
               ))}
             </div>
@@ -311,6 +340,7 @@ const PaginaIndicacoes = () => {
               Quem me indicou
             </CardTitle>
           </CardHeader>
+
           <CardContent>
             <div className="space-y-4">
               {indicados.map((indicacao) => (
@@ -333,6 +363,7 @@ const PaginaIndicacoes = () => {
           </CardContent>
         </Card>
       )}
+
     </div>
   );
 };
