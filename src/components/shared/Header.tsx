@@ -265,9 +265,9 @@ const Header = () => {
   </div>
 
   {/* DIREITA: Botão de fechar */}
-  <Button variant="ghost" onClick={() => setMobileMenuOpen(false)}>
+  {/* <Button variant="ghost" onClick={() => setMobileMenuOpen(false)}>
     <X className="h-5 w-5 mb-5" />
-  </Button>
+  </Button> */}
 </div>
 
 
