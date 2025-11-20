@@ -118,13 +118,12 @@ const Header = () => {
   };
 
   const desktopNavItems = [
-    { label: 'Feed', path: '/feed', icon: Home },
-    { label: 'Publicar', path: '/publicar', icon: Plus },
+        { label: 'Meu Perfil', path: '/perfil', icon: User },
     { label: 'Carteira', path: '/carteira', icon: Wallet },
     { label: 'Favoritos', path: '/favoritos', icon: Heart },
     { label: 'Seguindo', path: '/maes-seguidas', icon: UserCheck },
-    { label: 'Missões', path: '/missoes', icon: Trophy },
     { label: 'Reservas', path: '/minhas-reservas', icon: Package },
+    { label: 'Indicações', path: '/indicacoes', icon: Users },
     { label: 'Parcerias', path: '/parcerias', icon: HeartHandshake }  ];
 
   /* ------------------ HEADER DESLOGADO ------------------ */
