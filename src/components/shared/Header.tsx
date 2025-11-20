@@ -75,6 +75,8 @@ const Header = () => {
   const shouldSkipProfile = location.pathname === '/cadastro';
   const { profile } = shouldSkipProfile ? { profile: null } : useProfile();
 
+  console.log("PROFILE:", profile);
+
   /* ------ VERIFICAR STATUS DO CADASTRO ------ */
   useEffect(() => {
     const checkCadastroStatus = async () => {
@@ -237,17 +239,37 @@ const Header = () => {
           <div className="fixed right-0 top-0 h-full w-64 bg-white shadow-lg"
                onClick={e => e.stopPropagation()}>
 
-            <div className="p-4 border-b flex justify-between items-center">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} className="w-10 h-10 rounded-full" />
-              ) : (
-                <User className="w-10 h-10 p-2 bg-gray-100 rounded-full" />
-              )}
+            <div className="p-4 border-b flex items-center justify-between">
+  {/* ESQUERDA: Avatar + nome + email */}
+  <div className="flex items-center gap-3">
+    
+    {profile?.avatar_url ? (
+      <img
+        src={profile.avatar_url}
+        className="w-12 h-12 rounded-full object-cover"
+      />
+    ) : (
+      <User className="w-12 h-12 p-2 bg-gray-100 rounded-full" />
+    )}
+    
 
-              <Button variant="ghost" onClick={() => setMobileMenuOpen(false)}>
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+    <div className="flex flex-col">
+      <span className="font-semibold text-sm text-gray-900">
+        {profile?.nome || profile?.username || "Usuário"}
+      </span>
+
+      <span className="text-xs text-gray-500">
+        {profile?.email}
+      </span>
+    </div>
+  </div>
+
+  {/* DIREITA: Botão de fechar */}
+  <Button variant="ghost" onClick={() => setMobileMenuOpen(false)}>
+    <X className="h-5 w-5 mb-5" />
+  </Button>
+</div>
+
 
             <nav className="p-4 space-y-2">
               {desktopNavItems.map(item => {
