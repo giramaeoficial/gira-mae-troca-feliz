@@ -64,7 +64,7 @@ export const useBonusDiario = () => {
     queryFn: async (): Promise<StatusBonusDiario> => {
       if (!user?.id) throw new Error('Usuário não autenticado');
 
-      // CORREÇÃO: Usar view ledger_transacoes ao invés de transacoes
+      // Usar view ledger_transacoes ao invés de transacoes
       const { data: ultimoBonus, error } = await (supabase as any)
         .from('ledger_transacoes')
         .select('data_criacao')
@@ -85,14 +85,32 @@ export const useBonusDiario = () => {
       let ja_coletou_hoje = false;
 
       if (ultimoBonusData) {
-        const horasDesdeUltimo = (agora.getTime() - ultimoBonusData.getTime()) / (1000 * 60 * 60);
-        const horasNecessarias = config?.validade_horas ?? 24;
+        // ✅ CORREÇÃO: Verificar por DATA ao invés de HORAS
+        // Normalizar as datas para comparação (apenas dia/mês/ano, ignorando hora)
+        const dataUltimoBonus = new Date(ultimoBonusData);
+        dataUltimoBonus.setHours(0, 0, 0, 0);
         
-        if (horasDesdeUltimo < horasNecessarias) {
+        const dataHoje = new Date(agora);
+        dataHoje.setHours(0, 0, 0, 0);
+        
+        // Se a data do último bônus é HOJE, já coletou
+        if (dataUltimoBonus.getTime() === dataHoje.getTime()) {
           pode_coletar = false;
           ja_coletou_hoje = true;
-          horas_restantes = Math.ceil(horasNecessarias - horasDesdeUltimo);
-          proxima_coleta = new Date(ultimoBonusData.getTime() + (horasNecessarias * 60 * 60 * 1000)).toISOString();
+          
+          // Calcular tempo até meia-noite (próxima coleta)
+          const proximaMeiaNoite = new Date(agora);
+          proximaMeiaNoite.setDate(proximaMeiaNoite.getDate() + 1);
+          proximaMeiaNoite.setHours(0, 0, 0, 0);
+          
+          const msAteMeiaNoite = proximaMeiaNoite.getTime() - agora.getTime();
+          horas_restantes = Math.ceil(msAteMeiaNoite / (1000 * 60 * 60));
+          proxima_coleta = proximaMeiaNoite.toISOString();
+        }
+        // Se a data do último bônus é ANTERIOR a hoje, pode coletar
+        else if (dataUltimoBonus.getTime() < dataHoje.getTime()) {
+          pode_coletar = true;
+          ja_coletou_hoje = false;
         }
       }
 
@@ -118,7 +136,7 @@ export const useBonusDiario = () => {
       const valorGirinhas = config.valor_girinhas;
       const validadeHoras = config.validade_horas;
       
-      // CORREÇÃO: Usar sistema ledger para criar bônus
+      // Usar sistema ledger para criar bônus
       const { data: result, error } = await (supabase as any).rpc('ledger_processar_bonus', {
         p_user_id: user.id,
         p_tipo: 'bonus_diario',
@@ -135,7 +153,7 @@ export const useBonusDiario = () => {
       
       toast({
         title: "🎁 Bônus Diário Coletado!",
-        description: `+${valorGirinhas} Girinhas adicionadas! Válidas por ${validadeHoras}h.`,
+        description: `+${valorGirinhas} Girinhas adicionadas! Válidas até meia-noite.`,
       });
 
       // Invalidar queries relacionadas
