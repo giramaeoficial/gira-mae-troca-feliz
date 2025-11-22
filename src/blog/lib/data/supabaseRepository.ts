@@ -262,6 +262,45 @@ export class SupabaseBlogRepository implements BlogRepository {
 
   // ==================== TAGS ====================
   
+  async getTags(): Promise<Tag[]> {
+    try {
+      const { data, error } = await supabase.rpc('blog_get_tags') as { data: any[], error: any };
+      
+      if (error) throw error;
+      
+      return (data || []).map((tag: any) => ({
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+        postCount: tag.post_count
+      }));
+    } catch (error) {
+      console.error('Erro ao buscar tags:', error);
+      return [];
+    }
+  }
+
+  async getTagBySlug(slug: string): Promise<Tag | null> {
+    try {
+      const { data, error } = await supabase.rpc('blog_get_tag_by_slug', {
+        p_slug: slug
+      }) as { data: any[], error: any };
+
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      
+      const tag = data[0];
+      return {
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug
+      };
+    } catch (error) {
+      console.error('Erro ao buscar tag por slug:', error);
+      return null;
+    }
+  }
+  
   private async getPostTags(postId: string): Promise<Tag[]> {
     try {
       const { data, error } = await supabase.rpc('blog_get_post_tags', {

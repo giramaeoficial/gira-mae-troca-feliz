@@ -18,10 +18,13 @@ export function useTags(): UseTagsReturn {
     try {
       setLoading(true);
       setError(null);
-      // Tags são estáticos por enquanto, virão do repository quando implementado
-      setTags([]);
+      
+      const repository = getBlogRepository();
+      const result = await repository.getTags();
+      
+      setTags(result);
     } catch (err) {
-      setError(err as Error);
+      setError(err instanceof Error ? err : new Error('Failed to fetch tags'));
     } finally {
       setLoading(false);
     }
