@@ -21,7 +21,7 @@ export default function RelatedPosts({ posts, currentPostId }: RelatedPostsProps
       <h2 className="text-2xl font-bold mb-6">Posts Relacionados</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {relatedPosts.map((post) => (
-          <Link key={post.id} href={`/blog/${post.slug}`}>
+          <Link key={post.id} to={`/blog/${post.slug}`}>
             <Card className="h-full hover:shadow-lg transition-shadow">
               <CardHeader>
                 {post.category && (
