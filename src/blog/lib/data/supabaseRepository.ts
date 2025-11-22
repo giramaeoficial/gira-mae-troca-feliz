@@ -264,7 +264,7 @@ export class SupabaseBlogRepository implements BlogRepository {
   
   async getTags(): Promise<Tag[]> {
     try {
-      const { data, error } = await (supabase.rpc as any)('blog_get_tags');
+      const { data, error } = await supabase.rpc('blog_get_tags');
       
       if (error) throw error;
       
@@ -282,7 +282,7 @@ export class SupabaseBlogRepository implements BlogRepository {
 
   async getTagBySlug(slug: string): Promise<Tag | null> {
     try {
-      const { data, error } = await (supabase.rpc as any)('blog_get_tag_by_slug', {
+      const { data, error } = await supabase.rpc('blog_get_tag_by_slug', {
         p_slug: slug
       });
 
