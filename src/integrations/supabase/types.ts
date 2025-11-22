@@ -3373,12 +3373,20 @@ export type Database = {
           view_count: number
         }[]
       }
+      blog_get_tag_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
       blog_get_tags: {
         Args: never
         Returns: {
-          created_at: string
           id: string
           name: string
+          post_count: number
           slug: string
         }[]
       }
