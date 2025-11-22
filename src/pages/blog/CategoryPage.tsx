@@ -5,6 +5,8 @@ import { useCategories } from '@/blog/hooks/useCategories';
 import BlogLayout from '@/blog/components/layout/BlogLayout';
 import BlogSidebar from '@/blog/components/layout/BlogSidebar';
 import PostCard from '@/blog/components/ui/PostCard';
+import Breadcrumbs from '@/blog/components/ui/Breadcrumbs';
+import SEOHead from '@/components/seo/SEOHead';
 import { Loader2 } from 'lucide-react';
 
 export default function CategoryPage() {
@@ -32,17 +34,43 @@ export default function CategoryPage() {
 
   if (!category) {
     return (
-      <BlogLayout>
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Categoria não encontrada</h1>
-          <p className="text-muted-foreground">A categoria que você está procurando não existe.</p>
-        </div>
-      </BlogLayout>
+      <>
+        <SEOHead noindex />
+        <BlogLayout>
+          <div className="container mx-auto px-4 py-16 text-center">
+            <h1 className="text-3xl font-bold mb-4">Categoria não encontrada</h1>
+            <p className="text-muted-foreground">A categoria que você está procurando não existe.</p>
+          </div>
+        </BlogLayout>
+      </>
     );
   }
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `${category.name} | Blog GiraMãe`,
+    "description": category.seoDescription || category.description || `Posts sobre ${category.name}`,
+    "url": `https://giramae.com.br/blog/categoria/${category.slug}`,
+    "isPartOf": {
+      "@type": "Blog",
+      "name": "Blog GiraMãe",
+      "url": "https://giramae.com.br/blog"
+    }
+  };
+
   return (
-    <BlogLayout sidebar={<BlogSidebar />}>
+    <>
+      <SEOHead
+        title={category.seoTitle || `${category.name} | Blog GiraMãe`}
+        description={category.seoDescription || category.description || `Todos os posts sobre ${category.name} no Blog GiraMãe`}
+        url={`https://giramae.com.br/blog/categoria/${category.slug}`}
+        type="website"
+        structuredData={structuredData}
+      />
+      
+      <BlogLayout sidebar={<BlogSidebar />}>
+        <Breadcrumbs items={[{ name: category.name }]} />
       {/* Header da Categoria */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-4">{category.name}</h1>
@@ -57,6 +85,7 @@ export default function CategoryPage() {
           <PostCard key={post.id} post={post} />
         ))}
       </div>
-    </BlogLayout>
+      </BlogLayout>
+    </>
   );
 }

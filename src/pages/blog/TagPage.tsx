@@ -5,6 +5,8 @@ import { useTags } from '@/blog/hooks/useTags';
 import BlogLayout from '@/blog/components/layout/BlogLayout';
 import BlogSidebar from '@/blog/components/layout/BlogSidebar';
 import PostCard from '@/blog/components/ui/PostCard';
+import Breadcrumbs from '@/blog/components/ui/Breadcrumbs';
+import SEOHead from '@/components/seo/SEOHead';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 
@@ -33,17 +35,43 @@ export default function TagPage() {
 
   if (!tag) {
     return (
-      <BlogLayout>
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Tag não encontrada</h1>
-          <p className="text-muted-foreground">A tag que você está procurando não existe.</p>
-        </div>
-      </BlogLayout>
+      <>
+        <SEOHead noindex />
+        <BlogLayout>
+          <div className="container mx-auto px-4 py-16 text-center">
+            <h1 className="text-3xl font-bold mb-4">Tag não encontrada</h1>
+            <p className="text-muted-foreground">A tag que você está procurando não existe.</p>
+          </div>
+        </BlogLayout>
+      </>
     );
   }
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `Tag: ${tag.name} | Blog GiraMãe`,
+    "description": `Posts marcados com ${tag.name} no Blog GiraMãe`,
+    "url": `https://giramae.com.br/blog/tag/${tag.slug}`,
+    "isPartOf": {
+      "@type": "Blog",
+      "name": "Blog GiraMãe",
+      "url": "https://giramae.com.br/blog"
+    }
+  };
+
   return (
-    <BlogLayout sidebar={<BlogSidebar />}>
+    <>
+      <SEOHead
+        title={`Tag: ${tag.name} | Blog GiraMãe`}
+        description={`Todos os posts com a tag ${tag.name} no Blog GiraMãe`}
+        url={`https://giramae.com.br/blog/tag/${tag.slug}`}
+        type="website"
+        structuredData={structuredData}
+      />
+      
+      <BlogLayout sidebar={<BlogSidebar />}>
+        <Breadcrumbs items={[{ name: `Tag: ${tag.name}` }]} />
       {/* Header da Tag */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
@@ -61,6 +89,7 @@ export default function TagPage() {
           <PostCard key={post.id} post={post} />
         ))}
       </div>
-    </BlogLayout>
+      </BlogLayout>
+    </>
   );
 }
