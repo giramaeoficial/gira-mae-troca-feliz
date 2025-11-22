@@ -3,7 +3,7 @@ export const blogConfig = {
   // Informações básicas
   name: 'Blog GiraMãe',
   description: 'Dicas práticas sobre maternidade, economia e sustentabilidade para mães de Canoas e região',
-  url: process.env.NEXT_PUBLIC_BASE_URL || 'https://giramae.com.br',
+  url: import.meta.env.VITE_BASE_URL || 'https://giramae.com.br',
   
   // Configurações de paginação
   postsPerPage: 12,
@@ -40,7 +40,7 @@ export const blogConfig = {
   
   // Analytics
   analytics: {
-    googleAnalytics: process.env.NEXT_PUBLIC_GA_ID,
+    googleAnalytics: import.meta.env.VITE_GA_ID,
   },
 } as const;
 
