@@ -331,93 +331,6 @@ export type Database = {
           },
         ]
       }
-      backup_carteiras_legado: {
-        Row: {
-          backup_timestamp: string | null
-          created_at: string | null
-          id: string | null
-          saldo_atual: number | null
-          total_gasto: number | null
-          total_recebido: number | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          backup_timestamp?: string | null
-          created_at?: string | null
-          id?: string | null
-          saldo_atual?: number | null
-          total_gasto?: number | null
-          total_recebido?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          backup_timestamp?: string | null
-          created_at?: string | null
-          id?: string | null
-          saldo_atual?: number | null
-          total_gasto?: number | null
-          total_recebido?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      backup_transacoes_legado: {
-        Row: {
-          backup_timestamp: string | null
-          cotacao_utilizada: number | null
-          created_at: string | null
-          data_expiracao: string | null
-          descricao: string | null
-          id: string | null
-          item_id: string | null
-          metadados: Json | null
-          quantidade_girinhas: number | null
-          reserva_id: string | null
-          transferencia_id: string | null
-          user_id: string | null
-          usuario_origem: string | null
-          valor: number | null
-          valor_real: number | null
-        }
-        Insert: {
-          backup_timestamp?: string | null
-          cotacao_utilizada?: number | null
-          created_at?: string | null
-          data_expiracao?: string | null
-          descricao?: string | null
-          id?: string | null
-          item_id?: string | null
-          metadados?: Json | null
-          quantidade_girinhas?: number | null
-          reserva_id?: string | null
-          transferencia_id?: string | null
-          user_id?: string | null
-          usuario_origem?: string | null
-          valor?: number | null
-          valor_real?: number | null
-        }
-        Update: {
-          backup_timestamp?: string | null
-          cotacao_utilizada?: number | null
-          created_at?: string | null
-          data_expiracao?: string | null
-          descricao?: string | null
-          id?: string | null
-          item_id?: string | null
-          metadados?: Json | null
-          quantidade_girinhas?: number | null
-          reserva_id?: string | null
-          transferencia_id?: string | null
-          user_id?: string | null
-          usuario_origem?: string | null
-          valor?: number | null
-          valor_real?: number | null
-        }
-        Relationships: []
-      }
       categorias: {
         Row: {
           ativo: boolean | null
@@ -1213,10 +1126,12 @@ export type Database = {
       }
       indicacoes: {
         Row: {
+          bonus_cadastro_indicado_pago: boolean | null
           bonus_cadastro_pago: boolean | null
           bonus_primeira_compra_pago: boolean | null
           bonus_primeiro_item_pago: boolean | null
           created_at: string
+          data_bonus_cadastro_indicado_pago: string | null
           data_cadastro_indicado: string | null
           data_primeira_compra: string | null
           data_primeiro_item: string | null
@@ -1225,10 +1140,12 @@ export type Database = {
           indicador_id: string
         }
         Insert: {
+          bonus_cadastro_indicado_pago?: boolean | null
           bonus_cadastro_pago?: boolean | null
           bonus_primeira_compra_pago?: boolean | null
           bonus_primeiro_item_pago?: boolean | null
           created_at?: string
+          data_bonus_cadastro_indicado_pago?: string | null
           data_cadastro_indicado?: string | null
           data_primeira_compra?: string | null
           data_primeiro_item?: string | null
@@ -1237,10 +1154,12 @@ export type Database = {
           indicador_id: string
         }
         Update: {
+          bonus_cadastro_indicado_pago?: boolean | null
           bonus_cadastro_pago?: boolean | null
           bonus_primeira_compra_pago?: boolean | null
           bonus_primeiro_item_pago?: boolean | null
           created_at?: string
+          data_bonus_cadastro_indicado_pago?: string | null
           data_cadastro_indicado?: string | null
           data_primeira_compra?: string | null
           data_primeiro_item?: string | null
@@ -1268,6 +1187,7 @@ export type Database = {
       itens: {
         Row: {
           categoria: string
+          codigo_unico: string
           created_at: string
           descricao: string
           estado_conservacao: string
@@ -1285,6 +1205,7 @@ export type Database = {
         }
         Insert: {
           categoria: string
+          codigo_unico: string
           created_at?: string
           descricao: string
           estado_conservacao: string
@@ -1302,6 +1223,7 @@ export type Database = {
         }
         Update: {
           categoria?: string
+          codigo_unico?: string
           created_at?: string
           descricao?: string
           estado_conservacao?: string
@@ -2263,6 +2185,7 @@ export type Database = {
           profissao: string | null
           raio_entrega_km: number | null
           reputacao: number | null
+          ritual_completo: boolean | null
           sobrenome: string | null
           telefone: string | null
           telefone_verificado: boolean | null
@@ -2307,6 +2230,7 @@ export type Database = {
           profissao?: string | null
           raio_entrega_km?: number | null
           reputacao?: number | null
+          ritual_completo?: boolean | null
           sobrenome?: string | null
           telefone?: string | null
           telefone_verificado?: boolean | null
@@ -2351,6 +2275,7 @@ export type Database = {
           profissao?: string | null
           raio_entrega_km?: number | null
           reputacao?: number | null
+          ritual_completo?: boolean | null
           sobrenome?: string | null
           telefone?: string | null
           telefone_verificado?: boolean | null
@@ -3541,6 +3466,7 @@ export type Database = {
         Args: { msg_ids: number[] }
         Returns: undefined
       }
+      gerar_codigo_item: { Args: never; Returns: string }
       get_municipios_por_uf: { Args: { uf_param: string }; Returns: string[] }
       get_prazo_reserva_horas: { Args: never; Returns: number }
       get_user_form_data: { Args: never; Returns: Json }
@@ -3601,6 +3527,10 @@ export type Database = {
         }
         Returns: Json
       }
+      ledger_estender_validade: {
+        Args: { p_transacao_id: string; p_user_id: string }
+        Returns: Json
+      }
       ledger_get_metricas_basicas: { Args: never; Returns: Json }
       ledger_get_metricas_transferencias_30d: { Args: never; Returns: Json }
       ledger_get_user_balance: { Args: { p_user_id: string }; Returns: number }
@@ -3636,6 +3566,14 @@ export type Database = {
       ledger_transferir_p2p: {
         Args: {
           p_destinatario_id: string
+          p_quantidade: number
+          p_remetente_id: string
+        }
+        Returns: Json
+      }
+      ledger_transferir_p2p_email: {
+        Args: {
+          p_email_destinatario: string
           p_quantidade: number
           p_remetente_id: string
         }
@@ -3699,10 +3637,12 @@ export type Database = {
         Returns: Json
       }
       obter_valor_bonus: { Args: { p_tipo_bonus: string }; Returns: number }
+      pode_editar_item: { Args: { p_item_id: string }; Returns: Json }
       pode_usuario_agir: {
         Args: { p_acao?: string; p_user_id: string }
         Returns: boolean
       }
+      processar_bonus_indicacao_pendentes: { Args: never; Returns: Json }
       processar_compra_girinhas_v2: { Args: { p_dados: Json }; Returns: Json }
       processar_compra_manual: {
         Args: {
@@ -3756,11 +3696,6 @@ export type Database = {
         Args: { p_batch_size?: number }
         Returns: number
       }
-      processar_transacao_atomica: {
-        Args: { p_dados: Json; p_operacao: string }
-        Returns: Json
-      }
-      processar_transferencia_p2p_v2: { Args: { p_dados: Json }; Returns: Json }
       re_enable_rls: { Args: never; Returns: undefined }
       read_geocoding_messages: {
         Args: { p_limit?: number }
