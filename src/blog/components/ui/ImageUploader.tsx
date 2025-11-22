@@ -80,17 +80,99 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
   };
 
   const handleInsertFromUpload = () => {
-    if (preview && altText) {
-      onImageInsert(preview, altText);
-      onClose();
+    if (!preview) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Nenhuma imagem selecionada',
+      });
+      return;
     }
+    
+    if (!altText.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Alt text obrigatório',
+        description: 'Descrição da imagem é obrigatória para SEO e acessibilidade',
+      });
+      return;
+    }
+    
+    // Validar alt text descritivo (não genérico)
+    const genericTerms = ['imagem', 'foto', 'image', 'picture', 'img', 'figura'];
+    const isGeneric = genericTerms.some(term => 
+      altText.toLowerCase().trim() === term
+    );
+    
+    if (isGeneric) {
+      toast({
+        variant: 'destructive',
+        title: 'Descrição muito genérica',
+        description: 'Use uma descrição específica (ex: "Mãe organizando roupas infantis")',
+      });
+      return;
+    }
+    
+    // Validar comprimento mínimo
+    if (altText.trim().length < 10) {
+      toast({
+        variant: 'destructive',
+        title: 'Descrição muito curta',
+        description: 'Use pelo menos 10 caracteres para descrever a imagem',
+      });
+      return;
+    }
+    
+    onImageInsert(preview, altText);
+    onClose();
   };
 
   const handleInsertFromUrl = () => {
-    if (urlInput && altText) {
-      onImageInsert(urlInput, altText);
-      onClose();
+    if (!urlInput.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'URL da imagem não pode estar vazia',
+      });
+      return;
     }
+    
+    if (!altText.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Alt text obrigatório',
+        description: 'Descrição da imagem é obrigatória para SEO e acessibilidade',
+      });
+      return;
+    }
+    
+    // Validar alt text descritivo (não genérico)
+    const genericTerms = ['imagem', 'foto', 'image', 'picture', 'img', 'figura'];
+    const isGeneric = genericTerms.some(term => 
+      altText.toLowerCase().trim() === term
+    );
+    
+    if (isGeneric) {
+      toast({
+        variant: 'destructive',
+        title: 'Descrição muito genérica',
+        description: 'Use uma descrição específica (ex: "Mãe organizando roupas infantis")',
+      });
+      return;
+    }
+    
+    // Validar comprimento mínimo
+    if (altText.trim().length < 10) {
+      toast({
+        variant: 'destructive',
+        title: 'Descrição muito curta',
+        description: 'Use pelo menos 10 caracteres para descrever a imagem',
+      });
+      return;
+    }
+    
+    onImageInsert(urlInput, altText);
+    onClose();
   };
 
   return (
@@ -161,17 +243,24 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
           {preview && (
             <>
               <div>
-                <Label htmlFor="alt-upload">Texto alternativo (alt)</Label>
+                <Label htmlFor="alt-upload">
+                  Texto alternativo (alt) *
+                </Label>
                 <Input
                   id="alt-upload"
                   value={altText}
                   onChange={(e) => setAltText(e.target.value)}
-                  placeholder="Descrição da imagem"
+                  placeholder="Descrição detalhada da imagem (min. 10 caracteres)"
+                  minLength={10}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Descreva o conteúdo da imagem para acessibilidade e SEO.
+                  Evite termos genéricos como "imagem" ou "foto".
+                </p>
               </div>
               <Button
                 onClick={handleInsertFromUpload}
-                disabled={!altText}
+                disabled={!altText || altText.length < 10}
                 className="w-full"
               >
                 <ImageIcon className="mr-2 h-4 w-4" />
@@ -208,18 +297,23 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
           )}
 
           <div>
-            <Label htmlFor="alt-url">Texto alternativo (alt)</Label>
+            <Label htmlFor="alt-url">Texto alternativo (alt) *</Label>
             <Input
               id="alt-url"
               value={altText}
               onChange={(e) => setAltText(e.target.value)}
-              placeholder="Descrição da imagem"
+              placeholder="Descrição detalhada da imagem (min. 10 caracteres)"
+              minLength={10}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Descreva o conteúdo da imagem para acessibilidade e SEO.
+              Evite termos genéricos como "imagem" ou "foto".
+            </p>
           </div>
 
           <Button
             onClick={handleInsertFromUrl}
-            disabled={!urlInput || !altText}
+            disabled={!urlInput || !altText || altText.length < 10}
             className="w-full"
           >
             <ImageIcon className="mr-2 h-4 w-4" />
