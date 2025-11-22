@@ -1,5 +1,5 @@
 // Mock Repository para desenvolvimento
-import { BlogRepository, Post, Category, Author, PostFilters, PaginationOptions } from '@/blog/types';
+import { BlogRepository, Post, Category, Author, Tag, PostFilters, PaginationOptions } from '@/blog/types';
 
 const mockAuthors: Author[] = [
   {
@@ -33,6 +33,14 @@ const mockCategories: Category[] = [
     description: 'Dicas e experiências sobre ser mãe',
     postCount: 0,
   },
+];
+
+const mockTags: Tag[] = [
+  { id: 'tag-1', name: 'Roupas Infantis', slug: 'roupas-infantis', postCount: 2 },
+  { id: 'tag-2', name: 'Economia', slug: 'economia', postCount: 3 },
+  { id: 'tag-3', name: 'Sustentabilidade', slug: 'sustentabilidade', postCount: 2 },
+  { id: 'tag-4', name: 'Dicas Práticas', slug: 'dicas-praticas', postCount: 5 },
+  { id: 'tag-5', name: 'Maternidade', slug: 'maternidade', postCount: 4 },
 ];
 
 const mockPosts: Post[] = [
@@ -95,6 +103,7 @@ export class MockBlogRepository implements BlogRepository {
   private posts: Post[] = mockPosts;
   private categories: Category[] = mockCategories;
   private authors: Author[] = mockAuthors;
+  private tags: Tag[] = mockTags;
 
   async getPosts(filters?: PostFilters, pagination?: PaginationOptions): Promise<Post[]> {
     let filtered = [...this.posts];
@@ -200,5 +209,13 @@ export class MockBlogRepository implements BlogRepository {
 
   async getAuthorBySlug(slug: string): Promise<Author | null> {
     return this.authors.find(a => a.slug === slug) || null;
+  }
+
+  async getTags(): Promise<Tag[]> {
+    return this.tags;
+  }
+
+  async getTagBySlug(slug: string): Promise<Tag | null> {
+    return this.tags.find(t => t.slug === slug) || null;
   }
 }

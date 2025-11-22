@@ -25,6 +25,7 @@ export interface Tag {
   id: string;
   name: string;
   slug: string;
+  postCount?: number;
 }
 
 export interface Post {
@@ -94,4 +95,8 @@ export interface BlogRepository {
   // Authors
   getAuthors(): Promise<Author[]>;
   getAuthorBySlug(slug: string): Promise<Author | null>;
+  
+  // Tags
+  getTags(): Promise<Tag[]>;
+  getTagBySlug(slug: string): Promise<Tag | null>;
 }
