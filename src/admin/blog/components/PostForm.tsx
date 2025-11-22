@@ -70,7 +70,7 @@ export default function PostForm({ post }: PostFormProps) {
         await repository.updatePost({ id: post.id, ...data });
         toast.success('Post atualizado!');
       } else {
-        await repository.createPost({ ...data, authorId: 'author-1' });
+        await repository.createPost({ ...data, authorId: 'e878e3c8-1e29-4fc3-a9a5-c8b865703cc0' });
         toast.success('Post criado!');
       }
 
