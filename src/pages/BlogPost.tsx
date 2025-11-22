@@ -13,6 +13,8 @@ import RelatedPosts from '@/blog/components/ui/RelatedPosts';
 import ShareButtons from '@/blog/components/ui/ShareButtons';
 import TableOfContents from '@/blog/components/ui/TableOfContents';
 import MarkdownRenderer from '@/blog/components/ui/MarkdownRenderer';
+import SEOHead from '@/components/seo/SEOHead';
+import Breadcrumbs from '@/blog/components/ui/Breadcrumbs';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -35,32 +37,93 @@ export default function BlogPost() {
 
   if (error || !post) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <h1 className="text-3xl font-bold mb-4">Post não encontrado</h1>
-        <p className="text-muted-foreground mb-6">
-          O post que você está procurando não existe ou foi removido.
-        </p>
-        <Button asChild>
-          <Link to="/blog">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao Blog
-          </Link>
-        </Button>
-      </div>
+      <>
+        <SEOHead noindex />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-3xl font-bold mb-4">Post não encontrado</h1>
+          <p className="text-muted-foreground mb-6">
+            O post que você está procurando não existe ou foi removido.
+          </p>
+          <Button asChild>
+            <Link to="/blog">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao Blog
+            </Link>
+          </Button>
+        </div>
+      </>
     );
   }
 
+  // Structured Data para SEO
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": post.excerpt,
+    "image": post.featuredImage || 'https://giramae.com.br/og-blog.jpg',
+    "datePublished": post.publishedAt || post.createdAt,
+    "dateModified": post.updatedAt,
+    "author": {
+      "@type": "Person",
+      "name": post.author?.name || 'Equipe GiraMãe',
+      "url": post.author ? `https://giramae.com.br/blog/autor/${post.author.slug}` : 'https://giramae.com.br'
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "GiraMãe",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://giramae.com.br/logo.png"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://giramae.com.br/blog/${post.slug}`
+    },
+    "wordCount": post.content.split(/\s+/).length,
+    "keywords": post.tags?.map(t => t.name).join(', ') || post.seoKeywords?.join(', ')
+  };
+
+  // Breadcrumbs data
+  const breadcrumbItems = [
+    ...(post.category ? [{
+      name: post.category.name,
+      url: `/blog/categoria/${post.category.slug}`
+    }] : []),
+    { name: post.title }
+  ];
+
   return (
-    <BlogLayout sidebar={<TableOfContents content={post.content} />}>
-      {/* Back Button */}
-      <div className="mb-6">
-        <Button variant="ghost" asChild>
-          <Link to="/blog">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar ao Blog
-          </Link>
-        </Button>
-      </div>
+    <>
+      <SEOHead
+        title={post.seoTitle || post.title}
+        description={post.seoDescription || post.excerpt}
+        keywords={post.seoKeywords?.join(', ')}
+        image={post.ogImage || post.featuredImage || 'https://giramae.com.br/og-blog.jpg'}
+        url={`https://giramae.com.br/blog/${post.slug}`}
+        type="article"
+        structuredData={structuredData}
+        publishedDate={post.publishedAt || post.createdAt}
+        modifiedDate={post.updatedAt}
+        authorName={post.author?.name || 'Equipe GiraMãe'}
+        category={post.category?.name}
+        tags={post.tags?.map(t => t.name)}
+      />
+      
+      <BlogLayout sidebar={<TableOfContents content={post.content} />}>
+        {/* Breadcrumbs */}
+        <Breadcrumbs items={breadcrumbItems} />
+        
+        {/* Back Button */}
+        <div className="mb-6">
+          <Button variant="ghost" asChild>
+            <Link to="/blog">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao Blog
+            </Link>
+          </Button>
+        </div>
 
       {/* Content Container */}
       <article className="space-y-8">
@@ -125,5 +188,6 @@ export default function BlogPost() {
         )}
       </article>
     </BlogLayout>
+    </>
   );
 }

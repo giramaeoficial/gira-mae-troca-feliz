@@ -10,6 +10,8 @@ import BlogLayout from '@/blog/components/layout/BlogLayout';
 import BlogSidebar from '@/blog/components/layout/BlogSidebar';
 import CategoryBadge from '@/blog/components/ui/CategoryBadge';
 import PostMeta from '@/blog/components/ui/PostMeta';
+import SEOHead from '@/components/seo/SEOHead';
+import { seoConfig } from '@/blog/config/seoConfig';
 
 export default function Blog() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,8 +36,35 @@ export default function Blog() {
     );
   }
 
+  // Structured Data para Blog
+  const blogStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "Blog GiraMãe",
+    "description": seoConfig.defaultDescription,
+    "url": "https://giramae.com.br/blog",
+    "publisher": {
+      "@type": "Organization",
+      "name": "GiraMãe",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://giramae.com.br/logo.png"
+      }
+    }
+  };
+
   return (
-    <BlogLayout sidebar={<BlogSidebar />}>
+    <>
+      <SEOHead
+        title={seoConfig.defaultTitle}
+        description={seoConfig.defaultDescription}
+        keywords={seoConfig.keywords.join(', ')}
+        url="https://giramae.com.br/blog"
+        type="website"
+        structuredData={blogStructuredData}
+      />
+      
+      <BlogLayout sidebar={<BlogSidebar />}>
       {/* Header */}
       <div className="bg-gradient-to-br from-primary/15 via-secondary/10 to-background py-16 -mx-4 mb-8 rounded-2xl">
         <div className="container mx-auto px-4">
@@ -141,6 +170,7 @@ export default function Blog() {
           </>
         )}
       </div>
-    </BlogLayout>
+      </BlogLayout>
+    </>
   );
 }

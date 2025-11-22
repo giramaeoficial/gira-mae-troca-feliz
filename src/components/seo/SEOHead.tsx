@@ -10,6 +10,12 @@ interface SEOHeadProps {
   type?: string;
   noindex?: boolean;
   structuredData?: object;
+  // Article-specific props
+  publishedDate?: string;
+  modifiedDate?: string;
+  authorName?: string;
+  category?: string;
+  tags?: string[];
 }
 
 const SEOHead: React.FC<SEOHeadProps> = ({
@@ -20,7 +26,12 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   url = "https://giramae.com.br",
   type = "website",
   noindex = false,
-  structuredData
+  structuredData,
+  publishedDate,
+  modifiedDate,
+  authorName,
+  category,
+  tags
 }) => {
   const fullTitle = title.includes('GiraMãe') ? title : `${title} | GiraMãe`;
   
@@ -52,8 +63,21 @@ const SEOHead: React.FC<SEOHeadProps> = ({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={image} />
       
+      {/* Article Meta Tags */}
+      {type === 'article' && (
+        <>
+          {publishedDate && <meta property="article:published_time" content={publishedDate} />}
+          {modifiedDate && <meta property="article:modified_time" content={modifiedDate} />}
+          {authorName && <meta property="article:author" content={authorName} />}
+          {category && <meta property="article:section" content={category} />}
+          {tags?.map(tag => (
+            <meta key={tag} property="article:tag" content={tag} />
+          ))}
+        </>
+      )}
+      
       {/* Additional Meta Tags */}
-      <meta name="author" content="GiraMãe" />
+      <meta name="author" content={authorName || "GiraMãe"} />
       <meta name="theme-color" content="#E879F9" />
       <meta name="geo.region" content="BR-RS" />
       <meta name="geo.placename" content="Canoas" />
