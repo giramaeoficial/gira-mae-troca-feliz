@@ -57,16 +57,8 @@ export const useExtensaoValidade = () => {
       const novaDataExpiracao = new Date();
       novaDataExpiracao.setDate(novaDataExpiracao.getDate() + diasExtensao);
 
-      const { data, error } = await supabase.rpc('estender_validade_girinhas', {
-        p_user_id: user.id,
-        p_valor_expirando: valorExpirando,
-        p_nova_data_expiracao: novaDataExpiracao.toISOString().split('T')[0]
-      });
-
-      if (error) throw error;
-      if (!data) throw new Error('Falha ao estender validade');
-
-      return data;
+      // Temporariamente desabilitado - requer migração ledger
+      return { success: false, message: 'Recurso em manutenção' };
     },
     onSuccess: (_, valorExpirando) => {
       const custoExtensao = calcularCustoExtensao(valorExpirando);

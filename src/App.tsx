@@ -50,6 +50,9 @@ import Sobre from '@/pages/Sobre';
 import FAQ from '@/pages/FAQ';
 import Blog from '@/pages/Blog';
 import BlogPost from '@/pages/BlogPost';
+import AdminBlogHome from '@/pages/admin/blog/AdminBlogHome';
+import NovoPost from '@/pages/admin/blog/NovoPost';
+import EditarPost from '@/pages/admin/blog/EditarPost';
 import EnderecoOnboarding from '@/pages/onboarding/EnderecoOnboarding';
 import AguardandoLiberacao from '@/pages/onboarding/AguardandoLiberacao';
 import MaesSeguidas from '@/pages/MaesSeguidas';
@@ -103,8 +106,13 @@ function App() {
            <Route path="/faq" element={<FAQ />} />
            <Route path="/institucional" element={<Institucional />} />
            {/* ✅ ROTAS PÚBLICAS - Blog */}
-           <Route path="/blog" element={<Blog />} />
-           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          
+          {/* Admin Blog Routes */}
+          <Route path="/admin/blog" element={<AdminBlogHome />} />
+          <Route path="/admin/blog/novo" element={<NovoPost />} />
+          <Route path="/admin/blog/editar/:id" element={<EditarPost />} />
 
           
           {/* ================================================ */}

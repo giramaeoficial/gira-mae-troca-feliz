@@ -82,15 +82,6 @@ export const criarTransacaoValidada = async (
   descricao: string,
   metadados: Record<string, any> = {}
 ): Promise<string> => {
-  const { supabase } = await import('@/integrations/supabase/client');
-  
-  const { data, error } = await supabase.rpc('criar_transacao_validada', {
-    p_user_id: userId,
-    p_tipo: tipo,
-    p_valor: valor,
-    p_descricao: descricao,
-    p_metadados: metadados
-  });
-  if (error) throw error;
-  return data;
+  // Temporariamente desabilitado - requer migração ledger
+  throw new Error('criar_transacao_validada temporariamente desabilitado');
 };

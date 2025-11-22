@@ -32,9 +32,9 @@ export const useGirinhasExpiracao = () => {
 
       console.log('🔍 [useGirinhasExpiracao] Buscando dados de expiração para usuário:', user.id);
 
-      const { data, error } = await supabase.rpc('obter_girinhas_expiracao', {
-        p_user_id: user.id
-      });
+      // Temporariamente desabilitado - requer migração ledger
+      const data = { total_valido: 0, total_expirando: 0, total_expirado: 0 };
+      const error = null;
 
       if (error) {
         console.error('❌ Erro ao buscar expiração:', error);
