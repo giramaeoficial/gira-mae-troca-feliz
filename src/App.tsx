@@ -50,6 +50,9 @@ import Sobre from '@/pages/Sobre';
 import FAQ from '@/pages/FAQ';
 import Blog from '@/pages/Blog';
 import BlogPost from '@/pages/BlogPost';
+import CategoryPage from '@/pages/blog/CategoryPage';
+import TagPage from '@/pages/blog/TagPage';
+import AuthorPage from '@/pages/blog/AuthorPage';
 import AdminBlogHome from '@/pages/admin/blog/AdminBlogHome';
 import NovoPost from '@/pages/admin/blog/NovoPost';
 import EditarPost from '@/pages/admin/blog/EditarPost';
@@ -107,6 +110,9 @@ function App() {
            <Route path="/institucional" element={<Institucional />} />
            {/* ✅ ROTAS PÚBLICAS - Blog */}
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/categoria/:slug" element={<CategoryPage />} />
+          <Route path="/blog/tag/:slug" element={<TagPage />} />
+          <Route path="/blog/autor/:slug" element={<AuthorPage />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           
           {/* Admin Blog Routes */}

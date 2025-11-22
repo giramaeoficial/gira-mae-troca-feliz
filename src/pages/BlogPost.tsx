@@ -1,15 +1,30 @@
 import { useParams, Link } from 'react-router-dom';
 import { usePost } from '@/blog/hooks/usePost';
-import { Badge } from '@/components/ui/badge';
+import { usePosts } from '@/blog/hooks/usePosts';
 import { Card } from '@/components/ui/card';
-import { Clock, Eye, Calendar, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/blog/lib/utils/formatDate';
 import ReactMarkdown from 'react-markdown';
+import BlogLayout from '@/blog/components/layout/BlogLayout';
+import CategoryBadge from '@/blog/components/ui/CategoryBadge';
+import TagList from '@/blog/components/ui/TagList';
+import PostMeta from '@/blog/components/ui/PostMeta';
+import AuthorCard from '@/blog/components/ui/AuthorCard';
+import RelatedPosts from '@/blog/components/ui/RelatedPosts';
+import ShareButtons from '@/blog/components/ui/ShareButtons';
+import TableOfContents from '@/blog/components/ui/TableOfContents';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const { post, loading, error } = usePost(slug || '');
+  const { posts: relatedPosts } = usePosts(
+    { 
+      status: 'published',
+      categoryId: post?.categoryId 
+    },
+    { page: 1, pageSize: 4 }
+  );
 
   if (loading) {
     return (
@@ -37,9 +52,9 @@ export default function BlogPost() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <BlogLayout sidebar={<TableOfContents content={post.content} />}>
       {/* Back Button */}
-      <div className="container mx-auto px-4 py-6">
+      <div className="mb-6">
         <Button variant="ghost" asChild>
           <Link to="/blog">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -49,59 +64,69 @@ export default function BlogPost() {
       </div>
 
       {/* Content Container */}
-      <article className="container mx-auto px-4 pb-16 max-w-4xl">
+      <article className="space-y-8">
         {/* Category Badge */}
         {post.category && (
-          <Badge className="mb-4">{post.category.name}</Badge>
+          <CategoryBadge category={post.category} />
         )}
 
         {/* Title */}
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+        <h1 className="text-4xl md:text-5xl font-bold leading-tight">
           {post.title}
         </h1>
 
         {/* Excerpt */}
-        <p className="text-xl text-muted-foreground mb-6">{post.excerpt}</p>
+        <p className="text-xl text-muted-foreground">{post.excerpt}</p>
 
         {/* Meta Info */}
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-8 pb-8 border-b">
+        <div className="flex flex-wrap items-center gap-4 pb-8 border-b">
           {post.author && (
             <div className="flex items-center gap-2">
               <span className="font-medium">{post.author.name}</span>
             </div>
           )}
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {formatDate(post.publishedAt || post.createdAt)}
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {post.readingTimeMinutes} min de leitura
-          </span>
-          <span className="flex items-center gap-1">
-            <Eye className="h-3 w-3" />
-            {post.viewCount} visualizações
-          </span>
+          <PostMeta 
+            readingTimeMinutes={post.readingTimeMinutes}
+            viewCount={post.viewCount}
+            date={post.publishedAt || post.createdAt}
+          />
         </div>
 
         {/* Content */}
         <Card className="p-8">
-          <div className="prose prose-lg max-w-none">
+          <div className="prose prose-lg max-w-none dark:prose-invert">
             <ReactMarkdown>{post.content}</ReactMarkdown>
           </div>
         </Card>
 
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
-          <div className="mt-8 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <Badge key={tag.id} variant="outline">
-                {tag.name}
-              </Badge>
-            ))}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Tags:</h3>
+            <TagList tags={post.tags} />
           </div>
         )}
+
+        {/* Share Buttons */}
+        <ShareButtons 
+          title={post.title}
+          url={`${window.location.origin}/blog/${post.slug}`}
+          description={post.excerpt}
+        />
+
+        {/* Author Card */}
+        {post.author && (
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Sobre o Autor</h3>
+            <AuthorCard author={post.author} />
+          </div>
+        )}
+
+        {/* Related Posts */}
+        {relatedPosts.length > 0 && (
+          <RelatedPosts posts={relatedPosts} currentPostId={post.id} />
+        )}
       </article>
-    </div>
+    </BlogLayout>
   );
 }

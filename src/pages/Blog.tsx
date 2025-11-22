@@ -4,11 +4,12 @@ import { useCategories } from '@/blog/hooks/useCategories';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Search, Clock, Eye, Loader2 } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { formatDateRelative } from '@/blog/lib/utils/formatDate';
-import { truncate } from '@/blog/lib/utils/truncate';
+import BlogLayout from '@/blog/components/layout/BlogLayout';
+import BlogSidebar from '@/blog/components/layout/BlogSidebar';
+import CategoryBadge from '@/blog/components/ui/CategoryBadge';
+import PostMeta from '@/blog/components/ui/PostMeta';
 
 export default function Blog() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,9 +35,9 @@ export default function Blog() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <BlogLayout sidebar={<BlogSidebar />}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-16">
+      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-16 -mx-4 mb-8">
         <div className="container mx-auto px-4">
           <h1 className="text-5xl font-bold mb-4">Blog GiraMãe</h1>
           <p className="text-xl opacity-90 max-w-2xl">
@@ -45,7 +46,7 @@ export default function Blog() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="space-y-8">
         {/* Search & Filters */}
         <Card className="mb-8">
           <CardContent className="pt-6 space-y-4">
@@ -96,7 +97,7 @@ export default function Blog() {
                 <Card key={post.id} className="hover:shadow-lg transition-shadow h-full flex flex-col">
                   <CardHeader>
                     {post.category && (
-                      <Badge className="mb-2 w-fit">{post.category.name}</Badge>
+                      <CategoryBadge category={post.category} className="mb-2" />
                     )}
                     <Link to={`/blog/${post.slug}`}>
                       <h3 className="text-xl font-bold hover:text-primary transition-colors line-clamp-2">
@@ -109,18 +110,13 @@ export default function Blog() {
                     <p className="text-muted-foreground line-clamp-3">{post.excerpt}</p>
                   </CardContent>
 
-                  <CardFooter className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {post.readingTimeMinutes} min
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {post.viewCount}
-                      </span>
-                    </div>
-                    <span>{formatDateRelative(post.publishedAt || post.createdAt)}</span>
+                  <CardFooter>
+                    <PostMeta 
+                      readingTimeMinutes={post.readingTimeMinutes}
+                      viewCount={post.viewCount}
+                      date={post.publishedAt || post.createdAt}
+                      variant="compact"
+                    />
                   </CardFooter>
                 </Card>
               ))}
@@ -143,6 +139,6 @@ export default function Blog() {
           </>
         )}
       </div>
-    </div>
+    </BlogLayout>
   );
 }
