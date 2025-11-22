@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     // Buscar posts publicados
     const { data: posts, error: postsError } = await supabase.rpc('blog_get_posts', {
       p_filters: { status: 'published' },
-      p_pagination: { page: 1, page_size: 10000 }
+      p_pagination: { page: 1, page_size: 2000 }
     });
 
     if (postsError) {
@@ -31,9 +31,10 @@ Deno.serve(async (req) => {
     // Gerar URLs dos posts com imagens
     const postUrls = (posts || []).map((post: any) => {
       const lastmod = new Date(post.updated_at || post.created_at).toISOString().split('T')[0];
-      const imageTag = post.featured_image ? `
+      const imageUrl = post.featured_image || post.cover_image || null;
+      const imageTag = imageUrl ? `
     <image:image>
-      <image:loc>${post.featured_image}</image:loc>
+      <image:loc>${imageUrl}</image:loc>
       <image:title><![CDATA[${post.title}]]></image:title>
     </image:image>` : '';
 
