@@ -22,17 +22,17 @@ export default function BlogFooter() {
             <h3 className="font-semibold mb-4">Links Rápidos</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/blog" className="text-muted-foreground hover:text-primary transition-colors">
                   Todos os Posts
                 </Link>
               </li>
               <li>
-                <Link href="/blog/categorias" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/blog/categorias" className="text-muted-foreground hover:text-primary transition-colors">
                   Categorias
                 </Link>
               </li>
               <li>
-                <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
                   GiraMãe
                 </Link>
               </li>
@@ -44,17 +44,17 @@ export default function BlogFooter() {
             <h3 className="font-semibold mb-4">Categorias</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/blog/categoria/maternidade" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/blog/categoria/maternidade" className="text-muted-foreground hover:text-primary transition-colors">
                   Maternidade
                 </Link>
               </li>
               <li>
-                <Link href="/blog/categoria/economia" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/blog/categoria/economia" className="text-muted-foreground hover:text-primary transition-colors">
                   Economia
                 </Link>
               </li>
               <li>
-                <Link href="/blog/categoria/sustentabilidade" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/blog/categoria/sustentabilidade" className="text-muted-foreground hover:text-primary transition-colors">
                   Sustentabilidade
                 </Link>
               </li>
