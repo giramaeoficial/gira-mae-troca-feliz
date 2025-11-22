@@ -174,8 +174,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ [create-mercadopago-preference] Erro:', error);
     
+    const errorMessage = error instanceof Error ? error.message : "Erro interno do servidor";
     return new Response(JSON.stringify({ 
-      error: error.message || "Erro interno do servidor",
+      error: errorMessage,
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

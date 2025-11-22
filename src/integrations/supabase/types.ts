@@ -3218,6 +3218,36 @@ export type Database = {
         }
         Returns: boolean
       }
+      blog_create_post: {
+        Args: {
+          p_author_id?: string
+          p_category_id?: string
+          p_content: string
+          p_excerpt: string
+          p_featured_image?: string
+          p_seo_description?: string
+          p_seo_title?: string
+          p_slug: string
+          p_status?: string
+          p_title: string
+        }
+        Returns: {
+          author_id: string
+          category_id: string
+          content: string
+          created_at: string
+          excerpt: string
+          featured_image: string
+          id: string
+          published_at: string
+          seo_description: string
+          seo_title: string
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
+      }
       blog_get_author_by_slug: {
         Args: { p_slug: string }
         Returns: {
@@ -3355,6 +3385,36 @@ export type Database = {
       blog_increment_view_count: {
         Args: { p_post_id: string }
         Returns: undefined
+      }
+      blog_update_post: {
+        Args: {
+          p_category_id?: string
+          p_content?: string
+          p_excerpt?: string
+          p_featured_image?: string
+          p_id: string
+          p_seo_description?: string
+          p_seo_title?: string
+          p_slug?: string
+          p_status?: string
+          p_title?: string
+        }
+        Returns: {
+          author_id: string
+          category_id: string
+          content: string
+          created_at: string
+          excerpt: string
+          featured_image: string
+          id: string
+          published_at: string
+          seo_description: string
+          seo_title: string
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }[]
       }
       buscar_escolas_proximas_por_cep: {
         Args: { cep_usuario: string; limite?: number }

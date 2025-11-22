@@ -278,10 +278,11 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ [mercadopago-webhook] Erro crítico não relacionado ao timing:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     // Return 500 only for real errors (not timing issues)
     return new Response(JSON.stringify({ 
       error: "Internal server error",
-      message: error.message,
+      message: errorMessage,
       timestamp: new Date().toISOString()
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

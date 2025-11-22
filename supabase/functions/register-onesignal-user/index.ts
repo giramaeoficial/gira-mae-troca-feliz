@@ -147,12 +147,12 @@ serve(async (req: Request) => {
 
     } catch (oneSignalError) {
       console.error('OneSignal registration failed:', oneSignalError);
-      
+      const oneSignalErrorMessage = oneSignalError instanceof Error ? oneSignalError.message : 'Unknown error';
       return new Response(
         JSON.stringify({
           success: false,
           error: 'OneSignal registration failed',
-          details: oneSignalError.message
+          details: oneSignalErrorMessage
         }),
         {
           status: 500,
@@ -165,11 +165,12 @@ serve(async (req: Request) => {
     console.error('=== REGISTER ONESIGNAL USER ERROR ===');
     console.error('Error details:', error);
     
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({
         success: false,
         error: 'Internal server error',
-        details: error.message
+        details: errorMessage
       }),
       {
         status: 500,

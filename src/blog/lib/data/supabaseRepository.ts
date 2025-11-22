@@ -76,32 +76,29 @@ export class SupabaseBlogRepository implements BlogRepository {
 
   async createPost(postData: Partial<Post>): Promise<Post> {
     try {
-      const { data, error } = await supabase
-        .from('blog.posts')
-        .insert({
-          title: postData.title,
-          slug: postData.slug,
-          excerpt: postData.excerpt,
-          content: postData.content,
-          status: postData.status || 'draft',
-          author_id: postData.authorId,
-          category_id: postData.categoryId,
-          seo_title: postData.seoTitle,
-          seo_description: postData.seoDescription,
-          featured_image: postData.featuredImage,
-          published_at: postData.status === 'published' ? new Date().toISOString() : null
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('blog_create_post', {
+        p_title: postData.title!,
+        p_slug: postData.slug!,
+        p_excerpt: postData.excerpt!,
+        p_content: postData.content!,
+        p_status: postData.status || 'draft',
+        p_author_id: postData.authorId || null,
+        p_category_id: postData.categoryId || null,
+        p_seo_title: postData.seoTitle || null,
+        p_seo_description: postData.seoDescription || null,
+        p_featured_image: postData.featuredImage || null
+      }) as { data: any[], error: any };
 
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Nenhum post criado');
       
+      const post = data[0];
       const [author, category] = await Promise.all([
-        data.author_id ? this.getAuthorById(data.author_id) : Promise.resolve(null),
-        data.category_id ? this.getCategoryById(data.category_id) : Promise.resolve(null)
+        post.author_id ? this.getAuthorById(post.author_id) : Promise.resolve(null),
+        post.category_id ? this.getCategoryById(post.category_id) : Promise.resolve(null)
       ]);
       
-      return this.mapToPost(data, author, category, []);
+      return this.mapToPost(post, author, category, []);
     } catch (error) {
       console.error('Erro ao criar post:', error);
       throw error;
@@ -110,35 +107,30 @@ export class SupabaseBlogRepository implements BlogRepository {
 
   async updatePost(postData: Partial<Post> & { id: string }): Promise<Post> {
     try {
-      const { data, error } = await supabase
-        .from('blog.posts')
-        .update({
-          title: postData.title,
-          slug: postData.slug,
-          excerpt: postData.excerpt,
-          content: postData.content,
-          status: postData.status,
-          category_id: postData.categoryId,
-          seo_title: postData.seoTitle,
-          seo_description: postData.seoDescription,
-          featured_image: postData.featuredImage,
-          published_at: postData.status === 'published' && !postData.publishedAt 
-            ? new Date().toISOString() 
-            : undefined
-        })
-        .eq('id', postData.id)
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc('blog_update_post', {
+        p_id: postData.id,
+        p_title: postData.title || null,
+        p_slug: postData.slug || null,
+        p_excerpt: postData.excerpt || null,
+        p_content: postData.content || null,
+        p_status: postData.status || null,
+        p_category_id: postData.categoryId || null,
+        p_seo_title: postData.seoTitle || null,
+        p_seo_description: postData.seoDescription || null,
+        p_featured_image: postData.featuredImage || null
+      }) as { data: any[], error: any };
 
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Post não encontrado');
       
+      const post = data[0];
       const [author, category, tags] = await Promise.all([
-        data.author_id ? this.getAuthorById(data.author_id) : Promise.resolve(null),
-        data.category_id ? this.getCategoryById(data.category_id) : Promise.resolve(null),
-        this.getPostTags(data.id)
+        post.author_id ? this.getAuthorById(post.author_id) : Promise.resolve(null),
+        post.category_id ? this.getCategoryById(post.category_id) : Promise.resolve(null),
+        this.getPostTags(post.id)
       ]);
       
-      return this.mapToPost(data, author, category, tags);
+      return this.mapToPost(post, author, category, tags);
     } catch (error) {
       console.error('Erro ao atualizar post:', error);
       throw error;
