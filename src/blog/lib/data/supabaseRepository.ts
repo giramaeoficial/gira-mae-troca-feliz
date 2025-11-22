@@ -75,11 +75,74 @@ export class SupabaseBlogRepository implements BlogRepository {
   }
 
   async createPost(postData: Partial<Post>): Promise<Post> {
-    throw new Error('Criação de posts via interface admin não implementada ainda. Use SQL direto.');
+    try {
+      const { data, error } = await supabase
+        .from('blog.posts')
+        .insert({
+          title: postData.title,
+          slug: postData.slug,
+          excerpt: postData.excerpt,
+          content: postData.content,
+          status: postData.status || 'draft',
+          author_id: postData.authorId,
+          category_id: postData.categoryId,
+          seo_title: postData.seoTitle,
+          seo_description: postData.seoDescription,
+          featured_image: postData.featuredImage,
+          published_at: postData.status === 'published' ? new Date().toISOString() : null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      const [author, category] = await Promise.all([
+        data.author_id ? this.getAuthorById(data.author_id) : Promise.resolve(null),
+        data.category_id ? this.getCategoryById(data.category_id) : Promise.resolve(null)
+      ]);
+      
+      return this.mapToPost(data, author, category, []);
+    } catch (error) {
+      console.error('Erro ao criar post:', error);
+      throw error;
+    }
   }
 
   async updatePost(postData: Partial<Post> & { id: string }): Promise<Post> {
-    throw new Error('Atualização de posts via interface admin não implementada ainda. Use SQL direto.');
+    try {
+      const { data, error } = await supabase
+        .from('blog.posts')
+        .update({
+          title: postData.title,
+          slug: postData.slug,
+          excerpt: postData.excerpt,
+          content: postData.content,
+          status: postData.status,
+          category_id: postData.categoryId,
+          seo_title: postData.seoTitle,
+          seo_description: postData.seoDescription,
+          featured_image: postData.featuredImage,
+          published_at: postData.status === 'published' && !postData.publishedAt 
+            ? new Date().toISOString() 
+            : undefined
+        })
+        .eq('id', postData.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      const [author, category, tags] = await Promise.all([
+        data.author_id ? this.getAuthorById(data.author_id) : Promise.resolve(null),
+        data.category_id ? this.getCategoryById(data.category_id) : Promise.resolve(null),
+        this.getPostTags(data.id)
+      ]);
+      
+      return this.mapToPost(data, author, category, tags);
+    } catch (error) {
+      console.error('Erro ao atualizar post:', error);
+      throw error;
+    }
   }
 
   async deletePost(id: string): Promise<void> {
