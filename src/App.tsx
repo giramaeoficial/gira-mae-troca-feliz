@@ -51,6 +51,7 @@ import FAQ from '@/pages/FAQ';
 import Blog from '@/pages/Blog';
 import BlogPost from '@/pages/BlogPost';
 import CategoryPage from '@/pages/blog/CategoryPage';
+import CategoriesPage from '@/pages/blog/CategoriesPage';
 import TagPage from '@/pages/blog/TagPage';
 import AuthorPage from '@/pages/blog/AuthorPage';
 import AdminBlogHome from '@/pages/admin/blog/AdminBlogHome';
@@ -110,6 +111,7 @@ function App() {
            <Route path="/institucional" element={<Institucional />} />
            {/* ✅ ROTAS PÚBLICAS - Blog */}
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/categorias" element={<CategoriesPage />} />
           <Route path="/blog/categoria/:slug" element={<CategoryPage />} />
           <Route path="/blog/tag/:slug" element={<TagPage />} />
           <Route path="/blog/autor/:slug" element={<AuthorPage />} />
