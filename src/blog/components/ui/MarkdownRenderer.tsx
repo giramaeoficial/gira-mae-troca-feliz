@@ -17,14 +17,21 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeHighlight]}
         components={{
-        img: ({ src, alt }) => (
-          <img
-            src={src}
-            alt={alt || ''}
-            className="rounded-lg shadow-lg my-6 w-full"
-            loading="lazy"
-          />
-        ),
+        img: ({ src, alt }) => {
+          // Garantir alt text descritivo para SEO e acessibilidade
+          const altText = alt && alt.trim() 
+            ? alt 
+            : 'Imagem ilustrativa do post - Blog GiraMãe sobre maternidade e sustentabilidade';
+          
+          return (
+            <img
+              src={src}
+              alt={altText}
+              className="rounded-lg shadow-lg my-6 w-full"
+              loading="lazy"
+            />
+          );
+        },
         a: ({ href, children }) => (
           <a
             href={href}
