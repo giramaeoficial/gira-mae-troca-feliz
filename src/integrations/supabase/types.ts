@@ -3218,6 +3218,144 @@ export type Database = {
         }
         Returns: boolean
       }
+      blog_get_author_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      blog_get_authors: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          bio: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      blog_get_categories: {
+        Args: never
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          post_count: number
+          seo_description: string
+          seo_title: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      blog_get_category_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          created_at: string
+          description: string
+          id: string
+          name: string
+          seo_description: string
+          seo_title: string
+          slug: string
+          updated_at: string
+        }[]
+      }
+      blog_get_post_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          author_id: string
+          canonical_url: string
+          category_id: string
+          content: string
+          created_at: string
+          excerpt: string
+          featured_image: string
+          featured_image_alt: string
+          id: string
+          og_description: string
+          og_image: string
+          og_title: string
+          published_at: string
+          reading_time_minutes: number
+          scheduled_for: string
+          seo_description: string
+          seo_keywords: string[]
+          seo_title: string
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          view_count: number
+        }[]
+      }
+      blog_get_post_tags: {
+        Args: { p_post_id: string }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
+      blog_get_posts: {
+        Args: {
+          p_author_id?: string
+          p_category_id?: string
+          p_page?: number
+          p_page_size?: number
+          p_search?: string
+          p_status?: string
+          p_tag_ids?: string[]
+        }
+        Returns: {
+          author_id: string
+          canonical_url: string
+          category_id: string
+          content: string
+          created_at: string
+          excerpt: string
+          featured_image: string
+          featured_image_alt: string
+          id: string
+          og_description: string
+          og_image: string
+          og_title: string
+          published_at: string
+          reading_time_minutes: number
+          scheduled_for: string
+          seo_description: string
+          seo_keywords: string[]
+          seo_title: string
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+          view_count: number
+        }[]
+      }
+      blog_get_tags: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }[]
+      }
+      blog_increment_view_count: {
+        Args: { p_post_id: string }
+        Returns: undefined
+      }
       buscar_escolas_proximas_por_cep: {
         Args: { cep_usuario: string; limite?: number }
         Returns: {
