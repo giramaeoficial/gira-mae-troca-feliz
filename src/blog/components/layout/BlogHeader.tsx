@@ -4,12 +4,19 @@ import { Home, BookOpen, Tag } from 'lucide-react';
 
 export default function BlogHeader() {
   return (
-    <header className="border-b bg-card sticky top-0 z-50">
+    <header className="border-b bg-card sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/blog" className="flex items-center gap-2 font-bold text-xl">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <span>Blog GiraMãe</span>
+          <Link to="/blog" className="flex items-center gap-3 group">
+            <img 
+              src="/giramae_logo.png" 
+              alt="GiraMãe" 
+              className="h-10 transition-transform group-hover:scale-105"
+            />
+            <div className="flex flex-col">
+              <span className="font-bold text-xl text-primary">GiraMãe</span>
+              <span className="text-xs text-muted-foreground">Blog</span>
+            </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">

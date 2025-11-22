@@ -4,8 +4,6 @@ import { usePosts } from '@/blog/hooks/usePosts';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { formatDate } from '@/blog/lib/utils/formatDate';
-import ReactMarkdown from 'react-markdown';
 import BlogLayout from '@/blog/components/layout/BlogLayout';
 import CategoryBadge from '@/blog/components/ui/CategoryBadge';
 import TagList from '@/blog/components/ui/TagList';
@@ -14,6 +12,7 @@ import AuthorCard from '@/blog/components/ui/AuthorCard';
 import RelatedPosts from '@/blog/components/ui/RelatedPosts';
 import ShareButtons from '@/blog/components/ui/ShareButtons';
 import TableOfContents from '@/blog/components/ui/TableOfContents';
+import MarkdownRenderer from '@/blog/components/ui/MarkdownRenderer';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -94,9 +93,7 @@ export default function BlogPost() {
 
         {/* Content */}
         <Card className="p-8">
-          <div className="prose prose-lg max-w-none dark:prose-invert">
-            <ReactMarkdown>{post.content}</ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={post.content} />
         </Card>
 
         {/* Tags */}

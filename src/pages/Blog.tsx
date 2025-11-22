@@ -37,10 +37,12 @@ export default function Blog() {
   return (
     <BlogLayout sidebar={<BlogSidebar />}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground py-16 -mx-4 mb-8">
+      <div className="bg-gradient-to-br from-primary/15 via-secondary/10 to-background py-16 -mx-4 mb-8 rounded-2xl">
         <div className="container mx-auto px-4">
-          <h1 className="text-5xl font-bold mb-4">Blog GiraMãe</h1>
-          <p className="text-xl opacity-90 max-w-2xl">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Blog GiraMãe
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl">
             Dicas práticas sobre maternidade, economia e sustentabilidade
           </p>
         </div>

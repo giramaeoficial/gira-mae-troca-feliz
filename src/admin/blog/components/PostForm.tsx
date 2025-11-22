@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Post } from '@/blog/types';
@@ -15,7 +15,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Eye, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Save, Loader2, Image as ImageIcon } from 'lucide-react';
+import MDEditor from '@uiw/react-md-editor';
+import ImageUploader from '@/blog/components/ui/ImageUploader';
+import '@uiw/react-md-editor/markdown-editor.css';
+import '@uiw/react-markdown-preview/markdown.css';
 
 interface PostFormProps {
   post?: Post;
@@ -25,6 +30,7 @@ export default function PostForm({ post }: PostFormProps) {
   const navigate = useNavigate();
   const { categories } = useCategories();
   const isEditing = !!post;
+  const [showImageUploader, setShowImageUploader] = useState(false);
 
   const form = useForm<PostFormData>({
     resolver: zodResolver(postFormSchema),
@@ -49,6 +55,12 @@ export default function PostForm({ post }: PostFormProps) {
       setValue('slug', slugify(title));
     }
   }, [title, isEditing, setValue]);
+
+  const handleImageInsert = (url: string, alt: string) => {
+    const currentContent = form.getValues('content');
+    const markdown = `![${alt}](${url})`;
+    form.setValue('content', currentContent + '\n\n' + markdown);
+  };
 
   const onSubmit = async (data: PostFormData) => {
     try {
@@ -122,8 +134,35 @@ export default function PostForm({ post }: PostFormProps) {
 
                 <FormField control={form.control} name="content" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Conteúdo *</FormLabel>
-                    <FormControl><Textarea rows={15} {...field} /></FormControl>
+                    <div className="flex items-center justify-between mb-2">
+                      <FormLabel>Conteúdo *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowImageUploader(true)}
+                      >
+                        <ImageIcon className="h-4 w-4 mr-2" />
+                        Inserir Imagem
+                      </Button>
+                    </div>
+                    <FormControl>
+                      <div data-color-mode="light">
+                        <MDEditor
+                          value={field.value}
+                          onChange={(val) => field.onChange(val || '')}
+                          preview="live"
+                          height={500}
+                          style={{
+                            borderRadius: 'var(--radius)',
+                            border: '1px solid hsl(var(--border))',
+                          }}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Use Markdown para formatar: **negrito**, *itálico*, [link](url), etc.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -205,6 +244,18 @@ export default function PostForm({ post }: PostFormProps) {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <Dialog open={showImageUploader} onOpenChange={setShowImageUploader}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Inserir Imagem</DialogTitle>
+            </DialogHeader>
+            <ImageUploader
+              onImageInsert={handleImageInsert}
+              onClose={() => setShowImageUploader(false)}
+            />
+          </DialogContent>
+        </Dialog>
       </form>
     </Form>
   );
