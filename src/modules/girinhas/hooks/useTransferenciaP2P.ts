@@ -79,9 +79,8 @@ export const useTransferenciaP2P = () => {
       }
 
       // ✅ MUDOU: Envia email ao invés de UUID
-      const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/transferir-p2p`,
-        {
+      const functionUrl = 'https://sjyvqtfpvqavtffexoky.supabase.co/functions/v1/transferir-p2p';
+      const response = await fetch(functionUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

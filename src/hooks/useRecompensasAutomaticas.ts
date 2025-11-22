@@ -73,7 +73,7 @@ export const useRecompensasAutomaticas = () => {
                 novaReserva.confirmado_por_vendedor && 
                 novaReserva.status === 'confirmada') {
               console.log('Processando bônus de troca concluída (reservador)');
-              await processarBonusTrocaConcluida(novaReserva.id);
+              await processarBonusTrocaConcluida();
               await verificarEProcessarMetas();
             }
           }
@@ -96,7 +96,7 @@ export const useRecompensasAutomaticas = () => {
                 novaReserva.confirmado_por_vendedor && 
                 novaReserva.status === 'confirmada') {
               console.log('Processando bônus de troca concluída (vendedor)');
-              await processarBonusTrocaConcluida(novaReserva.id);
+              await processarBonusTrocaConcluida();
               await verificarEProcessarMetas();
             }
           }
