@@ -55,43 +55,82 @@ export default function BlogPost() {
     );
   }
 
-  // Structured Data para SEO
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    "headline": post.title,
-    "description": post.excerpt,
-    "image": post.featuredImage || 'https://giramae.com.br/og-blog.jpg',
-    "datePublished": post.publishedAt || post.createdAt,
-    "dateModified": post.updatedAt,
-    "author": {
-      "@type": "Person",
-      "name": post.author?.name || 'Equipe GiraMãe',
-      "url": post.author ? `https://giramae.com.br/blog/autor/${post.author.slug}` : 'https://giramae.com.br'
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "GiraMãe",
-      "logo": {
+  // Structured Data para BlogPosting (Google Best Practices)
+  const imageUrl = post.featuredImage || post.ogImage || 'https://giramae.com.br/og-blog.jpg';
+  
+  const structuredData = [
+    // BlogPosting Schema
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": post.title,
+      "description": post.excerpt,
+      "image": {
         "@type": "ImageObject",
-        "url": "https://giramae.com.br/logo.png"
-      }
+        "url": imageUrl,
+        "width": 1200,
+        "height": 630
+      },
+      "datePublished": post.publishedAt || post.createdAt,
+      "dateModified": post.updatedAt,
+      "author": {
+        "@type": "Person",
+        "name": post.author?.name || 'Equipe GiraMãe',
+        "url": post.author ? `https://giramae.com.br/blog/autor/${post.author.slug}` : 'https://giramae.com.br/sobre'
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "GiraMãe",
+        "url": "https://giramae.com.br",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://giramae.com.br/logo.png",
+          "width": 600,
+          "height": 60
+        }
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": `https://giramae.com.br/blog/${post.slug}`
+      },
+      "inLanguage": "pt-BR",
+      "wordCount": post.content.split(/\s+/).length,
+      "keywords": post.tags?.map(t => t.name).join(', ') || post.seoKeywords?.join(', '),
+      ...(post.category && {
+        "articleSection": post.category.name
+      })
     },
-    "mainEntityOfPage": {
-      "@type": "WebPage",
-      "@id": `https://giramae.com.br/blog/${post.slug}`
-    },
-    "wordCount": post.content.split(/\s+/).length,
-    "keywords": post.tags?.map(t => t.name).join(', ') || post.seoKeywords?.join(', ')
-  };
-
-  // Breadcrumbs data
-  const breadcrumbItems = [
-    ...(post.category ? [{
-      name: post.category.name,
-      url: `/blog/categoria/${post.category.slug}`
-    }] : []),
-    { name: post.title }
+    // BreadcrumbList Schema
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://giramae.com.br"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Blog",
+          "item": "https://giramae.com.br/blog"
+        },
+        ...(post.category ? [{
+          "@type": "ListItem",
+          "position": 3,
+          "name": post.category.name,
+          "item": `https://giramae.com.br/blog/categoria/${post.category.slug}`
+        }] : []),
+        {
+          "@type": "ListItem",
+          "position": post.category ? 4 : 3,
+          "name": post.title,
+          "item": `https://giramae.com.br/blog/${post.slug}`
+        }
+      ]
+    }
   ];
 
   return (
@@ -100,7 +139,7 @@ export default function BlogPost() {
         title={post.seoTitle || post.title}
         description={post.seoDescription || post.excerpt}
         keywords={post.seoKeywords?.join(', ')}
-        image={post.ogImage || post.featuredImage || 'https://giramae.com.br/og-blog.jpg'}
+        image={imageUrl}
         url={`https://giramae.com.br/blog/${post.slug}`}
         type="article"
         structuredData={structuredData}
@@ -113,7 +152,13 @@ export default function BlogPost() {
       
       <BlogLayout sidebar={<TableOfContents content={post.content} />}>
         {/* Breadcrumbs */}
-        <Breadcrumbs items={breadcrumbItems} />
+        <Breadcrumbs items={[
+          ...(post.category ? [{
+            name: post.category.name,
+            url: `/blog/categoria/${post.category.slug}`
+          }] : []),
+          { name: post.title }
+        ]} />
         
         {/* Back Button */}
         <div className="mb-6">
