@@ -126,8 +126,11 @@ export default function PostForm({ post }: PostFormProps) {
 
                 <FormField control={form.control} name="excerpt" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Resumo *</FormLabel>
-                    <FormControl><Textarea rows={3} {...field} /></FormControl>
+                    <FormLabel>Resumo (100-160 caracteres) *</FormLabel>
+                    <FormControl><Textarea rows={3} {...field} maxLength={160} /></FormControl>
+                    <FormDescription>
+                      {field.value?.length || 0}/160 caracteres
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -135,7 +138,7 @@ export default function PostForm({ post }: PostFormProps) {
                 <FormField control={form.control} name="content" render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between mb-2">
-                      <FormLabel>Conteúdo *</FormLabel>
+                      <FormLabel>Conteúdo (min. 1000 palavras) *</FormLabel>
                       <Button
                         type="button"
                         variant="outline"
@@ -161,7 +164,10 @@ export default function PostForm({ post }: PostFormProps) {
                       </div>
                     </FormControl>
                     <FormDescription>
-                      Use Markdown para formatar: **negrito**, *itálico*, [link](url), etc.
+                      {field.value?.length || 0} caracteres (≈{Math.round((field.value?.length || 0) / 5)} palavras)
+                      {field.value?.length >= 5000 && ' ✓ Conteúdo adequado para SEO'}
+                      <br />
+                      Use Markdown. Sempre adicione alt text nas imagens: ![descrição da imagem](url)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -176,18 +182,26 @@ export default function PostForm({ post }: PostFormProps) {
               <CardContent className="space-y-4">
                 <FormField control={form.control} name="seoTitle" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título SEO</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormDescription>Máx 60 caracteres</FormDescription>
+                    <FormLabel>Título SEO (Obrigatório)</FormLabel>
+                    <FormControl><Input {...field} maxLength={60} /></FormControl>
+                    <FormDescription className={field.value?.length > 60 ? 'text-destructive' : ''}>
+                      {field.value?.length || 0}/60 caracteres
+                      {field.value?.length > 50 && field.value?.length <= 60 && ' ✓ Tamanho ideal'}
+                      {field.value?.length > 60 && ' ⚠ Muito longo'}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />
 
                 <FormField control={form.control} name="seoDescription" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descrição SEO</FormLabel>
-                    <FormControl><Textarea rows={3} {...field} /></FormControl>
-                    <FormDescription>Máx 160 caracteres</FormDescription>
+                    <FormLabel>Descrição SEO (Obrigatória)</FormLabel>
+                    <FormControl><Textarea rows={3} {...field} maxLength={160} /></FormControl>
+                    <FormDescription className={field.value?.length > 160 ? 'text-destructive' : ''}>
+                      {field.value?.length || 0}/160 caracteres
+                      {field.value?.length >= 150 && field.value?.length <= 160 && ' ✓ Tamanho ideal'}
+                      {field.value?.length > 160 && ' ⚠ Muito longo'}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />

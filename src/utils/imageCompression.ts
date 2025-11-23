@@ -4,6 +4,7 @@ export interface CompressOptions {
   maxHeight?: number;
   quality?: number;
   format?: 'jpeg' | 'webp';
+  maxSizeKB?: number;
 }
 
 export const compressImage = async (
@@ -11,10 +12,11 @@ export const compressImage = async (
   options: CompressOptions = {}
 ): Promise<File> => {
   const {
-    maxWidth = 1024,
-    maxHeight = 1024,
-    quality = 0.8,
-    format = 'jpeg'
+    maxWidth = 1200,
+    maxHeight = 1200,
+    quality = 0.85,
+    format = 'webp',
+    maxSizeKB = 200
   } = options;
 
   return new Promise((resolve, reject) => {
@@ -44,25 +46,38 @@ export const compressImage = async (
       // Desenhar imagem redimensionada
       ctx?.drawImage(img, 0, 0, width, height);
 
-      // Converter para blob
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error('Falha na compressão da imagem'));
-            return;
-          }
+      // Converter para blob com qualidade adaptativa
+      const tryCompress = (currentQuality: number) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Falha na compressão da imagem'));
+              return;
+            }
 
-          // Criar novo arquivo com nome original
-          const compressedFile = new File([blob], file.name, {
-            type: `image/${format}`,
-            lastModified: Date.now()
-          });
+            const sizeKB = blob.size / 1024;
 
-          resolve(compressedFile);
-        },
-        `image/${format}`,
-        quality
-      );
+            // Se está acima do limite e qualidade ainda é alta, tenta reduzir
+            if (sizeKB > maxSizeKB && currentQuality > 0.3) {
+              tryCompress(currentQuality - 0.1);
+              return;
+            }
+
+            // Criar novo arquivo com nome otimizado
+            const fileName = file.name.replace(/\.[^/.]+$/, `.${format}`);
+            const compressedFile = new File([blob], fileName, {
+              type: `image/${format}`,
+              lastModified: Date.now()
+            });
+
+            resolve(compressedFile);
+          },
+          `image/${format}`,
+          currentQuality
+        );
+      };
+
+      tryCompress(quality);
     };
 
     img.onerror = () => reject(new Error('Falha ao carregar imagem'));
