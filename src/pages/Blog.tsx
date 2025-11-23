@@ -36,22 +36,48 @@ export default function Blog() {
     );
   }
 
-  // Structured Data para Blog
-  const blogStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "Blog",
-    "name": "Blog GiraMãe",
-    "description": seoConfig.defaultDescription,
-    "url": "https://giramae.com.br/blog",
-    "publisher": {
+  // Structured Data para Blog e Organization (Google Best Practices)
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Blog",
+      "name": "Blog GiraMãe",
+      "description": seoConfig.defaultDescription,
+      "url": "https://giramae.com.br/blog",
+      "inLanguage": "pt-BR",
+      "publisher": {
+        "@type": "Organization",
+        "name": "GiraMãe",
+        "url": "https://giramae.com.br",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://giramae.com.br/logo.png",
+          "width": 600,
+          "height": 60
+        }
+      }
+    },
+    {
+      "@context": "https://schema.org",
       "@type": "Organization",
       "name": "GiraMãe",
+      "url": "https://giramae.com.br",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://giramae.com.br/logo.png"
-      }
+        "url": "https://giramae.com.br/logo.png",
+        "width": 600,
+        "height": 60
+      },
+      "description": "Plataforma de economia circular para mães trocarem roupas e itens infantis em Canoas/RS",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Canoas",
+        "addressRegion": "RS",
+        "addressCountry": "BR"
+      },
+      "sameAs": seoConfig.organization.sameAs
     }
-  };
+  ];
 
   return (
     <>
@@ -61,7 +87,7 @@ export default function Blog() {
         keywords={seoConfig.keywords.join(', ')}
         url="https://giramae.com.br/blog"
         type="website"
-        structuredData={blogStructuredData}
+        structuredData={structuredData}
       />
       
       <BlogLayout sidebar={<BlogSidebar />}>
