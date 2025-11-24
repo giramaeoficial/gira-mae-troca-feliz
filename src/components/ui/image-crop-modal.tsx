@@ -101,21 +101,20 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   const modalContent = (
     <div 
-      className="fixed inset-0 bg-black flex flex-col"
+      className="fixed inset-0 bg-black"
       style={{ 
         zIndex: 99999,
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        display: 'flex',
+        flexDirection: 'column',
         width: '100vw',
-        height: '100vh',
-        overflow: 'hidden'
+        height: '100vh'
       }}
     >
-      {/* Header */}
-      <div className="bg-gray-900 px-4 py-3 flex items-center justify-between flex-shrink-0 shadow-lg">
+      {/* Header - 60px */}
+      <div 
+        className="bg-gray-900 px-4 py-3 flex items-center justify-between shadow-lg"
+        style={{ height: '60px', flexShrink: 0 }}
+      >
         <Button
           variant="ghost"
           size="sm"
@@ -141,18 +140,19 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </Button>
       </div>
 
-      {/* Área de Crop - ✅ CORRIGIDO: Container ocupa espaço disponível */}
+      {/* Área de Crop - Ocupa EXATAMENTE o espaço restante */}
       <div 
         ref={containerRef}
-        className="flex-1 bg-black overflow-hidden"
+        className="bg-black"
         style={{ 
-          minHeight: 0,
-          width: '100%',
-          height: 'calc(100vh - 120px)', // Espaço para header e footer
-          position: 'relative'
+          flex: '1 1 auto',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: 0, // CRÍTICO: permite que flex funcione corretamente
+          width: '100%'
         }}
       >
-        {/* ✅ CORRIGIDO: Imagem sem restrições de tamanho inline */}
+        {/* Imagem - SEM estilos que atrapalhem o Cropper */}
         <img
           ref={imageRef}
           src={imageSrc}
@@ -160,24 +160,37 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
           onLoad={handleImageLoad}
           style={{
             display: imageLoaded ? 'block' : 'none',
-            // Removido maxWidth, maxHeight, width e height
-            // O Cropper.js vai controlar o tamanho
+            maxWidth: '100%' // MANTÉM para não ultrapassar largura
           }}
         />
         
         {!imageLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white text-sm">Carregando imagem...</div>
+          <div 
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              color: 'white',
+              fontSize: '14px'
+            }}
+          >
+            Carregando imagem...
           </div>
         )}
       </div>
 
-      {/* Controles de Zoom e Rotação */}
-      <div className="bg-gray-900 px-6 py-4 flex-shrink-0">
+      {/* Footer com controles - 140px */}
+      <div 
+        className="bg-gray-900 px-6 py-4"
+        style={{ height: '140px', flexShrink: 0 }}
+      >
         <div className="max-w-4xl mx-auto space-y-4">
           {/* Zoom Slider */}
           <div className="flex items-center gap-4">
-            <span className="text-white text-sm font-medium w-16">Zoom</span>
+            <span className="text-white text-sm font-medium" style={{ width: '64px' }}>
+              Zoom
+            </span>
             <Slider
               value={[zoomValue]}
               onValueChange={handleZoomChange}
@@ -191,7 +204,9 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
           
           {/* Botões de Rotação */}
           <div className="flex items-center gap-4">
-            <span className="text-white text-sm font-medium w-16">Girar</span>
+            <span className="text-white text-sm font-medium" style={{ width: '64px' }}>
+              Girar
+            </span>
             <div className="flex gap-2 flex-1">
               <Button
                 variant="outline"
