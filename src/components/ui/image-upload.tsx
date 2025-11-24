@@ -1,15 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, Upload, Image, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Camera, X, Upload, Image, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { ImageCropModal } from './image-crop-modal';
 import { processMultipleImages, ImageMetadata } from '@/utils/imageCropUtils';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
 
 interface ImageUploadProps {
   value: File[];
@@ -229,17 +224,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Alerta de fotos pendentes */}
-      {showNeedsCropAlert && pendingCropsCount > 0 && (
-        <Alert variant="destructive" className="animate-pulse">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Atenção!</AlertTitle>
-          <AlertDescription>
-            {pendingCropsCount} foto(s) precisa(m) ser ajustada(s) para o formato quadrado antes de publicar.
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Preview das imagens */}
       {imagesMetadata.length > 0 && (
         <div>

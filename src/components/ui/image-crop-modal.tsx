@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { X, RotateCcw, RotateCw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useImageCrop } from '@/hooks/useImageCrop';
 import { toast } from '@/hooks/use-toast';
+import 'cropperjs/dist/cropper.css';
 
 interface ImageCropModalProps {
   isOpen: boolean;
@@ -85,9 +87,9 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 bg-black z-[9999] flex flex-col"
+      className="fixed inset-0 bg-black z-[99999] flex flex-col"
       style={{ 
         position: 'fixed',
         top: 0,
@@ -97,7 +99,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         margin: 0,
         padding: 0,
         width: '100vw',
-        height: '100vh'
+        height: '100vh',
+        overflow: 'hidden'
       }}
     >
       {/* Header */}
@@ -205,4 +208,6 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
