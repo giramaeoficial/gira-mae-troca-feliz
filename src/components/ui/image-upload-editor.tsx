@@ -3,7 +3,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, X, Upload, Image, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { compressImage } from '@/utils/imageCompression';
+import { cropToSquare } from '@/utils/imageCompression';
 import { toast } from '@/hooks/use-toast';
 import LazyImage from '@/components/ui/lazy-image';
 
@@ -78,31 +78,26 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
 
     setIsUploading(true);
     try {
-      console.log('📸 Comprimindo', validFiles.length, 'imagens...');
+      console.log('📸 Processando', validFiles.length, 'imagens em formato quadrado...');
       
+      // MUDANÇA: Usar cropToSquare
       const compressedFiles = await Promise.all(
         validFiles.map(async (file) => {
           try {
-            return await compressImage(file, {
-              maxWidth: 1024,
-              maxHeight: 1024,
-              quality: 0.8,
-              format: 'jpeg'
-            });
+            return await cropToSquare(file, 1024, 0.85);
           } catch (error) {
-            console.error('Erro ao comprimir imagem:', error);
+            console.error('Erro ao processar imagem:', error);
             return file;
           }
         })
       );
 
-      const newFiles = [...novasImagens, ...compressedFiles];
-      onAdicionarNovas(newFiles);
-      generatePreviews(newFiles);
+      onAdicionarNovas([...novasImagens, ...compressedFiles]);
+      generatePreviews([...novasImagens, ...compressedFiles]);
 
       toast({
         title: "Imagens adicionadas",
-        description: `${compressedFiles.length} imagem(ns) adicionada(s)`,
+        description: `${compressedFiles.length} imagem(ns) processada(s)`,
       });
     } catch (error) {
       console.error('Erro no processamento das imagens:', error);
@@ -177,6 +172,23 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
 
   return (
     <div className={cn('space-y-4', className)}>
+      {/* Dica de formato quadrado */}
+      {totalImagens === 0 && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-start gap-2">
+            <Camera className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">
+                📸 Formato automático
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                Novas fotos serão ajustadas para formato quadrado. Centralize o item para melhor resultado.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Imagens Existentes */}
       {imagensExistentes.length > 0 && (
         <div className="space-y-2">
