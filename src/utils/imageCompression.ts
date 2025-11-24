@@ -92,3 +92,63 @@ export const compressMultipleImages = async (
   const compressionPromises = files.map(file => compressImage(file, options));
   return Promise.all(compressionPromises);
 };
+
+/**
+ * Crop e redimensiona imagem para formato quadrado (1:1)
+ * Usa crop centralizado para manter o conteúdo principal
+ */
+export const cropToSquare = async (
+  file: File,
+  size: number = 1024,
+  quality: number = 0.85
+): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      const { width, height } = img;
+      
+      // Determinar o tamanho do crop (o menor lado)
+      const cropSize = Math.min(width, height);
+      
+      // Calcular offset para centralizar
+      const offsetX = (width - cropSize) / 2;
+      const offsetY = (height - cropSize) / 2;
+
+      // Configurar canvas quadrado
+      canvas.width = size;
+      canvas.height = size;
+
+      // Desenhar imagem cropada e redimensionada
+      ctx?.drawImage(
+        img,
+        offsetX, offsetY, cropSize, cropSize, // Source (crop centralizado)
+        0, 0, size, size // Destination (quadrado)
+      );
+
+      // Converter para blob
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Falha ao processar imagem'));
+            return;
+          }
+
+          const croppedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          });
+
+          resolve(croppedFile);
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+
+    img.onerror = () => reject(new Error('Falha ao carregar imagem'));
+    img.src = URL.createObjectURL(file);
+  });
+};

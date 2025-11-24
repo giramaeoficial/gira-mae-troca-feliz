@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, X, Upload, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { compressImage } from '@/utils/imageCompression';
+import { cropToSquare } from '@/utils/imageCompression';
 import { toast } from '@/hooks/use-toast';
 
 interface ImageUploadProps {
@@ -47,7 +47,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     const validFiles: File[] = [];
     
     for (const file of filesToProcess) {
-      // Verificar tipo de arquivo
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Tipo de arquivo inválido",
@@ -57,7 +56,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         continue;
       }
 
-      // Verificar tamanho
       if (file.size > maxSizeKB * 1024) {
         toast({
           title: "Arquivo muito grande",
@@ -74,20 +72,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
     setIsUploading(true);
     try {
-      console.log('📸 Comprimindo', validFiles.length, 'imagens...');
+      console.log('📸 Processando', validFiles.length, 'imagens em formato quadrado...');
       
+      // MUDANÇA PRINCIPAL: Usar cropToSquare em vez de compressImage
       const compressedFiles = await Promise.all(
         validFiles.map(async (file) => {
           try {
-            return await compressImage(file, {
-              maxWidth: 1024,
-              maxHeight: 1024,
-              quality: 0.8,
-              format: 'jpeg'
-            });
+            return await cropToSquare(file, 1024, 0.85);
           } catch (error) {
-            console.error('Erro ao comprimir imagem:', error);
-            return file; // Usar arquivo original se compressão falhar
+            console.error('Erro ao processar imagem:', error);
+            return file;
           }
         })
       );
@@ -98,7 +92,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       toast({
         title: "Imagens adicionadas",
-        description: `${compressedFiles.length} imagem(ns) adicionada(s)`,
+        description: `${compressedFiles.length} imagem(ns) processada(s) em formato quadrado`,
       });
     } catch (error) {
       console.error('Erro no processamento das imagens:', error);
@@ -203,9 +197,27 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         </div>
       )}
 
+      {/* Dica de formato quadrado */}
+      {value.length === 0 && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-start gap-2">
+            <Camera className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-blue-900">
+                📸 Dica: Centralize o item na foto
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                Suas fotos serão automaticamente ajustadas para formato quadrado (como no Instagram). 
+                O item será centralizado automaticamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upload area */}
       {value.length < maxFiles && (
-        <div 
+        <div
           className={cn(
             "border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer",
             isDragOver 
