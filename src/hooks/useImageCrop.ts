@@ -23,23 +23,22 @@ export const useImageCrop = () => {
     const cropper = new Cropper(imageElement, {
       viewMode: 1,
       dragMode: 'move',
-      aspectRatio: 1, // Forçar quadrado 1:1
-      autoCropArea: 0.9,
+      aspectRatio: 1,
+      autoCropArea: 1,
       restore: false,
       guides: true,
       center: true,
-      highlight: true,
+      highlight: false,
       cropBoxMovable: true,
       cropBoxResizable: true,
       toggleDragModeOnDblclick: false,
       responsive: true,
-      background: true,
-      modal: true,
+      background: false,
       zoomOnWheel: true,
       zoomOnTouch: true,
       wheelZoomRatio: 0.1,
-      minCropBoxWidth: 300,
-      minCropBoxHeight: 300,
+      minCropBoxWidth: 200,
+      minCropBoxHeight: 200,
       initialAspectRatio: 1,
       checkOrientation: true,
       checkCrossOrigin: true,
@@ -48,22 +47,10 @@ export const useImageCrop = () => {
         console.log('✅ Cropper pronto');
         
         const cropper = (this as any).cropper;
-        const containerData = cropper.getContainerData();
-        const imageData = cropper.getImageData();
         
-        // Calcular zoom para preencher 90% do container
-        const scaleX = (containerData.width * 0.9) / imageData.naturalWidth;
-        const scaleY = (containerData.height * 0.9) / imageData.naturalHeight;
-        const scale = Math.max(scaleX, scaleY);
-        
-        // Aplicar zoom inicial
-        if (scale > 0) {
-          cropper.zoomTo(scale);
-        }
-        
-        // Chamar callback de zoom inicial
+        // Iniciar com zoom 0 (padrão do protótipo)
         if (onZoomChange) {
-          onZoomChange(scale);
+          onZoomChange(0);
         }
       },
       
@@ -165,22 +152,6 @@ export const useImageCrop = () => {
     
     const cropper = cropperInstanceRef.current as any;
     cropper.reset();
-    
-    // Reaplica zoom inicial após reset
-    setTimeout(() => {
-      const containerData = cropper.getContainerData();
-      const imageData = cropper.getImageData();
-      
-      if (containerData && imageData) {
-        const scaleX = (containerData.width * 0.9) / imageData.naturalWidth;
-        const scaleY = (containerData.height * 0.9) / imageData.naturalHeight;
-        const scale = Math.max(scaleX, scaleY);
-        
-        if (scale > 0) {
-          cropper.zoomTo(scale);
-        }
-      }
-    }, 100);
   }, []);
 
   /**

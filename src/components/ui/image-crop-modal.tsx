@@ -141,21 +141,19 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </Button>
       </div>
 
-      {/* Área de Crop - AUMENTADA */}
+      {/* Área de Crop */}
       <div 
         ref={containerRef}
-        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center"
+        className="flex-1 bg-black overflow-hidden flex items-center justify-center"
         style={{ 
-          minHeight: '70vh',
-          height: 'calc(100vh - 180px)',
-          padding: '20px'
+          minHeight: '60vh',
+          maxHeight: '60vh'
         }}
       >
         <div 
           style={{ 
             width: '100%', 
             height: '100%',
-            minHeight: '500px',
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center' 
@@ -194,8 +192,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             <span className="font-mono">{(zoomValue * 100).toFixed(0)}%</span>
           </div>
           <Slider
-            min={0.5}
-            max={3}
+            min={0}
+            max={2}
             step={0.01}
             value={[zoomValue]}
             onValueChange={handleZoomChange}
@@ -240,8 +238,9 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </div>
 
         {/* Dica */}
-        <div className="text-center text-gray-400 text-xs">
-          🖼️ Formato quadrado 1:1 - Padrão GiraMãe para melhor visualização
+        <div className="bg-purple-900 rounded-lg p-3 text-center">
+          <p className="text-white text-sm font-medium">📐 Formato quadrado 1:1</p>
+          <p className="text-purple-300 text-xs mt-1">Padrão GiraMãe para melhor visualização</p>
         </div>
       </div>
     </div>
