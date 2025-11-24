@@ -3,7 +3,6 @@ import { X, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useImageCrop } from '@/hooks/useImageCrop';
-import 'cropperjs/dist/cropper.css';
 
 interface ImageCropModalProps {
   isOpen: boolean;
