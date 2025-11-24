@@ -17,6 +17,7 @@ interface ImageUploadEditorProps {
   accept?: string;
   className?: string;
   disabled?: boolean;
+  onPendingCropsChange?: (count: number) => void;
 }
 
 const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
@@ -28,7 +29,8 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
   maxSizeKB = 5000,
   accept = "image/*",
   className,
-  disabled = false
+  disabled = false,
+  onPendingCropsChange
 }) => {
   const [novasMetadata, setNovasMetadata] = useState<ImageMetadata[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,6 +40,7 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalImagens = imagensExistentes.length + novasImagens.length;
+  const pendingCropsCount = novasMetadata.filter(img => img.needsCrop && !img.edited).length;
 
   const handleCropApply = async (croppedBlob: Blob) => {
     if (currentCropIndex === null) return;
@@ -213,6 +216,12 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
       setNovasMetadata([]);
     }
   }, [novasImagens.length]);
+
+  useEffect(() => {
+    if (onPendingCropsChange) {
+      onPendingCropsChange(pendingCropsCount);
+    }
+  }, [pendingCropsCount, onPendingCropsChange]);
 
   return (
     <div className={cn('space-y-4', className)}>

@@ -30,7 +30,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const { 
     initCropper, 
     destroyCropper, 
-    getCroppedBlob, 
+    applyCrop, 
     rotate, 
     reset, 
     zoom 
@@ -59,7 +59,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   const handleApply = async () => {
     try {
-      const blob = await getCroppedBlob(1024, 1024, 0.9);
+      const blob = await applyCrop('crop.jpg');
       console.log(`✅ Crop aplicado - Tamanho: ${(blob.size / 1024).toFixed(2)}KB`);
       onApply(blob);
       setImageLoaded(false);
@@ -87,7 +87,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/95 z-[9999] flex flex-col"
+      className="fixed inset-0 bg-black z-[9999] flex flex-col"
       style={{ 
         position: 'fixed',
         top: 0,
@@ -95,7 +95,9 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         right: 0,
         bottom: 0,
         margin: 0,
-        padding: 0
+        padding: 0,
+        width: '100vw',
+        height: '100vh'
       }}
     >
       {/* Header */}
@@ -125,26 +127,17 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </Button>
       </div>
 
-      {/* Área de Crop - CORRIGIDO PARA OCUPAR MAIS ESPAÇO */}
+      {/* Área de Crop */}
       <div 
         ref={containerRef}
-        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center p-4"
+        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center"
         style={{ 
-          minHeight: '400px',
-          maxHeight: 'calc(100vh - 200px)' // Mais espaço para a imagem
+          width: '100%',
+          height: 'calc(100vh - 160px)',
+          minHeight: '400px'
         }}
       >
-        <div 
-          style={{ 
-            width: '100%', 
-            height: '100%',
-            maxWidth: '90vw', // Permite que a imagem ocupe mais espaço horizontal
-            maxHeight: '90%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <img
             ref={imageRef}
             src={imageSrc}
@@ -153,10 +146,10 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             style={{
               maxWidth: '100%',
               maxHeight: '100%',
-              display: 'block',
-              visibility: imageLoaded ? 'visible' : 'hidden'
+              width: 'auto',
+              height: 'auto',
+              display: imageLoaded ? 'block' : 'none'
             }}
-            className="cropper-image"
           />
         </div>
       </div>
@@ -183,8 +176,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </div>
 
         {/* Info do formato */}
-        <div className="bg-purple-900/50 rounded-lg p-3 text-center">
-          <p className="text-white text-sm font-medium">🔒 Formato quadrado 1:1</p>
+        <div className="bg-purple-900/50 rounded-lg p-2 text-center">
+          <p className="text-white text-sm font-medium">📐 Formato quadrado 1:1</p>
           <p className="text-purple-300 text-xs mt-1">Padrão GiraMãe para melhor visualização</p>
         </div>
 
