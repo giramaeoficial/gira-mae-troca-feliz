@@ -1,10 +1,15 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, Upload, Image } from 'lucide-react';
+import { Camera, X, Upload, Image, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { ImageCropModal } from './image-crop-modal';
 import { processMultipleImages, ImageMetadata } from '@/utils/imageCropUtils';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 
 interface ImageUploadProps {
   value: File[];
@@ -19,7 +24,7 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value = [],
   onChange,
-  maxFiles = 3,
+  maxFiles = 6,
   maxSizeKB = 5000,
   accept = "image/*",
   className,
@@ -30,7 +35,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [currentCropIndex, setCurrentCropIndex] = useState<number | null>(null);
+  const [showNeedsCropAlert, setShowNeedsCropAlert] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const pendingCropsCount = imagesMetadata.filter(img => img.needsCrop && !img.edited).length;
 
   const handleCropApply = async (croppedBlob: Blob) => {
     if (currentCropIndex === null) return;
@@ -41,7 +49,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       lastModified: Date.now()
     });
     
-    // Atualizar metadata
     const reader = new FileReader();
     reader.onload = (e) => {
       const updatedMetadata = [...imagesMetadata];
@@ -53,28 +60,32 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       };
       setImagesMetadata(updatedMetadata);
       
-      // Atualizar array de files
       const newFiles = [...value];
       newFiles[currentCropIndex] = croppedFile;
       onChange(newFiles);
       
-      // Verificar se há próxima imagem que precisa crop
+      // Verificar próxima imagem que precisa crop
       const nextNeedsCrop = updatedMetadata.findIndex(
         (img, idx) => idx > currentCropIndex && img.needsCrop && !img.edited
       );
       
       if (nextNeedsCrop !== -1) {
-        setCurrentCropIndex(nextNeedsCrop);
-        toast({
-          title: "Próxima foto",
-          description: "Ajustando foto seguinte..."
-        });
+        // Abrir próxima automaticamente
+        setTimeout(() => {
+          setCurrentCropIndex(nextNeedsCrop);
+          toast({
+            title: "Próxima foto",
+            description: `Ajustando foto ${nextNeedsCrop + 1} de ${updatedMetadata.length}...`
+          });
+        }, 200);
       } else {
+        // Todas as fotos foram ajustadas
         setCropModalOpen(false);
         setCurrentCropIndex(null);
+        setShowNeedsCropAlert(false);
         toast({
-          title: "Concluído",
-          description: "Todas as fotos foram ajustadas!"
+          title: "✅ Concluído!",
+          description: "Todas as fotos foram ajustadas para o formato quadrado."
         });
       }
     };
@@ -89,64 +100,47 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     if (files.length > remainingSlots) {
       toast({
         title: "Limite de fotos",
-        description: `Máximo de ${maxFiles} fotos. Adicionando apenas ${remainingSlots}.`
+        description: `Máximo de ${maxFiles} fotos permitido.`,
+        variant: "destructive"
       });
     }
 
-    const validFiles: File[] = [];
-    
-    for (const file of filesToProcess) {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Tipo de arquivo inválido",
-          description: `${file.name} não é uma imagem válida`,
-          variant: "destructive"
-        });
-        continue;
-      }
-
-      if (file.size > maxSizeKB * 1024) {
-        toast({
-          title: "Arquivo muito grande",
-          description: `${file.name} excede o limite de ${maxSizeKB}KB`,
-          variant: "destructive"
-        });
-        continue;
-      }
-
-      validFiles.push(file);
-    }
-
-    if (validFiles.length === 0) return;
-
     setIsUploading(true);
+
     try {
-      console.log('🔄 Processando', validFiles.length, 'imagens...');
+      const metadata = await processMultipleImages(filesToProcess, maxSizeKB);
       
-      const metadata = await processMultipleImages(validFiles);
-      setImagesMetadata(prev => [...prev, ...metadata]);
-      
-      // Atualizar array de files original
+      const validFiles = filesToProcess.filter((_, index) => 
+        metadata[index] && metadata[index].originalSrc
+      );
+
+      setImagesMetadata([...imagesMetadata, ...metadata]);
       onChange([...value, ...validFiles]);
-      
-      // Verificar se há imagens que precisam de crop
-      const firstNeedsCrop = metadata.findIndex(img => img.needsCrop);
-      if (firstNeedsCrop !== -1) {
-        const totalNeedsCrop = metadata.filter(img => img.needsCrop).length;
+
+      // Contar quantas precisam crop
+      const needsCropCount = metadata.filter(m => m.needsCrop).length;
+      const firstNeedsCrop = metadata.findIndex(m => m.needsCrop);
+
+      if (needsCropCount > 0) {
+        setShowNeedsCropAlert(true);
+        
+        // Mostrar alerta inicial
         toast({
-          title: "Ajuste necessário",
-          description: `${totalNeedsCrop} foto(s) precisa(m) ser ajustada(s) para formato quadrado.`
+          title: "⚠️ Atenção",
+          description: `${needsCropCount} foto(s) não estão no formato quadrado e precisam ser ajustadas.`,
+          variant: "destructive",
+          duration: 5000
         });
         
-        // Abrir crop automaticamente
+        // Abrir crop automaticamente da primeira imagem não-quadrada
         setTimeout(() => {
           setCurrentCropIndex(value.length + firstNeedsCrop);
           setCropModalOpen(true);
         }, 500);
       } else {
         toast({
-          title: "Imagens adicionadas",
-          description: `${validFiles.length} foto(s) já está(ão) no formato correto!`
+          title: "✅ Imagens adicionadas",
+          description: `${validFiles.length} foto(s) já estão no formato correto!`
         });
       }
     } catch (error) {
@@ -201,108 +195,130 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     
     const newMetadata = imagesMetadata.filter((_, index) => index !== indexToRemove);
     setImagesMetadata(newMetadata);
+    
+    // Atualizar alerta se necessário
+    const stillNeedsCrop = newMetadata.some(img => img.needsCrop && !img.edited);
+    setShowNeedsCropAlert(stillNeedsCrop);
   };
 
   const openFileDialog = () => {
-    fileInputRef.current?.click();
+    if (!disabled && !isUploading) {
+      fileInputRef.current?.click();
+    }
   };
 
-  // Sincronizar metadata com value
+  const openCropForImage = (index: number) => {
+    setCurrentCropIndex(index);
+    setCropModalOpen(true);
+  };
+
   useEffect(() => {
     if (value.length === 0) {
       setImagesMetadata([]);
+      setShowNeedsCropAlert(false);
     }
   }, [value.length]);
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Preview das imagens */}
-      {imagesMetadata.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {imagesMetadata.map((metadata, index) => {
-            const needsCropWarning = metadata.needsCrop && !metadata.edited;
-            
-            return (
-              <div key={index} className="relative group">
-                <img
-                  src={metadata.croppedSrc || metadata.originalSrc}
-                  alt={`Preview ${index + 1}`}
-                  className={cn(
-                    "w-full aspect-square object-cover rounded-lg border-2 cursor-pointer",
-                    needsCropWarning ? "border-yellow-400" : "border-gray-200"
-                  )}
-                  onClick={() => {
-                    setCurrentCropIndex(index);
-                    setCropModalOpen(true);
-                  }}
-                />
-                
-                {/* Badge de status */}
-                {index === 0 && (
-                  <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    ⭐ Principal
-                  </div>
-                )}
-                
-                {needsCropWarning ? (
-                  <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-                    ⚠️ Ajustar
-                  </div>
-                ) : metadata.edited && (
-                  <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                    ✓ OK
-                  </div>
-                )}
-                
-                {/* Botão remover */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeImage(index);
-                  }}
-                  disabled={disabled}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-                
-                {/* Botão de editar */}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant={needsCropWarning ? "default" : "secondary"}
-                  className={cn(
-                    "w-full mt-2",
-                    needsCropWarning && "bg-yellow-500 hover:bg-yellow-600 animate-pulse"
-                  )}
-                  onClick={() => {
-                    setCurrentCropIndex(index);
-                    setCropModalOpen(true);
-                  }}
-                  disabled={disabled}
-                >
-                  {needsCropWarning ? '⚠️ Ajustar' : '✏️ Editar'}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
+      {/* Alerta de fotos pendentes */}
+      {showNeedsCropAlert && pendingCropsCount > 0 && (
+        <Alert variant="destructive" className="animate-pulse">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Atenção!</AlertTitle>
+          <AlertDescription>
+            {pendingCropsCount} foto(s) precisa(m) ser ajustada(s) para o formato quadrado antes de publicar.
+          </AlertDescription>
+        </Alert>
       )}
 
-      {/* Dica de formato quadrado */}
-      {value.length === 0 && (
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-start gap-2">
-            <Camera className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-blue-900">
-                📸 Sistema de Crop Inteligente
-              </p>
-              <p className="text-xs text-blue-700 mt-1">
-                Fotos que não forem quadradas serão automaticamente detectadas e você poderá ajustá-las manualmente para o formato 1:1 (Instagram).
-              </p>
-            </div>
+      {/* Preview das imagens */}
+      {imagesMetadata.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-gray-700">
+              {imagesMetadata.length} foto(s) selecionada(s)
+            </h3>
+            {pendingCropsCount === 0 && (
+              <div className="flex items-center text-green-600 text-sm">
+                <CheckCircle2 className="w-4 h-4 mr-1" />
+                Todas ajustadas
+              </div>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {imagesMetadata.map((metadata, index) => {
+              const needsCropWarning = metadata.needsCrop && !metadata.edited;
+              
+              return (
+                <div key={index} className="relative group">
+                  {/* Preview da imagem */}
+                  <div className="relative rounded-lg overflow-hidden border-2 transition-all">
+                    <img
+                      src={metadata.croppedSrc || metadata.originalSrc}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full aspect-square object-cover"
+                    />
+                    
+                    {/* Badge Principal */}
+                    {index === 0 && (
+                      <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+                        ⭐ Principal
+                      </div>
+                    )}
+                    
+                    {/* Badge Status */}
+                    {needsCropWarning ? (
+                      <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg animate-pulse">
+                        ⚠️ Ajustar
+                      </div>
+                    ) : metadata.edited ? (
+                      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+                        ✓ OK
+                      </div>
+                    ) : null}
+                    
+                    {/* Botão Remover */}
+                    <button
+                      onClick={() => removeImage(index)}
+                      className={cn(
+                        "absolute bg-red-500 text-white w-8 h-8 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity active:scale-90",
+                        index === 0 ? "top-10 right-2" : "top-2 right-2",
+                        needsCropWarning && "top-10"
+                      )}
+                      disabled={disabled}
+                    >
+                      ×
+                    </button>
+                    
+                    {/* Info dimensões originais */}
+                    {needsCropWarning && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-yellow-900 to-transparent p-2">
+                        <p className="text-white text-xs text-center font-medium">
+                          {metadata.dimensions.width}×{metadata.dimensions.height}px - Precisa ajustar
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Botão de ação */}
+                  <Button
+                    variant={needsCropWarning ? "default" : "secondary"}
+                    className={cn(
+                      "w-full mt-2",
+                      needsCropWarning && "bg-yellow-500 hover:bg-yellow-600 animate-pulse"
+                    )}
+                    onClick={() => openCropForImage(index)}
+                    disabled={disabled}
+                  >
+                    {needsCropWarning ? '⚠️ Ajustar Enquadramento' : 
+                     metadata.edited ? '✏️ Editar Novamente' : 
+                     '✂️ Cortar Imagem'}
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
