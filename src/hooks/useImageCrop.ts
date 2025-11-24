@@ -2,7 +2,6 @@ import { useRef, useCallback } from 'react';
 import Cropper from 'cropperjs';
 
 export const useImageCrop = () => {
-  // Usar useRef ao invés de useState para evitar re-renders
   const cropperInstanceRef = useRef<Cropper | null>(null);
 
   /**
@@ -18,41 +17,77 @@ export const useImageCrop = () => {
       cropperInstanceRef.current = null;
     }
 
-    console.log('🎨 Inicializando Cropper...');
+    console.log('🎨 Inicializando Cropper com configurações AGRESSIVAS...');
 
     const cropper = new Cropper(imageElement, {
-      viewMode: 2, // ✅ CORRIGIDO: força a imagem a preencher o container
+      // ✅ CRÍTICO: viewMode 2 ou 3 para forçar preenchimento
+      viewMode: 3, // ← MUDADO DE 2 PARA 3 (mais agressivo)
+      
       dragMode: 'move',
       aspectRatio: 1,
+      
+      // ✅ CRÍTICO: autoCropArea em 1 força o crop a ocupar 100%
       autoCropArea: 1,
-      minContainerWidth: 100,
-      minContainerHeight: 100,
+      
       restore: false,
       guides: true,
       center: true,
       highlight: false,
+      
+      // ✅ Crop box deve ser móvel e redimensionável
       cropBoxMovable: true,
       cropBoxResizable: true,
+      
       toggleDragModeOnDblclick: false,
       responsive: true,
+      
+      // ✅ Sem background para melhor visualização
       background: false,
+      
+      // ✅ Zoom habilitado
       zoomOnWheel: true,
       zoomOnTouch: true,
       wheelZoomRatio: 0.1,
-      minCropBoxWidth: 200,
-      minCropBoxHeight: 200,
+      
+      // ✅ Tamanhos mínimos razoáveis
+      minCropBoxWidth: 100,
+      minCropBoxHeight: 100,
+      minContainerWidth: 100,
+      minContainerHeight: 100,
+      
       initialAspectRatio: 1,
       checkOrientation: true,
       checkCrossOrigin: true,
+      
+      // ✅ MUDANÇA CRÍTICA: setar minCanvasWidth e minCanvasHeight
+      minCanvasWidth: 0,
+      minCanvasHeight: 0,
       
       ready: function() {
         console.log('✅ Cropper pronto');
         
         const cropper = (this as any).cropper;
         
-        // Iniciar com zoom 0 (padrão do protótipo)
+        // ✅ FORÇAR zoom inicial para preencher
+        const containerData = cropper.getContainerData();
+        const imageData = cropper.getImageData();
+        
+        // Calcular o zoom necessário para preencher o container
+        const scaleX = containerData.width / imageData.naturalWidth;
+        const scaleY = containerData.height / imageData.naturalHeight;
+        const minScale = Math.max(scaleX, scaleY);
+        
+        // Aplicar zoom para preencher
+        if (minScale > 1) {
+          cropper.zoomTo(minScale);
+        }
+        
+        console.log('📏 Container:', containerData.width, 'x', containerData.height);
+        console.log('🖼️ Imagem:', imageData.naturalWidth, 'x', imageData.naturalHeight);
+        console.log('🔍 Zoom aplicado:', minScale);
+        
         if (onZoomChange) {
-          onZoomChange(0);
+          onZoomChange(cropper.getData().scale || 1);
         }
       },
       
@@ -63,9 +98,11 @@ export const useImageCrop = () => {
           (this as any).cropper.zoomTo(3);
           return;
         }
-        if (e.detail.ratio < 0.5) {
+        
+        // ✅ MUDANÇA: permitir zoom out até 0.1 (mais flexível)
+        if (e.detail.ratio < 0.1) {
           e.preventDefault();
-          (this as any).cropper.zoomTo(0.5);
+          (this as any).cropper.zoomTo(0.1);
           return;
         }
         
@@ -77,7 +114,7 @@ export const useImageCrop = () => {
 
     cropperInstanceRef.current = cropper;
     return cropper;
-  }, []); // Array vazio - nunca recria a função
+  }, []);
 
   /**
    * Aplica o crop e retorna o Blob processado
@@ -112,7 +149,7 @@ export const useImageCrop = () => {
           resolve(blob);
         },
         'image/jpeg',
-        0.9 // 90% de qualidade
+        0.9
       );
     });
   }, []);
@@ -154,6 +191,17 @@ export const useImageCrop = () => {
     
     const cropper = cropperInstanceRef.current as any;
     cropper.reset();
+    
+    // ✅ Após reset, reaplica o zoom para preencher
+    const containerData = cropper.getContainerData();
+    const imageData = cropper.getImageData();
+    const scaleX = containerData.width / imageData.naturalWidth;
+    const scaleY = containerData.height / imageData.naturalHeight;
+    const minScale = Math.max(scaleX, scaleY);
+    
+    if (minScale > 1) {
+      cropper.zoomTo(minScale);
+    }
   }, []);
 
   /**
