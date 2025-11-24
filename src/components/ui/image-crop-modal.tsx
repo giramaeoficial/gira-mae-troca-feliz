@@ -5,7 +5,6 @@ import { X, RotateCcw, RotateCw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useImageCrop } from '@/hooks/useImageCrop';
 import { toast } from '@/hooks/use-toast';
-import 'cropperjs/dist/cropper.css';
 
 interface ImageCropModalProps {
   isOpen: boolean;
