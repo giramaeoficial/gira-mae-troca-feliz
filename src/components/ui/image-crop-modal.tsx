@@ -144,18 +144,18 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       {/* Área de Crop - AUMENTADA */}
       <div 
         ref={containerRef}
-        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center p-4"
+        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center"
         style={{ 
-          minHeight: '60vh',
-          height: 'calc(100vh - 200px)'
+          minHeight: '70vh',
+          height: 'calc(100vh - 180px)',
+          padding: '20px'
         }}
       >
         <div 
           style={{ 
             width: '100%', 
-            height: '100%', 
-            maxWidth: '800px',
-            maxHeight: '800px',
+            height: '100%',
+            minHeight: '500px',
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center' 

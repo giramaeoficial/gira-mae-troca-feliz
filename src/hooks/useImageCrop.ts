@@ -24,7 +24,7 @@ export const useImageCrop = () => {
       viewMode: 1,
       dragMode: 'move',
       aspectRatio: 1, // Forçar quadrado 1:1
-      autoCropArea: 0.9, // 90% da área disponível
+      autoCropArea: 0.9,
       restore: false,
       guides: true,
       center: true,
@@ -38,8 +38,8 @@ export const useImageCrop = () => {
       zoomOnWheel: true,
       zoomOnTouch: true,
       wheelZoomRatio: 0.1,
-      minCropBoxWidth: 100,
-      minCropBoxHeight: 100,
+      minCropBoxWidth: 300,
+      minCropBoxHeight: 300,
       initialAspectRatio: 1,
       checkOrientation: true,
       checkCrossOrigin: true,
