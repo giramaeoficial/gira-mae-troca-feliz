@@ -21,10 +21,12 @@ export const useImageCrop = () => {
     console.log('🎨 Inicializando Cropper...');
 
     const cropper = new Cropper(imageElement, {
-      viewMode: 2, // ✅ MUDANÇA: de 1 para 2 - força a imagem a preencher o container
+      viewMode: 2, // ✅ CORRIGIDO: força a imagem a preencher o container
       dragMode: 'move',
       aspectRatio: 1,
       autoCropArea: 1,
+      minContainerWidth: 100,
+      minContainerHeight: 100,
       restore: false,
       guides: true,
       center: true,
