@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import Cropper from 'cropperjs';
 
 export const useImageCrop = () => {
-  const [cropperInstance, setCropperInstance] = useState<Cropper | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number | null>(null);
+  // Usar useRef ao invés de useState para evitar re-renders
+  const cropperInstanceRef = useRef<Cropper | null>(null);
 
   /**
    * Inicializa o cropper em um elemento img
@@ -12,15 +12,19 @@ export const useImageCrop = () => {
     imageElement: HTMLImageElement,
     onZoomChange?: (ratio: number) => void
   ) => {
-    if (cropperInstance) {
-      cropperInstance.destroy();
+    // Destruir instância anterior se existir
+    if (cropperInstanceRef.current) {
+      cropperInstanceRef.current.destroy();
+      cropperInstanceRef.current = null;
     }
+
+    console.log('🎨 Inicializando Cropper...');
 
     const cropper = new Cropper(imageElement, {
       viewMode: 1,
       dragMode: 'move',
-      aspectRatio: 1,
-      autoCropArea: 1,
+      aspectRatio: 1, // Forçar quadrado 1:1
+      autoCropArea: 0.9, // 90% da área disponível
       restore: false,
       guides: true,
       center: true,
@@ -34,33 +38,32 @@ export const useImageCrop = () => {
       zoomOnWheel: true,
       zoomOnTouch: true,
       wheelZoomRatio: 0.1,
-      minCropBoxWidth: 200,
-      minCropBoxHeight: 200,
+      minCropBoxWidth: 100,
+      minCropBoxHeight: 100,
       initialAspectRatio: 1,
       checkOrientation: true,
       checkCrossOrigin: true,
       
       ready: function() {
-        console.log('✅ Cropper inicializado');
+        console.log('✅ Cropper pronto');
         
         const cropper = (this as any).cropper;
         const containerData = cropper.getContainerData();
-        const imageData = cropper.getImageData();
         const canvasData = cropper.getCanvasData();
         
-        // Calcular quanto precisamos aumentar para preencher o container
-        const scaleX = containerData.width / canvasData.width;
-        const scaleY = containerData.height / canvasData.height;
-        const scale = Math.min(scaleX, scaleY) * 0.9;
+        // Calcular zoom inicial para preencher melhor o container
+        const scaleX = (containerData.width * 0.85) / canvasData.width;
+        const scaleY = (containerData.height * 0.85) / canvasData.height;
+        const scale = Math.max(scaleX, scaleY, 1);
         
-        // Aplicar zoom para que a imagem fique maior
+        // Aplicar zoom inicial
         if (scale > 1) {
           cropper.zoomTo(scale);
         }
         
-        // Chamar callback de zoom
+        // Chamar callback de zoom inicial
         if (onZoomChange) {
-          onZoomChange(cropper.getData().scaleX || 1);
+          onZoomChange(scale);
         }
       },
       
@@ -69,10 +72,12 @@ export const useImageCrop = () => {
         if (e.detail.ratio > 3) {
           e.preventDefault();
           (this as any).cropper.zoomTo(3);
+          return;
         }
-        if (e.detail.ratio < 0.1) {
+        if (e.detail.ratio < 0.5) {
           e.preventDefault();
-          (this as any).cropper.zoomTo(0.1);
+          (this as any).cropper.zoomTo(0.5);
+          return;
         }
         
         if (onZoomChange) {
@@ -81,21 +86,21 @@ export const useImageCrop = () => {
       }
     } as any);
 
-    setCropperInstance(cropper);
+    cropperInstanceRef.current = cropper;
     return cropper;
-  }, [cropperInstance]);
+  }, []); // Array vazio - nunca recria a função
 
   /**
-   * Aplica o crop e retorna o arquivo processado
+   * Aplica o crop e retorna o Blob processado
    */
   const applyCrop = useCallback(async (
-    originalFileName: string
+    originalFileName: string = 'crop.jpg'
   ): Promise<Blob> => {
-    if (!cropperInstance) {
+    if (!cropperInstanceRef.current) {
       throw new Error('Cropper não inicializado');
     }
 
-    const canvas = (cropperInstance as any).getCroppedCanvas({
+    const canvas = (cropperInstanceRef.current as any).getCroppedCanvas({
       width: 1024,
       height: 1024,
       fillColor: '#fff',
@@ -117,59 +122,83 @@ export const useImageCrop = () => {
           resolve(blob);
         },
         'image/jpeg',
-        0.9
+        0.9 // 90% de qualidade
       );
     });
-  }, [cropperInstance]);
+  }, []);
 
   /**
    * Destrói a instância do cropper
    */
   const destroyCropper = useCallback(() => {
-    if (cropperInstance) {
-      cropperInstance.destroy();
-      setCropperInstance(null);
+    if (cropperInstanceRef.current) {
+      cropperInstanceRef.current.destroy();
+      cropperInstanceRef.current = null;
       console.log('🗑️ Cropper destruído');
     }
-  }, [cropperInstance]);
+  }, []);
 
   /**
-   * Controles do cropper
+   * Controle de zoom
    */
   const zoom = useCallback((ratio: number) => {
-    (cropperInstance as any)?.zoomTo(ratio);
-  }, [cropperInstance]);
+    if (cropperInstanceRef.current) {
+      (cropperInstanceRef.current as any).zoomTo(ratio);
+    }
+  }, []);
 
+  /**
+   * Rotação da imagem
+   */
   const rotate = useCallback((degrees: number) => {
-    (cropperInstance as any)?.rotate(degrees);
-  }, [cropperInstance]);
+    if (cropperInstanceRef.current) {
+      (cropperInstanceRef.current as any).rotate(degrees);
+    }
+  }, []);
 
+  /**
+   * Reset do cropper
+   */
   const reset = useCallback(() => {
-    const cropper = cropperInstance as any;
-    cropper?.reset();
+    if (!cropperInstanceRef.current) return;
+    
+    const cropper = cropperInstanceRef.current as any;
+    cropper.reset();
+    
     // Reaplica zoom inicial após reset
     setTimeout(() => {
-      const containerData = cropper?.getContainerData();
-      const imageData = cropper?.getImageData();
+      const containerData = cropper.getContainerData();
+      const canvasData = cropper.getCanvasData();
       
-      if (containerData && imageData) {
-        const scaleX = (containerData.width * 0.85) / imageData.naturalWidth;
-        const scaleY = (containerData.height * 0.85) / imageData.naturalHeight;
+      if (containerData && canvasData) {
+        const scaleX = (containerData.width * 0.85) / canvasData.width;
+        const scaleY = (containerData.height * 0.85) / canvasData.height;
         const scale = Math.max(scaleX, scaleY, 1);
+        
         if (scale > 1) {
-          cropper?.zoomTo(scale);
+          cropper.zoomTo(scale);
         }
       }
     }, 100);
-  }, [cropperInstance]);
+  }, []);
 
+  /**
+   * Mover imagem
+   */
   const move = useCallback((offsetX: number, offsetY: number) => {
-    (cropperInstance as any)?.move(offsetX, offsetY);
-  }, [cropperInstance]);
+    if (cropperInstanceRef.current) {
+      (cropperInstanceRef.current as any).move(offsetX, offsetY);
+    }
+  }, []);
 
+  /**
+   * Escalar imagem
+   */
   const scale = useCallback((scaleX: number, scaleY?: number) => {
-    (cropperInstance as any)?.scale(scaleX, scaleY);
-  }, [cropperInstance]);
+    if (cropperInstanceRef.current) {
+      (cropperInstanceRef.current as any).scale(scaleX, scaleY);
+    }
+  }, []);
 
   return {
     initCropper,
@@ -180,8 +209,6 @@ export const useImageCrop = () => {
     reset,
     move,
     scale,
-    cropperInstance,
-    currentImageIndex,
-    setCurrentImageIndex
+    cropperInstance: cropperInstanceRef.current
   };
 };
