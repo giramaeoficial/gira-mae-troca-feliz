@@ -1,11 +1,11 @@
-
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, X, Upload, Image, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { cropToSquare } from '@/utils/imageCompression';
 import { toast } from '@/hooks/use-toast';
 import LazyImage from '@/components/ui/lazy-image';
+import { ImageCropModal } from './image-crop-modal';
+import { processMultipleImages, ImageMetadata } from '@/utils/imageCropUtils';
 
 interface ImageUploadEditorProps {
   imagensExistentes: string[];
@@ -30,25 +30,72 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
   className,
   disabled = false
 }) => {
-  const [previewsNovas, setPreviewsNovas] = useState<string[]>([]);
+  const [novasMetadata, setNovasMetadata] = useState<ImageMetadata[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [currentCropIndex, setCurrentCropIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const totalImagens = imagensExistentes.length + novasImagens.length;
 
-  const generatePreviews = useCallback((files: File[]) => {
-    previewsNovas.forEach(url => URL.revokeObjectURL(url));
-    const newPreviews = files.map(file => URL.createObjectURL(file));
-    setPreviewsNovas(newPreviews);
-  }, [previewsNovas]);
+  const handleCropApply = async (croppedBlob: Blob) => {
+    if (currentCropIndex === null) return;
+    
+    const metadata = novasMetadata[currentCropIndex];
+    const croppedFile = new File([croppedBlob], metadata.file.name, {
+      type: 'image/jpeg',
+      lastModified: Date.now()
+    });
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const updatedMetadata = [...novasMetadata];
+      updatedMetadata[currentCropIndex] = {
+        ...metadata,
+        croppedSrc: e.target?.result as string,
+        croppedBlob,
+        edited: true
+      };
+      setNovasMetadata(updatedMetadata);
+      
+      const newFiles = [...novasImagens];
+      newFiles[currentCropIndex] = croppedFile;
+      onAdicionarNovas(newFiles);
+      
+      const nextNeedsCrop = updatedMetadata.findIndex(
+        (img, idx) => idx > currentCropIndex && img.needsCrop && !img.edited
+      );
+      
+      if (nextNeedsCrop !== -1) {
+        setCurrentCropIndex(nextNeedsCrop);
+        toast({
+          title: "Próxima foto",
+          description: "Ajustando foto seguinte..."
+        });
+      } else {
+        setCropModalOpen(false);
+        setCurrentCropIndex(null);
+        toast({
+          title: "Concluído",
+          description: "Todas as novas fotos foram ajustadas!"
+        });
+      }
+    };
+    reader.readAsDataURL(croppedBlob);
+  };
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const remainingSlots = maxFiles - totalImagens;
     const filesToProcess = fileArray.slice(0, remainingSlots);
 
-    console.log('🔄 Processando', filesToProcess.length, 'arquivos...');
+    if (files.length > remainingSlots) {
+      toast({
+        title: "Limite de fotos",
+        description: `Máximo de ${maxFiles} fotos. Adicionando apenas ${remainingSlots}.`
+      });
+    }
 
     const validFiles: File[] = [];
     
@@ -78,27 +125,31 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
 
     setIsUploading(true);
     try {
-      console.log('📸 Processando', validFiles.length, 'imagens em formato quadrado...');
+      console.log('🔄 Processando', validFiles.length, 'imagens...');
       
-      // MUDANÇA: Usar cropToSquare
-      const compressedFiles = await Promise.all(
-        validFiles.map(async (file) => {
-          try {
-            return await cropToSquare(file, 1024, 0.85);
-          } catch (error) {
-            console.error('Erro ao processar imagem:', error);
-            return file;
-          }
-        })
-      );
-
-      onAdicionarNovas([...novasImagens, ...compressedFiles]);
-      generatePreviews([...novasImagens, ...compressedFiles]);
-
-      toast({
-        title: "Imagens adicionadas",
-        description: `${compressedFiles.length} imagem(ns) processada(s)`,
-      });
+      const metadata = await processMultipleImages(validFiles);
+      setNovasMetadata(prev => [...prev, ...metadata]);
+      
+      onAdicionarNovas([...novasImagens, ...validFiles]);
+      
+      const firstNeedsCrop = metadata.findIndex(img => img.needsCrop);
+      if (firstNeedsCrop !== -1) {
+        const totalNeedsCrop = metadata.filter(img => img.needsCrop).length;
+        toast({
+          title: "Ajuste necessário",
+          description: `${totalNeedsCrop} foto(s) precisa(m) ser ajustada(s).`
+        });
+        
+        setTimeout(() => {
+          setCurrentCropIndex(novasImagens.length + firstNeedsCrop);
+          setCropModalOpen(true);
+        }, 500);
+      } else {
+        toast({
+          title: "Imagens adicionadas",
+          description: `${validFiles.length} foto(s) já está(ão) no formato correto!`
+        });
+      }
     } catch (error) {
       console.error('Erro no processamento das imagens:', error);
       toast({
@@ -149,26 +200,19 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
     const newFiles = novasImagens.filter((_, index) => index !== indexToRemove);
     onAdicionarNovas(newFiles);
     
-    const newPreviews = previewsNovas.filter((_, index) => index !== indexToRemove);
-    URL.revokeObjectURL(previewsNovas[indexToRemove]);
-    setPreviewsNovas(newPreviews);
+    const newMetadata = novasMetadata.filter((_, index) => index !== indexToRemove);
+    setNovasMetadata(newMetadata);
   };
 
   const openFileDialog = () => {
     fileInputRef.current?.click();
   };
 
-  React.useEffect(() => {
-    if (novasImagens.length > 0) {
-      generatePreviews(novasImagens);
+  useEffect(() => {
+    if (novasImagens.length === 0) {
+      setNovasMetadata([]);
     }
-  }, [novasImagens]);
-
-  React.useEffect(() => {
-    return () => {
-      previewsNovas.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, []);
+  }, [novasImagens.length]);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -179,10 +223,10 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
             <Camera className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-blue-900">
-                📸 Formato automático
+                📸 Sistema de Crop Inteligente
               </p>
               <p className="text-xs text-blue-700 mt-1">
-                Novas fotos serão ajustadas para formato quadrado. Centralize o item para melhor resultado.
+                Fotos não-quadradas serão detectadas e você poderá ajustá-las manualmente.
               </p>
             </div>
           </div>
@@ -223,32 +267,90 @@ const ImageUploadEditor: React.FC<ImageUploadEditorProps> = ({
       )}
 
       {/* Novas Imagens */}
-      {previewsNovas.length > 0 && (
+      {novasMetadata.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium text-gray-700">Novas Imagens</h4>
-          <div className="grid grid-cols-3 gap-4">
-            {previewsNovas.map((preview, index) => (
-              <div key={`new-${index}`} className="relative group">
-                <img 
-                  src={preview} 
-                  alt={`Nova imagem ${index + 1}`}
-                  className="w-full h-24 object-cover rounded-lg border-2 border-green-200"
-                />
-                <button
-                  type="button"
-                  onClick={() => removerNovaImagem(index)}
-                  disabled={disabled}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-                <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1 rounded">
-                  Nova
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {novasMetadata.map((metadata, index) => {
+              const needsCropWarning = metadata.needsCrop && !metadata.edited;
+              
+              return (
+                <div key={`new-${index}`} className="relative group">
+                  <img 
+                    src={metadata.croppedSrc || metadata.originalSrc} 
+                    alt={`Nova imagem ${index + 1}`}
+                    className={cn(
+                      "w-full aspect-square object-cover rounded-lg border-2 cursor-pointer",
+                      needsCropWarning ? "border-yellow-400" : "border-green-200"
+                    )}
+                    onClick={() => {
+                      setCurrentCropIndex(index);
+                      setCropModalOpen(true);
+                    }}
+                  />
+                  
+                  {needsCropWarning ? (
+                    <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
+                      ⚠️ Ajustar
+                    </div>
+                  ) : metadata.edited ? (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                      ✓ OK
+                    </div>
+                  ) : (
+                    <div className="absolute top-1 left-1 bg-green-500 text-white text-xs px-1 rounded">
+                      Nova
+                    </div>
+                  )}
+                  
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removerNovaImagem(index);
+                    }}
+                    disabled={disabled}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={needsCropWarning ? "default" : "secondary"}
+                    className={cn(
+                      "w-full mt-2",
+                      needsCropWarning && "bg-yellow-500 hover:bg-yellow-600 animate-pulse"
+                    )}
+                    onClick={() => {
+                      setCurrentCropIndex(index);
+                      setCropModalOpen(true);
+                    }}
+                    disabled={disabled}
+                  >
+                    {needsCropWarning ? '⚠️ Ajustar' : '✏️ Editar'}
+                  </Button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
+      )}
+
+      {/* Modal de Crop */}
+      {currentCropIndex !== null && novasMetadata[currentCropIndex] && (
+        <ImageCropModal
+          isOpen={cropModalOpen}
+          imageSrc={novasMetadata[currentCropIndex].originalSrc}
+          imageIndex={currentCropIndex}
+          totalImages={novasMetadata.length}
+          onClose={() => {
+            setCropModalOpen(false);
+            setCurrentCropIndex(null);
+          }}
+          onApply={handleCropApply}
+        />
       )}
 
       {/* Upload area */}
