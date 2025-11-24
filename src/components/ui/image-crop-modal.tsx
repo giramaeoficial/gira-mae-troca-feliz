@@ -59,7 +59,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         setInitializing(false);
       }
     };
-  }, [isOpen, imageLoaded]); // Removido imageSrc das dependências para evitar reinicialização
+  }, [isOpen, imageLoaded]);
 
   // Reset quando modal fecha
   useEffect(() => {
@@ -141,110 +141,96 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </Button>
       </div>
 
-      {/* Área de Crop */}
+      {/* Área de Crop - ✅ CORRIGIDO: Container ocupa espaço disponível */}
       <div 
         ref={containerRef}
-        className="flex-1 bg-black overflow-hidden flex items-center justify-center"
+        className="flex-1 bg-black overflow-hidden"
         style={{ 
-          minHeight: '60vh',
-          maxHeight: '60vh'
+          minHeight: 0,
+          width: '100%',
+          height: 'calc(100vh - 120px)', // Espaço para header e footer
+          position: 'relative'
         }}
       >
-        <div 
-          style={{ 
-            width: '100%', 
-            height: '100%',
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center' 
+        {/* ✅ CORRIGIDO: Imagem sem restrições de tamanho inline */}
+        <img
+          ref={imageRef}
+          src={imageSrc}
+          alt="Imagem para crop"
+          onLoad={handleImageLoad}
+          style={{
+            display: imageLoaded ? 'block' : 'none',
+            // Removido maxWidth, maxHeight, width e height
+            // O Cropper.js vai controlar o tamanho
           }}
-        >
-          <img
-            ref={imageRef}
-            src={imageSrc}
-            alt="Imagem para crop"
-            onLoad={handleImageLoad}
-            style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              width: 'auto',
-              height: 'auto',
-              display: imageLoaded ? 'block' : 'none',
-              objectFit: 'contain'
-            }}
-          />
-          
-          {!imageLoaded && (
-            <div className="text-white text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-              <p>Carregando imagem...</p>
-            </div>
-          )}
-        </div>
+        />
+        
+        {!imageLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-white text-sm">Carregando imagem...</div>
+          </div>
+        )}
       </div>
 
-      {/* Controles */}
-      <div className="bg-gray-900 px-4 py-4 space-y-4 flex-shrink-0">
-        {/* Zoom Slider */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-white text-sm">
-            <span>Zoom</span>
-            <span className="font-mono">{(zoomValue * 100).toFixed(0)}%</span>
+      {/* Controles de Zoom e Rotação */}
+      <div className="bg-gray-900 px-6 py-4 flex-shrink-0">
+        <div className="max-w-4xl mx-auto space-y-4">
+          {/* Zoom Slider */}
+          <div className="flex items-center gap-4">
+            <span className="text-white text-sm font-medium w-16">Zoom</span>
+            <Slider
+              value={[zoomValue]}
+              onValueChange={handleZoomChange}
+              min={0.5}
+              max={3}
+              step={0.1}
+              disabled={!imageLoaded || !initializing}
+              className="flex-1"
+            />
           </div>
-          <Slider
-            min={0}
-            max={2}
-            step={0.01}
-            value={[zoomValue]}
-            onValueChange={handleZoomChange}
-            disabled={!imageLoaded || !initializing}
-            className="w-full"
-          />
-        </div>
-
-        {/* Botões de Rotação e Reset */}
-        <div className="flex gap-2 justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => rotate(-90)}
-            disabled={!imageLoaded || !initializing}
-            className="text-white border-gray-600 hover:bg-gray-800"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Girar
-          </Button>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => rotate(90)}
-            disabled={!imageLoaded || !initializing}
-            className="text-white border-gray-600 hover:bg-gray-800"
-          >
-            <RotateCw className="w-4 h-4 mr-2" />
-            Girar
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={reset}
-            disabled={!imageLoaded || !initializing}
-            className="text-white border-gray-600 hover:bg-gray-800"
-          >
-            Resetar
-          </Button>
-        </div>
-
-        {/* Dica */}
-        <div className="bg-purple-900 rounded-lg p-3 text-center">
-          <p className="text-white text-sm font-medium">📐 Formato quadrado 1:1</p>
-          <p className="text-purple-300 text-xs mt-1">Padrão GiraMãe para melhor visualização</p>
+          {/* Botões de Rotação */}
+          <div className="flex items-center gap-4">
+            <span className="text-white text-sm font-medium w-16">Girar</span>
+            <div className="flex gap-2 flex-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => rotate(-90)}
+                disabled={!imageLoaded || !initializing}
+                className="flex-1"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                90° Esquerda
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => rotate(90)}
+                disabled={!imageLoaded || !initializing}
+                className="flex-1"
+              >
+                <RotateCw className="w-4 h-4 mr-2" />
+                90° Direita
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={reset}
+                disabled={!imageLoaded || !initializing}
+                className="flex-1"
+              >
+                Resetar
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 
-  return ReactDOM.createPortal(modalContent, document.body);
+  return ReactDOM.createPortal(
+    modalContent,
+    document.body
+  );
 };
