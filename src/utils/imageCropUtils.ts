@@ -75,29 +75,35 @@ export const canvasToFile = async (
  * Processa múltiplas imagens e identifica quais precisam de crop
  */
 export const processMultipleImages = async (
-  files: File[]
+  files: File[],
+  maxSizeKB?: number
 ): Promise<ImageMetadata[]> => {
   const metadata: ImageMetadata[] = [];
   
   for (const file of files) {
-    const dimensions = await loadImageDimensions(file);
-    const needsCrop = !isImageSquare(dimensions.width, dimensions.height);
-    
-    const reader = new FileReader();
-    const originalSrc = await new Promise<string>((resolve) => {
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.readAsDataURL(file);
-    });
-    
-    metadata.push({
-      file,
-      originalSrc,
-      croppedSrc: null,
-      croppedBlob: null,
-      dimensions,
-      needsCrop,
-      edited: false
-    });
+    try {
+      const dimensions = await loadImageDimensions(file);
+      const needsCrop = !isImageSquare(dimensions.width, dimensions.height);
+      
+      const reader = new FileReader();
+      const originalSrc = await new Promise<string>((resolve, reject) => {
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+        reader.readAsDataURL(file);
+      });
+      
+      metadata.push({
+        file,
+        originalSrc,
+        croppedSrc: null,
+        croppedBlob: null,
+        dimensions,
+        needsCrop,
+        edited: false
+      });
+    } catch (error) {
+      console.error('Erro ao processar imagem:', error);
+    }
   }
   
   return metadata;

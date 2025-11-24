@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, AlertCircle } from "lucide-react";
 import { usePublicarItemFormV2 } from '@/hooks/usePublicarItemFormV2';
 import { SimpleItemForm } from '@/components/forms/SimpleItemForm';
 import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const PublicarItem = () => {
   const {
@@ -16,6 +17,8 @@ const PublicarItem = () => {
     loading,
     handleSubmit
   } = usePublicarItemFormV2();
+
+  const [pendingCropsCount, setPendingCropsCount] = useState(0);
 
   const handleFieldChange = (field: string, value: any) => {
     updateFormData({ [field]: value });
@@ -35,22 +38,38 @@ const PublicarItem = () => {
             </CardHeader>
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {pendingCropsCount > 0 && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Atenção!</AlertTitle>
+                    <AlertDescription>
+                      {pendingCropsCount} foto(s) precisa(m) ser ajustada(s) para o formato quadrado antes de publicar.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <SimpleItemForm
                   formData={formData}
                   onFieldChange={handleFieldChange}
                   errors={errors}
+                  onPendingCropsChange={setPendingCropsCount}
                 />
 
                 <div className="pt-4 border-t border-gray-100">
                   <Button 
                     type="submit" 
-                    disabled={loading} 
-                    className="w-full h-12 text-base bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg rounded-lg transition-all duration-200"
+                    disabled={loading || pendingCropsCount > 0} 
+                    className="w-full h-12 text-base bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Publicando...
+                      </>
+                    ) : pendingCropsCount > 0 ? (
+                      <>
+                        <AlertCircle className="mr-2 h-4 w-4" />
+                        Ajuste as fotos primeiro
                       </>
                     ) : (
                       <>

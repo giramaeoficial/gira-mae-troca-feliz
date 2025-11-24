@@ -19,6 +19,7 @@ interface ImageUploadProps {
   accept?: string;
   className?: string;
   disabled?: boolean;
+  onPendingCropsChange?: (count: number) => void;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -28,7 +29,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   maxSizeKB = 5000,
   accept = "image/*",
   className,
-  disabled = false
+  disabled = false,
+  onPendingCropsChange
 }) => {
   const [imagesMetadata, setImagesMetadata] = useState<ImageMetadata[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -64,22 +66,22 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       newFiles[currentCropIndex] = croppedFile;
       onChange(newFiles);
       
-      // Verificar próxima imagem que precisa crop
-      const nextNeedsCrop = updatedMetadata.findIndex(
+      // Procurar próxima imagem não-ajustada
+      const nextIndex = updatedMetadata.findIndex(
         (img, idx) => idx > currentCropIndex && img.needsCrop && !img.edited
       );
       
-      if (nextNeedsCrop !== -1) {
-        // Abrir próxima automaticamente
+      if (nextIndex !== -1) {
+        // Esperar 200ms e abrir próxima
         setTimeout(() => {
-          setCurrentCropIndex(nextNeedsCrop);
+          setCurrentCropIndex(nextIndex);
           toast({
             title: "Próxima foto",
-            description: `Ajustando foto ${nextNeedsCrop + 1} de ${updatedMetadata.length}...`
+            description: `Ajustando foto ${nextIndex + 1} de ${updatedMetadata.length}...`
           });
         }, 200);
       } else {
-        // Todas as fotos foram ajustadas
+        // Fechar modal - tudo ajustado
         setCropModalOpen(false);
         setCurrentCropIndex(null);
         setShowNeedsCropAlert(false);
@@ -127,12 +129,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         // Mostrar alerta inicial
         toast({
           title: "⚠️ Atenção",
-          description: `${needsCropCount} foto(s) não estão no formato quadrado e precisam ser ajustadas.`,
+          description: `${needsCropCount} foto(s) não ${needsCropCount === 1 ? 'está' : 'estão'} no formato quadrado e precisa${needsCropCount === 1 ? '' : 'm'} ser ajustada${needsCropCount === 1 ? '' : 's'}.`,
           variant: "destructive",
           duration: 5000
         });
         
-        // Abrir crop automaticamente da primeira imagem não-quadrada
+        // Abrir crop automaticamente da primeira imagem não-quadrada após 500ms
         setTimeout(() => {
           setCurrentCropIndex(value.length + firstNeedsCrop);
           setCropModalOpen(true);
@@ -140,7 +142,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       } else {
         toast({
           title: "✅ Imagens adicionadas",
-          description: `${validFiles.length} foto(s) já estão no formato correto!`
+          description: `${validFiles.length} foto(s) já ${validFiles.length === 1 ? 'está' : 'estão'} no formato correto!`
         });
       }
     } catch (error) {
@@ -218,6 +220,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setShowNeedsCropAlert(false);
     }
   }, [value.length]);
+
+  useEffect(() => {
+    if (onPendingCropsChange) {
+      onPendingCropsChange(pendingCropsCount);
+    }
+  }, [pendingCropsCount, onPendingCropsChange]);
 
   return (
     <div className={cn('space-y-4', className)}>

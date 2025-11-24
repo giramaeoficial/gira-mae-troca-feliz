@@ -42,17 +42,18 @@ export const useImageCrop = () => {
       ready: function() {
         console.log('✅ Cropper inicializado');
         
-        // Centralizar imagem ao iniciar
-        const containerData = (this as any).cropper.getContainerData();
-        const imageData = (this as any).cropper.getImageData();
+        const cropper = (this as any).cropper;
+        const containerData = cropper.getContainerData();
+        const imageData = cropper.getImageData();
         
-        // Se a imagem for maior que o container, fazer zoom inicial para caber melhor
-        if (imageData.naturalWidth > containerData.width || 
-            imageData.naturalHeight > containerData.height) {
-          const scaleX = containerData.width / imageData.naturalWidth;
-          const scaleY = containerData.height / imageData.naturalHeight;
-          const scale = Math.min(scaleX, scaleY) * 0.8; // 80% do tamanho máximo
-          (this as any).cropper.zoomTo(scale);
+        // Calcular escala para preencher 85% do container
+        const scaleX = (containerData.width * 0.85) / imageData.naturalWidth;
+        const scaleY = (containerData.height * 0.85) / imageData.naturalHeight;
+        const scale = Math.max(scaleX, scaleY, 1);
+        
+        // Aplicar zoom inicial se necessário
+        if (scale > 1) {
+          cropper.zoomTo(scale);
         }
       },
       
@@ -137,17 +138,20 @@ export const useImageCrop = () => {
   }, [cropperInstance]);
 
   const reset = useCallback(() => {
-    (cropperInstance as any)?.reset();
+    const cropper = cropperInstance as any;
+    cropper?.reset();
     // Reaplica zoom inicial após reset
     setTimeout(() => {
-      const containerData = (cropperInstance as any)?.getContainerData();
-      const imageData = (cropperInstance as any)?.getImageData();
+      const containerData = cropper?.getContainerData();
+      const imageData = cropper?.getImageData();
       
       if (containerData && imageData) {
-        const scaleX = containerData.width / imageData.naturalWidth;
-        const scaleY = containerData.height / imageData.naturalHeight;
-        const scale = Math.min(scaleX, scaleY) * 0.8;
-        (cropperInstance as any)?.zoomTo(scale);
+        const scaleX = (containerData.width * 0.85) / imageData.naturalWidth;
+        const scaleY = (containerData.height * 0.85) / imageData.naturalHeight;
+        const scale = Math.max(scaleX, scaleY, 1);
+        if (scale > 1) {
+          cropper?.zoomTo(scale);
+        }
       }
     }, 100);
   }, [cropperInstance]);
