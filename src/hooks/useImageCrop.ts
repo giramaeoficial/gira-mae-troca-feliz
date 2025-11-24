@@ -17,10 +17,10 @@ export const useImageCrop = () => {
     }
 
     const cropper = new Cropper(imageElement, {
-      viewMode: 1, // Restringe crop box dentro do canvas
-      dragMode: 'move', // Permite mover a imagem
-      aspectRatio: 1, // FIXO - Formato quadrado
-      autoCropArea: 0.9, // 90% da área inicial
+      viewMode: 1,
+      dragMode: 'move',
+      aspectRatio: 1,
+      autoCropArea: 1,
       restore: false,
       guides: true,
       center: true,
@@ -30,14 +30,15 @@ export const useImageCrop = () => {
       toggleDragModeOnDblclick: false,
       responsive: true,
       background: true,
-      modal: true, // Escurece área fora do crop
+      modal: true,
       zoomOnWheel: true,
       zoomOnTouch: true,
       wheelZoomRatio: 0.1,
-      
-      // Configurações de tamanho
-      minCropBoxWidth: 100,
-      minCropBoxHeight: 100,
+      minCropBoxWidth: 200,
+      minCropBoxHeight: 200,
+      initialAspectRatio: 1,
+      checkOrientation: true,
+      checkCrossOrigin: true,
       
       ready: function() {
         console.log('✅ Cropper inicializado');
@@ -45,15 +46,21 @@ export const useImageCrop = () => {
         const cropper = (this as any).cropper;
         const containerData = cropper.getContainerData();
         const imageData = cropper.getImageData();
+        const canvasData = cropper.getCanvasData();
         
-        // Calcular escala para preencher 85% do container
-        const scaleX = (containerData.width * 0.85) / imageData.naturalWidth;
-        const scaleY = (containerData.height * 0.85) / imageData.naturalHeight;
-        const scale = Math.max(scaleX, scaleY, 1);
+        // Calcular quanto precisamos aumentar para preencher o container
+        const scaleX = containerData.width / canvasData.width;
+        const scaleY = containerData.height / canvasData.height;
+        const scale = Math.min(scaleX, scaleY) * 0.9;
         
-        // Aplicar zoom inicial se necessário
+        // Aplicar zoom para que a imagem fique maior
         if (scale > 1) {
           cropper.zoomTo(scale);
+        }
+        
+        // Chamar callback de zoom
+        if (onZoomChange) {
+          onZoomChange(cropper.getData().scaleX || 1);
         }
       },
       
