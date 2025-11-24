@@ -194,8 +194,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             <span className="font-mono">{(zoomValue * 100).toFixed(0)}%</span>
           </div>
           <Slider
-            min={0}
-            max={1}
+            min={0.5}
+            max={3}
             step={0.01}
             value={[zoomValue]}
             onValueChange={handleZoomChange}

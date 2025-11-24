@@ -49,15 +49,15 @@ export const useImageCrop = () => {
         
         const cropper = (this as any).cropper;
         const containerData = cropper.getContainerData();
-        const canvasData = cropper.getCanvasData();
+        const imageData = cropper.getImageData();
         
-        // Calcular zoom inicial para preencher melhor o container
-        const scaleX = (containerData.width * 0.85) / canvasData.width;
-        const scaleY = (containerData.height * 0.85) / canvasData.height;
-        const scale = Math.max(scaleX, scaleY, 1);
+        // Calcular zoom para preencher 90% do container
+        const scaleX = (containerData.width * 0.9) / imageData.naturalWidth;
+        const scaleY = (containerData.height * 0.9) / imageData.naturalHeight;
+        const scale = Math.max(scaleX, scaleY);
         
         // Aplicar zoom inicial
-        if (scale > 1) {
+        if (scale > 0) {
           cropper.zoomTo(scale);
         }
         
@@ -100,7 +100,8 @@ export const useImageCrop = () => {
       throw new Error('Cropper não inicializado');
     }
 
-    const canvas = (cropperInstanceRef.current as any).getCroppedCanvas({
+    const cropperAny = cropperInstanceRef.current as any;
+    const canvas = cropperAny.getCroppedCanvas({
       width: 1024,
       height: 1024,
       fillColor: '#fff',
@@ -168,14 +169,14 @@ export const useImageCrop = () => {
     // Reaplica zoom inicial após reset
     setTimeout(() => {
       const containerData = cropper.getContainerData();
-      const canvasData = cropper.getCanvasData();
+      const imageData = cropper.getImageData();
       
-      if (containerData && canvasData) {
-        const scaleX = (containerData.width * 0.85) / canvasData.width;
-        const scaleY = (containerData.height * 0.85) / canvasData.height;
-        const scale = Math.max(scaleX, scaleY, 1);
+      if (containerData && imageData) {
+        const scaleX = (containerData.width * 0.9) / imageData.naturalWidth;
+        const scaleY = (containerData.height * 0.9) / imageData.naturalHeight;
+        const scale = Math.max(scaleX, scaleY);
         
-        if (scale > 1) {
+        if (scale > 0) {
           cropper.zoomTo(scale);
         }
       }
