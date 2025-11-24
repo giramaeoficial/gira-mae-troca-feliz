@@ -27,6 +27,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [zoomValue, setZoomValue] = useState(0);
+  const [initializing, setInitializing] = useState(false);
   
   const { 
     initCropper, 
@@ -37,24 +38,35 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     zoom 
   } = useImageCrop();
 
+  // Inicializar cropper apenas uma vez quando imagem carregar
   useEffect(() => {
-    if (isOpen && imageRef.current && imageLoaded) {
+    if (isOpen && imageRef.current && imageLoaded && !initializing) {
+      setInitializing(true);
+      
       const handleZoomChange = (ratio: number) => {
         setZoomValue(ratio);
       };
       
-      initCropper(imageRef.current, handleZoomChange);
+      // Aguardar próximo frame para garantir que o DOM está pronto
+      requestAnimationFrame(() => {
+        initCropper(imageRef.current!, handleZoomChange);
+      });
     }
     
     return () => {
-      destroyCropper();
+      if (initializing) {
+        destroyCropper();
+        setInitializing(false);
+      }
     };
-  }, [isOpen, imageSrc, imageLoaded, initCropper, destroyCropper]);
+  }, [isOpen, imageLoaded]); // Removido imageSrc das dependências para evitar reinicialização
 
+  // Reset quando modal fecha
   useEffect(() => {
     if (!isOpen) {
       setImageLoaded(false);
       setZoomValue(0);
+      setInitializing(false);
     }
   }, [isOpen]);
 
@@ -64,6 +76,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       console.log(`✅ Crop aplicado - Tamanho: ${(blob.size / 1024).toFixed(2)}KB`);
       onApply(blob);
       setImageLoaded(false);
+      setInitializing(false);
     } catch (error) {
       console.error('Erro ao aplicar crop:', error);
       toast({
@@ -88,15 +101,14 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   const modalContent = (
     <div 
-      className="fixed inset-0 bg-black z-[99999] flex flex-col"
+      className="fixed inset-0 bg-black flex flex-col"
       style={{ 
+        zIndex: 99999,
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        margin: 0,
-        padding: 0,
         width: '100vw',
         height: '100vh',
         overflow: 'hidden'
@@ -123,23 +135,32 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
           size="sm"
           onClick={handleApply}
           className="text-purple-400 hover:bg-gray-800 font-bold"
-          disabled={!imageLoaded}
+          disabled={!imageLoaded || !initializing}
         >
           Aplicar
         </Button>
       </div>
 
-      {/* Área de Crop */}
+      {/* Área de Crop - AUMENTADA */}
       <div 
         ref={containerRef}
-        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center"
+        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center p-4"
         style={{ 
-          width: '100%',
-          height: 'calc(100vh - 160px)',
-          minHeight: '400px'
+          minHeight: '60vh',
+          height: 'calc(100vh - 200px)'
         }}
       >
-        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div 
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            maxWidth: '800px',
+            maxHeight: '800px',
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}
+        >
           <img
             ref={imageRef}
             src={imageSrc}
@@ -150,59 +171,77 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
               maxHeight: '100%',
               width: 'auto',
               height: 'auto',
-              display: imageLoaded ? 'block' : 'none'
+              display: imageLoaded ? 'block' : 'none',
+              objectFit: 'contain'
             }}
           />
+          
+          {!imageLoaded && (
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+              <p>Carregando imagem...</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Controles - MELHORADO */}
-      <div className="bg-gray-900 px-4 py-4 space-y-3 flex-shrink-0">
-        {/* Zoom */}
-        <div className="flex items-center gap-3">
-          <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path>
-          </svg>
+      {/* Controles */}
+      <div className="bg-gray-900 px-4 py-4 space-y-4 flex-shrink-0">
+        {/* Zoom Slider */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-white text-sm">
+            <span>Zoom</span>
+            <span className="font-mono">{(zoomValue * 100).toFixed(0)}%</span>
+          </div>
           <Slider
+            min={0}
+            max={1}
+            step={0.01}
             value={[zoomValue]}
             onValueChange={handleZoomChange}
-            min={0}
-            max={2}
-            step={0.01}
-            disabled={!imageLoaded}
-            className="flex-1"
+            disabled={!imageLoaded || !initializing}
+            className="w-full"
           />
-          <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"></path>
-          </svg>
         </div>
 
-        {/* Info do formato */}
-        <div className="bg-purple-900/50 rounded-lg p-2 text-center">
-          <p className="text-white text-sm font-medium">📐 Formato quadrado 1:1</p>
-          <p className="text-purple-300 text-xs mt-1">Padrão GiraMãe para melhor visualização</p>
-        </div>
-
-        {/* Ações */}
-        <div className="flex gap-2">
+        {/* Botões de Rotação e Reset */}
+        <div className="flex gap-2 justify-center">
           <Button
+            variant="outline"
+            size="sm"
             onClick={() => rotate(-90)}
-            disabled={!imageLoaded}
-            variant="secondary"
-            className="flex-1"
+            disabled={!imageLoaded || !initializing}
+            className="text-white border-gray-600 hover:bg-gray-800"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Girar
           </Button>
+          
           <Button
-            onClick={reset}
-            disabled={!imageLoaded}
-            variant="secondary"
-            className="flex-1"
+            variant="outline"
+            size="sm"
+            onClick={() => rotate(90)}
+            disabled={!imageLoaded || !initializing}
+            className="text-white border-gray-600 hover:bg-gray-800"
           >
             <RotateCw className="w-4 h-4 mr-2" />
+            Girar
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={reset}
+            disabled={!imageLoaded || !initializing}
+            className="text-white border-gray-600 hover:bg-gray-800"
+          >
             Resetar
           </Button>
+        </div>
+
+        {/* Dica */}
+        <div className="text-center text-gray-400 text-xs">
+          🖼️ Formato quadrado 1:1 - Padrão GiraMãe para melhor visualização
         </div>
       </div>
     </div>
