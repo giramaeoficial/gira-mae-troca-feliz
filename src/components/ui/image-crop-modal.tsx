@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { X, RotateCcw, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { X, RotateCcw, RotateCw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { useImageCrop } from '@/hooks/useImageCrop';
-import 'cropperjs/dist/cropper.css';
+import { toast } from '@/hooks/use-toast';
 
 interface ImageCropModalProps {
   isOpen: boolean;
@@ -11,7 +11,7 @@ interface ImageCropModalProps {
   imageIndex: number;
   totalImages: number;
   onClose: () => void;
-  onApply: (croppedBlob: Blob) => void;
+  onApply: (blob: Blob) => void;
 }
 
 export const ImageCropModal: React.FC<ImageCropModalProps> = ({
@@ -24,40 +24,32 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 }) => {
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [zoomValue, setZoomValue] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [zoomValue, setZoomValue] = useState(0);
   
-  const {
-    initCropper,
-    applyCrop,
-    destroyCropper,
-    zoom,
-    rotate,
-    reset
+  const { 
+    initCropper, 
+    destroyCropper, 
+    getCroppedBlob, 
+    rotate, 
+    reset, 
+    zoom 
   } = useImageCrop();
 
-  // Carregar imagem e inicializar cropper
   useEffect(() => {
-    if (isOpen && imageSrc && imageLoaded && imageRef.current) {
-      console.log('🔄 Inicializando cropper...');
-      
-      // Pequeno delay para garantir que o DOM está pronto
-      const timer = setTimeout(() => {
-        if (imageRef.current) {
-          initCropper(imageRef.current, (ratio) => {
-            setZoomValue(ratio);
-          });
-        }
-      }, 100);
-      
-      return () => {
-        clearTimeout(timer);
-        destroyCropper();
+    if (isOpen && imageRef.current && imageLoaded) {
+      const handleZoomChange = (ratio: number) => {
+        setZoomValue(ratio);
       };
+      
+      initCropper(imageRef.current, handleZoomChange);
     }
+    
+    return () => {
+      destroyCropper();
+    };
   }, [isOpen, imageSrc, imageLoaded, initCropper, destroyCropper]);
 
-  // Reset quando modal fecha
   useEffect(() => {
     if (!isOpen) {
       setImageLoaded(false);
@@ -67,11 +59,17 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
 
   const handleApply = async () => {
     try {
-      const blob = await applyCrop(`crop_${Date.now()}.jpg`);
+      const blob = await getCroppedBlob(1024, 1024, 0.9);
+      console.log(`✅ Crop aplicado - Tamanho: ${(blob.size / 1024).toFixed(2)}KB`);
       onApply(blob);
-      setImageLoaded(false); // Reset para próxima imagem
+      setImageLoaded(false);
     } catch (error) {
       console.error('Erro ao aplicar crop:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao processar a imagem",
+        variant: "destructive"
+      });
     }
   };
 
@@ -81,14 +79,25 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   };
 
   const handleImageLoad = () => {
-    console.log('✅ Imagem carregada');
+    console.log('✅ Imagem carregada no modal');
     setImageLoaded(true);
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col">
+    <div 
+      className="fixed inset-0 bg-black/95 z-[9999] flex flex-col"
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        margin: 0,
+        padding: 0
+      }}
+    >
       {/* Header */}
       <div className="bg-gray-900 px-4 py-3 flex items-center justify-between flex-shrink-0 shadow-lg">
         <Button
@@ -116,78 +125,85 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </Button>
       </div>
 
-      {/* Área de Crop */}
+      {/* Área de Crop - CORRIGIDO PARA OCUPAR MAIS ESPAÇO */}
       <div 
         ref={containerRef}
-        className="flex-1 bg-gray-950 overflow-hidden"
+        className="flex-1 bg-gray-950 overflow-hidden flex items-center justify-center p-4"
         style={{ 
-          minHeight: '300px',
-          maxHeight: 'calc(100vh - 250px)'
+          minHeight: '400px',
+          maxHeight: 'calc(100vh - 200px)' // Mais espaço para a imagem
         }}
       >
-        {/* Container interno com padding */}
-        <div className="w-full h-full p-4 flex items-center justify-center">
-          <div style={{ maxWidth: '100%', maxHeight: '100%' }}>
-            <img
-              ref={imageRef}
-              src={imageSrc}
-              alt="Imagem para crop"
-              onLoad={handleImageLoad}
-              style={{ 
-                display: 'block',
-                maxWidth: '90vw',
-                maxHeight: '70vh',
-                width: 'auto',
-                height: 'auto'
-              }}
-            />
-          </div>
+        <div 
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            maxWidth: '90vw', // Permite que a imagem ocupe mais espaço horizontal
+            maxHeight: '90%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img
+            ref={imageRef}
+            src={imageSrc}
+            alt="Imagem para crop"
+            onLoad={handleImageLoad}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              display: 'block',
+              visibility: imageLoaded ? 'visible' : 'hidden'
+            }}
+            className="cropper-image"
+          />
         </div>
       </div>
 
-      {/* Controles */}
-      <div className="bg-gray-900 px-4 py-4 space-y-3 flex-shrink-0 shadow-lg">
+      {/* Controles - MELHORADO */}
+      <div className="bg-gray-900 px-4 py-4 space-y-3 flex-shrink-0">
         {/* Zoom */}
         <div className="flex items-center gap-3">
-          <ZoomOut className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path>
+          </svg>
           <Slider
             value={[zoomValue]}
             onValueChange={handleZoomChange}
             min={0}
             max={2}
             step={0.01}
-            className="flex-1"
             disabled={!imageLoaded}
+            className="flex-1"
           />
-          <ZoomIn className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"></path>
+          </svg>
         </div>
 
         {/* Info do formato */}
-        <div className="bg-purple-900 rounded-lg p-3 text-center">
-          <p className="text-white text-sm font-medium">📐 Formato quadrado 1:1</p>
-          <p className="text-purple-300 text-xs mt-1">
-            Arraste para mover • Pinça para zoom • 1024×1024px
-          </p>
+        <div className="bg-purple-900/50 rounded-lg p-3 text-center">
+          <p className="text-white text-sm font-medium">🔒 Formato quadrado 1:1</p>
+          <p className="text-purple-300 text-xs mt-1">Padrão GiraMãe para melhor visualização</p>
         </div>
 
         {/* Ações */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex gap-2">
           <Button
-            type="button"
-            variant="secondary"
-            className="w-full"
             onClick={() => rotate(-90)}
             disabled={!imageLoaded}
+            variant="secondary"
+            className="flex-1"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Girar
           </Button>
           <Button
-            type="button"
-            variant="secondary"
-            className="w-full"
             onClick={reset}
             disabled={!imageLoaded}
+            variant="secondary"
+            className="flex-1"
           >
             <RotateCw className="w-4 h-4 mr-2" />
             Resetar
