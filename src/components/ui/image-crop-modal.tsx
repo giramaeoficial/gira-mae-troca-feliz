@@ -64,7 +64,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col">
       {/* Header */}
-      <div className="bg-gray-900 px-4 py-3 flex items-center justify-between">
+      <div className="bg-gray-900 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <Button
           variant="ghost"
           size="sm"
@@ -89,22 +89,34 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </Button>
       </div>
 
-      {/* Área de Crop */}
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center p-4">
-        <img
-          ref={imageRef}
-          src={imageSrc}
-          alt="Imagem para crop"
-          className="max-w-full max-h-full"
-          style={{ display: 'block' }}
-        />
+      {/* Área de Crop - ALTURA FIXA */}
+      <div 
+        className="flex-1 relative overflow-hidden bg-gray-950"
+        style={{ 
+          minHeight: '400px',
+          height: 'calc(100vh - 200px)' // Header + Controles
+        }}
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img
+            ref={imageRef}
+            src={imageSrc}
+            alt="Imagem para crop"
+            className="max-w-full max-h-full"
+            style={{ 
+              display: 'block',
+              maxWidth: '100%',
+              maxHeight: '100%'
+            }}
+          />
+        </div>
       </div>
 
       {/* Controles */}
-      <div className="bg-gray-900 px-4 py-4 space-y-3">
+      <div className="bg-gray-900 px-4 py-4 space-y-3 flex-shrink-0">
         {/* Zoom */}
         <div className="flex items-center gap-3">
-          <ZoomOut className="w-5 h-5 text-gray-400" />
+          <ZoomOut className="w-5 h-5 text-gray-400 flex-shrink-0" />
           <Slider
             value={[zoomValue]}
             onValueChange={handleZoomChange}
@@ -113,18 +125,19 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             step={0.01}
             className="flex-1"
           />
-          <ZoomIn className="w-5 h-5 text-gray-400" />
+          <ZoomIn className="w-5 h-5 text-gray-400 flex-shrink-0" />
         </div>
 
         {/* Info do formato */}
         <div className="bg-purple-900 rounded-lg p-3 text-center">
           <p className="text-white text-sm font-medium">📐 Formato quadrado 1:1</p>
-          <p className="text-purple-300 text-xs mt-1">Padrão GiraMãe para melhor visualização</p>
+          <p className="text-purple-300 text-xs mt-1">Padrão GiraMãe • 1024×1024px</p>
         </div>
 
         {/* Ações */}
         <div className="flex gap-2">
           <Button
+            type="button"
             variant="secondary"
             className="flex-1"
             onClick={() => rotate(-90)}
@@ -133,6 +146,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             Girar
           </Button>
           <Button
+            type="button"
             variant="secondary"
             className="flex-1"
             onClick={reset}
