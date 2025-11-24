@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import Cropper from 'cropperjs';
-import 'cropperjs/dist/cropper.css';
 
 export const useImageCrop = () => {
   const [cropperInstance, setCropperInstance] = useState<Cropper | null>(null);
