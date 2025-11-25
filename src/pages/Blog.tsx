@@ -96,7 +96,7 @@ export default function Blog() {
   <div className="container mx-auto px-4">
     <div className="relative mt-6 h-36 md:h-30 lg:h-30">
       <img 
-        src="/blog.png" 
+        src="/blog190kb.png" 
         alt="Banner Blog GiraMãe" 
         className="w-full h-full object-cover rounded-2xl"
       />
