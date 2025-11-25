@@ -1,10 +1,8 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Plus, Trophy, Menu } from 'lucide-react';
+import { Home, Plus, Trophy, MessageCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useMissoes } from '@/hooks/useMissoes';
-import MoreMenu from './MoreMenu';
 
 const QuickNav: React.FC = () => {
   const location = useLocation();
@@ -13,24 +11,25 @@ const QuickNav: React.FC = () => {
   const mainItems = [
     { icon: Home, label: "Feed", path: "/feed" },
     { icon: Plus, label: "Publicar", path: "/publicar" },
-    { icon: Trophy, label: "Missões", path: "/missoes" }
+    { icon: Trophy, label: "Missões", path: "/missoes" },
   ];
 
   return (
-    // Mostrar apenas no mobile (md:hidden)
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
       <div className="grid grid-cols-4 h-16">
+        
+        {/* Itens principais */}
         {mainItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
-          
+
           return (
             <Link
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center justify-center space-y-1 relative ${
-                isActive 
-                  ? 'text-primary bg-primary/5' 
+                isActive
+                  ? 'text-primary bg-primary/5'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -46,14 +45,18 @@ const QuickNav: React.FC = () => {
             </Link>
           );
         })}
-        
-        {/* Menu "Mais" */}
-        <MoreMenu>
-          <div className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-gray-700 cursor-pointer">
-            <Menu className="h-5 w-5" />
-            <span className="text-xs font-medium">Mais</span>
-          </div>
-        </MoreMenu>
+
+        {/* 🔥 Novo item: Suporte WhatsApp */}
+        <a
+          href="https://wa.me/5551983117180?text=Olá!%20Preciso%20de%20ajuda%20no%20GiraMãe."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-green-600"
+        >
+          <MessageCircle className="h-5 w-5" />
+          <span className="text-xs font-medium">Suporte</span>
+        </a>
+
       </div>
     </nav>
   );

@@ -484,7 +484,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
              <div className="mb-3">
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
+                <img src="/girinha_sem_fundo.png" alt="girinha" className='w-auto h-6' />
                 <span className="text-lg font-bold text-primary">
                     {valores.total} Girinhas
                 </span>
@@ -637,7 +637,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 </div>
                 ) : (
                 <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
+                    {/* <Sparkles className="w-4 h-4" /> */}
                     Reservar Item
                 </div>
                 )}
