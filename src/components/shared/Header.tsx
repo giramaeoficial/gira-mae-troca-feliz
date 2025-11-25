@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, Menu, X, ChevronDown, Home, Plus, Package, Trophy, Users, Wallet, HeartHandshake, Heart, UserCheck } from 'lucide-react';
+import { User, Menu, X, ChevronDown, Home, Plus, Package, Rss, Trophy, Megaphone, Users, Wallet, HeartHandshake, Heart, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -126,6 +126,8 @@ const Header = () => {
     { label: 'Seguindo', path: '/maes-seguidas', icon: UserCheck },
     { label: 'Reservas', path: '/minhas-reservas', icon: Package },
     { label: 'Indicações', path: '/indicacoes', icon: Users },
+    { label: 'Contato', path: '/contato', icon: Megaphone },
+    { label: 'Blog', path: '/blog', icon: Rss },
     { label: 'Parcerias', path: '/parcerias', icon: HeartHandshake }  ];
 
   /* ------------------ HEADER DESLOGADO ------------------ */
