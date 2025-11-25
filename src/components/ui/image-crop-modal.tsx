@@ -28,6 +28,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [zoomValue, setZoomValue] = useState(0);
   const [initializing, setInitializing] = useState(false);
+  const [containerHeight, setContainerHeight] = useState<number>(0);
   
   const { 
     initCropper, 
@@ -38,18 +39,36 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
     zoom 
   } = useImageCrop();
 
-  // Inicializar cropper apenas uma vez quando imagem carregar
+  // ✅ MUDANÇA 1: Calcular altura do container ANTES de inicializar
   useEffect(() => {
-    if (isOpen && imageRef.current && imageLoaded && !initializing) {
+    if (isOpen && containerRef.current) {
+      // Header = 60px, Footer = 140px
+      const availableHeight = window.innerHeight - 60 - 140;
+      setContainerHeight(availableHeight);
+      console.log('📐 Altura calculada para container:', availableHeight);
+    }
+  }, [isOpen]);
+
+  // ✅ MUDANÇA 2: Inicializar cropper COM DELAY após imagem carregar E container ter altura
+  useEffect(() => {
+    if (isOpen && imageRef.current && imageLoaded && containerHeight > 0 && !initializing) {
+      console.log('🎬 Iniciando cropper após tudo pronto...');
       setInitializing(true);
       
       const handleZoomChange = (ratio: number) => {
         setZoomValue(ratio);
       };
       
-      // Aguardar próximo frame para garantir que o DOM está pronto
+      // ✅ CRÍTICO: Aguardar 2 frames + timeout para garantir layout estável
       requestAnimationFrame(() => {
-        initCropper(imageRef.current!, handleZoomChange);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            if (imageRef.current && containerRef.current) {
+              console.log('🚀 Inicializando Cropper agora!');
+              initCropper(imageRef.current, handleZoomChange);
+            }
+          }, 100);
+        });
       });
     }
     
@@ -59,7 +78,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         setInitializing(false);
       }
     };
-  }, [isOpen, imageLoaded]);
+  }, [isOpen, imageLoaded, containerHeight]);
 
   // Reset quando modal fecha
   useEffect(() => {
@@ -67,6 +86,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       setImageLoaded(false);
       setZoomValue(0);
       setInitializing(false);
+      setContainerHeight(0);
     }
   }, [isOpen]);
 
@@ -140,41 +160,34 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </Button>
       </div>
 
-      {/* Área de Crop - Ocupa EXATAMENTE o espaço restante */}
+      {/* ✅ MUDANÇA 3: Container com altura EXPLÍCITA calculada */}
       <div 
         ref={containerRef}
-        className="bg-black"
+        className="bg-black relative overflow-hidden"
         style={{ 
-          flex: '1 1 auto',
-          position: 'relative',
-          overflow: 'hidden',
-          minHeight: 0, // CRÍTICO: permite que flex funcione corretamente
-          width: '100%'
+          height: containerHeight > 0 ? `${containerHeight}px` : '100%',
+          width: '100%',
+          flexShrink: 0
         }}
       >
-        {/* Imagem - SEM estilos que atrapalhem o Cropper */}
+        {/* ✅ MUDANÇA 4: Usar opacity ao invés de display none */}
         <img
           ref={imageRef}
           src={imageSrc}
           alt="Imagem para crop"
           onLoad={handleImageLoad}
           style={{
-            display: imageLoaded ? 'block' : 'none',
+            display: 'block',
             maxWidth: '100%',
-            maxHeight: '100%'
+            maxHeight: '100%',
+            opacity: imageLoaded ? 1 : 0,
+            transition: 'opacity 0.2s'
           }}
         />
         
         {!imageLoaded && (
           <div 
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              color: 'white',
-              fontSize: '14px'
-            }}
+            className="absolute inset-0 flex items-center justify-center text-white text-sm"
           >
             Carregando imagem...
           </div>
