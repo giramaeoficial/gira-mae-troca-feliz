@@ -397,7 +397,7 @@ const DetalhesItem = () => {
                         .update({ status: 'trocado' })
                         .eq('id', id);
 
-                      await processarBonusTrocaConcluida(id);
+                      await processarBonusTrocaConcluida();
 
                       toast({
                         title: "Troca Confirmada!",

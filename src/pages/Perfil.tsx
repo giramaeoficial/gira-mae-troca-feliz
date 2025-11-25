@@ -148,7 +148,7 @@ const Perfil = () => {
                                     <div className="flex items-center gap-2">
                                         <Sparkles className="w-4 h-4 text-primary" />
                                         <span className="font-medium text-primary">
-                                            {profile?.saldo_girinhas || 0} Girinhas
+                                            {/* Saldo temporariamente desabilitado */}
                                         </span>
                                     </div>
                                 </div>

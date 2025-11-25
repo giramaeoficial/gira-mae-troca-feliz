@@ -221,7 +221,7 @@ const Contato = () => {
                     <div>
                       <p className="font-medium">WhatsApp</p>
                       <p className="text-sm text-muted-foreground">
-                        Em breve disponível
+                        51 98101.1805
                       </p>
                     </div>
                   </div>
@@ -254,7 +254,7 @@ const Contato = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Sábados</span>
-                      <span className="text-sm font-medium">9h às 14h</span>
+                      <span className="text-sm font-medium">9h às 12h</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Domingos</span>

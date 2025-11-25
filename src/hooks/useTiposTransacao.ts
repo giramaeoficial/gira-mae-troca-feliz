@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { TipoTransacaoConfig } from '@/types/transacao.types';
+import { TipoTransacaoConfig, TipoTransacaoEnum } from '@/types/transacao.types';
 
 export const useTiposTransacao = () => {
   const { data: configCompleta, isLoading: loadingConfig } = useQuery({
@@ -16,7 +16,7 @@ export const useTiposTransacao = () => {
       
       if (error) throw error;
       return (data || []).map(item => ({
-        tipo: item.tipo,
+        tipo: item.tipo as TipoTransacaoEnum,
         sinal: item.sinal as -1 | 1,
         validade_dias: item.validade_dias,
         valor_padrao: item.valor_padrao,

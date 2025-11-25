@@ -88,8 +88,8 @@ export const useMissoesSegmentadas = () => {
       
       for (const missao of data) {
         const { data: elegivel } = await supabase.rpc('usuario_elegivel_missao', {
-          user_id: user.id,
-          missao_id: missao.id
+          p_user_id: user.id,
+          p_missao_id: missao.id
         });
 
         if (elegivel) {
