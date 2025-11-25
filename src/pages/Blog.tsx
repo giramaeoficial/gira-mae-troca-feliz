@@ -92,16 +92,29 @@ export default function Blog() {
       
       <BlogLayout sidebar={<BlogSidebar />}>
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary/15 via-secondary/10 to-background py-16 -mx-4 mb-8 rounded-2xl">
-        <div className="container mx-auto px-4">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Blog GiraMãe
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl">
-            Dicas práticas sobre maternidade, economia e sustentabilidade
-          </p>
-        </div>
+      <div className="bg-gradient-to-br from-primary/15 via-secondary/10 to-background -mx-4 mb-8 rounded-2xl overflow-hidden">
+  <div className="container mx-auto px-4">
+    <div className="relative mt-6 h-36 md:h-30 lg:h-30">
+      <img 
+        src="/blog.png" 
+        alt="Banner Blog GiraMãe" 
+        className="w-full h-full object-cover rounded-2xl"
+      />
+      {/* Overlay escuro */}
+      <div className="absolute inset-0 bg-black/40 rounded-2xl"></div>
+      
+      {/* Texto */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4">
+        <h1 className="text-3xl md:text-5xl font-bold mb-4">
+          Blog GiraMãe
+        </h1>
+        <p className="text-md md:text-xl max-w-2xl">
+          Dicas práticas sobre maternidade, economia e sustentabilidade
+        </p>
       </div>
+    </div>
+  </div>
+</div>
 
       <div className="space-y-8">
         {/* Search & Filters */}

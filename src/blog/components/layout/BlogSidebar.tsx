@@ -55,7 +55,7 @@ export default function BlogSidebar() {
       </Card>
 
       {/* Newsletter (placeholder) */}
-      <Card className="bg-primary text-primary-foreground">
+      {/* <Card className="bg-primary text-primary-foreground">
         <CardHeader>
           <CardTitle className="text-lg">Newsletter</CardTitle>
         </CardHeader>
@@ -70,7 +70,7 @@ export default function BlogSidebar() {
             Inscrever-se
           </Link>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

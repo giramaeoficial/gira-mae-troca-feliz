@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Twitter } from 'lucide-react';
+import { Facebook, Instagram, Twitter, MessageCircleHeart } from 'lucide-react';
 import { blogConfig } from '@/blog/config/blogConfig';
 
 export default function BlogFooter() {
@@ -66,12 +66,12 @@ export default function BlogFooter() {
             <h3 className="font-semibold mb-4">Siga-nos</h3>
             <div className="flex gap-4">
               <a
-                href={blogConfig.social.facebook}
+                href={blogConfig.social.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
-                <Facebook className="h-5 w-5" />
+                <MessageCircleHeart className="h-5 w-5" />
               </a>
               <a
                 href={blogConfig.social.instagram}
@@ -81,14 +81,14 @@ export default function BlogFooter() {
               >
                 <Instagram className="h-5 w-5" />
               </a>
-              <a
+              {/* <a
                 href={blogConfig.social.twitter}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
                 <Twitter className="h-5 w-5" />
-              </a>
+              </a> */}
             </div>
           </div>
         </div>

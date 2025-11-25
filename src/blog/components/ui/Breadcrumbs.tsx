@@ -47,7 +47,7 @@ export default function Breadcrumbs({ items }: BreadcrumbsProps) {
       </Helmet>
       
       <nav aria-label="Breadcrumb" className="mb-6">
-        <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+        <ol className="flex mt-5 items-center gap-2 text-sm text-muted-foreground">
           <li>
             <Link 
               to="/" 

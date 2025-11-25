@@ -18,7 +18,7 @@ export const blogConfig = {
     facebook: 'https://facebook.com/giramae',
     instagram: 'https://instagram.com/giramae',
     twitter: 'https://twitter.com/giramae',
-    whatsapp: 'https://wa.me/5551999999999',
+    whatsapp: 'https://wa.me/5551981011805',
   },
   
   // Autor padrão
