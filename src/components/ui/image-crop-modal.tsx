@@ -5,7 +5,7 @@ import { X, RotateCcw, RotateCw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { toast } from '@/hooks/use-toast';
 import Cropper from 'cropperjs';
-import 'cropperjs/dist/cropper.css';
+// CSS do Cropper já está no index.css - não precisa importar aqui
 
 interface ImageCropModalProps {
   isOpen: boolean;
