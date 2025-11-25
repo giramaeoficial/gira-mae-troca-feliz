@@ -160,7 +160,8 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
           onLoad={handleImageLoad}
           style={{
             display: imageLoaded ? 'block' : 'none',
-            maxWidth: '100%' // MANTÉM para não ultrapassar largura
+            maxWidth: '100%',
+            maxHeight: '100%'
           }}
         />
         
