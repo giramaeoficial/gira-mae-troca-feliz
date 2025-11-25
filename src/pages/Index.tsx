@@ -600,8 +600,8 @@ const LandingPageOptimized = () => {
           <p><Link to="/sobre" className="hover:text-white transition-colors">Sobre Nós</Link></p>
           <p><Link to="/como-funciona" className="hover:text-white transition-colors">Como Funciona</Link></p>
           <p><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></p>
+          <p><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></p>
           
-          <p><span className="text-gray-500 cursor-not-allowed">Blog (em breve)</span></p>
         </div>
       </div>
 
