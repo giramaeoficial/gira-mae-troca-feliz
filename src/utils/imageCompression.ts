@@ -4,7 +4,6 @@ export interface CompressOptions {
   maxHeight?: number;
   quality?: number;
   format?: 'jpeg' | 'webp';
-  maxSizeKB?: number;
 }
 
 export const compressImage = async (
@@ -12,11 +11,10 @@ export const compressImage = async (
   options: CompressOptions = {}
 ): Promise<File> => {
   const {
-    maxWidth = 1200,
-    maxHeight = 1200,
-    quality = 0.85,
-    format = 'webp',
-    maxSizeKB = 200
+    maxWidth = 1024,
+    maxHeight = 1024,
+    quality = 0.8,
+    format = 'jpeg'
   } = options;
 
   return new Promise((resolve, reject) => {
@@ -46,38 +44,25 @@ export const compressImage = async (
       // Desenhar imagem redimensionada
       ctx?.drawImage(img, 0, 0, width, height);
 
-      // Converter para blob com qualidade adaptativa
-      const tryCompress = (currentQuality: number) => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error('Falha na compressão da imagem'));
-              return;
-            }
+      // Converter para blob
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Falha na compressão da imagem'));
+            return;
+          }
 
-            const sizeKB = blob.size / 1024;
+          // Criar novo arquivo com nome original
+          const compressedFile = new File([blob], file.name, {
+            type: `image/${format}`,
+            lastModified: Date.now()
+          });
 
-            // Se está acima do limite e qualidade ainda é alta, tenta reduzir
-            if (sizeKB > maxSizeKB && currentQuality > 0.3) {
-              tryCompress(currentQuality - 0.1);
-              return;
-            }
-
-            // Criar novo arquivo com nome otimizado
-            const fileName = file.name.replace(/\.[^/.]+$/, `.${format}`);
-            const compressedFile = new File([blob], fileName, {
-              type: `image/${format}`,
-              lastModified: Date.now()
-            });
-
-            resolve(compressedFile);
-          },
-          `image/${format}`,
-          currentQuality
-        );
-      };
-
-      tryCompress(quality);
+          resolve(compressedFile);
+        },
+        `image/${format}`,
+        quality
+      );
     };
 
     img.onerror = () => reject(new Error('Falha ao carregar imagem'));
@@ -91,64 +76,4 @@ export const compressMultipleImages = async (
 ): Promise<File[]> => {
   const compressionPromises = files.map(file => compressImage(file, options));
   return Promise.all(compressionPromises);
-};
-
-/**
- * Crop e redimensiona imagem para formato quadrado (1:1)
- * Usa crop centralizado para manter o conteúdo principal
- */
-export const cropToSquare = async (
-  file: File,
-  size: number = 1024,
-  quality: number = 0.85
-): Promise<File> => {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    img.onload = () => {
-      const { width, height } = img;
-      
-      // Determinar o tamanho do crop (o menor lado)
-      const cropSize = Math.min(width, height);
-      
-      // Calcular offset para centralizar
-      const offsetX = (width - cropSize) / 2;
-      const offsetY = (height - cropSize) / 2;
-
-      // Configurar canvas quadrado
-      canvas.width = size;
-      canvas.height = size;
-
-      // Desenhar imagem cropada e redimensionada
-      ctx?.drawImage(
-        img,
-        offsetX, offsetY, cropSize, cropSize, // Source (crop centralizado)
-        0, 0, size, size // Destination (quadrado)
-      );
-
-      // Converter para blob
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            reject(new Error('Falha ao processar imagem'));
-            return;
-          }
-
-          const croppedFile = new File([blob], file.name, {
-            type: 'image/jpeg',
-            lastModified: Date.now()
-          });
-
-          resolve(croppedFile);
-        },
-        'image/jpeg',
-        quality
-      );
-    };
-
-    img.onerror = () => reject(new Error('Falha ao carregar imagem'));
-    img.src = URL.createObjectURL(file);
-  });
 };

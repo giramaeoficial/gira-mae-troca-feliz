@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Camera, X, Upload, Image, CheckCircle2 } from 'lucide-react';
+import { Camera, X, Upload, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { compressImage } from '@/utils/imageCompression';
 import { toast } from '@/hooks/use-toast';
-import { ImageCropModal } from './image-crop-modal';
-import { processMultipleImages, ImageMetadata } from '@/utils/imageCropUtils';
 
 interface ImageUploadProps {
   value: File[];
@@ -14,132 +13,93 @@ interface ImageUploadProps {
   accept?: string;
   className?: string;
   disabled?: boolean;
-  onPendingCropsChange?: (count: number) => void;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value = [],
   onChange,
-  maxFiles = 6,
+  maxFiles = 3,
   maxSizeKB = 5000,
   accept = "image/*",
   className,
-  disabled = false,
-  onPendingCropsChange
+  disabled = false
 }) => {
-  const [imagesMetadata, setImagesMetadata] = useState<ImageMetadata[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [currentCropIndex, setCurrentCropIndex] = useState<number | null>(null);
-  const [showNeedsCropAlert, setShowNeedsCropAlert] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const pendingCropsCount = imagesMetadata.filter(img => img.needsCrop && !img.edited).length;
-
-  const handleCropApply = async (croppedBlob: Blob) => {
-    if (currentCropIndex === null) return;
+  const generatePreviews = useCallback((files: File[]) => {
+    // Limpar previews antigos
+    previews.forEach(url => URL.revokeObjectURL(url));
     
-    const metadata = imagesMetadata[currentCropIndex];
-    const croppedFile = new File([croppedBlob], metadata.file.name, {
-      type: 'image/jpeg',
-      lastModified: Date.now()
-    });
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const updatedMetadata = [...imagesMetadata];
-      updatedMetadata[currentCropIndex] = {
-        ...metadata,
-        croppedSrc: e.target?.result as string,
-        croppedBlob,
-        edited: true
-      };
-      setImagesMetadata(updatedMetadata);
-      
-      const newFiles = [...value];
-      newFiles[currentCropIndex] = croppedFile;
-      onChange(newFiles);
-      
-      // Procurar próxima imagem não-ajustada
-      const nextIndex = updatedMetadata.findIndex(
-        (img, idx) => idx > currentCropIndex && img.needsCrop && !img.edited
-      );
-      
-      if (nextIndex !== -1) {
-        // Esperar 200ms e abrir próxima
-        setTimeout(() => {
-          setCurrentCropIndex(nextIndex);
-          toast({
-            title: "Próxima foto",
-            description: `Ajustando foto ${nextIndex + 1} de ${updatedMetadata.length}...`
-          });
-        }, 200);
-      } else {
-        // Fechar modal - tudo ajustado
-        setCropModalOpen(false);
-        setCurrentCropIndex(null);
-        setShowNeedsCropAlert(false);
-        toast({
-          title: "✅ Concluído!",
-          description: "Todas as fotos foram ajustadas para o formato quadrado."
-        });
-      }
-    };
-    reader.readAsDataURL(croppedBlob);
-  };
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setPreviews(newPreviews);
+  }, [previews]);
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const remainingSlots = maxFiles - value.length;
     const filesToProcess = fileArray.slice(0, remainingSlots);
 
-    if (files.length > remainingSlots) {
-      toast({
-        title: "Limite de fotos",
-        description: `Máximo de ${maxFiles} fotos permitido.`,
-        variant: "destructive"
-      });
+    console.log('🔄 Processando', filesToProcess.length, 'arquivos...');
+
+    const validFiles: File[] = [];
+    
+    for (const file of filesToProcess) {
+      // Verificar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: `${file.name} não é uma imagem válida`,
+          variant: "destructive"
+        });
+        continue;
+      }
+
+      // Verificar tamanho
+      if (file.size > maxSizeKB * 1024) {
+        toast({
+          title: "Arquivo muito grande",
+          description: `${file.name} excede o limite de ${maxSizeKB}KB`,
+          variant: "destructive"
+        });
+        continue;
+      }
+
+      validFiles.push(file);
     }
 
-    setIsUploading(true);
+    if (validFiles.length === 0) return;
 
+    setIsUploading(true);
     try {
-      const metadata = await processMultipleImages(filesToProcess, maxSizeKB);
+      console.log('📸 Comprimindo', validFiles.length, 'imagens...');
       
-      const validFiles = filesToProcess.filter((_, index) => 
-        metadata[index] && metadata[index].originalSrc
+      const compressedFiles = await Promise.all(
+        validFiles.map(async (file) => {
+          try {
+            return await compressImage(file, {
+              maxWidth: 1024,
+              maxHeight: 1024,
+              quality: 0.8,
+              format: 'jpeg'
+            });
+          } catch (error) {
+            console.error('Erro ao comprimir imagem:', error);
+            return file; // Usar arquivo original se compressão falhar
+          }
+        })
       );
 
-      setImagesMetadata([...imagesMetadata, ...metadata]);
-      onChange([...value, ...validFiles]);
+      const newFiles = [...value, ...compressedFiles];
+      onChange(newFiles);
+      generatePreviews(newFiles);
 
-      // Contar quantas precisam crop
-      const needsCropCount = metadata.filter(m => m.needsCrop).length;
-      const firstNeedsCrop = metadata.findIndex(m => m.needsCrop);
-
-      if (needsCropCount > 0) {
-        setShowNeedsCropAlert(true);
-        
-        // Mostrar alerta inicial
-        toast({
-          title: "⚠️ Atenção",
-          description: `${needsCropCount} foto(s) não ${needsCropCount === 1 ? 'está' : 'estão'} no formato quadrado e precisa${needsCropCount === 1 ? '' : 'm'} ser ajustada${needsCropCount === 1 ? '' : 's'}.`,
-          variant: "destructive",
-          duration: 5000
-        });
-        
-        // Abrir crop automaticamente da primeira imagem não-quadrada após 500ms
-        setTimeout(() => {
-          setCurrentCropIndex(value.length + firstNeedsCrop);
-          setCropModalOpen(true);
-        }, 500);
-      } else {
-        toast({
-          title: "✅ Imagens adicionadas",
-          description: `${validFiles.length} foto(s) já ${validFiles.length === 1 ? 'está' : 'estão'} no formato correto!`
-        });
-      }
+      toast({
+        title: "Imagens adicionadas",
+        description: `${compressedFiles.length} imagem(ns) adicionada(s)`,
+      });
     } catch (error) {
       console.error('Erro no processamento das imagens:', error);
       toast({
@@ -190,149 +150,62 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     const newFiles = value.filter((_, index) => index !== indexToRemove);
     onChange(newFiles);
     
-    const newMetadata = imagesMetadata.filter((_, index) => index !== indexToRemove);
-    setImagesMetadata(newMetadata);
-    
-    // Atualizar alerta se necessário
-    const stillNeedsCrop = newMetadata.some(img => img.needsCrop && !img.edited);
-    setShowNeedsCropAlert(stillNeedsCrop);
+    const newPreviews = previews.filter((_, index) => index !== indexToRemove);
+    URL.revokeObjectURL(previews[indexToRemove]);
+    setPreviews(newPreviews);
   };
 
   const openFileDialog = () => {
-    if (!disabled && !isUploading) {
-      fileInputRef.current?.click();
-    }
+    fileInputRef.current?.click();
   };
 
-  const openCropForImage = (index: number) => {
-    setCurrentCropIndex(index);
-    setCropModalOpen(true);
-  };
-
-  useEffect(() => {
-    if (value.length === 0) {
-      setImagesMetadata([]);
-      setShowNeedsCropAlert(false);
+  // Atualizar previews quando value mudar
+  React.useEffect(() => {
+    if (value.length > 0) {
+      generatePreviews(value);
     }
-  }, [value.length]);
+  }, [value]);
 
-  useEffect(() => {
-    if (onPendingCropsChange) {
-      onPendingCropsChange(pendingCropsCount);
-    }
-  }, [pendingCropsCount, onPendingCropsChange]);
+  // Cleanup previews on unmount
+  React.useEffect(() => {
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   return (
     <div className={cn('space-y-4', className)}>
       {/* Preview das imagens */}
-      {imagesMetadata.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-gray-700">
-              {imagesMetadata.length} foto(s) selecionada(s)
-            </h3>
-            {pendingCropsCount === 0 && (
-              <div className="flex items-center text-green-600 text-sm">
-                <CheckCircle2 className="w-4 h-4 mr-1" />
-                Todas ajustadas
-              </div>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {imagesMetadata.map((metadata, index) => {
-              const needsCropWarning = metadata.needsCrop && !metadata.edited;
-              
-              return (
-                <div key={index} className="relative group">
-                  {/* Preview da imagem */}
-                  <div className="relative rounded-lg overflow-hidden border-2 transition-all">
-                    <img
-                      src={metadata.croppedSrc || metadata.originalSrc}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full aspect-square object-cover"
-                    />
-                    
-                    {/* Badge Principal */}
-                    {index === 0 && (
-                      <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                        ⭐ Principal
-                      </div>
-                    )}
-                    
-                    {/* Badge Status */}
-                    {needsCropWarning ? (
-                      <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg animate-pulse">
-                        ⚠️ Ajustar
-                      </div>
-                    ) : metadata.edited ? (
-                      <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                        ✓ OK
-                      </div>
-                    ) : null}
-                    
-                    {/* Botão Remover */}
-                    <button
-                      onClick={() => removeImage(index)}
-                      className={cn(
-                        "absolute bg-red-500 text-white w-8 h-8 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity active:scale-90",
-                        index === 0 ? "top-10 right-2" : "top-2 right-2",
-                        needsCropWarning && "top-10"
-                      )}
-                      disabled={disabled}
-                    >
-                      ×
-                    </button>
-                    
-                    {/* Info dimensões originais */}
-                    {needsCropWarning && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-yellow-900 to-transparent p-2">
-                        <p className="text-white text-xs text-center font-medium">
-                          {metadata.dimensions.width}×{metadata.dimensions.height}px - Precisa ajustar
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Botão de ação */}
-                  <Button
-                    variant={needsCropWarning ? "default" : "secondary"}
-                    className={cn(
-                      "w-full mt-2",
-                      needsCropWarning && "bg-yellow-500 hover:bg-yellow-600 animate-pulse"
-                    )}
-                    onClick={() => openCropForImage(index)}
-                    disabled={disabled}
-                  >
-                    {needsCropWarning ? '⚠️ Ajustar Enquadramento' : 
-                     metadata.edited ? '✏️ Editar Novamente' : 
-                     '✂️ Cortar Imagem'}
-                  </Button>
+      {previews.length > 0 && (
+        <div className="grid grid-cols-3 gap-4">
+          {previews.map((preview, index) => (
+            <div key={index} className="relative group">
+              <img 
+                src={preview} 
+                alt={`Preview ${index + 1}`}
+                className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                disabled={disabled}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <X className="w-3 h-3" />
+              </button>
+              {index === 0 && (
+                <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                  Principal
                 </div>
-              );
-            })}
-          </div>
+              )}
+            </div>
+          ))}
         </div>
-      )}
-
-      {/* Modal de Crop */}
-      {currentCropIndex !== null && imagesMetadata[currentCropIndex] && (
-        <ImageCropModal
-          isOpen={cropModalOpen}
-          imageSrc={imagesMetadata[currentCropIndex].originalSrc}
-          imageIndex={currentCropIndex}
-          totalImages={imagesMetadata.length}
-          onClose={() => {
-            setCropModalOpen(false);
-            setCurrentCropIndex(null);
-          }}
-          onApply={handleCropApply}
-        />
       )}
 
       {/* Upload area */}
       {value.length < maxFiles && (
-        <div
+        <div 
           className={cn(
             "border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer",
             isDragOver 

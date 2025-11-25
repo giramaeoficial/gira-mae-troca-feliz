@@ -26,7 +26,6 @@ interface SimpleItemFormProps {
   errors: any;
   isEditing?: boolean;
   isMission?: boolean;
-  onPendingCropsChange?: (count: number) => void;
 }
 
 export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
@@ -35,8 +34,7 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
   onRemoverImagemExistente,
   errors,
   isEditing = false,
-  isMission = false,
-  onPendingCropsChange
+  isMission = false
 }) => {
   const { getFaixaValores } = useConfigCategorias();
   const faixaPrecos = getFaixaValores(formData.categoria_id);
@@ -57,14 +55,12 @@ export const SimpleItemForm: React.FC<SimpleItemFormProps> = ({
             onRemoverExistente={onRemoverImagemExistente || (() => {})}
             onAdicionarNovas={(files) => onFieldChange('imagens', files)}
             maxFiles={6}
-            onPendingCropsChange={onPendingCropsChange}
           />
         ) : (
           <ImageUpload
             value={formData.imagens}
             onChange={(files) => onFieldChange('imagens', files)}
             maxFiles={6}
-            onPendingCropsChange={onPendingCropsChange}
           />
         )}
         
