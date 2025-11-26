@@ -48,12 +48,13 @@ const QuickNav: React.FC = () => {
 
         {/* 🔥 Novo item: Suporte WhatsApp */}
         <a
-          href="https://wa.me/5551983117180?text=Olá!%20Preciso%20de%20ajuda%20no%20GiraMãe."
+          href="https://wa.me/5551981011805?text=Olá!%20Preciso%20de%20ajuda%20no%20GiraMãe."
           target="_blank"
           rel="noopener noreferrer"
-          className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-green-600"
+          className="flex flex-col items-center justify-center space-y-1 text-gray-500 hover:text-gray-700"
         >
-          <MessageCircle className="h-5 w-5" />
+          
+          <img src="whatsapp_logo_gray.png" alt="whatsapp" className="h-5 w-5" />
           <span className="text-xs font-medium">Suporte</span>
         </a>
 
