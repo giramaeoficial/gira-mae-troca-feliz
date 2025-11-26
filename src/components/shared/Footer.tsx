@@ -32,7 +32,7 @@ const Footer: React.FC = () => {
               <p><Link to="/sobre" className="hover:text-white transition-colors">Sobre Nós</Link></p>
               <p><Link to="/como-funciona" className="hover:text-white transition-colors">Como Funciona</Link></p>
               <p><Link to="/faq" className="hover:text-white transition-colors">FAQ</Link></p>
-              <p><span className="text-gray-500 cursor-not-allowed">Blog (em breve)</span></p>
+              <p><Link to="/blog" className="hover:text-white transition-colors">Blog</Link></p>
             </div>
           </div>
 
@@ -47,10 +47,10 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
           <div className="flex items-center justify-center mb-4">
-            <Sparkles className="h-6 w-6 text-primary mr-2" />
-            <span className="text-xl font-bold text-primary">GiraMãe</span>
+            <img src="/giramae_logo.png" alt="" className="w-auto h-12" />
+            
           </div>
-          <p className="mb-4">© 2025 GiraMãe. Feito com <Heart className="inline h-4 w-4 text-primary" /> por e para mães.</p>
+          <p className="mb-4">© 2025 GiraMãe. Feito com <Heart className="inline h-4 w-4 text-pink-500" /> por e para mães.</p>
           <div className="flex flex-wrap justify-center gap-6 mt-4 text-sm">
             <Link to="/termos" className="hover:text-white transition-colors">Termos de Uso</Link>
             <Link to="/privacidade" className="hover:text-white transition-colors">Política de Privacidade</Link>
