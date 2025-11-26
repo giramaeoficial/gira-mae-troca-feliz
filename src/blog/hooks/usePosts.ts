@@ -16,7 +16,7 @@ export function usePosts(
 ): UsePostsReturn {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, Error | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
   const fetchPosts = async () => {
