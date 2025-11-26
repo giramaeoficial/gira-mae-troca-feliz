@@ -1,26 +1,53 @@
-import { Post } from '@/blog/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { Clock, Eye } from 'lucide-react';
 import { formatDateRelative } from '@/blog/lib/utils/formatDate';
 import { truncate } from '@/blog/lib/utils/truncate';
+import { useRelatedPosts } from '@/blog/hooks/useRelatedPosts';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface RelatedPostsProps {
-  posts: Post[];
-  currentPostId: string;
+  postId: string;
 }
 
-export default function RelatedPosts({ posts, currentPostId }: RelatedPostsProps) {
-  const relatedPosts = posts.filter(p => p.id !== currentPostId).slice(0, 3);
+export default function RelatedPosts({ postId }: RelatedPostsProps) {
+  const { posts, loading } = useRelatedPosts(postId);
 
-  if (relatedPosts.length === 0) return null;
+  if (loading) {
+    return (
+      <section className="mt-12">
+        <h2 className="text-2xl font-bold mb-6">Leia também</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-full">
+              <CardHeader>
+                <Skeleton className="h-4 w-16 mb-2" />
+                <Skeleton className="h-6 w-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4 mb-4" />
+                <div className="flex gap-3">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (posts.length === 0) return null;
 
   return (
     <section className="mt-12">
-      <h2 className="text-2xl font-bold mb-6">Posts Relacionados</h2>
+      <h2 className="text-2xl font-bold mb-6">Leia também</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {relatedPosts.map((post) => (
+        {posts.map((post) => (
           <Link key={post.id} to={`/blog/${post.slug}`}>
             <Card className="h-full hover:shadow-lg transition-shadow">
               <CardHeader>
