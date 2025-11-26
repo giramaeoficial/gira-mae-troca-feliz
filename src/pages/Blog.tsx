@@ -18,6 +18,17 @@ export default function Blog() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
+  // Handlers que resetam a página quando filtros mudam
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  };
+
+  const handleCategoryChange = (categoryId: string | null) => {
+    setSelectedCategory(categoryId);
+    setPage(1);
+  };
+
   const { categories } = useCategories();
   const { posts, loading, hasMore } = usePosts(
     {
@@ -127,7 +138,7 @@ export default function Blog() {
                 type="text"
                 placeholder="Buscar posts..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -137,7 +148,7 @@ export default function Blog() {
               <Button
                 variant={selectedCategory === null ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setSelectedCategory(null)}
+                onClick={() => handleCategoryChange(null)}
               >
                 Todas
               </Button>
@@ -146,7 +157,7 @@ export default function Blog() {
                   key={category.id}
                   variant={selectedCategory === category.id ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setSelectedCategory(category.id)}
+                  onClick={() => handleCategoryChange(category.id)}
                 >
                   {category.name}
                 </Button>
