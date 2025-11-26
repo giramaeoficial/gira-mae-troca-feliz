@@ -16,7 +16,7 @@ export function usePosts(
 ): UsePostsReturn {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, Error | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
   const fetchPosts = async () => {
@@ -43,6 +43,7 @@ export function usePosts(
     filters?.categoryId,
     filters?.authorId,
     filters?.search,
+    JSON.stringify(filters?.tags), // Serializa para detectar mudanças no array
     pagination?.page,
     pagination?.pageSize,
   ]);
