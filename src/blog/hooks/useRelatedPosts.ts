@@ -1,25 +1,36 @@
 import { useState, useEffect } from 'react';
-import { Post } from '@/blog/types';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface RelatedPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  featuredImage: string | null;
+  featuredImageAlt: string | null;
+  publishedAt: string | null;
+  readingTimeMinutes: number;
+  reason: string | null;
+}
+
 interface UseRelatedPostsReturn {
-  posts: Post[];
+  posts: RelatedPost[];
   loading: boolean;
   error: Error | null;
 }
 
-export function useRelatedPosts(postId: string | undefined): UseRelatedPostsReturn {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useRelatedPosts(postId?: string): UseRelatedPostsReturn {
+  const [posts, setPosts] = useState<RelatedPost[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const fetchRelatedPosts = async () => {
-      if (!postId) {
-        setLoading(false);
-        return;
-      }
+    if (!postId) {
+      setPosts([]);
+      return;
+    }
 
+    const fetchRelatedPosts = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -30,9 +41,22 @@ export function useRelatedPosts(postId: string | undefined): UseRelatedPostsRetu
 
         if (rpcError) throw rpcError;
 
-        setPosts(data as any || []);
+        const mapped: RelatedPost[] = (data || []).map((post: any) => ({
+          id: post.id,
+          title: post.title,
+          slug: post.slug,
+          excerpt: post.excerpt,
+          featuredImage: post.featured_image,
+          featuredImageAlt: post.featured_image_alt,
+          publishedAt: post.published_at,
+          readingTimeMinutes: post.reading_time_minutes || 5,
+          reason: post.reason
+        }));
+
+        setPosts(mapped);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch related posts'));
+        console.error('Erro ao buscar posts relacionados:', err);
+        setError(err instanceof Error ? err : new Error('Falha ao buscar posts relacionados'));
       } finally {
         setLoading(false);
       }
