@@ -217,7 +217,8 @@ const Contato = () => {
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <MessageCircle className="h-5 w-5 text-primary mt-1" />
+                    
+                    <img src="/whatsapp_logo.png" alt="whatsapp" className="h-5 w-5 mt-1" />
                     <div>
                       <p className="font-medium">WhatsApp</p>
                       <p className="text-sm text-muted-foreground">
@@ -279,8 +280,8 @@ const Contato = () => {
                     Antes de entrar em contato, que tal dar uma olhada nas
                     perguntas mais frequentes?
                   </p>
-                  <Button variant="outline" asChild className="w-full">
-                    <a href="/faq">Ver FAQ Completo</a>
+                  <Button className="bg-pink-600 w-full text-white hover:bg-pink-600">
+                    <a href="/faq" className="text-white font-bold w-full">Ver FAQ Completo</a>
                   </Button>
                 </CardContent>
               </Card>
