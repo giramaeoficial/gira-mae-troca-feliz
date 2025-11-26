@@ -3373,6 +3373,20 @@ export type Database = {
           view_count: number
         }[]
       }
+      blog_get_related_posts: {
+        Args: { p_post_id: string }
+        Returns: {
+          excerpt: string
+          featured_image: string
+          featured_image_alt: string
+          id: string
+          published_at: string
+          reading_time_minutes: number
+          reason: string
+          slug: string
+          title: string
+        }[]
+      }
       blog_get_tag_by_slug: {
         Args: { p_slug: string }
         Returns: {
