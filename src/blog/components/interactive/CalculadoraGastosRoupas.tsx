@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Calculator, TrendingUp, Leaf, PiggyBank, RefreshCw } from 'lucide-react';
+import { Calculator, TrendingUp, Leaf, PiggyBank, Info, Share2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface CalculoResult {
   gastoAnual: number;
@@ -18,10 +19,11 @@ export default function CalculadoraGastosRoupas() {
   const [pecasPorMes, setPecasPorMes] = useState(4);
   const [valorMedioPeca, setValorMedioPeca] = useState(50);
   const [idadeFilho, setIdadeFilho] = useState(2);
-  const [calculado, setCalculado] = useState(false);
+  const [quantidadeFilhos, setQuantidadeFilhos] = useState(1);
+  const [mostrarBaseCalculo, setMostrarBaseCalculo] = useState(false);
 
   const resultado = useMemo<CalculoResult>(() => {
-    const gastoMensal = pecasPorMes * valorMedioPeca;
+    const gastoMensal = pecasPorMes * valorMedioPeca * quantidadeFilhos;
     const gastoAnual = gastoMensal * 12;
     
     // Fator de crescimento: crianças menores precisam trocar mais frequentemente
@@ -45,7 +47,7 @@ export default function CalculadoraGastosRoupas() {
       economiaCircular: Math.round(economiaCircular),
       economiaAnual: Math.round(economiaAnual),
     };
-  }, [pecasPorMes, valorMedioPeca, idadeFilho]);
+  }, [pecasPorMes, valorMedioPeca, idadeFilho, quantidadeFilhos]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -54,15 +56,24 @@ export default function CalculadoraGastosRoupas() {
     }).format(value);
   };
 
-  const handleCalcular = () => {
-    setCalculado(true);
+  const textoCompartilhamento = `Descobri que gasto ${formatCurrency(resultado.gastoAnual)}/ano com roupas infantis! Com economia circular, posso economizar ${formatCurrency(resultado.economiaAnual)}. Faça o cálculo você também:`;
+  const urlCompartilhamento = 'https://giramae.com.br/blog/calculadora-gastos-roupas-infantis';
+
+  const compartilharWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(textoCompartilhamento + ' ' + urlCompartilhamento)}`, '_blank');
   };
 
-  const handleReset = () => {
-    setPecasPorMes(4);
-    setValorMedioPeca(50);
-    setIdadeFilho(2);
-    setCalculado(false);
+  const compartilharFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlCompartilhamento)}&quote=${encodeURIComponent(textoCompartilhamento)}`, '_blank');
+  };
+
+  const compartilharTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(textoCompartilhamento)}&url=${encodeURIComponent(urlCompartilhamento)}`, '_blank');
+  };
+
+  const copiarLink = () => {
+    navigator.clipboard.writeText(textoCompartilhamento + ' ' + urlCompartilhamento);
+    alert('Link copiado para a área de transferência!');
   };
 
   return (
@@ -79,11 +90,55 @@ export default function CalculadoraGastosRoupas() {
 
       <CardContent className="space-y-6">
         {/* Inputs */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Quantidade de filhos */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">
+              Quantidade de filhos
+            </Label>
+            <div className="space-y-2">
+              <Slider
+                value={[quantidadeFilhos]}
+                onValueChange={(v) => setQuantidadeFilhos(v[0])}
+                min={1}
+                max={5}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>1</span>
+                <span className="font-semibold text-primary text-base">{quantidadeFilhos} {quantidadeFilhos === 1 ? 'filho' : 'filhos'}</span>
+                <span>5</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Idade do filho */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">
+              Idade média dos filhos (anos)
+            </Label>
+            <div className="space-y-2">
+              <Slider
+                value={[idadeFilho]}
+                onValueChange={(v) => setIdadeFilho(v[0])}
+                min={0}
+                max={12}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>0</span>
+                <span className="font-semibold text-primary text-base">{idadeFilho} anos</span>
+                <span>12</span>
+              </div>
+            </div>
+          </div>
+
           {/* Peças por mês */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">
-              Peças compradas por mês
+              Peças compradas por mês (por filho)
             </Label>
             <div className="space-y-2">
               <Slider
@@ -119,52 +174,15 @@ export default function CalculadoraGastosRoupas() {
               Inclua roupas, calçados e acessórios
             </p>
           </div>
-
-          {/* Idade do filho */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">
-              Idade do filho (anos)
-            </Label>
-            <div className="space-y-2">
-              <Slider
-                value={[idadeFilho]}
-                onValueChange={(v) => setIdadeFilho(v[0])}
-                min={0}
-                max={12}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>0</span>
-                <span className="font-semibold text-primary text-base">{idadeFilho} anos</span>
-                <span>12</span>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Botões */}
-        <div className="flex gap-3 justify-center pt-2">
-          <Button onClick={handleCalcular} size="lg" className="gap-2">
-            <Calculator className="w-4 h-4" />
-            Calcular Gastos
-          </Button>
-          {calculado && (
-            <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
-              <RefreshCw className="w-4 h-4" />
-              Recalcular
-            </Button>
-          )}
-        </div>
+        {/* Resultados - sempre visíveis */}
+        <div className="space-y-4 pt-4 border-t">
+          <h3 className="font-semibold text-lg text-center text-primary">
+            Seus Resultados
+          </h3>
 
-        {/* Resultados */}
-        {calculado && (
-          <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-semibold text-lg text-center text-primary">
-              Seus Resultados
-            </h3>
-
-            <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
               {/* Gasto Anual */}
               <Card className="bg-red-50 border-red-200">
                 <CardContent className="pt-4">
