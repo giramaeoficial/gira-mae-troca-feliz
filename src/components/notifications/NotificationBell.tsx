@@ -61,7 +61,7 @@ export const NotificationBell: React.FC = () => {
         </Button>
       </PopoverTrigger>
       
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-100 p-0" align="center">
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="font-semibold">Notificações</h3>
           {unreadCount > 0 && (
@@ -123,7 +123,7 @@ export const NotificationBell: React.FC = () => {
                       </div>
                     </div>
                     
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
                       {notification.message}
                     </p>
                     
