@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Calculator, TrendingUp, Leaf, PiggyBank, Info, Share2 } from 'lucide-react';
+import { Calculator, TrendingUp, Leaf, PiggyBank, Info, Share2, Store, Repeat, ArrowRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface CalculoResult {
@@ -13,22 +13,54 @@ interface CalculoResult {
   gasto5Anos: number;
   economiaCircular: number;
   economiaAnual: number;
+  valorRecuperavelBrechoDireto: number;
+  valorRecuperavelConsignacao: number;
+  valorRecuperavelTroca: number;
 }
 
 export default function CalculadoraGastosRoupas() {
   const [pecasPorMes, setPecasPorMes] = useState(4);
   const [valorMedioPeca, setValorMedioPeca] = useState(50);
-  const [idadeFilho, setIdadeFilho] = useState(2);
   const [quantidadeFilhos, setQuantidadeFilhos] = useState(1);
+  const [idadesFilhos, setIdadesFilhos] = useState<number[]>([2]);
   const [mostrarBaseCalculo, setMostrarBaseCalculo] = useState(false);
+
+  // Atualiza o array de idades quando muda a quantidade de filhos
+  const handleQuantidadeFilhosChange = (novaQuantidade: number) => {
+    setQuantidadeFilhos(novaQuantidade);
+    setIdadesFilhos(prev => {
+      if (novaQuantidade > prev.length) {
+        // Adiciona novas idades com valor padrão 2
+        return [...prev, ...Array(novaQuantidade - prev.length).fill(2)];
+      } else {
+        // Remove idades excedentes
+        return prev.slice(0, novaQuantidade);
+      }
+    });
+  };
+
+  const handleIdadeChange = (index: number, idade: number) => {
+    setIdadesFilhos(prev => {
+      const novas = [...prev];
+      novas[index] = idade;
+      return novas;
+    });
+  };
 
   const resultado = useMemo<CalculoResult>(() => {
     const gastoMensal = pecasPorMes * valorMedioPeca * quantidadeFilhos;
     const gastoAnual = gastoMensal * 12;
     
-    // Fator de crescimento: crianças menores precisam trocar mais frequentemente
-    const fatorIdade = idadeFilho <= 2 ? 1.3 : idadeFilho <= 5 ? 1.15 : 1;
-    const gastoAnualAjustado = gastoAnual * fatorIdade;
+    // Calcular fator de idade baseado em cada filho
+    const calcularFatorIdade = (idade: number) => {
+      if (idade <= 2) return 1.3;
+      if (idade <= 5) return 1.15;
+      return 1;
+    };
+    
+    // Usar a média dos fatores de idade de todos os filhos
+    const fatorIdadeMedio = idadesFilhos.reduce((acc, idade) => acc + calcularFatorIdade(idade), 0) / idadesFilhos.length;
+    const gastoAnualAjustado = gastoAnual * fatorIdadeMedio;
     
     // Projeção de 5 anos com inflação média de 6% ao ano
     const inflacaoAnual = 0.06;
@@ -41,13 +73,24 @@ export default function CalculadoraGastosRoupas() {
     const economiaCircular = gasto5Anos * 0.7;
     const economiaAnual = gastoAnualAjustado * 0.7;
 
+    // Valor das roupas que poderiam ser repassadas (estimativa: 60% do gasto anual em roupas ainda em bom estado)
+    const valorRoupasBomEstado = gastoAnualAjustado * 0.6;
+    
+    // Quanto você recupera em cada cenário
+    const valorRecuperavelBrechoDireto = valorRoupasBomEstado * 0.25; // 20-30%, usando 25%
+    const valorRecuperavelConsignacao = valorRoupasBomEstado * 0.40; // ~40%
+    const valorRecuperavelTroca = valorRoupasBomEstado * 1.0; // 100% do valor de uso
+
     return {
       gastoAnual: Math.round(gastoAnualAjustado),
       gasto5Anos: Math.round(gasto5Anos),
       economiaCircular: Math.round(economiaCircular),
       economiaAnual: Math.round(economiaAnual),
+      valorRecuperavelBrechoDireto: Math.round(valorRecuperavelBrechoDireto),
+      valorRecuperavelConsignacao: Math.round(valorRecuperavelConsignacao),
+      valorRecuperavelTroca: Math.round(valorRecuperavelTroca),
     };
-  }, [pecasPorMes, valorMedioPeca, idadeFilho, quantidadeFilhos]);
+  }, [pecasPorMes, valorMedioPeca, idadesFilhos, quantidadeFilhos]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -90,7 +133,7 @@ export default function CalculadoraGastosRoupas() {
 
       <CardContent className="space-y-6">
         {/* Inputs */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-6">
           {/* Quantidade de filhos */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">
@@ -99,7 +142,7 @@ export default function CalculadoraGastosRoupas() {
             <div className="space-y-2">
               <Slider
                 value={[quantidadeFilhos]}
-                onValueChange={(v) => setQuantidadeFilhos(v[0])}
+                onValueChange={(v) => handleQuantidadeFilhosChange(v[0])}
                 min={1}
                 max={5}
                 step={1}
@@ -113,66 +156,76 @@ export default function CalculadoraGastosRoupas() {
             </div>
           </div>
 
-          {/* Idade do filho */}
+          {/* Idades individuais de cada filho */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">
-              Idade média dos filhos (anos)
+              Idade de cada filho
             </Label>
-            <div className="space-y-2">
-              <Slider
-                value={[idadeFilho]}
-                onValueChange={(v) => setIdadeFilho(v[0])}
-                min={0}
-                max={12}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>0</span>
-                <span className="font-semibold text-primary text-base">{idadeFilho} anos</span>
-                <span>12</span>
-              </div>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {idadesFilhos.map((idade, index) => (
+                <div key={index} className="flex items-center gap-2 bg-muted/30 rounded-lg p-3">
+                  <span className="text-sm font-medium text-muted-foreground min-w-fit">
+                    {quantidadeFilhos === 1 ? 'Filho:' : `${index + 1}º filho:`}
+                  </span>
+                  <Slider
+                    value={[idade]}
+                    onValueChange={(v) => handleIdadeChange(index, v[0])}
+                    min={0}
+                    max={12}
+                    step={1}
+                    className="flex-1"
+                  />
+                  <span className="font-semibold text-primary min-w-[4rem] text-right">
+                    {idade} {idade === 1 ? 'ano' : 'anos'}
+                  </span>
+                </div>
+              ))}
             </div>
-          </div>
-
-          {/* Peças por mês */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">
-              Peças compradas por mês (por filho)
-            </Label>
-            <div className="space-y-2">
-              <Slider
-                value={[pecasPorMes]}
-                onValueChange={(v) => setPecasPorMes(v[0])}
-                min={1}
-                max={15}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>1</span>
-                <span className="font-semibold text-primary text-base">{pecasPorMes} peças</span>
-                <span>15</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Valor médio */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">
-              Valor médio por peça (R$)
-            </Label>
-            <Input
-              type="number"
-              value={valorMedioPeca}
-              onChange={(e) => setValorMedioPeca(Number(e.target.value) || 0)}
-              min={10}
-              max={500}
-              className="text-center font-semibold"
-            />
-            <p className="text-xs text-muted-foreground text-center">
-              Inclua roupas, calçados e acessórios
+            <p className="text-xs text-muted-foreground">
+              Crianças menores crescem mais rápido e precisam trocar de roupa com mais frequência
             </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Peças por mês */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">
+                Peças compradas por mês (por filho)
+              </Label>
+              <div className="space-y-2">
+                <Slider
+                  value={[pecasPorMes]}
+                  onValueChange={(v) => setPecasPorMes(v[0])}
+                  min={1}
+                  max={15}
+                  step={1}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>1</span>
+                  <span className="font-semibold text-primary text-base">{pecasPorMes} peças</span>
+                  <span>15</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Valor médio */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">
+                Valor médio por peça (R$)
+              </Label>
+              <Input
+                type="number"
+                value={valorMedioPeca}
+                onChange={(e) => setValorMedioPeca(Number(e.target.value) || 0)}
+                min={10}
+                max={500}
+                className="text-center font-semibold"
+              />
+              <p className="text-xs text-muted-foreground text-center">
+                Inclua roupas, calçados e acessórios
+              </p>
+            </div>
           </div>
         </div>
 
@@ -244,6 +297,79 @@ export default function CalculadoraGastosRoupas() {
             </Card>
           </div>
 
+          {/* Comparativo: Brechó vs Consignação vs GiraMãe */}
+          <div className="mt-6 pt-6 border-t">
+            <h4 className="font-semibold text-center mb-4 flex items-center justify-center gap-2">
+              <Repeat className="w-5 h-5 text-primary" />
+              Quanto você recupera das roupas que não servem mais?
+            </h4>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              Estimativa baseada em {formatCurrency(resultado.gastoAnual * 0.6)} em roupas em bom estado por ano
+            </p>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Brechó direto */}
+              <Card className="bg-gray-50 border-gray-200">
+                <CardContent className="pt-4 text-center">
+                  <Store className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Brechó (compra à vista)</p>
+                  <p className="text-2xl font-bold text-gray-700 my-2">
+                    {formatCurrency(resultado.valorRecuperavelBrechoDireto)}
+                  </p>
+                  <div className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full inline-block">
+                    Você fica com ~25%
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Brechó fica com 70-80% para custos + lucro
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Consignação */}
+              <Card className="bg-yellow-50 border-yellow-200">
+                <CardContent className="pt-4 text-center">
+                  <Store className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
+                  <p className="text-xs text-yellow-600 font-medium uppercase tracking-wide">Consignação / Apps</p>
+                  <p className="text-2xl font-bold text-yellow-700 my-2">
+                    {formatCurrency(resultado.valorRecuperavelConsignacao)}
+                  </p>
+                  <div className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full inline-block">
+                    Você fica com ~40%
+                  </div>
+                  <p className="text-xs text-yellow-600 mt-2">
+                    Plataforma fica com ~60% de comissão
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* GiraMãe - Troca */}
+              <Card className="bg-gradient-to-br from-primary/10 to-pink-100 border-primary/30 ring-2 ring-primary/20">
+                <CardContent className="pt-4 text-center">
+                  <Repeat className="w-8 h-8 text-primary mx-auto mb-2" />
+                  <p className="text-xs text-primary font-medium uppercase tracking-wide">GiraMãe (troca)</p>
+                  <p className="text-2xl font-bold text-primary my-2">
+                    {formatCurrency(resultado.valorRecuperavelTroca)}
+                  </p>
+                  <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full inline-block">
+                    Você conserva 100%
+                  </div>
+                  <p className="text-xs text-primary mt-2">
+                    Sem taxas! Troca direta entre mães
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Explicação do comparativo */}
+            <div className="bg-primary/5 rounded-lg p-4 mt-4">
+              <p className="text-sm text-center">
+                <strong className="text-primary">A diferença é clara:</strong> enquanto brechós e plataformas ficam com 60-80% do valor, 
+                no GiraMãe você <strong>troca peça por peça</strong> e mantém 100% do valor de uso. 
+                Sua roupa de R$ 100 vira outra roupa de R$ 100, não R$ 25.
+              </p>
+            </div>
+          </div>
+
           {/* Compartilhar */}
           <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
             <span className="text-sm text-muted-foreground flex items-center gap-1">
@@ -286,16 +412,27 @@ export default function CalculadoraGastosRoupas() {
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="bg-muted/50 rounded-lg p-4 mt-2 text-sm space-y-2">
-                <p><strong>Como calculamos:</strong></p>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li><strong>Gasto mensal:</strong> {pecasPorMes} peças × R$ {valorMedioPeca} × {quantidadeFilhos} filho(s) = {formatCurrency(pecasPorMes * valorMedioPeca * quantidadeFilhos)}/mês</li>
-                  <li><strong>Fator de idade:</strong> Crianças de 0-2 anos crescem mais rápido (+30% de gasto), 3-5 anos (+15%), 6+ anos (sem ajuste)</li>
-                  <li><strong>Projeção de 5 anos:</strong> Considera inflação média de 6% ao ano no setor de vestuário</li>
-                  <li><strong>Economia circular:</strong> Baseada em redução média de 70% ao optar por trocas e brechós, conforme pesquisas de consumo sustentável</li>
-                </ul>
+              <div className="bg-muted/50 rounded-lg p-4 mt-2 text-sm space-y-3">
+                <div>
+                  <p><strong>Como calculamos os gastos:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground mt-1">
+                    <li><strong>Gasto mensal:</strong> {pecasPorMes} peças × R$ {valorMedioPeca} × {quantidadeFilhos} filho(s) = {formatCurrency(pecasPorMes * valorMedioPeca * quantidadeFilhos)}/mês</li>
+                    <li><strong>Fator de idade:</strong> Crianças de 0-2 anos crescem mais rápido (+30% de gasto), 3-5 anos (+15%), 6+ anos (sem ajuste)</li>
+                    <li><strong>Projeção de 5 anos:</strong> Considera inflação média de 6% ao ano no setor de vestuário</li>
+                    <li><strong>Economia circular:</strong> Baseada em redução média de 70% ao optar por trocas</li>
+                  </ul>
+                </div>
+                <div>
+                  <p><strong>Como calculamos a recuperação de valor:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground mt-1">
+                    <li><strong>Roupas em bom estado:</strong> Estimamos que 60% das roupas compradas podem ser repassadas</li>
+                    <li><strong>Brechó (compra à vista):</strong> Paga 20-30% do valor de revenda (usamos 25%)</li>
+                    <li><strong>Consignação/Apps:</strong> Você fica com ~40%, plataforma com ~60%</li>
+                    <li><strong>GiraMãe (troca):</strong> Troca direta, sem intermediários = 100% do valor de uso conservado</li>
+                  </ul>
+                </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  * Valores são estimativas para fins educativos. Resultados reais podem variar conforme hábitos de consumo e região.
+                  * Valores são estimativas para fins educativos baseadas em pesquisas de mercado. Resultados reais podem variar.
                 </p>
               </div>
             </CollapsibleContent>
@@ -304,11 +441,12 @@ export default function CalculadoraGastosRoupas() {
           {/* CTA */}
           <div className="bg-gradient-to-r from-primary/10 to-pink-100 rounded-lg p-4 text-center mt-6">
             <p className="text-sm text-primary mb-3">
-              💡 Com a economia circular do GiraMãe, você pode reduzir até 70% desses gastos!
+              💡 No GiraMãe você troca roupas diretamente com outras mães, sem taxas e sem intermediários!
             </p>
-            <Button asChild>
+            <Button asChild size="lg">
               <a href="/" className="gap-2">
-                Começar a Economizar
+                <ArrowRight className="w-4 h-4" />
+                Começar a Trocar
               </a>
             </Button>
           </div>
