@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Post, PostFilters, PaginationOptions } from '@/blog/types';
 import { getBlogRepository } from '@/blog/lib/data';
 
@@ -18,8 +18,11 @@ export function usePosts(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  
+  // Guarda os filtros anteriores para detectar mudanças
+  const prevFiltersRef = useRef<string>('');
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (isLoadMore: boolean) => {
     try {
       setLoading(true);
       setError(null);
@@ -27,7 +30,14 @@ export function usePosts(
       const repository = getBlogRepository();
       const result = await repository.getPosts(filters, pagination);
       
-      setPosts(result);
+      if (isLoadMore) {
+        // Acumula posts (load more)
+        setPosts(prev => [...prev, ...result]);
+      } else {
+        // Substitui posts (novos filtros)
+        setPosts(result);
+      }
+      
       setHasMore(result.length === (pagination?.pageSize || 10));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch posts'));
@@ -37,13 +47,29 @@ export function usePosts(
   };
 
   useEffect(() => {
-    fetchPosts();
+    // Serializa filtros atuais (sem página)
+    const currentFilters = JSON.stringify({
+      status: filters?.status,
+      categoryId: filters?.categoryId,
+      authorId: filters?.authorId,
+      search: filters?.search,
+      tags: filters?.tags,
+    });
+    
+    // Verifica se os filtros mudaram
+    const filtersChanged = currentFilters !== prevFiltersRef.current;
+    prevFiltersRef.current = currentFilters;
+    
+    // Se filtros mudaram, é uma nova busca. Se não, é load more.
+    const isLoadMore = !filtersChanged && (pagination?.page || 1) > 1;
+    
+    fetchPosts(isLoadMore);
   }, [
     filters?.status,
     filters?.categoryId,
     filters?.authorId,
     filters?.search,
-    JSON.stringify(filters?.tags), // Serializa para detectar mudanças no array
+    JSON.stringify(filters?.tags),
     pagination?.page,
     pagination?.pageSize,
   ]);
@@ -53,6 +79,6 @@ export function usePosts(
     loading,
     error,
     hasMore,
-    refetch: fetchPosts,
+    refetch: () => fetchPosts(false),
   };
 }
