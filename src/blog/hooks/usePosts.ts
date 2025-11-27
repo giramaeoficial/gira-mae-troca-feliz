@@ -7,28 +7,38 @@ interface UsePostsReturn {
   loading: boolean;
   error: Error | null;
   hasMore: boolean;
+  loadMore: () => void;
   refetch: () => void;
 }
 
 export function usePosts(
   filters?: PostFilters,
-  pagination?: PaginationOptions
+  initialPageSize: number = 20
 ): UsePostsReturn {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
   
   // Guarda os filtros anteriores para detectar mudanças
   const prevFiltersRef = useRef<string>('');
 
-  const fetchPosts = async (isLoadMore: boolean) => {
+  const fetchPosts = async (currentPage: number, isLoadMore: boolean) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
       
       const repository = getBlogRepository();
-      const result = await repository.getPosts(filters, pagination);
+      const result = await repository.getPosts(filters, {
+        page: currentPage,
+        pageSize: initialPageSize
+      });
       
       if (isLoadMore) {
         // Acumula posts (load more)
@@ -38,16 +48,25 @@ export function usePosts(
         setPosts(result);
       }
       
-      setHasMore(result.length === (pagination?.pageSize || 10));
+      setHasMore(result.length === initialPageSize);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch posts'));
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loadingMore && !loading && hasMore) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchPosts(nextPage, true);
     }
   };
 
   useEffect(() => {
-    // Serializa filtros atuais (sem página)
+    // Serializa filtros atuais
     const currentFilters = JSON.stringify({
       status: filters?.status,
       categoryId: filters?.categoryId,
@@ -58,27 +77,30 @@ export function usePosts(
     
     // Verifica se os filtros mudaram
     const filtersChanged = currentFilters !== prevFiltersRef.current;
-    prevFiltersRef.current = currentFilters;
     
-    // Se filtros mudaram, é uma nova busca. Se não, é load more.
-    const isLoadMore = !filtersChanged && (pagination?.page || 1) > 1;
-    
-    fetchPosts(isLoadMore);
+    if (filtersChanged) {
+      // Filtros mudaram - resetar paginação
+      prevFiltersRef.current = currentFilters;
+      setPage(1);
+      fetchPosts(1, false);
+    }
   }, [
     filters?.status,
     filters?.categoryId,
     filters?.authorId,
     filters?.search,
     JSON.stringify(filters?.tags),
-    pagination?.page,
-    pagination?.pageSize,
   ]);
 
   return {
     posts,
-    loading,
+    loading: loading && !loadingMore,
     error,
     hasMore,
-    refetch: () => fetchPosts(false),
+    loadMore,
+    refetch: () => {
+      setPage(1);
+      fetchPosts(1, false);
+    },
   };
 }

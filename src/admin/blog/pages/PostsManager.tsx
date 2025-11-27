@@ -14,6 +14,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Search, Eye, Edit, Trash2, Loader2, ExternalLink } from 'lucide-react';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
 
 export default function PostsManager() {
   const navigate = useNavigate();
@@ -23,12 +25,19 @@ export default function PostsManager() {
   const [deleting, setDeleting] = useState(false);
 
   const { categories } = useCategories();
-  const { posts, loading, refetch } = usePosts(
+  const { posts, loading, hasMore, loadMore, refetch } = usePosts(
     {
       ...(selectedStatus !== 'all' && { status: selectedStatus }),
       ...(searchQuery && { search: searchQuery }),
-    }
+    },
+    20 // Page size
   );
+
+  const { ref: scrollRef } = useInfiniteScroll({
+    loading,
+    hasNextPage: hasMore,
+    onLoadMore: loadMore,
+  });
 
   const handleDelete = async () => {
     if (!deletePostId) return;
@@ -93,6 +102,7 @@ export default function PostsManager() {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="draft">Rascunhos</SelectItem>
                 <SelectItem value="published">Publicados</SelectItem>
+                <SelectItem value="scheduled">Agendados</SelectItem>
                 <SelectItem value="archived">Arquivados</SelectItem>
               </SelectContent>
             </Select>
@@ -123,7 +133,13 @@ export default function PostsManager() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
+                  <Badge 
+                    variant={
+                      post.status === 'published' ? 'default' : 
+                      post.status === 'scheduled' ? 'outline' :
+                      'secondary'
+                    }
+                  >
                     {post.status}
                   </Badge>
                 </TableCell>
@@ -170,12 +186,22 @@ export default function PostsManager() {
           </TableBody>
         </Table>
 
-        {posts.length === 0 && (
+        {posts.length === 0 && !loading && (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-lg">Nenhum post encontrado</p>
           </div>
         )}
       </Card>
+
+      {/* Infinite Scroll */}
+      <div ref={scrollRef}>
+        <InfiniteScrollIndicator
+          isFetchingNextPage={loading && posts.length > 0}
+          hasNextPage={hasMore}
+          itemsCount={posts.length}
+          isInitialLoading={loading && posts.length === 0}
+        />
+      </div>
 
       {/* Delete Dialog */}
       <AlertDialog open={!!deletePostId} onOpenChange={() => setDeletePostId(null)}>

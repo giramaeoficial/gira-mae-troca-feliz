@@ -22,7 +22,7 @@ export default function TagPage() {
       status: 'published',
       tags: tag ? [tag.id] : [],
     },
-    { page, pageSize: 12 }
+    12
   );
 
   if (tagsLoading) {
