@@ -4,6 +4,7 @@ import rehypeRaw from 'rehype-raw';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import '@/blog/styles/prose-giramae.css';
+import { parseOptimizedImageMarkdown, generateOptimizedImageAttrs } from '@/utils/optimizedImage';
 
 // Importar componentes interativos
 import CalculadoraGastosRoupas from '@/blog/components/interactive/CalculadoraGastosRoupas';
@@ -91,7 +92,23 @@ function MarkdownContent({ content, className }: { content: string; className: s
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, rehypeHighlight]}
         components={{
-          img: ({ src, alt }) => {
+          img: ({ src, alt, title }) => {
+            // Tentar parsear como imagem otimizada
+            const optimizedData = title ? parseOptimizedImageMarkdown(src || '', alt || '', title) : null;
+            
+            if (optimizedData) {
+              // Renderizar com srcset otimizado
+              const attrs = generateOptimizedImageAttrs(optimizedData);
+              return (
+                <img
+                  {...attrs}
+                  className="rounded-lg shadow-lg my-6 w-full"
+                  style={{ aspectRatio: `${attrs.width} / ${attrs.height}` }}
+                />
+              );
+            }
+            
+            // Fallback para imagens normais
             const altText = alt && alt.trim() 
               ? alt 
               : 'Imagem ilustrativa do post - Blog GiraMãe sobre maternidade e sustentabilidade';
@@ -102,6 +119,7 @@ function MarkdownContent({ content, className }: { content: string; className: s
                 alt={altText}
                 className="rounded-lg shadow-lg my-6 w-full"
                 loading="lazy"
+                decoding="async"
               />
             );
           },

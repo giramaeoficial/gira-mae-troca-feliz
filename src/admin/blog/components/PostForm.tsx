@@ -56,9 +56,8 @@ export default function PostForm({ post }: PostFormProps) {
     }
   }, [title, isEditing, setValue]);
 
-  const handleImageInsert = (url: string, alt: string) => {
+  const handleImageInsert = (markdown: string) => {
     const currentContent = form.getValues('content');
-    const markdown = `![${alt}](${url})`;
     form.setValue('content', currentContent + '\n\n' + markdown);
   };
 
@@ -253,6 +252,7 @@ export default function PostForm({ post }: PostFormProps) {
             <ImageUploader
               onImageInsert={handleImageInsert}
               onClose={() => setShowImageUploader(false)}
+              postSlug={form.getValues('slug') || 'draft'}
             />
           </DialogContent>
         </Dialog>
