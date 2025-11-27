@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface CalculoResult {
   gastoAnual: number;
   gasto5Anos: number;
+  economiaAnual: number;
   valorRoupasBomEstado: number;
   valorRecuperavelBrechoDireto: number;
   valorRecuperavelConsignacao: number;
@@ -83,10 +84,11 @@ export default function CalculadoraGastosRoupas() {
     const valorRecuperavelConsignacao = valorRoupasBomEstado * 0.50; // 50%
     const valorRecuperavelVendaDireta = valorRoupasBomEstado * 0.75; // 75%
     const valorRecuperavelTroca = valorRoupasBomEstado * 1.0; // 100%
-
+    
     return {
       gastoAnual: Math.round(gastoAnualAjustado),
       gasto5Anos: Math.round(gasto5Anos),
+      economiaAnual: Math.round(economiaAnual),
       valorRoupasBomEstado: Math.round(valorRoupasBomEstado),
       valorRecuperavelBrechoDireto: Math.round(valorRecuperavelBrechoDireto),
       valorRecuperavelConsignacao: Math.round(valorRecuperavelConsignacao),

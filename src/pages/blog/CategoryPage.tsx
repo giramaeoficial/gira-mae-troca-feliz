@@ -21,7 +21,7 @@ export default function CategoryPage() {
       status: 'published',
       categoryId: category?.id,
     },
-    { page, pageSize: 12 }
+    12
   );
 
   if (categoriesLoading) {

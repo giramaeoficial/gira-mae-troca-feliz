@@ -36,7 +36,7 @@ export default function Blog() {
       search: searchQuery || undefined,
       categoryId: selectedCategory || undefined,
     },
-    { page, pageSize: 12 }
+    12
   );
 
   if (loading && posts.length === 0) {
