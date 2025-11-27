@@ -50,6 +50,7 @@ import Sobre from '@/pages/Sobre';
 import FAQ from '@/pages/FAQ';
 import Blog from '@/pages/Blog';
 import BlogPost from '@/pages/BlogPost';
+import BuscaBlog from '@/pages/BuscaBlog';
 import CategoryPage from '@/pages/blog/CategoryPage';
 import CategoriesPage from '@/pages/blog/CategoriesPage';
 import TagPage from '@/pages/blog/TagPage';
@@ -110,12 +111,13 @@ function App() {
            <Route path="/faq" element={<FAQ />} />
            <Route path="/institucional" element={<Institucional />} />
            {/* ✅ ROTAS PÚBLICAS - Blog */}
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/categorias" element={<CategoriesPage />} />
-          <Route path="/blog/categoria/:slug" element={<CategoryPage />} />
-          <Route path="/blog/tag/:slug" element={<TagPage />} />
-          <Route path="/blog/autor/:slug" element={<AuthorPage />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
+           <Route path="/blog" element={<Blog />} />
+           <Route path="/buscar" element={<BuscaBlog />} />
+           <Route path="/blog/categorias" element={<CategoriesPage />} />
+           <Route path="/blog/categoria/:slug" element={<CategoryPage />} />
+           <Route path="/blog/tag/:slug" element={<TagPage />} />
+           <Route path="/blog/autor/:slug" element={<AuthorPage />} />
+           <Route path="/blog/:slug" element={<BlogPost />} />
           
           {/* Admin Blog Routes */}
           <Route 
