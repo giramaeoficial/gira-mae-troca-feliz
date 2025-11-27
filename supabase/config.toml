@@ -1,1 +1,20 @@
 project_id = "sjyvqtfpvqavtffexoky"
+
+# Public sitemap functions - no authentication required
+[functions.sitemap-index]
+verify_jwt = false
+
+[functions.sitemap-posts]
+verify_jwt = false
+
+[functions.sitemap-static]
+verify_jwt = false
+
+[functions.sitemap-tags]
+verify_jwt = false
+
+[functions.sitemap-categories]
+verify_jwt = false
+
+[functions.blog-image-upload]
+verify_jwt = true
