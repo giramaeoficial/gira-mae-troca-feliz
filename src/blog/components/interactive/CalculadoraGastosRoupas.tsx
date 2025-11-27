@@ -5,14 +5,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Calculator, TrendingUp, Leaf, PiggyBank, Info, Share2, Repeat, ArrowRight } from 'lucide-react';
+import { Calculator, TrendingUp, Info, Share2, Repeat, ArrowRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface CalculoResult {
   gastoAnual: number;
   gasto5Anos: number;
-  economiaCircular: number;
-  economiaAnual: number;
+  valorRoupasBomEstado: number;
   valorRecuperavelBrechoDireto: number;
   valorRecuperavelConsignacao: number;
   valorRecuperavelVendaDireta: number;
@@ -25,6 +24,8 @@ export default function CalculadoraGastosRoupas() {
   const [quantidadeFilhos, setQuantidadeFilhos] = useState(1);
   const [idadesFilhos, setIdadesFilhos] = useState<number[]>([2]);
   const [mostrarBaseCalculo, setMostrarBaseCalculo] = useState(false);
+  const [percentualBomEstado, setPercentualBomEstado] = useState(60);
+  const [mostrarAjustePercentual, setMostrarAjustePercentual] = useState(false);
 
   // Atualiza o array de idades quando muda a quantidade de filhos
   const handleQuantidadeFilhosChange = (novaQuantidade: number) => {
@@ -74,8 +75,8 @@ export default function CalculadoraGastosRoupas() {
     const economiaCircular = gasto5Anos * 0.7;
     const economiaAnual = gastoAnualAjustado * 0.7;
 
-    // Valor das roupas que poderiam ser repassadas (estimativa: 60% do gasto anual em roupas ainda em bom estado)
-    const valorRoupasBomEstado = gastoAnualAjustado * 0.6;
+    // Valor das roupas que poderiam ser repassadas
+    const valorRoupasBomEstado = gastoAnualAjustado * (percentualBomEstado / 100);
     
     // Quanto você recupera em cada cenário
     const valorRecuperavelBrechoDireto = valorRoupasBomEstado * 0.25; // 25%
@@ -86,14 +87,13 @@ export default function CalculadoraGastosRoupas() {
     return {
       gastoAnual: Math.round(gastoAnualAjustado),
       gasto5Anos: Math.round(gasto5Anos),
-      economiaCircular: Math.round(economiaCircular),
-      economiaAnual: Math.round(economiaAnual),
+      valorRoupasBomEstado: Math.round(valorRoupasBomEstado),
       valorRecuperavelBrechoDireto: Math.round(valorRecuperavelBrechoDireto),
       valorRecuperavelConsignacao: Math.round(valorRecuperavelConsignacao),
       valorRecuperavelVendaDireta: Math.round(valorRecuperavelVendaDireta),
       valorRecuperavelTroca: Math.round(valorRecuperavelTroca),
     };
-  }, [pecasPorMes, valorMedioPeca, idadesFilhos, quantidadeFilhos]);
+  }, [pecasPorMes, valorMedioPeca, idadesFilhos, quantidadeFilhos, percentualBomEstado]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -268,36 +268,6 @@ export default function CalculadoraGastosRoupas() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Economia Anual */}
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <PiggyBank className="w-8 h-8 text-green-500" />
-                  <div>
-                    <p className="text-sm text-green-600 font-medium">Economia Anual com GiraMãe</p>
-                    <p className="text-2xl font-bold text-green-700">
-                      {formatCurrency(resultado.economiaAnual)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Economia 5 anos */}
-            <Card className="bg-emerald-50 border-emerald-200">
-              <CardContent className="pt-4">
-                <div className="flex items-center gap-3">
-                  <Leaf className="w-8 h-8 text-emerald-500" />
-                  <div>
-                    <p className="text-sm text-emerald-600 font-medium">Economia em 5 Anos</p>
-                    <p className="text-2xl font-bold text-emerald-700">
-                      {formatCurrency(resultado.economiaCircular)}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Comparativo de opções */}
@@ -306,9 +276,42 @@ export default function CalculadoraGastosRoupas() {
               <Repeat className="w-5 h-5 text-primary" />
               Quanto você recupera das roupas que não servem mais?
             </h4>
-            <p className="text-sm text-muted-foreground text-center mb-4">
-              Estimativa baseada em {formatCurrency(resultado.gastoAnual * 0.6)} em roupas em bom estado por ano
-            </p>
+            
+            {/* Explicação da base */}
+            <div className="bg-muted/50 rounded-lg p-3 mb-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-muted-foreground">
+                  Estimamos que <strong>{percentualBomEstado}%</strong> das roupas compradas ainda estão em bom estado quando não servem mais = <strong>{formatCurrency(resultado.valorRoupasBomEstado)}</strong>/ano
+                </p>
+                <button
+                  onClick={() => setMostrarAjustePercentual(!mostrarAjustePercentual)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {mostrarAjustePercentual ? 'Ocultar ajuste' : 'Ajustar percentual'}
+                </button>
+              </div>
+              
+              {mostrarAjustePercentual && (
+                <div className="mt-3 pt-3 border-t border-muted">
+                  <Label className="text-xs text-muted-foreground">
+                    Percentual de roupas em bom estado:
+                  </Label>
+                  <div className="flex items-center gap-3 mt-1">
+                    <Slider
+                      value={[percentualBomEstado]}
+                      onValueChange={(v) => setPercentualBomEstado(v[0])}
+                      min={20}
+                      max={90}
+                      step={10}
+                      className="flex-1"
+                    />
+                    <span className="font-semibold text-primary min-w-[3rem] text-right">
+                      {percentualBomEstado}%
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-3">
               {/* Doar & comprar novo - 0% */}
@@ -455,13 +458,12 @@ export default function CalculadoraGastosRoupas() {
                     <li><strong>Gasto mensal:</strong> {pecasPorMes} peças × R$ {valorMedioPeca} × {quantidadeFilhos} filho(s) = {formatCurrency(pecasPorMes * valorMedioPeca * quantidadeFilhos)}/mês</li>
                     <li><strong>Fator de idade:</strong> Crianças de 0-2 anos crescem mais rápido (+30% de gasto), 3-5 anos (+15%), 6+ anos (sem ajuste)</li>
                     <li><strong>Projeção de 5 anos:</strong> Considera inflação média de 6% ao ano no setor de vestuário</li>
-                    <li><strong>Economia circular:</strong> Baseada em redução média de 70% ao optar por trocas</li>
                   </ul>
                 </div>
                 <div>
                   <p><strong>Como calculamos a recuperação de valor:</strong></p>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground mt-1">
-                    <li><strong>Roupas em bom estado:</strong> Estimamos que 60% das roupas compradas podem ser repassadas</li>
+                    <li><strong>Roupas em bom estado:</strong> {percentualBomEstado}% das roupas compradas ({formatCurrency(resultado.valorRoupasBomEstado)})</li>
                     <li><strong>Doar:</strong> 0% de recuperação - você compra tudo novo</li>
                     <li><strong>Brechó:</strong> ~25% - brechó precisa de margem para revender</li>
                     <li><strong>Apps de revenda:</strong> ~50% - comissões, taxas e frete consomem metade</li>
