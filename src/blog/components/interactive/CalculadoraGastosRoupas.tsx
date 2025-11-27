@@ -315,87 +315,117 @@ export default function CalculadoraGastosRoupas() {
 
             <div className="space-y-3">
               {/* Doar & comprar novo - 0% */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50 border border-red-200">
-                <div className="w-16 text-center">
-                  <span className="text-xl font-bold text-red-600">0%</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg bg-red-50 border border-red-200">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-14 sm:w-16 text-center flex-shrink-0">
+                    <span className="text-lg sm:text-xl font-bold text-red-600">0%</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-red-400 rounded-full" style={{ width: '0%' }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-red-400 rounded-full" style={{ width: '0%' }} />
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <p className="font-medium text-red-700 text-sm">Doar & comprar tudo novo</p>
-                  <p className="text-xs text-red-600">Você não recupera nada</p>
-                </div>
-                <div className="text-right min-w-[80px]">
-                  <p className="font-bold text-red-700">{formatCurrency(0)}</p>
+                <div className="flex items-center justify-between sm:justify-end gap-2 pl-14 sm:pl-0">
+                  <div className="sm:min-w-[180px]">
+                    <p className="font-medium text-red-700 text-sm">Doar & comprar tudo novo</p>
+                    <p className="text-xs text-red-600">Você não recupera nada</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-red-700">{formatCurrency(0)}</p>
+                  </div>
                 </div>
               </div>
 
               {/* Brechó - 25% */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 border border-orange-200">
-                <div className="w-16 text-center">
-                  <span className="text-xl font-bold text-orange-600">25%</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg bg-orange-50 border border-orange-200">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-14 sm:w-16 text-center flex-shrink-0">
+                    <span className="text-lg sm:text-xl font-bold text-orange-600">25%</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-orange-400 rounded-full" style={{ width: '25%' }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-orange-400 rounded-full" style={{ width: '25%' }} />
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <p className="font-medium text-orange-700 text-sm">Vender para brechó</p>
-                  <p className="text-xs text-orange-600">Brechó fica com ~75%</p>
-                </div>
-                <div className="text-right min-w-[80px]">
-                  <p className="font-bold text-orange-700">{formatCurrency(resultado.valorRecuperavelBrechoDireto)}</p>
+                <div className="flex items-center justify-between sm:justify-end gap-2 pl-14 sm:pl-0">
+                  <div className="sm:min-w-[180px]">
+                    <p className="font-medium text-orange-700 text-sm">Vender para brechó</p>
+                    <p className="text-xs text-orange-600">Brechó fica com ~75%</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-orange-700">{formatCurrency(resultado.valorRecuperavelBrechoDireto)}</p>
+                  </div>
                 </div>
               </div>
 
               {/* Apps de revenda - 50% */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
-                <div className="w-16 text-center">
-                  <span className="text-xl font-bold text-yellow-600">50%</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-14 sm:w-16 text-center flex-shrink-0">
+                    <span className="text-lg sm:text-xl font-bold text-yellow-600">50%</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-yellow-400 rounded-full" style={{ width: '50%' }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-yellow-400 rounded-full" style={{ width: '50%' }} />
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <p className="font-medium text-yellow-700 text-sm">Vender em apps de revenda</p>
-                  <p className="text-xs text-yellow-600">Comissões, taxas e frete</p>
-                </div>
-                <div className="text-right min-w-[80px]">
-                  <p className="font-bold text-yellow-700">{formatCurrency(resultado.valorRecuperavelConsignacao)}</p>
+                <div className="flex items-center justify-between sm:justify-end gap-2 pl-14 sm:pl-0">
+                  <div className="sm:min-w-[180px]">
+                    <p className="font-medium text-yellow-700 text-sm">Vender em apps de revenda</p>
+                    <p className="text-xs text-yellow-600">Comissões, taxas e frete</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-yellow-700">{formatCurrency(resultado.valorRecuperavelConsignacao)}</p>
+                  </div>
                 </div>
               </div>
 
               {/* Venda direta - 75% */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-lime-50 border border-lime-200">
-                <div className="w-16 text-center">
-                  <span className="text-xl font-bold text-lime-600">75%</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg bg-lime-50 border border-lime-200">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-14 sm:w-16 text-center flex-shrink-0">
+                    <span className="text-lg sm:text-xl font-bold text-lime-600">75%</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-lime-400 rounded-full" style={{ width: '75%' }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-lime-400 rounded-full" style={{ width: '75%' }} />
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <p className="font-medium text-lime-700 text-sm">Venda direta (OLX, grupos, Insta)</p>
-                  <p className="text-xs text-lime-600">Mais trabalho, mais risco</p>
-                </div>
-                <div className="text-right min-w-[80px]">
-                  <p className="font-bold text-lime-700">{formatCurrency(resultado.valorRecuperavelVendaDireta)}</p>
+                <div className="flex items-center justify-between sm:justify-end gap-2 pl-14 sm:pl-0">
+                  <div className="sm:min-w-[180px]">
+                    <p className="font-medium text-lime-700 text-sm">Venda direta (OLX, grupos)</p>
+                    <p className="text-xs text-lime-600">Mais trabalho, mais risco</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-lime-700">{formatCurrency(resultado.valorRecuperavelVendaDireta)}</p>
+                  </div>
                 </div>
               </div>
 
               {/* GiraMãe - 100% */}
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-pink-100 border-2 border-primary/30 ring-2 ring-primary/10">
-                <div className="w-16 text-center">
-                  <span className="text-xl font-bold text-primary">100%</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-pink-100 border-2 border-primary/30 ring-2 ring-primary/10">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-14 sm:w-16 text-center flex-shrink-0">
+                    <span className="text-lg sm:text-xl font-bold text-primary">100%</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <p className="font-medium text-primary text-sm">Trocar no GiraMãe</p>
-                  <p className="text-xs text-primary/80">Sua peça vira outra peça</p>
-                </div>
-                <div className="text-right min-w-[80px]">
-                  <p className="font-bold text-primary">{formatCurrency(resultado.valorRecuperavelTroca)}</p>
+                <div className="flex items-center justify-between sm:justify-end gap-2 pl-14 sm:pl-0">
+                  <div className="sm:min-w-[180px]">
+                    <p className="font-medium text-primary text-sm">Trocar no GiraMãe</p>
+                    <p className="text-xs text-primary/80">Sua peça vira outra peça</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-primary">{formatCurrency(resultado.valorRecuperavelTroca)}</p>
+                  </div>
                 </div>
               </div>
             </div>
