@@ -4,19 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { uploadImage, compressImage, validateImage } from '@/utils/imageUpload';
+import { validateImage } from '@/utils/imageUpload';
+import { generateOptimizedImageMarkdown, OptimizedImageData, sanitizeFileName } from '@/utils/optimizedImage';
+import { processImageAllVariants } from '@/utils/imageProcessing';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ImageUploaderProps {
-  onImageInsert: (url: string, alt: string) => void;
+  onImageInsert: (markdown: string) => void;
   onClose: () => void;
+  postSlug?: string;
 }
 
-export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderProps) {
+export default function ImageUploader({ onImageInsert, onClose, postSlug = 'draft' }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState('');
   const [altText, setAltText] = useState('');
+  const [uploadedData, setUploadedData] = useState<OptimizedImageData | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -35,37 +40,90 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
     try {
       setUploading(true);
 
-      // Comprimir imagem
-      const compressedFile = await compressImage(file);
-
       // Preview local
       const reader = new FileReader();
       reader.onload = (e) => setPreview(e.target?.result as string);
-      reader.readAsDataURL(compressedFile);
+      reader.readAsDataURL(file);
 
-      // Upload para Supabase
-      const url = await uploadImage(compressedFile);
-
-      if (url) {
-        toast({
-          title: 'Sucesso!',
-          description: 'Imagem enviada com sucesso.',
-        });
-        // Auto-preencher com nome do arquivo se alt estiver vazio
-        if (!altText) {
-          setAltText(file.name.replace(/\.[^/.]+$/, ''));
-        }
-      } else {
-        throw new Error('Erro ao fazer upload');
+      // Auto-preencher com nome do arquivo se alt estiver vazio
+      if (!altText) {
+        const baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
+        setAltText(baseName);
       }
+
+      toast({
+        title: '🔄 Processando imagem...',
+        description: 'Convertendo para WebP e gerando 3 variações',
+      });
+
+      // Processar imagem no cliente (3 variações WebP)
+      const variants = await processImageAllVariants(file);
+
+      // Obter dimensões originais
+      const originalDimensions = variants.find(v => v.variant.size === 'large');
+      if (!originalDimensions) throw new Error('Failed to get dimensions');
+
+      // Sanitizar nome
+      const baseName = sanitizeFileName(file.name.replace(/\.[^/.]+$/, ''));
+
+      // Preparar FormData com as 3 variações
+      const formData = new FormData();
+      formData.append('postSlug', postSlug);
+      formData.append('baseName', baseName);
+      formData.append('alt', altText || baseName);
+      formData.append('originalWidth', originalDimensions.width.toString());
+      formData.append('originalHeight', originalDimensions.height.toString());
+
+      for (const variant of variants) {
+        formData.append(variant.variant.size, variant.blob, `${baseName}-${variant.variant.size}.webp`);
+      }
+
+      toast({
+        title: '📤 Enviando para servidor...',
+        description: 'Fazendo upload das 3 variações',
+      });
+
+      // Chamar edge function para upload
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/blog-image-upload`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro no upload');
+      }
+
+      const data: OptimizedImageData = await response.json();
+      setUploadedData(data);
+
+      toast({
+        title: '✅ Upload concluído!',
+        description: 'Imagem otimizada em 3 variações (small, medium, large)',
+      });
     } catch (error) {
       console.error(error);
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description: 'Não foi possível fazer upload da imagem.',
+        title: 'Erro no upload',
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
       });
       setPreview(null);
+      setUploadedData(null);
     } finally {
       setUploading(false);
     }
@@ -80,11 +138,11 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
   };
 
   const handleInsertFromUpload = () => {
-    if (!preview) {
+    if (!uploadedData) {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Nenhuma imagem selecionada',
+        description: 'Upload ainda não concluído',
       });
       return;
     }
@@ -122,8 +180,13 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
       });
       return;
     }
+
+    // Atualizar alt no uploadedData
+    const finalData = { ...uploadedData, alt: altText };
     
-    onImageInsert(preview, altText);
+    // Gerar markdown otimizado
+    const markdown = generateOptimizedImageMarkdown(finalData);
+    onImageInsert(markdown);
     onClose();
   };
 
@@ -171,7 +234,9 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
       return;
     }
     
-    onImageInsert(urlInput, altText);
+    // Para URLs externas, gerar markdown simples
+    const markdown = `![${altText}](${urlInput})`;
+    onImageInsert(markdown);
     onClose();
   };
 
@@ -260,12 +325,17 @@ export default function ImageUploader({ onImageInsert, onClose }: ImageUploaderP
               </div>
               <Button
                 onClick={handleInsertFromUpload}
-                disabled={!altText || altText.length < 10}
+                disabled={!uploadedData || !altText || altText.length < 10 || uploading}
                 className="w-full"
               >
                 <ImageIcon className="mr-2 h-4 w-4" />
-                Inserir Imagem
+                Inserir Imagem Otimizada
               </Button>
+              {uploadedData && (
+                <p className="text-xs text-muted-foreground text-center">
+                  ✅ 3 variações geradas: small (400px), medium (800px), large (1200px)
+                </p>
+              )}
             </>
           )}
         </TabsContent>

@@ -21,7 +21,7 @@ export default function AuthorPage() {
       status: 'published',
       authorId: author?.id,
     },
-    { page, pageSize: 12 }
+    12
   );
 
   useEffect(() => {

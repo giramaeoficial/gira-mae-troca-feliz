@@ -1,6 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { usePost } from '@/blog/hooks/usePost';
-import { usePosts } from '@/blog/hooks/usePosts';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,13 +18,6 @@ import Breadcrumbs from '@/blog/components/ui/Breadcrumbs';
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const { post, loading, error } = usePost(slug || '');
-  const { posts: relatedPosts } = usePosts(
-    { 
-      status: 'published',
-      categoryId: post?.categoryId 
-    },
-    { page: 1, pageSize: 4 }
-  );
 
   if (loading) {
     return (
@@ -228,9 +220,7 @@ export default function BlogPost() {
         )}
 
         {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <RelatedPosts posts={relatedPosts} currentPostId={post.id} />
-        )}
+        <RelatedPosts postId={post.id} />
       </article>
     </BlogLayout>
     </>
