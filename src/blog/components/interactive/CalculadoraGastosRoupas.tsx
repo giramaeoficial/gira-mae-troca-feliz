@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Calculator, TrendingUp, Leaf, PiggyBank, Info, Share2, Store, Repeat, ArrowRight } from 'lucide-react';
+import { Calculator, TrendingUp, Leaf, PiggyBank, Info, Share2, Repeat, ArrowRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface CalculoResult {
@@ -15,6 +15,7 @@ interface CalculoResult {
   economiaAnual: number;
   valorRecuperavelBrechoDireto: number;
   valorRecuperavelConsignacao: number;
+  valorRecuperavelVendaDireta: number;
   valorRecuperavelTroca: number;
 }
 
@@ -77,9 +78,10 @@ export default function CalculadoraGastosRoupas() {
     const valorRoupasBomEstado = gastoAnualAjustado * 0.6;
     
     // Quanto você recupera em cada cenário
-    const valorRecuperavelBrechoDireto = valorRoupasBomEstado * 0.25; // 20-30%, usando 25%
-    const valorRecuperavelConsignacao = valorRoupasBomEstado * 0.40; // ~40%
-    const valorRecuperavelTroca = valorRoupasBomEstado * 1.0; // 100% do valor de uso
+    const valorRecuperavelBrechoDireto = valorRoupasBomEstado * 0.25; // 25%
+    const valorRecuperavelConsignacao = valorRoupasBomEstado * 0.50; // 50%
+    const valorRecuperavelVendaDireta = valorRoupasBomEstado * 0.75; // 75%
+    const valorRecuperavelTroca = valorRoupasBomEstado * 1.0; // 100%
 
     return {
       gastoAnual: Math.round(gastoAnualAjustado),
@@ -88,6 +90,7 @@ export default function CalculadoraGastosRoupas() {
       economiaAnual: Math.round(economiaAnual),
       valorRecuperavelBrechoDireto: Math.round(valorRecuperavelBrechoDireto),
       valorRecuperavelConsignacao: Math.round(valorRecuperavelConsignacao),
+      valorRecuperavelVendaDireta: Math.round(valorRecuperavelVendaDireta),
       valorRecuperavelTroca: Math.round(valorRecuperavelTroca),
     };
   }, [pecasPorMes, valorMedioPeca, idadesFilhos, quantidadeFilhos]);
@@ -297,7 +300,7 @@ export default function CalculadoraGastosRoupas() {
             </Card>
           </div>
 
-          {/* Comparativo: Brechó vs Consignação vs GiraMãe */}
+          {/* Comparativo de opções */}
           <div className="mt-6 pt-6 border-t">
             <h4 className="font-semibold text-center mb-4 flex items-center justify-center gap-2">
               <Repeat className="w-5 h-5 text-primary" />
@@ -307,65 +310,98 @@ export default function CalculadoraGastosRoupas() {
               Estimativa baseada em {formatCurrency(resultado.gastoAnual * 0.6)} em roupas em bom estado por ano
             </p>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              {/* Brechó direto */}
-              <Card className="bg-gray-50 border-gray-200">
-                <CardContent className="pt-4 text-center">
-                  <Store className="w-8 h-8 text-gray-500 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Brechó (compra à vista)</p>
-                  <p className="text-2xl font-bold text-gray-700 my-2">
-                    {formatCurrency(resultado.valorRecuperavelBrechoDireto)}
-                  </p>
-                  <div className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full inline-block">
-                    Você fica com ~25%
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Brechó fica com 70-80% para custos + lucro
-                  </p>
-                </CardContent>
-              </Card>
+            <div className="space-y-3">
+              {/* Doar & comprar novo - 0% */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-red-50 border border-red-200">
+                <div className="w-16 text-center">
+                  <span className="text-xl font-bold text-red-600">0%</span>
+                </div>
+                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-red-400 rounded-full" style={{ width: '0%' }} />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <p className="font-medium text-red-700 text-sm">Doar & comprar tudo novo</p>
+                  <p className="text-xs text-red-600">Você não recupera nada</p>
+                </div>
+                <div className="text-right min-w-[80px]">
+                  <p className="font-bold text-red-700">{formatCurrency(0)}</p>
+                </div>
+              </div>
 
-              {/* Consignação */}
-              <Card className="bg-yellow-50 border-yellow-200">
-                <CardContent className="pt-4 text-center">
-                  <Store className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                  <p className="text-xs text-yellow-600 font-medium uppercase tracking-wide">Consignação / Apps</p>
-                  <p className="text-2xl font-bold text-yellow-700 my-2">
-                    {formatCurrency(resultado.valorRecuperavelConsignacao)}
-                  </p>
-                  <div className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full inline-block">
-                    Você fica com ~40%
-                  </div>
-                  <p className="text-xs text-yellow-600 mt-2">
-                    Plataforma fica com ~60% de comissão
-                  </p>
-                </CardContent>
-              </Card>
+              {/* Brechó - 25% */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 border border-orange-200">
+                <div className="w-16 text-center">
+                  <span className="text-xl font-bold text-orange-600">25%</span>
+                </div>
+                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-400 rounded-full" style={{ width: '25%' }} />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <p className="font-medium text-orange-700 text-sm">Vender para brechó</p>
+                  <p className="text-xs text-orange-600">Brechó fica com ~75%</p>
+                </div>
+                <div className="text-right min-w-[80px]">
+                  <p className="font-bold text-orange-700">{formatCurrency(resultado.valorRecuperavelBrechoDireto)}</p>
+                </div>
+              </div>
 
-              {/* GiraMãe - Troca */}
-              <Card className="bg-gradient-to-br from-primary/10 to-pink-100 border-primary/30 ring-2 ring-primary/20">
-                <CardContent className="pt-4 text-center">
-                  <Repeat className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <p className="text-xs text-primary font-medium uppercase tracking-wide">GiraMãe (troca)</p>
-                  <p className="text-2xl font-bold text-primary my-2">
-                    {formatCurrency(resultado.valorRecuperavelTroca)}
-                  </p>
-                  <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full inline-block">
-                    Você conserva 100%
-                  </div>
-                  <p className="text-xs text-primary mt-2">
-                    Sem taxas! Troca direta entre mães
-                  </p>
-                </CardContent>
-              </Card>
+              {/* Apps de revenda - 50% */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                <div className="w-16 text-center">
+                  <span className="text-xl font-bold text-yellow-600">50%</span>
+                </div>
+                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-yellow-400 rounded-full" style={{ width: '50%' }} />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <p className="font-medium text-yellow-700 text-sm">Vender em apps de revenda</p>
+                  <p className="text-xs text-yellow-600">Comissões, taxas e frete</p>
+                </div>
+                <div className="text-right min-w-[80px]">
+                  <p className="font-bold text-yellow-700">{formatCurrency(resultado.valorRecuperavelConsignacao)}</p>
+                </div>
+              </div>
+
+              {/* Venda direta - 75% */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-lime-50 border border-lime-200">
+                <div className="w-16 text-center">
+                  <span className="text-xl font-bold text-lime-600">75%</span>
+                </div>
+                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-lime-400 rounded-full" style={{ width: '75%' }} />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <p className="font-medium text-lime-700 text-sm">Venda direta (OLX, grupos, Insta)</p>
+                  <p className="text-xs text-lime-600">Mais trabalho, mais risco</p>
+                </div>
+                <div className="text-right min-w-[80px]">
+                  <p className="font-bold text-lime-700">{formatCurrency(resultado.valorRecuperavelVendaDireta)}</p>
+                </div>
+              </div>
+
+              {/* GiraMãe - 100% */}
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-primary/10 to-pink-100 border-2 border-primary/30 ring-2 ring-primary/10">
+                <div className="w-16 text-center">
+                  <span className="text-xl font-bold text-primary">100%</span>
+                </div>
+                <div className="h-3 flex-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
+                </div>
+                <div className="flex-1 min-w-[200px]">
+                  <p className="font-medium text-primary text-sm">Trocar no GiraMãe</p>
+                  <p className="text-xs text-primary/80">Sua peça vira outra peça</p>
+                </div>
+                <div className="text-right min-w-[80px]">
+                  <p className="font-bold text-primary">{formatCurrency(resultado.valorRecuperavelTroca)}</p>
+                </div>
+              </div>
             </div>
 
             {/* Explicação do comparativo */}
             <div className="bg-primary/5 rounded-lg p-4 mt-4">
               <p className="text-sm text-center">
-                <strong className="text-primary">A diferença é clara:</strong> enquanto brechós e plataformas ficam com 60-80% do valor, 
-                no GiraMãe você <strong>troca peça por peça</strong> e mantém 100% do valor de uso. 
-                Sua roupa de R$ 100 vira outra roupa de R$ 100, não R$ 25.
+                <strong className="text-primary">A matemática é simples:</strong> sua roupa de R$ 100 vira R$ 0 se você doar, 
+                R$ 25 no brechó, ou <strong>outra roupa de R$ 100</strong> no GiraMãe. Sem intermediários, sem taxas.
               </p>
             </div>
           </div>
@@ -426,9 +462,11 @@ export default function CalculadoraGastosRoupas() {
                   <p><strong>Como calculamos a recuperação de valor:</strong></p>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground mt-1">
                     <li><strong>Roupas em bom estado:</strong> Estimamos que 60% das roupas compradas podem ser repassadas</li>
-                    <li><strong>Brechó (compra à vista):</strong> Paga 20-30% do valor de revenda (usamos 25%)</li>
-                    <li><strong>Consignação/Apps:</strong> Você fica com ~40%, plataforma com ~60%</li>
-                    <li><strong>GiraMãe (troca):</strong> Troca direta, sem intermediários = 100% do valor de uso conservado</li>
+                    <li><strong>Doar:</strong> 0% de recuperação - você compra tudo novo</li>
+                    <li><strong>Brechó:</strong> ~25% - brechó precisa de margem para revender</li>
+                    <li><strong>Apps de revenda:</strong> ~50% - comissões, taxas e frete consomem metade</li>
+                    <li><strong>Venda direta:</strong> ~75% - você faz todo o trabalho e assume riscos</li>
+                    <li><strong>GiraMãe:</strong> 100% - troca direta, sua peça vira outra peça equivalente</li>
                   </ul>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
