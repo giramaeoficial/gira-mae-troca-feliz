@@ -118,9 +118,36 @@ function App() {
           <Route path="/blog/:slug" element={<BlogPost />} />
           
           {/* Admin Blog Routes */}
-          <Route path="/admin/blog" element={<AdminBlogHome />} />
-          <Route path="/admin/blog/novo" element={<NovoPost />} />
-          <Route path="/admin/blog/editar/:id" element={<EditarPost />} />
+          <Route 
+            path="/admin/blog" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <AdminBlogHome />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/admin/blog/novo" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <NovoPost />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
+          <Route 
+            path="/admin/blog/editar/:id" 
+            element={
+              <AuthGuard>
+                <AdminGuard>
+                  <EditarPost />
+                </AdminGuard>
+              </AuthGuard>
+            } 
+          />
 
           
           {/* ================================================ */}
