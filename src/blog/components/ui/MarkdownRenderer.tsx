@@ -16,8 +16,8 @@ const COMPONENT_MAP: Record<string, React.ComponentType> = {
   // Adicione novos mapeamentos aqui
 };
 
-// Regex para encontrar placeholders
-const PLACEHOLDER_REGEX = /\[REACT_[A-Z_]+\]/g;
+// Regex para encontrar placeholders (sem flag 'g' para o test)
+const PLACEHOLDER_PATTERN = /\[REACT_[A-Z_]+\]/;
 
 interface MarkdownRendererProps {
   content: string;
@@ -26,7 +26,7 @@ interface MarkdownRendererProps {
 
 export default function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
   // Verifica se há placeholders no conteúdo
-  const hasPlaceholders = PLACEHOLDER_REGEX.test(content);
+  const hasPlaceholders = PLACEHOLDER_PATTERN.test(content);
   
   // Se não há placeholders, renderiza normalmente
   if (!hasPlaceholders) {
@@ -40,7 +40,8 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     let match;
     let key = 0;
 
-    const regex = new RegExp(PLACEHOLDER_REGEX);
+    // Criar novo regex com flag 'g' para o loop
+    const regex = /\[REACT_[A-Z_]+\]/g;
     
     while ((match = regex.exec(content)) !== null) {
       // Markdown antes do placeholder
