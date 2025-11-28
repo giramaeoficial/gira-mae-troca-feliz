@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCarteira } from '@/hooks/useCarteira';
 import { useConfigMercadoPago } from '@/hooks/useConfigMercadoPago';
 import { supabase } from '@/integrations/supabase/client';
+import { analytics } from '@/lib/analytics';
 
 interface MercadoPagoPreference {
   preference_id: string;
@@ -107,12 +108,24 @@ export const useMercadoPago = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment');
     const externalRef = urlParams.get('ref');
+    const girinhasAmount = urlParams.get('girinhas');
 
     if (paymentStatus && externalRef) {
       const isTestEnvironment = config.usarAmbienteTeste;
+      const girinhas = girinhasAmount ? parseInt(girinhasAmount) : 0;
+      const valorReais = girinhas * 1.00;
       
       switch (paymentStatus) {
         case 'success':
+          // ✅ ANALYTICS: Compra de Girinhas concluída (CRÍTICO PARA ROAS)
+          if (girinhas > 0) {
+            analytics.girinhas.purchaseComplete(
+              girinhas,
+              valorReais,
+              externalRef
+            );
+          }
+          
           toast({
             title: `🎉 Pagamento Aprovado! ${isTestEnvironment ? '(Teste)' : ''}`,
             description: isTestEnvironment 
@@ -125,6 +138,9 @@ export const useMercadoPago = () => {
           break;
         
         case 'failure':
+          // ✅ ANALYTICS: Compra falhou
+          analytics.girinhas.purchaseFailed('payment_declined');
+          
           toast({
             title: `❌ Pagamento Recusado ${isTestEnvironment ? '(Teste)' : ''}`,
             description: isTestEnvironment
