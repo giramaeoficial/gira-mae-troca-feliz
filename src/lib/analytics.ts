@@ -193,7 +193,7 @@ export const setUserProperties = (
  */
 export const setUserId = (userId: string): void => {
   if (typeof window !== 'undefined' && window.gtag) {
-    window.gtag('set', { user_id: userId });
+    window.gtag('set', 'user_id', userId);
   }
 };
 
@@ -390,8 +390,7 @@ export const analytics = {
     purchaseStart: (packageValue: number) => {
       trackEvent('begin_checkout', {
         value: packageValue,
-        currency: 'BRL',
-        items: [{ item_name: 'Pacote Girinhas', price: packageValue }],
+        currency: 'BRL'
       });
     },
     
@@ -400,13 +399,7 @@ export const analytics = {
       trackEvent('purchase', {
         transaction_id: transactionId,
         value: valueInReais,
-        currency: 'BRL',
-        items: [{
-          item_id: 'girinhas_package',
-          item_name: `${girinhasAmount} Girinhas`,
-          price: valueInReais,
-          quantity: 1,
-        }],
+        currency: 'BRL'
       });
     },
     

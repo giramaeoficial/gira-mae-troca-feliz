@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, MapPin, Filter, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { useItensInteligentes } from '@/hooks/useItensInteligentes';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSimpleGeolocation } from '@/hooks/useSimpleGeolocation';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import { analytics } from '@/lib/analytics';
 
 const BuscarItens = () => {
   const navigate = useNavigate();
@@ -26,6 +27,13 @@ const BuscarItens = () => {
     location: location || undefined,
     ordem: 'recentes'
   });
+
+  // ✅ ANALYTICS: Busca realizada
+  useEffect(() => {
+    if (debouncedBusca) {
+      analytics.search.query(debouncedBusca, itens.length);
+    }
+  }, [debouncedBusca, itens.length]);
 
   // Mock feedData since this is a simple search page
   const mockFeedData = useMemo(() => ({

@@ -1,12 +1,13 @@
 // src/pages/onboarding/WhatsAppOnboarding.tsx - VERSÃO CORRIGIDA
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import PhoneStepV2 from '@/components/cadastro/PhoneStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import { analytics } from '@/lib/analytics';
 
 const WhatsAppOnboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -54,6 +55,11 @@ const WhatsAppOnboarding: React.FC = () => {
       setIsCompleting(false);
     }
   };
+
+  // ✅ ANALYTICS: Rastrear início da verificação
+  useEffect(() => {
+    analytics.onboarding.phoneVerificationStart();
+  }, []);
 
   const ProgressDots = () => (
     <div className="flex justify-center gap-2 mb-6">

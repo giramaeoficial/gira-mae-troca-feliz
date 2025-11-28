@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { initializeOneSignal } from '@/lib/onesignal';
 import { syncPlayerIdWithDatabase } from '@/lib/sync-player-id';
 import { referralStorage } from '@/utils/referralStorage';
+import { analytics } from '@/lib/analytics';
 
 interface AuthContextType {
   session: Session | null;
@@ -153,6 +154,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // ✅ ANALYTICS: Logout
+      analytics.auth.logout();
+      
       // Reset OneSignal state
       oneSignalSetup.current = {
         initialized: false,

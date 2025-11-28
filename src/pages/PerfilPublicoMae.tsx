@@ -1,6 +1,7 @@
 // src/pages/PerfilPublicoMae.tsx - CORREÇÃO DOS ERROS DE RENDERIZAÇÃO
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { analytics } from '@/lib/analytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -179,6 +180,9 @@ const PerfilPublicoMae = () => {
         }
 
         setProfile(profileData);
+        
+        // ✅ ANALYTICS: Visualização de perfil
+        analytics.social.viewProfile(id);
         
       } catch (error) {
         console.error('Erro ao carregar perfil:', error);

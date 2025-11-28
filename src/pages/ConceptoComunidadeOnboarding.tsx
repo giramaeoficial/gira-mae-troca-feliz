@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, Handshake, Shield, Lightbulb, ArrowRight, CheckCircle } from 'lucide-react'; // Adjusted icons
+import { Users, Handshake, Shield, Lightbulb, ArrowRight, CheckCircle } from 'lucide-react';
+import { analytics } from '@/lib/analytics';
 
 const ConceptoComunidadeOnboarding = () => {
   const navigate = useNavigate();
@@ -13,6 +14,9 @@ const ConceptoComunidadeOnboarding = () => {
   const itensNecessarios = 2; // Example value, would come from useMissoes
 
   const handleStartMission = () => {
+    // ✅ ANALYTICS: Conceito visualizado
+    analytics.onboarding.conceptViewComplete();
+    
     // Logic to navigate to the first mission or item submission page
     navigate('/publicar-primeiro-item');
   };
