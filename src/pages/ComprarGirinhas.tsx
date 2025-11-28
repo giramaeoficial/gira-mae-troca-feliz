@@ -9,6 +9,8 @@ import Header from "@/components/shared/Header";
 import CompraLivre from "@/components/girinhas/CompraLivre";
 import { useMercadoPago } from "@/hooks/useMercadoPago";
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 const ComprarGirinhas = () => {
   const { verificarStatusPagamento } = useMercadoPago();
@@ -19,7 +21,13 @@ const ComprarGirinhas = () => {
   }, [verificarStatusPagamento]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 md:pb-8">
+    <>
+      <SEOHead 
+        title={pageTitle.comprarGirinhas()}
+        description="Compre Girinhas e comece a trocar itens infantis na comunidade GiraMãe"
+        keywords="comprar girinhas, moeda virtual, troca de roupas infantis"
+      />
+      <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 md:pb-8">
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-6">
@@ -45,6 +53,7 @@ const ComprarGirinhas = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
 

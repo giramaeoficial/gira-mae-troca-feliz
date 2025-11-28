@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trophy, Ban, ArrowRight, CheckCircle } from 'lucide-react';
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 const PublicarPrimeiroItem = () => {
   const navigate = useNavigate();
