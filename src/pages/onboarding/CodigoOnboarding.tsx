@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CodeStepV2 from '@/components/cadastro/CodeStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
+import { analytics } from '@/lib/analytics';
 
 // ====================================================================
 // STEP 2: CÓDIGO DE VERIFICAÇÃO - PODE VOLTAR PARA WHATSAPP
@@ -13,6 +14,9 @@ const CodigoOnboarding: React.FC = () => {
 
     const handleCodeComplete = async () => {
       console.log('✅ Código verificado com sucesso! Redirecionando para termos...');
+      
+      // ✅ ANALYTICS: Verificação completa
+      analytics.onboarding.phoneVerificationComplete();
       
       setTimeout(() => {
         navigate('/onboarding/termos'); // ✅ AGORA NAVEGA PARA PRÓXIMA ETAPA

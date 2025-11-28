@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, MapPin, Search, Filter, Truck, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,17 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicator';
 import { supabase } from '@/integrations/supabase/client';
 import { useConfigSistema } from '@/hooks/useConfigSistema';
+import { analytics } from '@/lib/analytics';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // ✅ ANALYTICS: Rastrear visualização do feed
+  useEffect(() => {
+    analytics.feed.view();
+  }, []);
   
   // ✅ Estados de filtros (incluindo novo filtro de logística)
   const [busca, setBusca] = useState('');
@@ -166,7 +172,10 @@ const FeedOptimized = () => {
     rootMargin: '100px',
   });
 
-  const handleItemClick = useCallback((itemId: string) => {
+  const handleItemClick = useCallback((itemId: string, position?: number) => {
+    // ✅ ANALYTICS: Clique em item do feed
+    analytics.feed.itemClick(itemId, position || 0);
+    
     navigate(`/item/${itemId}`);
   }, [navigate]);
 
@@ -237,6 +246,9 @@ const FeedOptimized = () => {
     
     try {
       if (isFavorito) {
+        // ✅ ANALYTICS: Remover dos favoritos
+        analytics.items.removeFromFavorites(itemId);
+        
         // Remover favorito
         const { error } = await supabase
           .from('favoritos')
@@ -251,6 +263,9 @@ const FeedOptimized = () => {
           description: "Item removido da sua lista de desejos.",
         });
       } else {
+        // ✅ ANALYTICS: Adicionar aos favoritos
+        analytics.items.addToFavorites(itemId);
+        
         // Adicionar favorito
         const { error } = await supabase
           .from('favoritos')

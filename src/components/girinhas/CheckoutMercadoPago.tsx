@@ -11,6 +11,7 @@ import { useConfigMercadoPago } from '@/hooks/useConfigMercadoPago';
 import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { analytics } from '@/lib/analytics';
 
 const CheckoutMercadoPago = () => {
   const [quantidade, setQuantidade] = useState<number>(50);
@@ -48,6 +49,10 @@ const CheckoutMercadoPago = () => {
       });
       return;
     }
+
+    // ✅ ANALYTICS: Início da compra de Girinhas
+    const valorEmReais = quantidade * 1.00;
+    analytics.girinhas.purchaseStart(valorEmReais);
 
     await criarPreferencia(quantidade);
   };

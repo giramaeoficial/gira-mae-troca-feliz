@@ -5,6 +5,7 @@ import SimpleAddressForm from '@/components/address/SimpleAddressForm';
 import { useUserAddress } from '@/hooks/useUserAddress';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import { Button } from '@/components/ui/button';
+import { analytics } from '@/lib/analytics';
 
 const EnderecoOnboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ const EnderecoOnboarding: React.FC = () => {
     setIsNavigating(true);
     
     console.log('✅ Endereço salvo, redirecionando para próxima etapa...');
+    
+    // ✅ ANALYTICS: Endereço completo
+    if (userAddress?.cidade) {
+      analytics.onboarding.addressComplete(userAddress.cidade);
+    }
     
     // Aguardar um pouco para processar mudanças
     setTimeout(() => {

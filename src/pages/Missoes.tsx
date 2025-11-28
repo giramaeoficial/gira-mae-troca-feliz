@@ -13,6 +13,7 @@ import AuthGuard from '@/components/auth/AuthGuard';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
 import { MissaoInstagramCard } from '@/components/missoes/MissaoInstagramCard';
+import { analytics } from '@/lib/analytics';
 
 const MissionCard: React.FC<{ missao: any; onColetar: (id: string) => void; isCollecting: boolean }> = ({ 
   missao, 
@@ -257,6 +258,16 @@ const Missoes: React.FC = () => {
 
   const handleColetarRecompensa = async (missaoId: string) => {
     const missaoSegmentada = missoesSegmentadas.find(m => m.id === missaoId);
+    const missao = missaoSegmentada || missoesSimples.find(m => m.id === missaoId);
+    
+    if (missao) {
+      // ✅ ANALYTICS: Missão completa
+      analytics.missions.complete(
+        missao.id,
+        missao.tipo_missao || 'regular',
+        0 // Tempo não rastreado aqui
+      );
+    }
     
     if (missaoSegmentada) {
       await coletarRecompensaSegmentada.mutateAsync(missaoId);

@@ -14,10 +14,46 @@ import TableOfContents from '@/blog/components/ui/TableOfContents';
 import MarkdownRenderer from '@/blog/components/ui/MarkdownRenderer';
 import SEOHead from '@/components/seo/SEOHead';
 import Breadcrumbs from '@/blog/components/ui/Breadcrumbs';
+import { useState, useEffect } from 'react';
+import { analytics } from '@/lib/analytics';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
   const { post, loading, error } = usePost(slug || '');
+  const [startTime] = useState(Date.now());
+  const [scrollDepth, setScrollDepth] = useState(0);
+
+  // ✅ ANALYTICS: Visualização do post
+  useEffect(() => {
+    if (post) {
+      analytics.blog.viewPost(post.id, post.title, post.category?.name || 'sem-categoria');
+    }
+  }, [post]);
+
+  // ✅ ANALYTICS: Rastreamento de scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+      const depth = Math.round((scrollTop / (documentHeight - windowHeight)) * 100);
+      
+      setScrollDepth(Math.max(scrollDepth, depth));
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrollDepth]);
+
+  // ✅ ANALYTICS: Engagement ao sair
+  useEffect(() => {
+    return () => {
+      if (post) {
+        const timeSpent = Math.round((Date.now() - startTime) / 1000);
+        analytics.blog.engagement(post.id, timeSpent, scrollDepth);
+      }
+    };
+  }, [post, startTime, scrollDepth]);
 
   if (loading) {
     return (
