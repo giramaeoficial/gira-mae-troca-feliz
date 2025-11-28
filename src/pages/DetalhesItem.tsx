@@ -5,6 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 import {
   Card,
   CardContent,

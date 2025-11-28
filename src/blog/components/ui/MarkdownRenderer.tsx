@@ -9,16 +9,18 @@ import { parseOptimizedImageMarkdown, generateOptimizedImageAttrs } from '@/util
 // Importar componentes interativos
 import CalculadoraGastosRoupas from '@/blog/components/interactive/CalculadoraGastosRoupas';
 import SimuladorTamanhoRoupa from '@/blog/components/interactive/SimuladorTamanhoRoupa';
+import CalculadoraEnxovalInteligente from '@/blog/components/interactive/CalculadoraEnxovalInteligente';
 
 // Mapeamento de placeholders para componentes
 const COMPONENT_MAP: Record<string, React.ComponentType> = {
   '[REACT_CALCULATOR]': CalculadoraGastosRoupas,
   '[REACT_SIZE_SIMULATOR]': SimuladorTamanhoRoupa,
+  '[REACT_CALCULATOR:CalculadoraEnxovalInteligente]': CalculadoraEnxovalInteligente,
   // Adicione novos mapeamentos aqui
 };
 
 // Regex para encontrar placeholders (sem flag 'g' para o test)
-const PLACEHOLDER_PATTERN = /\[REACT_[A-Z_]+\]/;
+const PLACEHOLDER_PATTERN = /\[REACT_[A-Z_]+(:[A-Za-z]+)?\]/;
 
 interface MarkdownRendererProps {
   content: string;
@@ -42,7 +44,7 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
     let key = 0;
 
     // Criar novo regex com flag 'g' para o loop
-    const regex = /\[REACT_[A-Z_]+\]/g;
+    const regex = /\[REACT_[A-Z_]+(:[A-Za-z]+)?\]/g;
     
     while ((match = regex.exec(content)) !== null) {
       // Markdown antes do placeholder

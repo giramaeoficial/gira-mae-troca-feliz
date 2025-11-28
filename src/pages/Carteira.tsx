@@ -16,6 +16,8 @@ import { useConfigSistema } from "@/hooks/useConfigSistema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 
 const Carteira = () => {

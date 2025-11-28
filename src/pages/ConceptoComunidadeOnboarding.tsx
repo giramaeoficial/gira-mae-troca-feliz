@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, Handshake, Shield, Lightbulb, ArrowRight, CheckCircle } from 'lucide-react';
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 const ConceptoComunidadeOnboarding = () => {
   const navigate = useNavigate();
@@ -22,7 +24,13 @@ const ConceptoComunidadeOnboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4 flex items-center justify-center">
+    <>
+      <SEOHead 
+        title={pageTitle.onboarding.conceito()}
+        description="Entenda como funciona a comunidade de trocas GiraMãe"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4 flex items-center justify-center">
       <div className="max-w-md w-full mx-auto">
         <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm p-6 md:p-8 rounded-lg">
           <CardContent className="p-0">
@@ -94,6 +102,7 @@ const ConceptoComunidadeOnboarding = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 
