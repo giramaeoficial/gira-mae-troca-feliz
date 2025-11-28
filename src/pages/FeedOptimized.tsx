@@ -246,6 +246,9 @@ const FeedOptimized = () => {
     
     try {
       if (isFavorito) {
+        // ✅ ANALYTICS: Remover dos favoritos
+        analytics.items.removeFromFavorites(itemId);
+        
         // Remover favorito
         const { error } = await supabase
           .from('favoritos')
@@ -260,6 +263,9 @@ const FeedOptimized = () => {
           description: "Item removido da sua lista de desejos.",
         });
       } else {
+        // ✅ ANALYTICS: Adicionar aos favoritos
+        analytics.items.addToFavorites(itemId);
+        
         // Adicionar favorito
         const { error } = await supabase
           .from('favoritos')
