@@ -6,6 +6,8 @@ import { useUserAddress } from '@/hooks/useUserAddress';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 const EnderecoOnboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -48,7 +50,13 @@ const EnderecoOnboarding: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+    <>
+      <SEOHead 
+        title={pageTitle.onboarding.endereco()}
+        description="Informe seu endereço para encontrar itens próximos de você"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -119,6 +127,7 @@ const EnderecoOnboarding: React.FC = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import CodeStepV2 from '@/components/cadastro/CodeStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 // ====================================================================
 // STEP 2: CÓDIGO DE VERIFICAÇÃO - PODE VOLTAR PARA WHATSAPP
@@ -34,7 +36,13 @@ const CodigoOnboarding: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+    <>
+      <SEOHead 
+        title={pageTitle.onboarding.codigo()}
+        description="Digite o código de verificação enviado para seu WhatsApp"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -74,6 +82,7 @@ const CodigoOnboarding: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

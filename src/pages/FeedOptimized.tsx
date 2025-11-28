@@ -24,6 +24,8 @@ import InfiniteScrollIndicator from '@/components/loading/InfiniteScrollIndicato
 import { supabase } from '@/integrations/supabase/client';
 import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();

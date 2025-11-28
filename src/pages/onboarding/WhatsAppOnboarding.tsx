@@ -8,6 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import PhoneStepV2 from '@/components/cadastro/PhoneStepV2';
 import LoadingSpinner from '@/components/loading/LoadingSpinner';
 import { analytics } from '@/lib/analytics';
+import SEOHead from '@/components/seo/SEOHead';
+import { pageTitle } from '@/lib/pageTitle';
 
 const WhatsAppOnboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -72,7 +74,13 @@ const WhatsAppOnboarding: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+    <>
+      <SEOHead 
+        title={pageTitle.onboarding.whatsapp()}
+        description="Verifique seu WhatsApp para começar a fazer parte da comunidade GiraMãe"
+        noindex={true}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
       <div className="max-w-md mx-auto px-4 py-6">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -125,6 +133,7 @@ const WhatsAppOnboarding: React.FC = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
