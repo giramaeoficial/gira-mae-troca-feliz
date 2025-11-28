@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import Header from "@/components/shared/Header";
 import QuickNav from "@/components/shared/QuickNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,12 +15,18 @@ import BonusDiarioWidget from '@/components/carteira/BonusDiarioWidget';
 import { useConfigSistema } from "@/hooks/useConfigSistema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { analytics } from '@/lib/analytics';
 
 
 const Carteira = () => {
   const { carteira, transacoes, loading, saldo, totalRecebido, totalGasto } = useCarteira();
   const { expiracao } = useGirinhasExpiracaoSegura();
   const { taxaTransferencia, taxaTransacao } = useConfigSistema();
+
+  // ✅ ANALYTICS: Visualização da carteira
+  useEffect(() => {
+    analytics.feed.view(); // Usando feed.view como proxy para visualização da carteira
+  }, []);
 
   // ✅ Performance: Memoizar cálculos que dependem de transacoes
   const transacoesEsteMes = useMemo(() => 

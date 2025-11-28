@@ -1,9 +1,10 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { analytics } from '@/lib/analytics';
 import {
   Card,
   CardContent,
@@ -122,11 +123,34 @@ const DetalhesItem = () => {
     };
   }, [data]);
 
+  // ✅ ANALYTICS: Visualização do item
+  useEffect(() => {
+    if (item) {
+      analytics.items.view(
+        item.id,
+        item.titulo,
+        item.categoria,
+        item.valor_girinhas
+      );
+    }
+  }, [item]);
+
   const handleReservarItem = async () => {
-    if (!id) return;
+    if (!id || !item) return;
+
+    // ✅ ANALYTICS: Reserva iniciada
+    analytics.items.reserve(item.id, item.valor_girinhas);
 
     try {
       await criarReserva(id);
+      
+      // ✅ ANALYTICS: Troca completa (bloqueio de Girinhas)
+      analytics.items.exchangeComplete(
+        id,
+        item.id,
+        item.valor_girinhas
+      );
+      
       toast({
         title: "Item reservado!",
         description: "O vendedor foi notificado da sua reserva.",

@@ -8,6 +8,7 @@ import Header from "@/components/shared/Header";
 import { Heart, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { analytics } from '@/lib/analytics';
 
 const Auth = () => {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -25,6 +26,10 @@ const Auth = () => {
   const handleGoogleLogin = async () => {
     try {
       setIsSigningIn(true);
+      
+      // ✅ ANALYTICS: Início do cadastro
+      analytics.auth.signupStart('google');
+      
       await signInWithGoogle();
     } catch (error: any) {
       console.error('Erro no login:', error);

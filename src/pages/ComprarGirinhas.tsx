@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import Header from "@/components/shared/Header";
 import CompraLivre from "@/components/girinhas/CompraLivre";
 import { useMercadoPago } from "@/hooks/useMercadoPago";
+import { analytics } from '@/lib/analytics';
 
 const ComprarGirinhas = () => {
   const { verificarStatusPagamento } = useMercadoPago();

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePublicarItemFormV2 } from '@/hooks/usePublicarItemFormV2';
 import { SimpleItemForm } from '@/components/forms/SimpleItemForm';
@@ -7,10 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trophy, Ban, ArrowRight, CheckCircle } from 'lucide-react';
+import { analytics } from '@/lib/analytics';
 
 const PublicarPrimeiroItem = () => {
   const navigate = useNavigate();
   const [currentItem, setCurrentItem] = useState(1);
+  const [startTime] = useState(Date.now());
+  
+  // ✅ ANALYTICS: Início do upload
+  useEffect(() => {
+    analytics.onboarding.firstItemUploadStart();
+  }, []);
   
   const {
     formData,
@@ -39,6 +46,10 @@ const PublicarPrimeiroItem = () => {
           imagens: []
         });
       } else {
+        // ✅ ANALYTICS: Onboarding completo
+        const timeToComplete = Math.round((Date.now() - startTime) / 1000);
+        analytics.onboarding.complete(timeToComplete, 2);
+        
         window.location.reload();
       }
     }
@@ -57,6 +68,16 @@ const PublicarPrimeiroItem = () => {
 
   const handleFieldChange = (field: string, value: any) => {
     updateFormData({ [field]: value });
+    
+    // ✅ ANALYTICS: Foto adicionada
+    if (field === 'imagens' && Array.isArray(value) && value.length > (formData.imagens?.length || 0)) {
+      analytics.onboarding.firstItemPhotoAdded();
+    }
+    
+    // ✅ ANALYTICS: Formulário preenchido
+    if (field === 'categoria_id' && value) {
+      analytics.onboarding.firstItemFormFilled(value);
+    }
   };
 
   return (
