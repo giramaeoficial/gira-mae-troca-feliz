@@ -76,11 +76,11 @@ export default function App() {
   const [copied, setCopied] = useState(false);
 
   // Estados de Ajuste Fino
-  const [adjCusto, setAdjCusto] = useState(DEFAULT_CONF.perfis.padrao.custoMedioPeca);
-  const [adjVolume, setAdjVolume] = useState(DEFAULT_CONF.perfis.padrao.itensBasicosMes);
-  const [adjInflacao, setAdjInflacao] = useState(DEFAULT_CONF.inflacaoAnual);
-  const [adjDepreciacao, setAdjDepreciacao] = useState(DEFAULT_CONF.depreciacao);
-  const [adjEconomiaGM, setAdjEconomiaGM] = useState(DEFAULT_CONF.economiaGiraMae);
+  const [adjCusto, setAdjCusto] = useState<number>(DEFAULT_CONF.perfis.padrao.custoMedioPeca);
+  const [adjVolume, setAdjVolume] = useState<number>(DEFAULT_CONF.perfis.padrao.itensBasicosMes);
+  const [adjInflacao, setAdjInflacao] = useState<number>(DEFAULT_CONF.inflacaoAnual);
+  const [adjDepreciacao, setAdjDepreciacao] = useState<number>(DEFAULT_CONF.depreciacao);
+  const [adjEconomiaGM, setAdjEconomiaGM] = useState<number>(DEFAULT_CONF.economiaGiraMae);
 
   const [resultados, setResultados] = useState<Resultados | null>(null);
 
