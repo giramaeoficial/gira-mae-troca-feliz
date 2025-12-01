@@ -76,19 +76,19 @@ export default function App() {
   const [copied, setCopied] = useState(false);
 
   // Estados de Ajuste Fino
-  const [adjCusto, setAdjCusto] = useState(DEFAULT_CONF.perfis.padrao.custoMedioPeca);
-  const [adjVolume, setAdjVolume] = useState(DEFAULT_CONF.perfis.padrao.itensBasicosMes);
-  const [adjInflacao, setAdjInflacao] = useState(DEFAULT_CONF.inflacaoAnual);
-  const [adjDepreciacao, setAdjDepreciacao] = useState(DEFAULT_CONF.depreciacao);
-  const [adjEconomiaGM, setAdjEconomiaGM] = useState(DEFAULT_CONF.economiaGiraMae);
+  const [adjCusto, setAdjCusto] = useState<number>(DEFAULT_CONF.perfis.padrao.custoMedioPeca);
+  const [adjVolume, setAdjVolume] = useState<number>(DEFAULT_CONF.perfis.padrao.itensBasicosMes);
+  const [adjInflacao, setAdjInflacao] = useState<number>(DEFAULT_CONF.inflacaoAnual);
+  const [adjDepreciacao, setAdjDepreciacao] = useState<number>(DEFAULT_CONF.depreciacao);
+  const [adjEconomiaGM, setAdjEconomiaGM] = useState<number>(DEFAULT_CONF.economiaGiraMae);
 
   const [resultados, setResultados] = useState<Resultados | null>(null);
 
   // Reseta os inputs de ajuste quando troca o perfil
   const resetarAjustes = useCallback((perfilKey: PerfilKey) => {
     const perfilData = DEFAULT_CONF.perfis[perfilKey];
-    setAdjCusto(perfilData.custoMedioPeca);
-    setAdjVolume(perfilData.itensBasicosMes);
+    setAdjCusto(perfilData.custoMedioPeca as number);
+    setAdjVolume(perfilData.itensBasicosMes as number);
     setAdjInflacao(DEFAULT_CONF.inflacaoAnual);
     setAdjDepreciacao(DEFAULT_CONF.depreciacao);
     setAdjEconomiaGM(DEFAULT_CONF.economiaGiraMae);
