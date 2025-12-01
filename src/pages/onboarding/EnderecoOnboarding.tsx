@@ -23,19 +23,18 @@ const EnderecoOnboarding: React.FC = () => {
   }
 
   const handleContinue = async () => {
-    // ✅ NAVEGAÇÃO SIMPLIFICADA: Deixar o roteamento automático cuidar
     setIsNavigating(true);
     
-    console.log('✅ Endereço salvo, redirecionando para próxima etapa...');
+    console.log('✅ Endereço salvo, redirecionando para o feed...');
     
     // ✅ ANALYTICS: Endereço completo
     if (userAddress?.cidade) {
       analytics.onboarding.addressComplete(userAddress.cidade);
     }
     
-    // Aguardar um pouco para processar mudanças
+    // ✅ NOVA LÓGICA: Ir direto para o feed (sem missão obrigatória)
     setTimeout(() => {
-      navigate('/conceito-comunidade');
+      navigate('/feed');
     }, 1000);
   };
 
@@ -75,7 +74,7 @@ const EnderecoOnboarding: React.FC = () => {
             <ArrowLeft className="w-5 h-5" />
             <span>Voltar</span>
           </button>
-          <span className="text-sm text-gray-500">Etapa 4 de 5</span>
+          <span className="text-sm text-gray-500">Última etapa</span>
         </div>
 
         {/* Progress */}
