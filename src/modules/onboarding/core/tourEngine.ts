@@ -11,6 +11,20 @@ declare global {
   }
 }
 
+// Detecta se é mobile
+const isMobile = () => window.innerWidth < 640;
+
+// Ajusta posição para mobile - sempre abaixo do elemento
+const getMobilePosition = (originalPosition: string | undefined): string => {
+  if (!isMobile()) return originalPosition || 'bottom';
+  
+  // No mobile, preferir bottom para não cobrir elementos no topo
+  if (originalPosition === 'top') return 'bottom';
+  if (originalPosition === 'left' || originalPosition === 'right') return 'bottom';
+  
+  return originalPosition || 'bottom';
+};
+
 export class TourEngine {
   private tourInstance: any; // Shepherd.Tour type
   
@@ -29,15 +43,23 @@ export class TourEngine {
         classes: 'gira-tour-element',
         scrollTo: { behavior: 'smooth', block: 'center' },
         cancelIcon: { enabled: false },
+        modalOverlayOpeningPadding: 8,
+        modalOverlayOpeningRadius: 8,
       }
     });
 
     config.steps.forEach((step, index) => {
+      // Ajusta attachTo para mobile
+      const attachTo = step.attachTo ? {
+        element: step.attachTo.element,
+        on: getMobilePosition(step.attachTo.on),
+      } : undefined;
+
       this.tourInstance.addStep({
         id: step.id,
         title: step.title,
         text: step.text,
-        attachTo: step.attachTo,
+        attachTo: attachTo,
         highlightClass: step.highlightClass || 'gira-highlight',
         beforeShowPromise: step.beforeShow ? () => Promise.resolve(step.beforeShow!()) : undefined,
         buttons: [], // We use custom buttons in React component
