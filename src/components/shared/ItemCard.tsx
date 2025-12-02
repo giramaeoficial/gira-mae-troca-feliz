@@ -321,10 +321,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
  };
 
  return (
-   <Card className={cn(
-     "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full flex flex-col h-full",
-     itemIsReservado && "opacity-75"
-   )}>
+   <Card 
+     data-tour="item-card"
+     className={cn(
+       "group hover:shadow-lg transition-all duration-200 cursor-pointer relative overflow-hidden w-full flex flex-col h-full",
+       itemIsReservado && "opacity-75"
+     )}>
       <div className="absolute top-2 right-2 flex gap-2 z-10">
         {item.publicado_por !== currentUserId && (
           <DropdownMenu>
@@ -348,6 +350,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         
         {showActions && onToggleFavorito && (
           <Button
+            data-tour="btn-favorito"
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 bg-white/95 backdrop-blur-sm hover:bg-white/100"

@@ -180,11 +180,11 @@ const Header = () => {
             {/* -------------- LADO DIREITO -------------- */}
             <div className="hidden md:flex items-center space-x-4">
               {!shouldHideMenus && <SaldoHeader />}
-              {!shouldHideMenus && <NotificationBell />}
+              {!shouldHideMenus && <div data-tour="notifications"><NotificationBell /></div>}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <Button data-tour="header-menu" variant="ghost" size="sm" className="flex items-center space-x-2">
                     {profile?.avatar_url ? (
                       <img src={profile.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
                     ) : (
