@@ -26,6 +26,29 @@
   padding: 0 !important;
   overflow: hidden;
   font-family: inherit;
+  z-index: 10000 !important;
+}
+
+/* Mobile: tooltip menor e mais compacto */
+@media (max-width: 640px) {
+  .gira-tour-element {
+    max-width: calc(100vw - 32px) !important;
+    margin: 0 16px !important;
+  }
+  
+  /* Força posicionamento no topo ou bottom, nunca sobre o elemento */
+  .shepherd-element[data-popper-placement^="top"],
+  .shepherd-element[data-popper-placement^="bottom"] {
+    margin-top: 16px !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* Quando não há elemento anexado, centraliza na tela */
+  .shepherd-element:not([data-popper-reference-hidden]) {
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
 }
 
 /* Seta do tooltip */
@@ -72,4 +95,15 @@
 
 .shepherd-text {
   padding: 0 !important;
+}
+
+/* Garantir que o tooltip não cubra o elemento no mobile */
+.shepherd-element {
+  margin: 12px 0 !important;
+}
+
+@media (max-width: 640px) {
+  .shepherd-element {
+    margin: 20px 0 !important;
+  }
 }

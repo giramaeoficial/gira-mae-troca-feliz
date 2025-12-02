@@ -29,22 +29,22 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
   const isLast = currentStep === totalSteps;
 
   return (
-    <div className="bg-white p-6 rounded-2xl max-w-sm relative overflow-hidden">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl max-w-sm relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute top-0 left-0 w-full h-2 bg-pink-500" />
       
-      <div className="flex gap-4 items-start">
-        <div className="flex-shrink-0 -mt-2">
-          <GiraAvatar emotion={emotion} size="md" />
+      <div className="flex gap-3 sm:gap-4 items-start pt-2">
+        <div className="flex-shrink-0 -mt-1">
+          <GiraAvatar emotion={emotion} size="sm" />
         </div>
         
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-800 mb-1">{title}</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">{text}</p>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-1 leading-tight">{title}</h3>
+          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{text}</p>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-xs text-gray-400 font-medium">
+      <div className="mt-3 sm:mt-4 flex items-center justify-between text-xs text-gray-400 font-medium">
         <span>Passo {currentStep} de {totalSteps}</span>
         <div className="flex gap-1">
           {Array.from({ length: totalSteps }).map((_, i) => (
