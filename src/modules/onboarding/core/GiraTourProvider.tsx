@@ -6,10 +6,20 @@ import type { OnboardingState } from '../types';
 import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'giramae_completed_tours';
+const SKIPPED_KEY = 'giramae_skipped_tours';
 
 const getPersistedTours = (): string[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+const getSkippedTours = (): string[] => {
+  try {
+    const stored = localStorage.getItem(SKIPPED_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch {
     return [];
@@ -24,32 +34,50 @@ const persistTours = (completedTours: string[]) => {
   }
 };
 
-// Helper para concluir jornada no banco
-const concluirJornadaNoBanco = async (tourId: string) => {
+const persistSkippedTours = (skippedTours: string[]) => {
+  try {
+    localStorage.setItem(SKIPPED_KEY, JSON.stringify(skippedTours));
+  } catch (error) {
+    console.warn('Failed to persist skipped tours:', error);
+  }
+};
+
+// Helper para concluir jornada no banco e dar recompensa
+const concluirJornadaNoBanco = async (tourId: string): Promise<boolean> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return false;
 
     // Encontrar jornada correspondente ao tour
     const jornadaId = `tour-${tourId.replace('-tour', '')}`;
     
-    await supabase.rpc('concluir_jornada', {
+    const { data, error } = await supabase.rpc('concluir_jornada', {
       p_user_id: user.id,
       p_jornada_id: jornadaId,
     });
+
+    if (error) {
+      console.warn('Erro ao concluir jornada:', error);
+      return false;
+    }
+
+    const result = data as { sucesso?: boolean } | null;
+    return result?.sucesso || false;
   } catch (error) {
     console.warn('Erro ao concluir jornada:', error);
+    return false;
   }
 };
 
 export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<OnboardingState>({
     completedTours: getPersistedTours(),
+    skippedTours: getSkippedTours(),
     currentTourId: null,
     isTourActive: false,
   });
 
-  const startTour = useCallback((tourId: string) => {
+  const startTour = useCallback((tourId: string, isManual: boolean = false) => {
     const tourConfig = tours[tourId as TourId];
     if (!tourConfig) {
       console.warn(`Tour ${tourId} not found`);
@@ -62,37 +90,71 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return;
     }
 
+    // Não iniciar automaticamente se já foi completado
+    if (state.completedTours.includes(tourId)) {
+      console.warn(`Tour ${tourId} already completed`);
+      return;
+    }
+
+    // Se não é manual e foi pulado, não inicia automaticamente
+    if (!isManual && state.skippedTours.includes(tourId)) {
+      console.warn(`Tour ${tourId} was skipped, won't auto-start`);
+      return;
+    }
+
     setState(prev => ({ ...prev, currentTourId: tourId, isTourActive: true }));
 
     tourEngine.start(
       tourConfig,
       async () => {
-        // onComplete
-        console.log(`Tour ${tourId} finished`);
-        if (tourConfig.onComplete) tourConfig.onComplete('current-user-id');
+        // onComplete - tour finalizado com sucesso
+        console.log(`Tour ${tourId} finished successfully`);
         
         // Concluir jornada no banco e dar recompensa
         await concluirJornadaNoBanco(tourId);
         
         setState(prev => {
-          const newCompletedTours = [...prev.completedTours, tourId];
+          const newCompletedTours = prev.completedTours.includes(tourId) 
+            ? prev.completedTours 
+            : [...prev.completedTours, tourId];
+          
+          // Remover dos pulados se estava lá
+          const newSkippedTours = prev.skippedTours.filter(t => t !== tourId);
+          
           persistTours(newCompletedTours);
+          persistSkippedTours(newSkippedTours);
+          
           return {
             ...prev,
             isTourActive: false,
             currentTourId: null,
-            completedTours: newCompletedTours
+            completedTours: newCompletedTours,
+            skippedTours: newSkippedTours,
           };
         });
       },
       () => {
-        // onCancel
-        console.log(`Tour ${tourId} cancelled`);
-        if (tourConfig.onCancel) tourConfig.onCancel('current-user-id', 'unknown-step');
-        setState(prev => ({ ...prev, isTourActive: false, currentTourId: null }));
+        // onCancel - tour pulado/cancelado
+        console.log(`Tour ${tourId} cancelled/skipped`);
+        
+        setState(prev => {
+          // Adicionar aos pulados (não inicia automaticamente novamente)
+          const newSkippedTours = prev.skippedTours.includes(tourId)
+            ? prev.skippedTours
+            : [...prev.skippedTours, tourId];
+          
+          persistSkippedTours(newSkippedTours);
+          
+          return { 
+            ...prev, 
+            isTourActive: false, 
+            currentTourId: null,
+            skippedTours: newSkippedTours,
+          };
+        });
       }
     );
-  }, [state.isTourActive]);
+  }, [state.isTourActive, state.completedTours, state.skippedTours]);
 
   const stopTour = useCallback(() => {
     tourEngine.stop();
@@ -100,13 +162,13 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const checkTourEligibility = useCallback((tourId: string) => {
+    // Se já completou, não é elegível
+    if (state.completedTours.includes(tourId)) {
+      return false;
+    }
+    
     const tour = tours[tourId as TourId];
     if (!tour) return false;
-    
-    // Logic for 'first-visit'
-    if (tour.triggerCondition === 'first-visit' && state.completedTours.includes(tourId)) {
-      return tour.allowReplay || false;
-    }
     
     return true;
   }, [state.completedTours]);

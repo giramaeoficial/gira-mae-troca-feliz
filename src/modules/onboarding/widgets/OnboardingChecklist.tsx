@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useJornadas, JornadaComProgresso } from '@/hooks/useJornadas';
 import { useGiraTour } from '../core/useGiraTour';
 import { GiraAvatar } from '../components/GiraAvatar';
-import { ChevronDown, ChevronUp, Check, Gift, MapPin, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check, Gift, X, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const CATEGORIA_LABELS: Record<string, { label: string; icon: string }> = {
   tours: { label: 'Tours Guiados', icon: '🗺️' },
@@ -19,6 +19,7 @@ const CATEGORIA_LABELS: Record<string, { label: string; icon: string }> = {
 export const OnboardingChecklist: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['tours']);
+  const navigate = useNavigate();
   
   const { 
     jornadasPorCategoria, 
@@ -27,14 +28,16 @@ export const OnboardingChecklist: React.FC = () => {
     totalJornadas,
     jornadaAtiva,
     concluirJornada,
-    iniciarJornada,
     isPending,
   } = useJornadas();
   
-  const { startTour, checkTourEligibility } = useGiraTour();
+  const { startTour, state: tourState } = useGiraTour();
 
-  // Não mostrar se desabilitado ou sem jornadas
+  // Não mostrar se desabilitado, sem jornadas, ou 100% completo
   if (!jornadaAtiva || totalJornadas === 0) return null;
+  
+  // Esconder se todas as jornadas foram concluídas
+  if (jornadasConcluidas >= totalJornadas) return null;
 
   const toggleCategoria = (categoria: string) => {
     setExpandedCategories(prev => 
@@ -45,80 +48,122 @@ export const OnboardingChecklist: React.FC = () => {
   };
 
   const handleJornadaClick = (jornada: JornadaComProgresso) => {
-    // Se é um tour e ainda não foi concluído
-    if (jornada.tipo === 'tour' && jornada.tour_id && !jornada.concluida) {
-      if (checkTourEligibility(jornada.tour_id)) {
-        // Primeiro navegar, depois iniciar tour
-        iniciarJornada(jornada);
-        setTimeout(() => {
-          startTour(jornada.tour_id!);
-        }, 500);
-      }
-    } else if (!jornada.concluida) {
-      // Para ações, apenas navegar
-      iniciarJornada(jornada);
-    } else if (jornada.concluida && !jornada.recompensa_coletada) {
-      // Coletar recompensa pendente
+    // Se já coletou recompensa, não faz nada
+    if (jornada.recompensa_coletada) return;
+    
+    // Se pode coletar recompensa (concluída mas não coletada)
+    if (jornada.concluida && !jornada.recompensa_coletada) {
       concluirJornada(jornada.id);
+      return;
+    }
+    
+    // Se é um tour
+    if (jornada.tipo === 'tour' && jornada.tour_id) {
+      // Verificar se já foi completado
+      if (tourState.completedTours.includes(jornada.tour_id)) {
+        return; // Já completou, não pode refazer
+      }
+      
+      // Navegar primeiro, depois iniciar tour
+      if (jornada.rota_destino) {
+        navigate(jornada.rota_destino);
+      }
+      setIsOpen(false);
+      setTimeout(() => {
+        startTour(jornada.tour_id!);
+      }, 600);
+      return;
+    }
+    
+    // Para ações, apenas navegar
+    if (jornada.rota_destino) {
+      navigate(jornada.rota_destino);
+      setIsOpen(false);
     }
   };
 
   const categorias = Object.keys(jornadasPorCategoria);
 
   return (
-    <div 
-      className={cn(
-        "fixed bottom-20 right-4 z-40 transition-all duration-300 sm:bottom-4",
-        isOpen ? "w-80" : "w-auto"
+    <>
+      {/* Overlay quando aberto - mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/30 z-40 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
       )}
-    >
-      <div className="bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border overflow-hidden">
-        {/* Header - sempre visível */}
-        <button 
-          className="w-full bg-primary/90 p-3 flex items-center justify-between cursor-pointer hover:bg-primary transition-colors"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <div className="flex items-center gap-2">
-            <div className="bg-background rounded-full p-1.5 w-9 h-9 flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">{progressoPercentual}%</span>
-            </div>
-            <div className="text-left">
-              <span className="text-primary-foreground font-semibold text-sm block">
-                Sua Jornada
-              </span>
-              <span className="text-primary-foreground/70 text-xs">
-                {jornadasConcluidas}/{totalJornadas} completas
-              </span>
-            </div>
-          </div>
-          {isOpen ? (
-            <ChevronDown className="text-primary-foreground w-5 h-5" />
-          ) : (
-            <ChevronUp className="text-primary-foreground w-5 h-5" />
-          )}
-        </button>
 
-        {/* Conteúdo expandido */}
+      {/* Widget flutuante */}
+      <div 
+        className={cn(
+          "fixed z-50 transition-all duration-300",
+          // Mobile: bottom com espaço para nav, ocupa largura total quando aberto
+          isOpen 
+            ? "bottom-0 left-0 right-0 md:bottom-4 md:right-4 md:left-auto md:w-80"
+            : "bottom-20 right-4 md:bottom-4"
+        )}
+      >
+        {/* Botão FAB quando fechado */}
+        {!isOpen && (
+          <button
+            onClick={() => setIsOpen(true)}
+            className="bg-primary text-primary-foreground rounded-full p-3 shadow-lg hover:bg-primary/90 transition-all flex items-center gap-2"
+          >
+            <div className="relative">
+              <div className="w-8 h-8 bg-background rounded-full flex items-center justify-center">
+                <span className="text-xs font-bold text-primary">{progressoPercentual}%</span>
+              </div>
+              {/* Indicador de notificação */}
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />
+            </div>
+          </button>
+        )}
+
+        {/* Panel expandido */}
         {isOpen && (
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="bg-background rounded-t-2xl md:rounded-2xl shadow-xl border border-border overflow-hidden max-h-[80vh] md:max-h-[70vh] flex flex-col">
+            {/* Header */}
+            <div className="bg-primary p-4 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-background rounded-full p-1.5 w-10 h-10 flex items-center justify-center">
+                  <span className="text-sm font-bold text-primary">{progressoPercentual}%</span>
+                </div>
+                <div className="text-left">
+                  <span className="text-primary-foreground font-semibold block">
+                    Sua Jornada
+                  </span>
+                  <span className="text-primary-foreground/70 text-xs">
+                    {jornadasConcluidas}/{totalJornadas} completas
+                  </span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="text-primary-foreground/70 hover:text-primary-foreground p-2"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             {/* Banner motivacional */}
-            <div className="p-3 bg-primary/5 border-b border-border">
+            <div className="p-3 bg-primary/5 border-b border-border shrink-0">
               <div className="flex gap-3 items-center">
                 <div className="transform scale-75 origin-left -ml-2">
                   <GiraAvatar emotion="celebrating" size="sm" />
                 </div>
-                <p className="text-xs text-muted-foreground flex-1">
-                  Complete jornadas e ganhe <span className="text-primary font-semibold">Girinhas</span>! 🎉
+                <p className="text-sm text-muted-foreground flex-1">
+                  Complete as missões para ganhar <span className="text-primary font-semibold">Girinhas</span>!
                 </p>
               </div>
             </div>
 
-            {/* Lista de categorias */}
-            <div className="p-2">
+            {/* Lista de categorias - scrollable */}
+            <div className="flex-1 overflow-y-auto p-3">
               {categorias.map(categoria => {
                 const jornadas = jornadasPorCategoria[categoria];
                 const isExpanded = expandedCategories.includes(categoria);
-                const concluidas = jornadas.filter(j => j.concluida).length;
+                const concluidas = jornadas.filter(j => j.recompensa_coletada).length;
                 const catInfo = CATEGORIA_LABELS[categoria] || CATEGORIA_LABELS.geral;
 
                 return (
@@ -144,7 +189,7 @@ export const OnboardingChecklist: React.FC = () => {
                       )}
                     </button>
 
-                    {/* Lista de jornadas da categoria */}
+                    {/* Lista de jornadas */}
                     {isExpanded && (
                       <div className="ml-2 mt-1 space-y-1">
                         {jornadas.map(jornada => (
@@ -153,6 +198,8 @@ export const OnboardingChecklist: React.FC = () => {
                             jornada={jornada}
                             onClick={() => handleJornadaClick(jornada)}
                             isPending={isPending}
+                            isSkipped={jornada.tour_id ? tourState.skippedTours?.includes(jornada.tour_id) : false}
+                            isCompleted={jornada.tour_id ? tourState.completedTours.includes(jornada.tour_id) : false}
                           />
                         ))}
                       </div>
@@ -162,15 +209,11 @@ export const OnboardingChecklist: React.FC = () => {
               })}
             </div>
 
-            {/* Progresso total */}
-            <div className="p-3 border-t border-border bg-muted/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-xs font-medium text-foreground">Progresso Total</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
+            {/* Barra de progresso - footer fixo */}
+            <div className="p-3 border-t border-border bg-muted/30 shrink-0">
+              <div className="w-full bg-muted rounded-full h-2.5">
                 <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-primary to-pink-400 h-2.5 rounded-full transition-all duration-500"
                   style={{ width: `${progressoPercentual}%` }}
                 />
               </div>
@@ -178,7 +221,7 @@ export const OnboardingChecklist: React.FC = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 
@@ -186,63 +229,86 @@ interface JornadaItemProps {
   jornada: JornadaComProgresso;
   onClick: () => void;
   isPending: boolean;
+  isSkipped: boolean;
+  isCompleted: boolean;
 }
 
-const JornadaItem: React.FC<JornadaItemProps> = ({ jornada, onClick, isPending }) => {
+const JornadaItem: React.FC<JornadaItemProps> = ({ 
+  jornada, 
+  onClick, 
+  isPending, 
+  isSkipped,
+  isCompleted 
+}) => {
   const canCollect = jornada.concluida && !jornada.recompensa_coletada;
+  const isDone = jornada.recompensa_coletada;
+  
+  // Se é tour e foi pulado, mostrar botão de iniciar manualmente
+  const showPlayButton = jornada.tipo === 'tour' && isSkipped && !isDone && !isCompleted;
   
   return (
     <button
       className={cn(
-        "w-full flex items-center gap-3 p-2 rounded-lg transition-all text-left",
-        jornada.recompensa_coletada 
+        "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left",
+        isDone 
           ? "bg-primary/5 opacity-60" 
           : canCollect
-            ? "bg-primary/10 hover:bg-primary/20 animate-pulse"
-            : "hover:bg-accent/50"
+            ? "bg-gradient-to-r from-primary/10 to-pink-500/10 animate-pulse"
+            : showPlayButton
+              ? "bg-yellow-500/10 hover:bg-yellow-500/20"
+              : "hover:bg-accent/50"
       )}
       onClick={onClick}
-      disabled={jornada.recompensa_coletada || isPending}
+      disabled={isDone || isPending}
     >
       {/* Status icon */}
       <div className={cn(
-        "w-6 h-6 rounded-full flex items-center justify-center shrink-0",
-        jornada.recompensa_coletada 
+        "w-7 h-7 rounded-full flex items-center justify-center shrink-0",
+        isDone 
           ? "bg-primary text-primary-foreground" 
           : canCollect
             ? "bg-primary/20 text-primary"
-            : "border-2 border-muted-foreground/30"
+            : showPlayButton
+              ? "bg-yellow-500/20 text-yellow-600"
+              : "border-2 border-muted-foreground/30"
       )}>
-        {jornada.recompensa_coletada ? (
-          <Check className="w-3.5 h-3.5" />
+        {isDone ? (
+          <Check className="w-4 h-4" />
         ) : canCollect ? (
-          <Gift className="w-3.5 h-3.5" />
+          <Gift className="w-4 h-4" />
+        ) : showPlayButton ? (
+          <Play className="w-4 h-4" />
         ) : (
-          <span className="text-xs">{jornada.icone}</span>
+          <span className="text-sm">{jornada.icone}</span>
         )}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <span className={cn(
-          "text-sm block truncate",
-          jornada.recompensa_coletada 
+          "text-sm block truncate font-medium",
+          isDone 
             ? "text-muted-foreground line-through" 
             : "text-foreground"
         )}>
           {jornada.titulo}
         </span>
         {canCollect && (
-          <span className="text-xs text-primary font-medium">
-            Clique para coletar +{jornada.recompensa_girinhas}G$
+          <span className="text-xs text-primary font-semibold">
+            Toque para coletar +{jornada.recompensa_girinhas}G$
+          </span>
+        )}
+        {showPlayButton && (
+          <span className="text-xs text-yellow-600">
+            Toque para iniciar tour
           </span>
         )}
       </div>
 
       {/* Reward badge */}
-      {!jornada.recompensa_coletada && (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-          <span>+{jornada.recompensa_girinhas}</span>
+      {!isDone && (
+        <div className="flex items-center gap-1 text-xs shrink-0 bg-primary/10 px-2 py-1 rounded-full">
+          <span className="font-semibold text-primary">+{jornada.recompensa_girinhas}</span>
           <span className="text-primary">G$</span>
         </div>
       )}
