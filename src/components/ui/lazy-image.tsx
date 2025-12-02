@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { getImageUrl, ImageSize } from '@/utils/supabaseStorage';
@@ -12,7 +11,7 @@ interface LazyImageProps {
   skeletonClassName?: string;
   onLoad?: () => void;
   onError?: () => void;
-  placeholder?: string;
+  placeholder?: string; // Esta prop não será mais muito usada, mas mantive pela interface
   transform?: {
     width?: number;
     height?: number;
@@ -30,7 +29,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
   skeletonClassName,
   onLoad,
   onError,
-  placeholder = "📷",
+  // placeholder = "📷", // Removido pois não usaremos mais o emoji
   transform
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -66,12 +65,9 @@ const LazyImage: React.FC<LazyImageProps> = ({
 
   // Processar URL da imagem
   const getProcessedImageUrl = () => {
-    // Se for uma URL completa (HTTP ou blob), usar diretamente
     if (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:')) {
       return src;
     }
-    
-    // Se for um caminho relativo do Supabase, processar com bucket
     return getImageUrl(bucket, src, size, transform);
   };
 
@@ -88,7 +84,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
     onError?.();
   };
 
-  // Se deu erro, mostrar fallback
+  // Se deu erro, mostrar fallback (Mantive o original, mas você pode querer mudar o ícone aqui também)
   if (hasError) {
     return (
       <div 
@@ -99,8 +95,8 @@ const LazyImage: React.FC<LazyImageProps> = ({
         )}
       >
         <div className="text-center">
-          <span className="text-4xl mb-2 block">📷</span>
-          <span className="text-sm">Imagem não encontrada</span>
+          <span className="text-4xl mb-2 block">⚠️</span>
+          <span className="text-sm">Erro na imagem</span>
         </div>
       </div>
     );
@@ -108,42 +104,42 @@ const LazyImage: React.FC<LazyImageProps> = ({
 
   return (
     <div ref={containerRef} className={cn('relative overflow-hidden', className)}>
-      {/* Skeleton loading - só mostra se não carregou ainda */}
-      {!isLoaded && isInView && (
+      
+      {/* --- MUDANÇA AQUI ---
+         Spinner de Carregamento (Logotipo Girando).
+         Mostra sempre que a imagem final ainda não terminou de carregar (!isLoaded).
+         Isso substitui tanto o "Skeleton loading" quanto o "Placeholder inicial".
+      */}
+      {!isLoaded && (
         <div 
           className={cn(
-            'absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center',
+            // Usei um fundo cinza bem claro para destacar o logo.
+            // Removi o 'animate-pulse' do fundo, pois o logo já estará animado.
+            'absolute inset-0 bg-gray-50 flex items-center justify-center',
             skeletonClassName
           )}
         >
-          <div className="text-gray-400 text-sm">
-            {placeholder}
-          </div>
+          {/* O Logotipo Giratório */}
+          <img 
+            src="/giramae_logo.png"
+            alt="Carregando..."
+            // animate-spin: faz girar
+            // w-12 h-12: define um tamanho fixo para o spinner (ajuste conforme necessário)
+            // opacity-60: deixa um pouco translúcido para não ficar muito agressivo
+            className="animate-spin w-12 h-12 object-contain opacity-60"
+          />
         </div>
       )}
 
-      {/* Placeholder inicial antes de entrar em view */}
-      {!isInView && (
-        <div 
-          className={cn(
-            'absolute inset-0 bg-gray-100 flex items-center justify-center',
-            skeletonClassName
-          )}
-        >
-          <div className="text-gray-400 text-2xl">
-            📷
-          </div>
-        </div>
-      )}
-
-      {/* Imagem real - só renderiza se estiver em view */}
+      {/* Imagem real - só renderiza se estiver em view (para economizar banda) */}
       {isInView && (
         <img
           ref={imgRef}
           src={imageUrl}
           alt={alt}
           className={cn(
-            'transition-opacity duration-300 w-full h-full object-cover',
+            // A transição de opacidade fará o spinner desaparecer suavemente quando a imagem aparecer
+            'transition-opacity duration-500 w-full h-full object-cover absolute inset-0',
             isLoaded ? 'opacity-100' : 'opacity-0'
           )}
           onLoad={handleLoad}
