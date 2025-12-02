@@ -8,15 +8,21 @@ interface TriggerOptions {
 }
 
 export const useTourTrigger = (tourId: string, options: TriggerOptions) => {
-  const { startTour, checkTourEligibility } = useGiraTour();
+  const { startTour, checkTourEligibility, state } = useGiraTour();
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
+    // Não disparar se já tem tour ativo
+    if (state.isTourActive) return;
+
     if (options.condition === 'first-visit') {
       if (checkTourEligibility(tourId)) {
         timeoutId = setTimeout(() => {
-          startTour(tourId);
+          // Verificar novamente antes de iniciar (pode ter mudado)
+          if (!state.isTourActive) {
+            startTour(tourId);
+          }
         }, options.delay || 0);
       }
     }
@@ -24,5 +30,5 @@ export const useTourTrigger = (tourId: string, options: TriggerOptions) => {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [tourId, options.condition, options.delay, startTour, checkTourEligibility]);
+  }, [tourId, options.condition, options.delay, startTour, checkTourEligibility, state.isTourActive]);
 };
