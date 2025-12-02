@@ -26,6 +26,7 @@ import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { analytics } from '@/lib/analytics';
 import SEOHead from '@/components/seo/SEOHead';
 import { pageTitle } from '@/lib/pageTitle';
+import { useTourTrigger } from '@/modules/onboarding';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
@@ -36,6 +37,12 @@ const FeedOptimized = () => {
   useEffect(() => {
     analytics.feed.view();
   }, []);
+
+  // ✅ TOUR: Dispara automaticamente na primeira visita
+  useTourTrigger('feed-tour', { 
+    condition: 'first-visit',
+    delay: 1500 
+  });
   
   // ✅ Estados de filtros (incluindo novo filtro de logística)
   const [busca, setBusca] = useState('');
