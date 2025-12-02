@@ -24,34 +24,34 @@
   border: none !important;
   max-width: 380px !important;
   padding: 0 !important;
-  overflow: hidden;
+  overflow: visible !important;
   font-family: inherit;
   z-index: 10000 !important;
 }
 
-/* Mobile: tooltip menor e mais compacto */
+/* Garantir tooltip sempre visível na viewport */
+.shepherd-element {
+  max-height: calc(100vh - 40px) !important;
+  max-width: calc(100vw - 32px) !important;
+}
+
+/* Mobile: centraliza tooltip e garante visibilidade */
 @media (max-width: 640px) {
   .gira-tour-element {
     max-width: calc(100vw - 32px) !important;
-    margin: 0 16px !important;
   }
   
-  /* Força posicionamento no topo ou bottom, nunca sobre o elemento */
-  .shepherd-element[data-popper-placement^="top"],
-  .shepherd-element[data-popper-placement^="bottom"] {
-    margin-top: 16px !important;
-    margin-bottom: 16px !important;
-  }
-  
-  /* Quando não há elemento anexado, centraliza na tela */
-  .shepherd-element:not([data-popper-reference-hidden]) {
+  /* Tooltip no centro da tela quando sem elemento ou fora de vista */
+  .shepherd-element {
     position: fixed !important;
+    top: 50% !important;
     left: 50% !important;
-    transform: translateX(-50%) !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
   }
 }
 
-/* Seta do tooltip */
+/* Seta do tooltip - esconder no mobile já que o tooltip é centralizado */
 .gira-tour-element .shepherd-arrow {
   border-color: white !important;
 }
@@ -59,6 +59,12 @@
 .gira-tour-element .shepherd-arrow::before {
   background: white !important;
   border: 2px solid rgba(236, 72, 153, 0.3);
+}
+
+@media (max-width: 640px) {
+  .gira-tour-element .shepherd-arrow {
+    display: none !important;
+  }
 }
 
 /* Elemento destacado - classe adicionada pelo Shepherd */
@@ -95,15 +101,4 @@
 
 .shepherd-text {
   padding: 0 !important;
-}
-
-/* Garantir que o tooltip não cubra o elemento no mobile */
-.shepherd-element {
-  margin: 12px 0 !important;
-}
-
-@media (max-width: 640px) {
-  .shepherd-element {
-    margin: 20px 0 !important;
-  }
 }
