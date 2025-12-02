@@ -109,7 +109,7 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
   return (
     <div 
       ref={containerRef}
-      className="bg-white p-4 sm:p-6 rounded-2xl max-w-sm relative overflow-hidden select-none"
+      className="bg-white/90 backdrop-blur-sm p-4 sm:p-6 rounded-2xl max-w-sm relative overflow-hidden select-none shadow-xl"
       style={{ 
         transform: `translate(${offset.x}px, ${offset.y}px)`,
         transition: isDragging ? 'none' : 'transform 0.2s ease-out',
@@ -117,7 +117,7 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
     >
       {/* Drag handle */}
       <div 
-        className="absolute top-0 left-0 w-full h-8 bg-pink-500 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+        className="absolute top-0 left-0 w-full h-8 bg-pink-500/90 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none rounded-t-2xl"
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
