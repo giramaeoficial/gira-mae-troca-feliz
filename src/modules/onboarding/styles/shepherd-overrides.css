@@ -16,11 +16,9 @@
 
 /* Container do tooltip - sobrescreve Shepherd */
 .gira-tour-element {
-  background: white !important;
+  background: transparent !important;
   border-radius: 20px !important;
-  box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 3px rgba(236, 72, 153, 0.3) !important;
+  box-shadow: none !important;
   border: none !important;
   max-width: 380px !important;
   padding: 0 !important;
@@ -35,19 +33,10 @@
   max-width: calc(100vw - 32px) !important;
 }
 
-/* Mobile: centraliza tooltip e garante visibilidade */
+/* Mobile: ajusta posicionamento mas mantém próximo ao elemento */
 @media (max-width: 640px) {
   .gira-tour-element {
-    max-width: calc(100vw - 32px) !important;
-  }
-  
-  /* Tooltip no centro da tela quando sem elemento ou fora de vista */
-  .shepherd-element {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    margin: 0 !important;
+    max-width: calc(100vw - 24px) !important;
   }
 }
 
