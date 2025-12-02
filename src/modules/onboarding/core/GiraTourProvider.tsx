@@ -1,12 +1,31 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { GiraTourContext } from './GiraTourContext';
 import { tourEngine } from './tourEngine';
 import { tours, TourId } from '../tours';
 import type { OnboardingState } from '../types';
 
+const STORAGE_KEY = 'giramae_completed_tours';
+
+const getPersistedTours = (): string[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+const persistTours = (completedTours: string[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(completedTours));
+  } catch (error) {
+    console.warn('Failed to persist completed tours:', error);
+  }
+};
+
 export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<OnboardingState>({
-    completedTours: [], // Should come from persistence (Supabase)
+    completedTours: getPersistedTours(),
     currentTourId: null,
     isTourActive: false,
   });
@@ -18,6 +37,12 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return;
     }
 
+    // Não iniciar se já tem tour ativo
+    if (state.isTourActive) {
+      console.warn(`Tour already active, skipping ${tourId}`);
+      return;
+    }
+
     setState(prev => ({ ...prev, currentTourId: tourId, isTourActive: true }));
 
     tourEngine.start(
@@ -26,12 +51,16 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // onComplete
         console.log(`Tour ${tourId} finished`);
         if (tourConfig.onComplete) tourConfig.onComplete('current-user-id');
-        setState(prev => ({
-          ...prev,
-          isTourActive: false,
-          currentTourId: null,
-          completedTours: [...prev.completedTours, tourId]
-        }));
+        setState(prev => {
+          const newCompletedTours = [...prev.completedTours, tourId];
+          persistTours(newCompletedTours);
+          return {
+            ...prev,
+            isTourActive: false,
+            currentTourId: null,
+            completedTours: newCompletedTours
+          };
+        });
       },
       () => {
         // onCancel
@@ -40,10 +69,11 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setState(prev => ({ ...prev, isTourActive: false, currentTourId: null }));
       }
     );
-  }, []);
+  }, [state.isTourActive]);
 
   const stopTour = useCallback(() => {
     tourEngine.stop();
+    setState(prev => ({ ...prev, isTourActive: false, currentTourId: null }));
   }, []);
 
   const checkTourEligibility = useCallback((tourId: string) => {

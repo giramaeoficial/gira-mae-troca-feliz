@@ -11,11 +11,18 @@ import FilaEsperaCard from "@/components/reservas/FilaEsperaCard";
 import ModalItemDetalhes from "@/components/reservas/ModalItemDetalhes";
 import { useAuth } from "@/hooks/useAuth";
 import UniversalCard from "@/components/ui/universal-card";
+import { useTourTrigger } from '@/modules/onboarding';
 
 const MinhasReservas = () => {
   const { user } = useAuth();
   const { reservas, filasEspera, loading, confirmarEntrega, cancelarReserva, sairDaFila, refetch } = useReservas();
   
+  // ✅ TOUR: Dispara automaticamente na primeira visita
+  useTourTrigger('reservas-tour', { 
+    condition: 'first-visit',
+    delay: 1000 
+  });
+
   // ✅ NOVOS ESTADOS PARA FILTRO, MODAL E BUSCA POR CÓDIGO
   const [filtroStatus, setFiltroStatus] = useState<string>('todas');
   const [modalItemAberto, setModalItemAberto] = useState(false);
@@ -149,7 +156,7 @@ const MinhasReservas = () => {
         </div>
 
         {/* ✅ BUSCA POR CÓDIGO - SEMPRE VISÍVEL */}
-        <div className="mb-6 space-y-2">
+        <div data-tour="busca-codigo" className="mb-6 space-y-2">
           <div className="relative">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
               <span className="text-sm font-mono text-gray-500">GRM-</span>
@@ -184,7 +191,7 @@ const MinhasReservas = () => {
         </div>
 
         {/* ✅ ESTATÍSTICAS COM FILTRO CLICÁVEL */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div data-tour="reservas-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {stats.map((stat) => (
             <Card
               key={stat.filtro}
