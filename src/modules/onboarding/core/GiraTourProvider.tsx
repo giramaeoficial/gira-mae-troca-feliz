@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { GiraTourContext } from './GiraTourContext';
 import { tourEngine } from './tourEngine';
 import { tours, TourId } from '../tours';
 import type { OnboardingState } from '../types';
+import { supabase } from '@/integrations/supabase/client';
 
 const STORAGE_KEY = 'giramae_completed_tours';
 
@@ -20,6 +21,24 @@ const persistTours = (completedTours: string[]) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(completedTours));
   } catch (error) {
     console.warn('Failed to persist completed tours:', error);
+  }
+};
+
+// Helper para concluir jornada no banco
+const concluirJornadaNoBanco = async (tourId: string) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Encontrar jornada correspondente ao tour
+    const jornadaId = `tour-${tourId.replace('-tour', '')}`;
+    
+    await supabase.rpc('concluir_jornada', {
+      p_user_id: user.id,
+      p_jornada_id: jornadaId,
+    });
+  } catch (error) {
+    console.warn('Erro ao concluir jornada:', error);
   }
 };
 
@@ -47,10 +66,14 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     tourEngine.start(
       tourConfig,
-      () => {
+      async () => {
         // onComplete
         console.log(`Tour ${tourId} finished`);
         if (tourConfig.onComplete) tourConfig.onComplete('current-user-id');
+        
+        // Concluir jornada no banco e dar recompensa
+        await concluirJornadaNoBanco(tourId);
+        
         setState(prev => {
           const newCompletedTours = [...prev.completedTours, tourId];
           persistTours(newCompletedTours);

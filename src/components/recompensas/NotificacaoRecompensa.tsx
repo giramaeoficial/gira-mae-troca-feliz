@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Trophy, Gift, Star } from "lucide-react";
 
 interface Recompensa {
-  tipo: 'troca' | 'meta' | 'avaliacao' | 'indicacao' | 'cadastro';
+  tipo: 'troca' | 'meta' | 'avaliacao' | 'indicacao' | 'cadastro' | 'jornada';
   valor: number;
   descricao: string;
   meta?: string;
@@ -50,6 +50,8 @@ const NotificacaoRecompensa = ({ recompensa, onClose }: NotificacaoRecompensaPro
         return <Sparkles className="h-16 w-16 text-purple-500 animate-bounce" />;
       case 'cadastro':
         return <Gift className="h-16 w-16 text-pink-500 animate-pulse" />;
+      case 'jornada':
+        return <Trophy className="h-16 w-16 text-pink-500 animate-bounce" />;
       default:
         return <Sparkles className="h-16 w-16 text-primary animate-bounce" />;
     }
@@ -67,6 +69,8 @@ const NotificacaoRecompensa = ({ recompensa, onClose }: NotificacaoRecompensaPro
         return '👥 Embaixadora GiraMãe!';
       case 'cadastro':
         return '🎁 Bem-vinda à Família!';
+      case 'jornada':
+        return `${recompensa.meta || '🗺️'} Jornada Concluída!`;
       default:
         return '✨ Parabéns!';
     }
@@ -84,6 +88,8 @@ const NotificacaoRecompensa = ({ recompensa, onClose }: NotificacaoRecompensaPro
         return 'from-purple-200 via-purple-100 to-violet-50 border-purple-300';
       case 'cadastro':
         return 'from-pink-200 via-pink-100 to-rose-50 border-pink-300';
+      case 'jornada':
+        return 'from-pink-200 via-rose-100 to-fuchsia-50 border-pink-300';
       default:
         return 'from-gray-200 via-gray-100 to-slate-50 border-gray-300';
     }
@@ -101,6 +107,8 @@ const NotificacaoRecompensa = ({ recompensa, onClose }: NotificacaoRecompensaPro
         return 'Você está construindo uma rede de apoio incrível! Cada nova mãe fortalece nossa comunidade.';
       case 'cadastro':
         return 'Você faz parte de algo especial agora. Juntas, criamos um mundo melhor para nossos filhos!';
+      case 'jornada':
+        return 'Você está explorando cada cantinho do GiraMãe! Continue sua jornada de descobertas.';
       default:
         return 'Continue sendo essa pessoa incrível!';
     }

@@ -1270,6 +1270,92 @@ export type Database = {
           },
         ]
       }
+      jornadas_definicoes: {
+        Row: {
+          acao_validacao: string | null
+          ativo: boolean | null
+          categoria: string | null
+          created_at: string | null
+          descricao: string
+          icone: string | null
+          id: string
+          ordem: number | null
+          recompensa_girinhas: number | null
+          rota_destino: string | null
+          tipo: string | null
+          titulo: string
+          tour_id: string | null
+        }
+        Insert: {
+          acao_validacao?: string | null
+          ativo?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          descricao: string
+          icone?: string | null
+          id: string
+          ordem?: number | null
+          recompensa_girinhas?: number | null
+          rota_destino?: string | null
+          tipo?: string | null
+          titulo: string
+          tour_id?: string | null
+        }
+        Update: {
+          acao_validacao?: string | null
+          ativo?: boolean | null
+          categoria?: string | null
+          created_at?: string | null
+          descricao?: string
+          icone?: string | null
+          id?: string
+          ordem?: number | null
+          recompensa_girinhas?: number | null
+          rota_destino?: string | null
+          tipo?: string | null
+          titulo?: string
+          tour_id?: string | null
+        }
+        Relationships: []
+      }
+      jornadas_progresso: {
+        Row: {
+          concluida: boolean | null
+          created_at: string | null
+          data_conclusao: string | null
+          id: string
+          jornada_id: string
+          recompensa_coletada: boolean | null
+          user_id: string
+        }
+        Insert: {
+          concluida?: boolean | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          id?: string
+          jornada_id: string
+          recompensa_coletada?: boolean | null
+          user_id: string
+        }
+        Update: {
+          concluida?: boolean | null
+          created_at?: string | null
+          data_conclusao?: string | null
+          id?: string
+          jornada_id?: string
+          recompensa_coletada?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jornadas_progresso_jornada_id_fkey"
+            columns: ["jornada_id"]
+            isOneToOne: false
+            referencedRelation: "jornadas_definicoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ledger_functions_count: {
         Row: {
           count: number | null
@@ -2173,6 +2259,7 @@ export type Database = {
           id: string
           instagram: string | null
           interesses: string[] | null
+          jornada_ativa: boolean | null
           latitude: number | null
           longitude: number | null
           nome: string | null
@@ -2218,6 +2305,7 @@ export type Database = {
           id: string
           instagram?: string | null
           interesses?: string[] | null
+          jornada_ativa?: boolean | null
           latitude?: number | null
           longitude?: number | null
           nome?: string | null
@@ -2263,6 +2351,7 @@ export type Database = {
           id?: string
           instagram?: string | null
           interesses?: string[] | null
+          jornada_ativa?: boolean | null
           latitude?: number | null
           longitude?: number | null
           nome?: string | null
@@ -3612,6 +3701,10 @@ export type Database = {
         Args: { p_missao_id: string; p_user_id: string }
         Returns: Json
       }
+      concluir_jornada: {
+        Args: { p_jornada_id: string; p_user_id: string }
+        Returns: Json
+      }
       configurar_cron_parcerias_sociais: { Args: never; Returns: string }
       create_notification: {
         Args: {
@@ -3817,6 +3910,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      marcar_progresso_jornada: {
+        Args: { p_jornada_id: string; p_user_id: string }
+        Returns: boolean
       }
       mostrar_config_admin: {
         Args: never
