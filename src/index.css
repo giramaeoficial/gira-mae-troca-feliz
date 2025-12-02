@@ -1,3 +1,5 @@
+@import 'shepherd.js/dist/css/shepherd.css';
+@import './modules/onboarding/styles/index.css';
 
 @tailwind base;
 @tailwind components;

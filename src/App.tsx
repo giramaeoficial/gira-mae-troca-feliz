@@ -90,6 +90,7 @@ import NotFound from '@/pages/NotFound';
 
 // Providers
 import { RecompensasProvider } from '@/components/recompensas/ProviderRecompensas';
+import { GiraTourProvider } from '@/modules/onboarding';
 
 // ============================================================================
 // QUERY CLIENT CONFIGURATION
@@ -131,9 +132,10 @@ function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <Toaster />
-        <SonnerToaster />
-        <BrowserRouter>
+        <GiraTourProvider>
+          <Toaster />
+          <SonnerToaster />
+          <BrowserRouter>
           <AnalyticsWrapper>
             <Routes>
               {/* ================================================ */}
@@ -530,6 +532,7 @@ function App() {
             </Routes>
           </AnalyticsWrapper>
         </BrowserRouter>
+        </GiraTourProvider>
       </QueryClientProvider>
     </HelmetProvider>
   );
