@@ -7,6 +7,8 @@ import { useParceriasSociais, Organizacao, Programa } from '@/hooks/parcerias/us
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import SEOHead from '@/components/seo/SEOHead';
+import Header from '@/components/shared/Header';
+import Footer from '@/components/shared/Footer';
 
 const getIcon = (iconName: string) => {
   switch (iconName) {
@@ -37,8 +39,10 @@ export default function ParceriasSociais() {
         description="Comprove sua participação em programas sociais e receba benefícios em Girinhas"
         keywords="parcerias sociais, programas sociais, cadastro único, benefícios, girinhas"
       />
+      <Header />
       
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <main className="min-h-screen pt-16">
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
@@ -93,7 +97,10 @@ export default function ParceriasSociais() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </main>
+      
+      <Footer />
     </>
   );
 }
