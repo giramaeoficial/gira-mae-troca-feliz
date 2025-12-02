@@ -19,6 +19,7 @@ const SaldoHeader: React.FC = () => {
   return (
     <Link 
       to="/carteira" 
+      data-tour="wallet-button"
       className="flex justify-center items-center gap-2 px-5 ml-5 py-1.5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-full transition-all  group"
       title="Ver Carteira Completa"
     >
