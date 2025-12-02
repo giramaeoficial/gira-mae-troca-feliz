@@ -38,12 +38,13 @@ export interface TourConfig {
 
 export interface OnboardingState {
   completedTours: string[];
+  skippedTours?: string[];
   currentTourId: string | null;
   isTourActive: boolean;
 }
 
 export interface GiraTourContextType {
-  startTour: (tourId: string) => void;
+  startTour: (tourId: string, isManual?: boolean) => void;
   stopTour: () => void;
   state: OnboardingState;
   checkTourEligibility: (tourId: string) => boolean;
