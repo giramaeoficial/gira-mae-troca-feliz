@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Bell, User, Shield, TestTube, Building2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Settings, Bell, User, Shield, TestTube, Building2, Map } from 'lucide-react';
 import { NotificationPreferences } from '@/components/notifications/NotificationPreferences';
 import { OneSignalSettings } from '@/components/notifications/OneSignalSettings';
 import { useNotificationSystem } from '@/hooks/useNotificationSystem';
+import { useJornadas } from '@/hooks/useJornadas';
 import { toast } from 'sonner';
 import Header from '@/components/shared/Header';
 import QuickNav from '@/components/shared/QuickNav';
@@ -22,6 +24,7 @@ const Configuracoes: React.FC = () => {
   const { profile, loading } = useProfile();
   const { sendTestNotification } = useNotificationSystem();
   const { organizacoes, loading: loadingParcerias } = useParceriasSociais();
+  const { jornadaAtiva, toggleJornadaAtiva, progressoPercentual, jornadasConcluidas, totalJornadas } = useJornadas();
   const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.replace('#', '');
     return hash || 'perfil';
@@ -134,6 +137,45 @@ const Configuracoes: React.FC = () => {
                       Editar Perfil
                     </Button>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Card de Jornadas */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Map className="w-5 h-5" />
+                    Jornada de Descobertas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Mostrar checklist de jornadas</p>
+                      <p className="text-sm text-muted-foreground">
+                        Complete tarefas e ganhe Girinhas
+                      </p>
+                    </div>
+                    <Switch 
+                      checked={jornadaAtiva} 
+                      onCheckedChange={toggleJornadaAtiva}
+                    />
+                  </div>
+                  
+                  {jornadaAtiva && totalJornadas > 0 && (
+                    <div className="pt-4 border-t space-y-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Progresso</span>
+                        <span className="font-medium">{jornadasConcluidas}/{totalJornadas} ({progressoPercentual}%)</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${progressoPercentual}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

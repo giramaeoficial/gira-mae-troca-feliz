@@ -3,7 +3,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 import NotificacaoRecompensa from './NotificacaoRecompensa';
 
 interface Recompensa {
-  tipo: 'troca' | 'meta' | 'avaliacao' | 'indicacao' | 'cadastro';
+  tipo: 'troca' | 'meta' | 'avaliacao' | 'indicacao' | 'cadastro' | 'jornada';
   valor: number;
   descricao: string;
   meta?: string;
