@@ -93,6 +93,15 @@ import { RecompensasProvider } from '@/components/recompensas/ProviderRecompensa
 import { GiraTourProvider, OnboardingChecklist } from '@/modules/onboarding';
 
 // ============================================================================
+// ONBOARDING CHECKLIST COM RECOMPENSAS
+// ============================================================================
+const OnboardingChecklistWithRecompensas: React.FC = () => (
+  <RecompensasProvider>
+    <OnboardingChecklist />
+  </RecompensasProvider>
+);
+
+// ============================================================================
 // QUERY CLIENT CONFIGURATION
 // ============================================================================
 const queryClient = new QueryClient({
@@ -133,7 +142,7 @@ function App() {
           <BrowserRouter>
             <AnalyticsWrapper>
               {/* Menu flutuante de jornadas */}
-              <OnboardingChecklist />
+              <OnboardingChecklistWithRecompensas />
               
               <Routes>
                 {/* ================================================ */}
