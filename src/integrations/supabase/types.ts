@@ -1282,6 +1282,7 @@ export type Database = {
           ordem: number | null
           recompensa_girinhas: number | null
           rota_destino: string | null
+          steps: Json | null
           tipo: string | null
           titulo: string
           tour_id: string | null
@@ -1297,6 +1298,7 @@ export type Database = {
           ordem?: number | null
           recompensa_girinhas?: number | null
           rota_destino?: string | null
+          steps?: Json | null
           tipo?: string | null
           titulo: string
           tour_id?: string | null
@@ -1312,6 +1314,7 @@ export type Database = {
           ordem?: number | null
           recompensa_girinhas?: number | null
           rota_destino?: string | null
+          steps?: Json | null
           tipo?: string | null
           titulo?: string
           tour_id?: string | null

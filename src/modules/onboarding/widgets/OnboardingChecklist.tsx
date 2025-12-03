@@ -70,8 +70,7 @@ export const OnboardingChecklist: React.FC = () => {
   const handleJornadaClick = (jornada: JornadaComProgresso) => {
     console.log('[OnboardingChecklist] Clique na jornada:', {
       id: jornada.id,
-      tipo: jornada.tipo,
-      tour_id: jornada.tour_id,
+      hasSteps: !!(jornada.steps && jornada.steps.length > 0),
       rota_destino: jornada.rota_destino,
       concluida: jornada.concluida,
       recompensa_coletada: jornada.recompensa_coletada,
@@ -90,12 +89,14 @@ export const OnboardingChecklist: React.FC = () => {
       return;
     }
     
-    // Se é um tour
-    if (jornada.tipo === 'tour' && jornada.tour_id) {
-      console.log('[OnboardingChecklist] É um tour:', jornada.tour_id);
+    // Se tem steps (é um tour guiado)
+    const hasSteps = jornada.steps && jornada.steps.length > 0;
+    
+    if (hasSteps) {
+      console.log('[OnboardingChecklist] É um tour com steps:', jornada.id);
       
-      // Verificar se já foi completado
-      if (tourState.completedTours.includes(jornada.tour_id)) {
+      // Verificar se já foi completado (usando jornada.id como tour_id)
+      if (tourState.completedTours.includes(jornada.id)) {
         console.log('[OnboardingChecklist] Tour já completado, ignorando');
         return;
       }
@@ -110,20 +111,20 @@ export const OnboardingChecklist: React.FC = () => {
       
       if (rotaDestino && rotaAtual !== rotaDestino) {
         // Precisa navegar primeiro - armazenar tour pendente
-        console.log(`[OnboardingChecklist] Navegando para ${rotaDestino}, tour ${jornada.tour_id} será iniciado após`);
-        pendingTourRef.current = jornada.tour_id;
+        console.log(`[OnboardingChecklist] Navegando para ${rotaDestino}, tour ${jornada.id} será iniciado após`);
+        pendingTourRef.current = jornada.id;
         navigate(rotaDestino);
       } else {
         // Já está na rota correta - iniciar tour diretamente
-        console.log(`[OnboardingChecklist] Já na rota correta, iniciando tour ${jornada.tour_id}`);
+        console.log(`[OnboardingChecklist] Já na rota correta, iniciando tour ${jornada.id}`);
         setTimeout(() => {
-          startTour(jornada.tour_id!, true);
+          startTour(jornada.id, true);
         }, 300);
       }
       return;
     }
     
-    // Para ações, apenas navegar
+    // Para ações sem tour, apenas navegar
     console.log('[OnboardingChecklist] É uma ação, navegando para:', jornada.rota_destino);
     if (jornada.rota_destino) {
       navigate(jornada.rota_destino);
@@ -241,16 +242,20 @@ export const OnboardingChecklist: React.FC = () => {
                     {/* Lista de jornadas */}
                     {isExpanded && (
                       <div className="ml-2 mt-1 space-y-1">
-                        {jornadas.map(jornada => (
-                          <JornadaItem 
-                            key={jornada.id} 
-                            jornada={jornada}
-                            onClick={() => handleJornadaClick(jornada)}
-                            isPending={isPending}
-                            isSkipped={jornada.tour_id ? tourState.skippedTours?.includes(jornada.tour_id) : false}
-                            isCompleted={jornada.tour_id ? tourState.completedTours.includes(jornada.tour_id) : false}
-                          />
-                        ))}
+                        {jornadas.map(jornada => {
+                          const hasSteps = jornada.steps && jornada.steps.length > 0;
+                          return (
+                            <JornadaItem 
+                              key={jornada.id} 
+                              jornada={jornada}
+                              onClick={() => handleJornadaClick(jornada)}
+                              isPending={isPending}
+                              isSkipped={hasSteps ? tourState.skippedTours?.includes(jornada.id) : false}
+                              isCompleted={hasSteps ? tourState.completedTours.includes(jornada.id) : false}
+                              hasSteps={hasSteps}
+                            />
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -280,6 +285,7 @@ interface JornadaItemProps {
   isPending: boolean;
   isSkipped: boolean;
   isCompleted: boolean;
+  hasSteps: boolean;
 }
 
 const JornadaItem: React.FC<JornadaItemProps> = ({ 
@@ -287,16 +293,17 @@ const JornadaItem: React.FC<JornadaItemProps> = ({
   onClick, 
   isPending, 
   isSkipped,
-  isCompleted 
+  isCompleted,
+  hasSteps 
 }) => {
   const canCollect = jornada.concluida && !jornada.recompensa_coletada;
   const isDone = jornada.recompensa_coletada;
   
-  // Se é tour e foi pulado, mostrar botão de iniciar manualmente
-  const showPlayButton = jornada.tipo === 'tour' && isSkipped && !isDone && !isCompleted;
+  // Se tem steps (é tour) e foi pulado, mostrar botão de iniciar manualmente
+  const showPlayButton = hasSteps && isSkipped && !isDone && !isCompleted;
   
-  // Se é tour e não foi feito ainda (nem pulado)
-  const showStartButton = jornada.tipo === 'tour' && !isDone && !isCompleted && !isSkipped;
+  // Se tem steps (é tour) e não foi feito ainda (nem pulado)
+  const showStartButton = hasSteps && !isDone && !isCompleted && !isSkipped;
 
   const handleClick = () => {
     console.log('[JornadaItem] Clique detectado:', jornada.id, { isDone, isPending });
