@@ -1,7 +1,9 @@
 import { GiraEmotion } from "../types";
 
-// Using placeholder images for demonstration since actual GIFs are not available in this environment.
-// In a real scenario, these would be imports from the assets folder.
+// Import actual GIFs
+import giraCelebrating from "@/assets/gira/gira_celebrating.gif";
+
+// Using placeholder images for emotions that don't have actual GIFs yet
 const PLACEHOLDER_BASE = "https://placehold.co/200x200/EC4899/FFFFFF?text=";
 
 export const GIRA_ASSETS: Record<GiraEmotion, { path: string; description: string; useCases: string[] }> = {
@@ -31,7 +33,7 @@ export const GIRA_ASSETS: Record<GiraEmotion, { path: string; description: strin
     useCases: ['Carregando', 'Processando'],
   },
   celebrating: {
-    path: `${PLACEHOLDER_BASE}Gira+Celebrating`,
+    path: giraCelebrating,
     description: 'Pulando de alegria, confetes',
     useCases: ['Conquista', 'Fim de tour', 'Recompensa'],
   },
