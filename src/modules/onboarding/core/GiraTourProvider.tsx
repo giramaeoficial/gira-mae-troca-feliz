@@ -109,30 +109,35 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [queryClient, mostrarRecompensa]);
 
   const startTour = useCallback((tourId: string, isManual: boolean = false) => {
+    console.log(`[GiraTourProvider] startTour chamado: ${tourId}, isManual: ${isManual}`);
+    
     const tourConfig = tours[tourId as TourId];
     if (!tourConfig) {
-      console.warn(`Tour ${tourId} not found`);
+      console.error(`[GiraTourProvider] Tour ${tourId} não encontrado! Tours disponíveis:`, Object.keys(tours));
       return;
     }
+    
+    console.log(`[GiraTourProvider] Tour config encontrado:`, tourConfig.name);
 
     // Não iniciar se já tem tour ativo
     if (state.isTourActive) {
-      console.warn(`Tour already active, skipping ${tourId}`);
+      console.warn(`[GiraTourProvider] Tour já ativo, ignorando ${tourId}`);
       return;
     }
 
     // Não iniciar automaticamente se já foi completado
     if (state.completedTours.includes(tourId)) {
-      console.warn(`Tour ${tourId} already completed`);
+      console.warn(`[GiraTourProvider] Tour ${tourId} já foi completado`);
       return;
     }
 
     // Se não é manual e foi pulado, não inicia automaticamente
     if (!isManual && state.skippedTours.includes(tourId)) {
-      console.warn(`Tour ${tourId} was skipped, won't auto-start`);
+      console.warn(`[GiraTourProvider] Tour ${tourId} foi pulado, não inicia automaticamente`);
       return;
     }
 
+    console.log(`[GiraTourProvider] Iniciando tour ${tourId}...`);
     setState(prev => ({ ...prev, currentTourId: tourId, isTourActive: true }));
 
     tourEngine.start(
