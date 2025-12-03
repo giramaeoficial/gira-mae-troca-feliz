@@ -1,9 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { GiraTourContext } from './GiraTourContext';
 import { tourEngine } from './tourEngine';
 import { tours, TourId } from '../tours';
 import type { OnboardingState } from '../types';
 import { supabase } from '@/integrations/supabase/client';
+import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 
 const STORAGE_KEY = 'giramae_completed_tours';
 const SKIPPED_KEY = 'giramae_skipped_tours';
@@ -42,40 +44,69 @@ const persistSkippedTours = (skippedTours: string[]) => {
   }
 };
 
-// Helper para concluir jornada no banco e dar recompensa
-const concluirJornadaNoBanco = async (tourId: string): Promise<boolean> => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    // Encontrar jornada correspondente ao tour
-    const jornadaId = `tour-${tourId.replace('-tour', '')}`;
-    
-    const { data, error } = await supabase.rpc('concluir_jornada', {
-      p_user_id: user.id,
-      p_jornada_id: jornadaId,
-    });
-
-    if (error) {
-      console.warn('Erro ao concluir jornada:', error);
-      return false;
-    }
-
-    const result = data as { sucesso?: boolean } | null;
-    return result?.sucesso || false;
-  } catch (error) {
-    console.warn('Erro ao concluir jornada:', error);
-    return false;
-  }
-};
+interface ConcluirJornadaResult {
+  sucesso: boolean;
+  erro?: string;
+  recompensa?: number;
+  titulo?: string;
+  icone?: string;
+  transacao_id?: string;
+}
 
 export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const queryClient = useQueryClient();
+  const { mostrarRecompensa } = useRecompensas();
+  
   const [state, setState] = useState<OnboardingState>({
     completedTours: getPersistedTours(),
     skippedTours: getSkippedTours(),
     currentTourId: null,
     isTourActive: false,
   });
+
+  // Helper para concluir jornada no banco e dar recompensa
+  const concluirJornadaNoBanco = useCallback(async (tourId: string): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      // Encontrar jornada correspondente ao tour
+      const jornadaId = `tour-${tourId.replace('-tour', '')}`;
+      
+      const { data, error } = await supabase.rpc('concluir_jornada', {
+        p_user_id: user.id,
+        p_jornada_id: jornadaId,
+      });
+
+      if (error) {
+        console.warn('Erro ao concluir jornada:', error);
+        return false;
+      }
+
+      const result = data as ConcluirJornadaResult | null;
+      
+      if (result?.sucesso) {
+        // Invalidar queries para atualizar o checklist
+        queryClient.invalidateQueries({ queryKey: ['jornadas-progresso'] });
+        queryClient.invalidateQueries({ queryKey: ['carteira'] });
+
+        // Mostrar celebração com confetes e tudo mais!
+        mostrarRecompensa({
+          tipo: 'jornada',
+          valor: result.recompensa || 1,
+          descricao: result.titulo || 'Tour concluído!',
+          meta: result.icone,
+        });
+
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.warn('Erro ao concluir jornada:', error);
+      return false;
+    }
+  }, [queryClient, mostrarRecompensa]);
 
   const startTour = useCallback((tourId: string, isManual: boolean = false) => {
     const tourConfig = tours[tourId as TourId];
@@ -110,7 +141,7 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // onComplete - tour finalizado com sucesso
         console.log(`Tour ${tourId} finished successfully`);
         
-        // Concluir jornada no banco e dar recompensa
+        // Concluir jornada no banco, dar recompensa e mostrar celebração
         await concluirJornadaNoBanco(tourId);
         
         setState(prev => {
@@ -154,7 +185,7 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
       }
     );
-  }, [state.isTourActive, state.completedTours, state.skippedTours]);
+  }, [state.isTourActive, state.completedTours, state.skippedTours, concluirJornadaNoBanco]);
 
   const stopTour = useCallback(() => {
     tourEngine.stop();
