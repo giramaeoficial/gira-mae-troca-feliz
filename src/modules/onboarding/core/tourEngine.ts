@@ -4,29 +4,23 @@ import ReactDOM from 'react-dom/client';
 import { GiraTooltip } from '../components/GiraTooltip';
 import type { TourConfig } from '../types';
 
-// Extend Window to support Shepherd
 declare global {
   interface Window {
     Shepherd: any;
   }
 }
 
-// Detecta se é mobile
 const isMobile = () => window.innerWidth < 640;
 
-// Ajusta posição para mobile - sempre abaixo do elemento
 const getMobilePosition = (originalPosition: string | undefined): string => {
   if (!isMobile()) return originalPosition || 'bottom';
-  
-  // No mobile, preferir bottom para não cobrir elementos no topo
   if (originalPosition === 'top') return 'bottom';
   if (originalPosition === 'left' || originalPosition === 'right') return 'bottom';
-  
   return originalPosition || 'bottom';
 };
 
 export class TourEngine {
-  private tourInstance: any; // Shepherd.Tour type
+  private tourInstance: any;
   
   constructor() {
     this.tourInstance = null;
@@ -49,28 +43,38 @@ export class TourEngine {
     });
 
     config.steps.forEach((step, index) => {
-      // Ajusta attachTo para mobile
+      const isCentered = !step.attachTo;
+      
       const attachTo = step.attachTo ? {
         element: step.attachTo.element,
         on: getMobilePosition(step.attachTo.on),
       } : undefined;
+
+      // Classes customizadas - adiciona gira-tour-centered quando não tem attachTo
+      const stepClasses = isCentered 
+        ? 'gira-tour-element gira-tour-centered' 
+        : 'gira-tour-element';
 
       this.tourInstance.addStep({
         id: step.id,
         title: step.title,
         text: step.text,
         attachTo: attachTo,
+        classes: stepClasses,
         highlightClass: step.highlightClass || 'gira-highlight',
         beforeShowPromise: step.beforeShow ? () => Promise.resolve(step.beforeShow!()) : undefined,
-        buttons: [], // We use custom buttons in React component
+        buttons: [],
         when: {
           show: () => {
-            // Mount React component into the step element
             const currentStepElement = this.tourInstance.getCurrentStep().el;
             const contentElement = currentStepElement.querySelector('.shepherd-content');
             
+            // Adicionar classe extra para centralização se não tem attachTo
+            if (isCentered) {
+              currentStepElement.classList.add('gira-tour-centered');
+            }
+            
             if (contentElement) {
-              // Clear default content
               contentElement.innerHTML = '';
               const container = document.createElement('div');
               contentElement.appendChild(container);
@@ -86,6 +90,7 @@ export class TourEngine {
                   onNext: () => this.tourInstance.next(),
                   onBack: () => this.tourInstance.back(),
                   onSkip: () => this.tourInstance.cancel(),
+                  isCentered: isCentered,
                 })
               );
             }
