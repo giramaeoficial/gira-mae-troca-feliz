@@ -1,11 +1,6 @@
-import { feedTour } from './feed.tour';
-import { carteiraTour } from './carteira.tour';
-import { reservasTour } from './reservas.tour';
+// Tours agora são carregados dinamicamente do banco de dados
+// Este arquivo é mantido apenas para compatibilidade com imports existentes
 
-export const tours = {
-  'feed-tour': feedTour,
-  'carteira-tour': carteiraTour,
-  'reservas-tour': reservasTour,
-};
+export const tours: Record<string, never> = {};
 
-export type TourId = keyof typeof tours;
+export type TourId = string;

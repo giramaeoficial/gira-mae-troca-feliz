@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import type { TourStepConfig } from '@/modules/onboarding/types';
 
 export type TipoJornada = 'tour' | 'acao' | 'sequencia';
 
@@ -19,6 +20,7 @@ export interface JornadaDefinicao {
   rota_destino: string | null;
   tour_id: string | null;
   ativo: boolean;
+  steps: TourStepConfig[] | null;
 }
 
 export interface JornadaProgresso {
@@ -50,7 +52,7 @@ export const useJornadas = () => {
   const { mostrarRecompensa } = useRecompensas();
   const navigate = useNavigate();
 
-  // Buscar definições de jornadas
+  // Buscar definições de jornadas (incluindo steps)
   const { data: definicoes, isLoading: loadingDefinicoes } = useQuery({
     queryKey: ['jornadas-definicoes'],
     queryFn: async (): Promise<JornadaDefinicao[]> => {
@@ -61,7 +63,11 @@ export const useJornadas = () => {
         .order('ordem');
 
       if (error) throw error;
-      return (data || []) as JornadaDefinicao[];
+      
+      return (data || []).map(item => ({
+        ...item,
+        steps: item.steps as unknown as TourStepConfig[] | null,
+      })) as JornadaDefinicao[];
     },
     staleTime: 10 * 60 * 1000, // 10 minutos
   });
@@ -141,7 +147,7 @@ export const useJornadas = () => {
       if (error) throw error;
       return data as unknown as ConcluirJornadaResult;
     },
-    onSuccess: (result, jornadaId) => {
+    onSuccess: (result) => {
       if (result.sucesso) {
         // Invalidar queries
         queryClient.invalidateQueries({ queryKey: ['jornadas-progresso'] });
@@ -200,6 +206,12 @@ export const useJornadas = () => {
     return jornada?.concluida === true && jornada?.recompensa_coletada === false;
   };
 
+  // Buscar steps de uma jornada específica
+  const getJornadaSteps = (jornadaId: string): TourStepConfig[] | null => {
+    const jornada = jornadas.find(j => j.id === jornadaId);
+    return jornada?.steps || null;
+  };
+
   return {
     jornadas,
     jornadasPorCategoria,
@@ -213,6 +225,7 @@ export const useJornadas = () => {
     toggleJornadaAtiva,
     iniciarJornada,
     podeColetarRecompensa,
+    getJornadaSteps,
     isPending: concluirJornadaMutation.isPending,
   };
 };

@@ -2,8 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { GiraTourContext } from './GiraTourContext';
 import { tourEngine } from './tourEngine';
-import { tours, TourId } from '../tours';
-import type { OnboardingState } from '../types';
+import type { OnboardingState, TourConfig, TourStepConfig } from '../types';
 import { supabase } from '@/integrations/supabase/client';
 import { useRecompensas } from '@/components/recompensas/ProviderRecompensas';
 
@@ -53,6 +52,18 @@ interface ConcluirJornadaResult {
   transacao_id?: string;
 }
 
+interface JornadaFromDB {
+  id: string;
+  titulo: string;
+  descricao: string;
+  steps: TourStepConfig[] | null;
+  rota_destino: string | null;
+  recompensa_girinhas: number;
+}
+
+// Cache de tours do banco
+let toursCache: Map<string, TourConfig> = new Map();
+
 export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
   const { mostrarRecompensa } = useRecompensas();
@@ -63,6 +74,56 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     currentTourId: null,
     isTourActive: false,
   });
+
+  // Carregar tours do banco de dados
+  useEffect(() => {
+    const loadToursFromDB = async () => {
+      try {
+        const { data: jornadas, error } = await supabase
+          .from('jornadas_definicoes')
+          .select('id, titulo, descricao, steps, rota_destino, recompensa_girinhas')
+          .eq('ativo', true);
+
+        if (error) {
+          console.warn('[GiraTourProvider] Erro ao carregar tours:', error);
+          return;
+        }
+
+        if (!jornadas) return;
+
+        // Converter jornadas do banco para TourConfig
+        jornadas.forEach((jornada) => {
+          const steps = jornada.steps as unknown as TourStepConfig[] | null;
+          if (steps && Array.isArray(steps) && steps.length > 0) {
+            const tourConfig: TourConfig = {
+              id: jornada.id,
+              name: jornada.titulo,
+              description: jornada.descricao,
+              triggerCondition: 'first-visit',
+              triggerDelay: 1000,
+              validRoutes: jornada.rota_destino ? [jornada.rota_destino] : ['/'],
+              reward: jornada.recompensa_girinhas,
+              allowReplay: false,
+              steps: steps.map(step => ({
+                ...step,
+                attachTo: step.attachTo ? {
+                  element: step.attachTo.element,
+                  on: step.attachTo.on as 'top' | 'bottom' | 'left' | 'right' | 'auto',
+                } : null,
+              })),
+            };
+            toursCache.set(jornada.id, tourConfig);
+          }
+        });
+
+        console.log('[GiraTourProvider] Tours carregados do banco:', toursCache.size);
+      } catch (error) {
+        console.warn('[GiraTourProvider] Erro ao carregar tours:', error);
+      }
+    };
+
+    loadToursFromDB();
+  }, []);
 
   // Sincronizar estado local com o banco ao inicializar
   useEffect(() => {
@@ -79,38 +140,16 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         if (!progresso) return;
 
-        // Buscar definições para mapear jornada_id -> tour_id
-        const { data: definicoes } = await supabase
-          .from('jornadas_definicoes')
-          .select('id, tour_id')
-          .eq('tipo', 'tour');
-
-        if (!definicoes) return;
-
-        // Criar mapa de jornada_id -> tour_id
-        const jornadaToTour = new Map<string, string>();
-        definicoes.forEach(d => {
-          if (d.tour_id) {
-            jornadaToTour.set(d.id, d.tour_id);
-          }
-        });
-
         // Tours completados no banco (onde recompensa foi coletada)
         const completedFromDb = progresso
           .filter(p => p.recompensa_coletada)
-          .map(p => jornadaToTour.get(p.jornada_id))
-          .filter((id): id is string => !!id);
+          .map(p => p.jornada_id);
 
         // Atualizar estado local se houver diferença
         const localCompleted = getPersistedTours();
         
-        // Manter apenas os que estão no banco como completados
-        // Isso limpa tours que foram marcados localmente mas não no banco
         if (JSON.stringify(localCompleted.sort()) !== JSON.stringify(completedFromDb.sort())) {
-          console.log('[GiraTourProvider] Sincronizando estado local com banco:', {
-            local: localCompleted,
-            banco: completedFromDb,
-          });
+          console.log('[GiraTourProvider] Sincronizando estado local com banco');
           
           persistTours(completedFromDb);
           setState(prev => ({
@@ -127,13 +166,10 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   // Helper para concluir jornada no banco e dar recompensa
-  const concluirJornadaNoBanco = useCallback(async (tourId: string): Promise<boolean> => {
+  const concluirJornadaNoBanco = useCallback(async (jornadaId: string): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-
-      // Encontrar jornada correspondente ao tour
-      const jornadaId = `tour-${tourId.replace('-tour', '')}`;
       
       const { data, error } = await supabase.rpc('concluir_jornada', {
         p_user_id: user.id,
@@ -145,7 +181,7 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return false;
       }
 
-      const result = data as ConcluirJornadaResult | null;
+      const result = data as unknown as ConcluirJornadaResult | null;
       
       if (result?.sucesso) {
         // Invalidar queries para atualizar o checklist
@@ -173,9 +209,10 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const startTour = useCallback((tourId: string, isManual: boolean = false) => {
     console.log(`[GiraTourProvider] startTour chamado: ${tourId}, isManual: ${isManual}`);
     
-    const tourConfig = tours[tourId as TourId];
+    // Buscar tour do cache (carregado do banco)
+    const tourConfig = toursCache.get(tourId);
     if (!tourConfig) {
-      console.error(`[GiraTourProvider] Tour ${tourId} não encontrado! Tours disponíveis:`, Object.keys(tours));
+      console.error(`[GiraTourProvider] Tour ${tourId} não encontrado no cache!`);
       return;
     }
     
@@ -265,7 +302,8 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return false;
     }
     
-    const tour = tours[tourId as TourId];
+    // Verificar se existe no cache
+    const tour = toursCache.get(tourId);
     if (!tour) return false;
     
     return true;
