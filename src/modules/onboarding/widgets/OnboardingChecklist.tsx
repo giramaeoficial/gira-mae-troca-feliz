@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useJornadas, JornadaComProgresso } from '@/hooks/useJornadas';
 import { useGiraTour } from '../core/useGiraTour';
 import { GiraAvatar } from '../components/GiraAvatar';
 import { ChevronDown, ChevronUp, Check, Gift, X, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CATEGORIA_LABELS: Record<string, { label: string; icon: string }> = {
   tours: { label: 'Tours Guiados', icon: '🗺️' },
@@ -20,6 +20,10 @@ export const OnboardingChecklist: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['tours']);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Ref para armazenar tour pendente após navegação
+  const pendingTourRef = useRef<string | null>(null);
   
   const { 
     jornadasPorCategoria, 
@@ -32,6 +36,22 @@ export const OnboardingChecklist: React.FC = () => {
   } = useJornadas();
   
   const { startTour, state: tourState } = useGiraTour();
+
+  // Efeito para iniciar tour pendente após navegação
+  useEffect(() => {
+    if (pendingTourRef.current) {
+      const tourId = pendingTourRef.current;
+      pendingTourRef.current = null;
+      
+      // Aguardar a página carregar completamente
+      const timer = setTimeout(() => {
+        console.log(`[OnboardingChecklist] Iniciando tour pendente: ${tourId}`);
+        startTour(tourId, true);
+      }, 800);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, startTour]);
 
   // Não mostrar se desabilitado, sem jornadas, ou 100% completo
   if (!jornadaAtiva || totalJornadas === 0) return null;
@@ -64,14 +84,24 @@ export const OnboardingChecklist: React.FC = () => {
         return; // Já completou, não pode refazer
       }
       
-      // Navegar primeiro, depois iniciar tour
-      if (jornada.rota_destino) {
-        navigate(jornada.rota_destino);
-      }
       setIsOpen(false);
-      setTimeout(() => {
-        startTour(jornada.tour_id!);
-      }, 600);
+      
+      // Verificar se já está na rota correta
+      const rotaAtual = location.pathname;
+      const rotaDestino = jornada.rota_destino;
+      
+      if (rotaDestino && rotaAtual !== rotaDestino) {
+        // Precisa navegar primeiro - armazenar tour pendente
+        console.log(`[OnboardingChecklist] Navegando para ${rotaDestino}, tour ${jornada.tour_id} será iniciado após`);
+        pendingTourRef.current = jornada.tour_id;
+        navigate(rotaDestino);
+      } else {
+        // Já está na rota correta - iniciar tour diretamente
+        console.log(`[OnboardingChecklist] Já na rota correta, iniciando tour ${jornada.tour_id}`);
+        setTimeout(() => {
+          startTour(jornada.tour_id!, true);
+        }, 300);
+      }
       return;
     }
     
@@ -246,6 +276,9 @@ const JornadaItem: React.FC<JornadaItemProps> = ({
   // Se é tour e foi pulado, mostrar botão de iniciar manualmente
   const showPlayButton = jornada.tipo === 'tour' && isSkipped && !isDone && !isCompleted;
   
+  // Se é tour e não foi feito ainda (nem pulado)
+  const showStartButton = jornada.tipo === 'tour' && !isDone && !isCompleted && !isSkipped;
+  
   return (
     <button
       className={cn(
@@ -256,7 +289,9 @@ const JornadaItem: React.FC<JornadaItemProps> = ({
             ? "bg-gradient-to-r from-primary/10 to-pink-500/10 animate-pulse"
             : showPlayButton
               ? "bg-yellow-500/10 hover:bg-yellow-500/20"
-              : "hover:bg-accent/50"
+              : showStartButton
+                ? "bg-primary/5 hover:bg-primary/10"
+                : "hover:bg-accent/50"
       )}
       onClick={onClick}
       disabled={isDone || isPending}
@@ -270,13 +305,15 @@ const JornadaItem: React.FC<JornadaItemProps> = ({
             ? "bg-primary/20 text-primary"
             : showPlayButton
               ? "bg-yellow-500/20 text-yellow-600"
-              : "border-2 border-muted-foreground/30"
+              : showStartButton
+                ? "bg-primary/20 text-primary"
+                : "border-2 border-muted-foreground/30"
       )}>
         {isDone ? (
           <Check className="w-4 h-4" />
         ) : canCollect ? (
           <Gift className="w-4 h-4" />
-        ) : showPlayButton ? (
+        ) : showPlayButton || showStartButton ? (
           <Play className="w-4 h-4" />
         ) : (
           <span className="text-sm">{jornada.icone}</span>
@@ -300,7 +337,12 @@ const JornadaItem: React.FC<JornadaItemProps> = ({
         )}
         {showPlayButton && (
           <span className="text-xs text-yellow-600">
-            Toque para iniciar tour
+            Toque para retomar o tour
+          </span>
+        )}
+        {showStartButton && (
+          <span className="text-xs text-primary">
+            Toque para iniciar o tour
           </span>
         )}
       </div>
