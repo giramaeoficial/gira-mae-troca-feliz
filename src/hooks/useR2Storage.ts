@@ -1,10 +1,13 @@
-// src/hooks/useR2Storage.ts
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Configure aqui seu domínio público (O que você ativou no R2)
-// Se for dev, use o r2.dev. Se for prod, use seu dominio customizado.
-const R2_PUBLIC_DOMAIN = 'https://pub-SEU-ID.r2.dev'; 
+// Domínio público do R2 - configurar conforme ambiente
+const R2_PUBLIC_DOMAIN = import.meta.env.VITE_R2_PUBLIC_DOMAIN || 'https://pub-SEU-ID.r2.dev';
+
+export interface R2UploadResult {
+  path: string;
+  publicUrl: string;
+}
 
 export const useR2Storage = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -12,12 +15,18 @@ export const useR2Storage = () => {
   /**
    * Faz upload de arquivo para o Cloudflare R2
    * @param file O arquivo (File object)
-   * @param bucket Nome do bucket (ex: 'itens-dev')
+   * @param bucket Nome do bucket (ex: 'itens')
    * @param path Caminho/Nome do arquivo (ex: 'user_123/foto.jpg')
    */
-  const uploadFile = async (file: File, bucket: string, path: string) => {
+  const uploadFile = async (
+    file: File, 
+    bucket: string, 
+    path: string
+  ): Promise<{ data: R2UploadResult | null; error: Error | null }> => {
     setIsUploading(true);
     try {
+      console.log('🔄 R2 Upload iniciando:', { bucket, path, fileSize: file.size });
+
       // 1. Pede a URL assinada para a Edge Function
       const { data: responseData, error: funcError } = await supabase.functions.invoke('storage-r2', {
         body: {
@@ -28,9 +37,11 @@ export const useR2Storage = () => {
         }
       });
 
-      if (funcError || !responseData.uploadUrl) {
+      if (funcError || !responseData?.uploadUrl) {
         throw new Error(funcError?.message || 'Falha ao gerar URL de upload');
       }
+
+      console.log('✅ URL de upload obtida');
 
       // 2. Faz o upload direto para o R2 usando a URL assinada
       const uploadResponse = await fetch(responseData.uploadUrl, {
@@ -48,13 +59,15 @@ export const useR2Storage = () => {
       // 3. Retorna a URL pública final para salvar no banco
       const publicUrl = `${R2_PUBLIC_DOMAIN}/${bucket}/${path}`;
       
+      console.log('✅ R2 Upload concluído:', publicUrl);
+
       return { 
         data: { path, publicUrl }, 
         error: null 
       };
 
     } catch (error: any) {
-      console.error('R2 Upload Error:', error);
+      console.error('❌ R2 Upload Error:', error);
       return { data: null, error };
     } finally {
       setIsUploading(false);
@@ -64,8 +77,13 @@ export const useR2Storage = () => {
   /**
    * Deleta arquivo do R2
    */
-  const deleteFile = async (bucket: string, path: string) => {
+  const deleteFile = async (
+    bucket: string, 
+    path: string
+  ): Promise<{ error: Error | null }> => {
     try {
+      console.log('🗑️ R2 Delete:', { bucket, path });
+
       const { error } = await supabase.functions.invoke('storage-r2', {
         body: {
           action: 'delete',
@@ -73,8 +91,15 @@ export const useR2Storage = () => {
           key: path
         }
       });
-      return { error };
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('✅ R2 Delete concluído');
+      return { error: null };
     } catch (error: any) {
+      console.error('❌ R2 Delete Error:', error);
       return { error };
     }
   };
@@ -82,7 +107,7 @@ export const useR2Storage = () => {
   /**
    * Gera URL pública (Apenas formatação de string, sem custo)
    */
-  const getPublicUrl = (bucket: string, path: string) => {
+  const getPublicUrl = (bucket: string, path: string): string => {
     return `${R2_PUBLIC_DOMAIN}/${bucket}/${path}`;
   };
 

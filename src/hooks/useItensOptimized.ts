@@ -179,18 +179,15 @@ export const usePublicarItem = () => {
         try {
           const fileName = generateImagePath(itemData.publicado_por, foto.name);
           
-          await uploadImage({
+          // Upload retorna publicUrl diretamente (R2)
+          const uploadResult = await uploadImage({
             bucket: 'itens',
             path: fileName,
             file: foto
           });
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('itens')
-            .getPublicUrl(fileName);
           
-          fotosUrls.push(publicUrl);
-          console.log(`✅ Foto ${i + 1} uploaded:`, publicUrl);
+          fotosUrls.push(uploadResult.publicUrl);
+          console.log(`✅ Foto ${i + 1} uploaded:`, uploadResult.publicUrl);
         } catch (uploadError: any) {
           console.error(`❌ Erro no upload da foto ${i + 1}:`, uploadError);
           throw new Error(`Erro no upload da imagem ${i + 1}: ${uploadError.message}`);
