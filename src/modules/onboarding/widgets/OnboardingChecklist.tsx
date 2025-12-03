@@ -68,20 +68,36 @@ export const OnboardingChecklist: React.FC = () => {
   };
 
   const handleJornadaClick = (jornada: JornadaComProgresso) => {
+    console.log('[OnboardingChecklist] Clique na jornada:', {
+      id: jornada.id,
+      tipo: jornada.tipo,
+      tour_id: jornada.tour_id,
+      rota_destino: jornada.rota_destino,
+      concluida: jornada.concluida,
+      recompensa_coletada: jornada.recompensa_coletada,
+    });
+    
     // Se já coletou recompensa, não faz nada
-    if (jornada.recompensa_coletada) return;
+    if (jornada.recompensa_coletada) {
+      console.log('[OnboardingChecklist] Jornada já coletada, ignorando');
+      return;
+    }
     
     // Se pode coletar recompensa (concluída mas não coletada)
     if (jornada.concluida && !jornada.recompensa_coletada) {
+      console.log('[OnboardingChecklist] Coletando recompensa...');
       concluirJornada(jornada.id);
       return;
     }
     
     // Se é um tour
     if (jornada.tipo === 'tour' && jornada.tour_id) {
+      console.log('[OnboardingChecklist] É um tour:', jornada.tour_id);
+      
       // Verificar se já foi completado
       if (tourState.completedTours.includes(jornada.tour_id)) {
-        return; // Já completou, não pode refazer
+        console.log('[OnboardingChecklist] Tour já completado, ignorando');
+        return;
       }
       
       setIsOpen(false);
@@ -89,6 +105,8 @@ export const OnboardingChecklist: React.FC = () => {
       // Verificar se já está na rota correta
       const rotaAtual = location.pathname;
       const rotaDestino = jornada.rota_destino;
+      
+      console.log('[OnboardingChecklist] Rotas:', { rotaAtual, rotaDestino });
       
       if (rotaDestino && rotaAtual !== rotaDestino) {
         // Precisa navegar primeiro - armazenar tour pendente
@@ -106,6 +124,7 @@ export const OnboardingChecklist: React.FC = () => {
     }
     
     // Para ações, apenas navegar
+    console.log('[OnboardingChecklist] É uma ação, navegando para:', jornada.rota_destino);
     if (jornada.rota_destino) {
       navigate(jornada.rota_destino);
       setIsOpen(false);
@@ -278,23 +297,30 @@ const JornadaItem: React.FC<JornadaItemProps> = ({
   
   // Se é tour e não foi feito ainda (nem pulado)
   const showStartButton = jornada.tipo === 'tour' && !isDone && !isCompleted && !isSkipped;
+
+  const handleClick = () => {
+    console.log('[JornadaItem] Clique detectado:', jornada.id, { isDone, isPending });
+    if (!isDone && !isPending) {
+      onClick();
+    }
+  };
   
   return (
     <button
       className={cn(
         "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left",
         isDone 
-          ? "bg-primary/5 opacity-60" 
+          ? "bg-primary/5 opacity-60 cursor-not-allowed" 
           : canCollect
-            ? "bg-gradient-to-r from-primary/10 to-pink-500/10 animate-pulse"
+            ? "bg-gradient-to-r from-primary/10 to-pink-500/10 animate-pulse cursor-pointer"
             : showPlayButton
-              ? "bg-yellow-500/10 hover:bg-yellow-500/20"
+              ? "bg-yellow-500/10 hover:bg-yellow-500/20 cursor-pointer"
               : showStartButton
-                ? "bg-primary/5 hover:bg-primary/10"
-                : "hover:bg-accent/50"
+                ? "bg-primary/5 hover:bg-primary/10 cursor-pointer"
+                : "hover:bg-accent/50 cursor-pointer"
       )}
-      onClick={onClick}
-      disabled={isDone || isPending}
+      onClick={handleClick}
+      type="button"
     >
       {/* Status icon */}
       <div className={cn(
