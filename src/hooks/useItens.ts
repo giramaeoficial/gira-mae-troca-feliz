@@ -192,18 +192,14 @@ export const useItens = () => {
           const fileName = generateImagePath(itemData.publicado_por, foto.name);
           console.log('Fazendo upload da foto:', fileName);
           
-          await uploadImage({
+          const uploadResult = await uploadImage({
             bucket: 'itens',
             path: fileName,
             file: foto
           });
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('itens')
-            .getPublicUrl(fileName);
           
-          fotosUrls.push(publicUrl);
-          console.log('Foto uploaded com sucesso:', publicUrl);
+          fotosUrls.push(uploadResult.publicUrl);
+          console.log('Foto uploaded com sucesso:', uploadResult.publicUrl);
         } catch (uploadError) {
           console.error('Erro no upload da foto:', uploadError);
           throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
