@@ -46,24 +46,13 @@ export const feedTour: TourConfig = {
     {
       id: 'items',
       title: 'Itens Disponíveis 👕',
-      text: 'Veja os itens publicados por outras mães da comunidade.',
-      giraEmotion: 'pointing',
+      text: 'Veja os itens publicados por outras mães da comunidade. Clique em "Concluir" para ganhar suas Girinhas!',
+      giraEmotion: 'celebrating',
       attachTo: {
         element: '[data-tour="item-card"]',
         on: 'bottom',
       },
     },
-    {
-      id: 'finish',
-      title: 'Jornada Concluída! 🎉',
-      text: 'Parabéns! Você ganhou Girinhas por completar este tour. Confira seu saldo!',
-      giraEmotion: 'celebrating',
-      attachTo: {
-        element: '[data-tour="wallet-button"]',
-        on: 'bottom',
-      },
-      highlightClass: 'gira-highlight-pulse',
-    }
   ],
 
   onComplete: async (userId) => {
