@@ -33,14 +33,55 @@
   max-width: calc(100vw - 32px) !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOOLTIP CENTRALIZADO (quando não tem attachTo / elemento de referência)
+   Shepherd adiciona a classe .shepherd-centered quando attachTo é undefined
+   ═══════════════════════════════════════════════════════════════════════════ */
+.shepherd-element.shepherd-centered,
+.shepherd-element:not(.shepherd-has-target) {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+/* Classe customizada para forçar centralização */
+.gira-tour-element.gira-tour-centered {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
 /* Mobile: ajusta posicionamento mas mantém próximo ao elemento */
 @media (max-width: 640px) {
   .gira-tour-element {
     max-width: calc(100vw - 24px) !important;
   }
+  
+  /* Centralizado no mobile também */
+  .shepherd-element.shepherd-centered,
+  .shepherd-element:not(.shepherd-has-target),
+  .gira-tour-element.gira-tour-centered {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 380px !important;
+  }
 }
 
-/* Seta do tooltip - esconder no mobile já que o tooltip é centralizado */
+/* Seta do tooltip - esconder quando centralizado */
+.shepherd-element.shepherd-centered .shepherd-arrow,
+.shepherd-element:not(.shepherd-has-target) .shepherd-arrow,
+.gira-tour-element.gira-tour-centered .shepherd-arrow {
+  display: none !important;
+}
+
+/* Seta do tooltip */
 .gira-tour-element .shepherd-arrow {
   border-color: white !important;
 }
