@@ -93,15 +93,6 @@ import { RecompensasProvider } from '@/components/recompensas/ProviderRecompensa
 import { GiraTourProvider, OnboardingChecklist } from '@/modules/onboarding';
 
 // ============================================================================
-// ONBOARDING CHECKLIST COM RECOMPENSAS
-// ============================================================================
-const OnboardingChecklistWithRecompensas: React.FC = () => (
-  <RecompensasProvider>
-    <OnboardingChecklist />
-  </RecompensasProvider>
-);
-
-// ============================================================================
 // QUERY CLIENT CONFIGURATION
 // ============================================================================
 const queryClient = new QueryClient({
@@ -136,13 +127,14 @@ function App() {
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
-        <GiraTourProvider>
-          <Toaster />
-          <SonnerToaster />
-          <BrowserRouter>
-            <AnalyticsWrapper>
-              {/* Menu flutuante de jornadas */}
-              <OnboardingChecklistWithRecompensas />
+        <RecompensasProvider>
+          <GiraTourProvider>
+            <Toaster />
+            <SonnerToaster />
+            <BrowserRouter>
+              <AnalyticsWrapper>
+                {/* Menu flutuante de jornadas */}
+                <OnboardingChecklist />
               
               <Routes>
                 {/* ================================================ */}
@@ -212,7 +204,7 @@ function App() {
                 <Route path="/carteira" element={<AuthGuard><AcessoTotalGuard><Carteira /></AcessoTotalGuard></AuthGuard>} />
                 <Route path="/comprar-girinhas" element={<AuthGuard><AcessoTotalGuard><ComprarGirinhas /></AcessoTotalGuard></AuthGuard>} />
                 <Route path="/indicacoes" element={<AuthGuard><AcessoTotalGuard><Indicacoes /></AcessoTotalGuard></AuthGuard>} />
-                <Route path="/minhas-reservas" element={<AuthGuard><AcessoTotalGuard><RecompensasProvider><MinhasReservas /></RecompensasProvider></AcessoTotalGuard></AuthGuard>} />
+                <Route path="/minhas-reservas" element={<AuthGuard><AcessoTotalGuard><MinhasReservas /></AcessoTotalGuard></AuthGuard>} />
                 <Route path="/configuracoes" element={<AuthGuard><AcessoTotalGuard><Configuracoes /></AcessoTotalGuard></AuthGuard>} />
                 <Route path="/parcerias" element={<AuthGuard><AcessoTotalGuard><ParceriasSociais /></AcessoTotalGuard></AuthGuard>} />
                 <Route path="/parcerias/:organizacao_codigo/:programa_codigo" element={<AuthGuard><AcessoTotalGuard><ProgramaDetalhes /></AcessoTotalGuard></AuthGuard>} />
@@ -242,7 +234,8 @@ function App() {
               </Routes>
             </AnalyticsWrapper>
           </BrowserRouter>
-        </GiraTourProvider>
+          </GiraTourProvider>
+        </RecompensasProvider>
       </QueryClientProvider>
     </HelmetProvider>
   );
