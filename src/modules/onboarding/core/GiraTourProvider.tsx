@@ -64,6 +64,68 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     isTourActive: false,
   });
 
+  // Sincronizar estado local com o banco ao inicializar
+  useEffect(() => {
+    const syncWithDatabase = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Buscar progresso do banco
+        const { data: progresso } = await supabase
+          .from('jornadas_progresso')
+          .select('jornada_id, concluida, recompensa_coletada')
+          .eq('user_id', user.id);
+
+        if (!progresso) return;
+
+        // Buscar definições para mapear jornada_id -> tour_id
+        const { data: definicoes } = await supabase
+          .from('jornadas_definicoes')
+          .select('id, tour_id')
+          .eq('tipo', 'tour');
+
+        if (!definicoes) return;
+
+        // Criar mapa de jornada_id -> tour_id
+        const jornadaToTour = new Map<string, string>();
+        definicoes.forEach(d => {
+          if (d.tour_id) {
+            jornadaToTour.set(d.id, d.tour_id);
+          }
+        });
+
+        // Tours completados no banco (onde recompensa foi coletada)
+        const completedFromDb = progresso
+          .filter(p => p.recompensa_coletada)
+          .map(p => jornadaToTour.get(p.jornada_id))
+          .filter((id): id is string => !!id);
+
+        // Atualizar estado local se houver diferença
+        const localCompleted = getPersistedTours();
+        
+        // Manter apenas os que estão no banco como completados
+        // Isso limpa tours que foram marcados localmente mas não no banco
+        if (JSON.stringify(localCompleted.sort()) !== JSON.stringify(completedFromDb.sort())) {
+          console.log('[GiraTourProvider] Sincronizando estado local com banco:', {
+            local: localCompleted,
+            banco: completedFromDb,
+          });
+          
+          persistTours(completedFromDb);
+          setState(prev => ({
+            ...prev,
+            completedTours: completedFromDb,
+          }));
+        }
+      } catch (error) {
+        console.warn('[GiraTourProvider] Erro ao sincronizar com banco:', error);
+      }
+    };
+
+    syncWithDatabase();
+  }, []);
+
   // Helper para concluir jornada no banco e dar recompensa
   const concluirJornadaNoBanco = useCallback(async (tourId: string): Promise<boolean> => {
     try {
