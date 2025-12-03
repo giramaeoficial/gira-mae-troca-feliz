@@ -2,41 +2,27 @@ import type { TourConfig } from '../types';
 import * as actions from '../actions';
 
 export const feedTour: TourConfig = {
-  // ─────────────────────────────────────────────────
-  // METADADOS
-  // ─────────────────────────────────────────────────
   id: 'feed-tour',
   name: 'Conhecendo o Feed',
   description: 'Tour introdutório da página principal',
-  
-  // ─────────────────────────────────────────────────
-  // GATILHO
-  // ─────────────────────────────────────────────────
-  triggerCondition: 'first-visit',  // Quando disparar
-  triggerDelay: 1500,               // Delay em ms
-  validRoutes: ['/feed', '/'],      // Rotas válidas
-  
-  // ─────────────────────────────────────────────────
-  // RECOMPENSA
-  // ─────────────────────────────────────────────────
-  reward: 5,            // Girinhas ao completar
-  allowReplay: true,    // Pode repetir
-  
-  // ─────────────────────────────────────────────────
-  // PASSOS
-  // ─────────────────────────────────────────────────
+  triggerCondition: 'first-visit',
+  triggerDelay: 1500,
+  validRoutes: ['/feed', '/'],
+  reward: 5,
+  allowReplay: false,
+
   steps: [
     {
       id: 'welcome',
       title: 'Bem-vinda ao GiraMãe! 💕',
-      text: 'Eu sou a Gira, sua guia aqui!',
+      text: 'Eu sou a Gira, sua guia aqui! Vou te mostrar como funciona a plataforma.',
       giraEmotion: 'waving',
-      attachTo: null,  // null = modal centralizado
+      attachTo: null,
     },
     {
       id: 'wallet',
       title: 'Suas Girinhas ✨',
-      text: 'Aqui você vê seu saldo...',
+      text: 'Aqui você vê seu saldo de Girinhas, a moeda da comunidade!',
       giraEmotion: 'pointing',
       attachTo: {
         element: '[data-tour="wallet-button"]',
@@ -47,11 +33,11 @@ export const feedTour: TourConfig = {
     {
       id: 'filters',
       title: 'Filtros 🔍',
-      text: 'Encontre o que precisa...',
+      text: 'Use os filtros para encontrar exatamente o que você precisa.',
       giraEmotion: 'talking',
       attachTo: {
         element: '[data-tour="filters-panel"]',
-        on: 'right',
+        on: 'bottom',
       },
       beforeShow: async () => {
         await actions.expandFilters();
@@ -59,8 +45,8 @@ export const feedTour: TourConfig = {
     },
     {
       id: 'items',
-      title: 'Itens',
-      text: 'Veja os itens disponíveis para troca ou venda.',
+      title: 'Itens Disponíveis 👕',
+      text: 'Veja os itens publicados por outras mães da comunidade.',
       giraEmotion: 'pointing',
       attachTo: {
         element: '[data-tour="item-card"]',
@@ -69,22 +55,22 @@ export const feedTour: TourConfig = {
     },
     {
       id: 'finish',
-      title: 'Tudo pronto!',
-      text: 'Agora você já sabe como navegar. Divirta-se!',
+      title: 'Jornada Concluída! 🎉',
+      text: 'Parabéns! Você ganhou Girinhas por completar este tour. Confira seu saldo!',
       giraEmotion: 'celebrating',
-      attachTo: null,
+      attachTo: {
+        element: '[data-tour="wallet-button"]',
+        on: 'bottom',
+      },
+      highlightClass: 'gira-highlight-pulse',
     }
   ],
-  
-  // ─────────────────────────────────────────────────
-  // CALLBACKS
-  // ─────────────────────────────────────────────────
+
   onComplete: async (userId) => {
-    console.log('Tour completed for user:', userId);
-    // Registra no Supabase, dá recompensa
+    console.log('Tour Feed completed for user:', userId);
   },
+
   onCancel: async (userId, stepId) => {
-    console.log('Tour cancelled at step:', stepId);
-    // Tracking de abandono
+    console.log('Tour Feed cancelled at step:', stepId);
   },
 };
