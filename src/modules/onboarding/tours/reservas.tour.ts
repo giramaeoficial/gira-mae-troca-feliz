@@ -6,9 +6,9 @@ export const reservasTour: TourConfig = {
   description: 'Tour guiado pela página de reservas',
   triggerCondition: 'first-visit',
   triggerDelay: 1000,
-  validRoutes: ['/reservas'],
+  validRoutes: ['/minhas-reservas'],
   reward: 3,
-  allowReplay: true,
+  allowReplay: false,
 
   steps: [
     {
@@ -34,10 +34,14 @@ export const reservasTour: TourConfig = {
     },
     {
       id: 'finish-reservas',
-      title: 'Tudo certo! ✅',
-      text: 'Agora você sabe como gerenciar suas trocas! Lembre-se de confirmar a entrega após receber o item.',
+      title: 'Jornada Concluída! 🎉',
+      text: 'Parabéns! Você ganhou Girinhas por completar este tour. Confira seu saldo!',
       giraEmotion: 'celebrating',
-      attachTo: null,
+      attachTo: { 
+        element: '[data-tour="wallet-button"]', 
+        on: 'bottom' 
+      },
+      highlightClass: 'gira-highlight-pulse',
     }
   ],
 
