@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
+import { R2_BUCKETS } from '@/lib/cdn';
 
 export interface Item {
   id: string;
@@ -181,7 +182,7 @@ export const usePublicarItem = () => {
           
           // Upload retorna publicUrl diretamente (R2)
           const uploadResult = await uploadImage({
-            bucket: 'itens',
+            bucket: R2_BUCKETS.itens,
             path: fileName,
             file: foto
           });

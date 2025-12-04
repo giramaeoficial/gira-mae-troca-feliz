@@ -5,6 +5,7 @@ import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
+import { R2_BUCKETS } from '@/lib/cdn';
 interface EditFormData {
   titulo: string;
   descricao: string;
@@ -244,7 +245,7 @@ export const useEditarItemForm = (initialItem: Item | null) => {
             
             // Upload retorna publicUrl diretamente (R2)
             const uploadResult = await uploadImage({
-              bucket: 'itens',
+              bucket: R2_BUCKETS.itens,
               path: fileName,
               file: foto
             });
