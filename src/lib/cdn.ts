@@ -12,6 +12,15 @@ export const CDN_URLS = {
   blogImages: import.meta.env.VITE_BLOG_IMAGES_CDN || 'https://dev-blog-images.giramae.com.br',
 } as const;
 
+// Nomes dos buckets no R2 (baseado no ambiente)
+export const R2_BUCKETS = {
+  itens: import.meta.env.VITE_BUCKET_ITENS || 'itens-dev',
+  avatars: import.meta.env.VITE_BUCKET_AVATARS || 'avatars-dev',
+  docs: import.meta.env.VITE_BUCKET_DOCS || 'documentos-parcerias-dev',
+  logos: import.meta.env.VITE_BUCKET_LOGOS || 'logos-parceiros-dev',
+  blogImages: import.meta.env.VITE_BUCKET_BLOG_IMAGES || 'blog-images-dev',
+} as const;
+
 // Mapeamento de bucket names para CDN keys
 const BUCKET_TO_CDN: Record<string, keyof typeof CDN_URLS> = {
   'itens': 'assets',

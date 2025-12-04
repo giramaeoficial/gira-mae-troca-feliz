@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
+import { R2_BUCKETS } from '@/lib/cdn';
 
 type Escola = Tables<'escolas_inep'>;
 
@@ -193,7 +194,7 @@ export const useItens = () => {
           console.log('Fazendo upload da foto:', fileName);
           
           const uploadResult = await uploadImage({
-            bucket: 'itens',
+            bucket: R2_BUCKETS.itens,
             path: fileName,
             file: foto
           });
