@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +7,7 @@ import { Heart, Star, Sparkles, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import LazyImage from '@/components/ui/lazy-image';
+import { buildItemImageUrl } from '@/lib/cdn';
 
 // Tipos base
 interface BaseCardProps {
@@ -112,8 +112,9 @@ const UniversalCard: React.FC<UniversalCardProps> = (props) => {
   if (props.variant === 'item') {
     const { data, onFavorite, isFavorite, linkTo, showAuthor = true } = props;
     
+    // Usar helper CDN para construir URL da imagem
     const imagemPrincipal = data.fotos && data.fotos.length > 0 && data.fotos[0]
-      ? data.fotos[0]
+      ? buildItemImageUrl(data.fotos[0])
       : "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400";
 
     const formatarCategoria = (categoria: string) => {
@@ -148,7 +149,6 @@ const UniversalCard: React.FC<UniversalCardProps> = (props) => {
               bucket="itens"
               size="medium"
               className="w-full h-full object-cover"
-              placeholder="📷"
             />
           </div>
           
@@ -352,7 +352,6 @@ const UniversalCard: React.FC<UniversalCardProps> = (props) => {
                   bucket="itens"
                   size="thumbnail"
                   className="w-full h-full object-cover"
-                  placeholder="📷"
                 />
               </div>
             )}

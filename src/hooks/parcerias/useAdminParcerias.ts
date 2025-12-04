@@ -197,20 +197,35 @@ export function useAdminParcerias() {
         throw new Error('Caminho do documento não encontrado');
       }
       
-      const { data, error } = await supabase.storage
-        .from('documentos-parcerias')
-        .download(filePath);
+      // Se for URL completa (dados antigos), baixar diretamente
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        const response = await fetch(filePath);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = documento.nome;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Se for path, usar supabase.storage.download()
+        const { data, error } = await supabase.storage
+          .from('documentos-parcerias')
+          .download(filePath);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const url = URL.createObjectURL(data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = documento.nome;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(data);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = documento.nome;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
 
       toast({
         title: "Download iniciado",

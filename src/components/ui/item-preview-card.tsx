@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Heart, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getImageUrl } from '@/utils/supabaseStorage';
+import { buildItemImageUrl } from '@/lib/cdn';
 
 interface ItemPreviewCardProps {
   titulo: string;
@@ -26,12 +25,22 @@ const ItemPreviewCard: React.FC<ItemPreviewCardProps> = ({
   fotos,
   className
 }) => {
-  // Verificar se fotos são Files ou strings (URLs)
-  const previewImage = fotos.length > 0 
-    ? (fotos[0] instanceof File 
-        ? URL.createObjectURL(fotos[0]) 
-        : getImageUrl('itens', fotos[0] as string, 'medium'))
-    : null;
+  // Verificar se fotos são Files ou strings (paths ou URLs)
+  const getPreviewImage = () => {
+    if (fotos.length === 0) return null;
+    
+    const firstPhoto = fotos[0];
+    
+    // Se for File, criar blob URL
+    if (firstPhoto instanceof File) {
+      return URL.createObjectURL(firstPhoto);
+    }
+    
+    // Se for string (path ou URL), usar helper CDN
+    return buildItemImageUrl(firstPhoto as string);
+  };
+
+  const previewImage = getPreviewImage();
 
   const getCategoriaLabel = (cat: string) => {
     const labels: Record<string, string> = {

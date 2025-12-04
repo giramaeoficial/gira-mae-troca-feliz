@@ -58,6 +58,8 @@ serve(async (req) => {
       { size: 'large', file: largeFile },
     ];
 
+    // Apenas retornar os paths, NÃO as URLs completas
+    // Frontend vai construir URLs usando BLOG_IMAGES_CDN + path
     const uploadedVariants: Record<string, string> = {};
 
     for (const variant of variants) {
@@ -83,20 +85,17 @@ serve(async (req) => {
         throw uploadError;
       }
 
-      // Obter URL pública
-      const { data: urlData } = supabase.storage
-        .from('blog-images')
-        .getPublicUrl(filePath);
-
-      uploadedVariants[variant.size] = urlData.publicUrl;
-      console.log(`${variant.size} uploaded successfully`);
+      // Retornar apenas o path (não URL completa)
+      // Frontend usará: BLOG_IMAGES_CDN + path
+      uploadedVariants[variant.size] = filePath;
+      console.log(`${variant.size} uploaded successfully, path: ${filePath}`);
     }
 
-    // Retornar estrutura JSON com metadados
+    // Retornar estrutura JSON com paths (não URLs)
     const response = {
       id: crypto.randomUUID(),
       alt: altText,
-      variants: uploadedVariants,
+      variants: uploadedVariants,  // Agora contém paths, não URLs
       width: originalWidth,
       height: originalHeight,
       mime_type: 'image/webp',

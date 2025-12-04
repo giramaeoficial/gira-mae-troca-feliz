@@ -1481,6 +1481,33 @@ export type Database = {
         }
         Relationships: []
       }
+      media_backup: {
+        Row: {
+          coluna: string
+          created_at: string
+          id: number
+          registro_id: string
+          tabela: string
+          valor_original: string
+        }
+        Insert: {
+          coluna: string
+          created_at?: string
+          id?: number
+          registro_id: string
+          tabela: string
+          valor_original: string
+        }
+        Update: {
+          coluna?: string
+          created_at?: string
+          id?: number
+          registro_id?: string
+          tabela?: string
+          valor_original?: string
+        }
+        Relationships: []
+      }
       metas_usuarios: {
         Row: {
           conquistado: boolean | null
@@ -3700,6 +3727,7 @@ export type Database = {
           table_name: string
         }[]
       }
+      clean_media_url: { Args: { input_url: string }; Returns: string }
       coletar_recompensa_missao: {
         Args: { p_missao_id: string; p_user_id: string }
         Returns: Json

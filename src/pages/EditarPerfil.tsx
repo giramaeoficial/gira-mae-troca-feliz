@@ -278,6 +278,8 @@ const EditarPerfil = () => {
         file: file
       });
 
+      // Para avatars, retornar a publicUrl pois é usada diretamente no profile
+      // O profile.avatar_url será exibido via buildAvatarUrl no frontend
       return uploadResult.publicUrl;
     } catch (error) {
       console.error('Erro ao fazer upload do avatar:', error);

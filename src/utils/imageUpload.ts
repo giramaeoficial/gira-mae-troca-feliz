@@ -1,13 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
-
-// Domínio público do R2 - configurar conforme ambiente
-const R2_PUBLIC_DOMAIN = import.meta.env.VITE_R2_PUBLIC_DOMAIN || 'https://pub-SEU-ID.r2.dev';
+import { buildBlogImageUrl } from '@/lib/cdn';
 
 /**
  * Faz upload de uma imagem para o Cloudflare R2 via Edge Function
  * @param file - Arquivo de imagem
  * @param bucket - Nome do bucket (padrão: 'blog-images')
- * @returns URL pública da imagem ou null em caso de erro
+ * @returns Path da imagem ou null em caso de erro (não URL completa)
  */
 export async function uploadImage(
   file: File,
@@ -49,11 +47,11 @@ export async function uploadImage(
       return null;
     }
 
-    // 3. Retornar URL pública
-    const publicUrl = `${R2_PUBLIC_DOMAIN}/${bucket}/${fileName}`;
-    console.log('✅ Upload R2 realizado:', publicUrl);
+    // 3. Retornar apenas o path (não URL completa)
+    // Quem consumir vai usar buildBlogImageUrl(path) para construir URL
+    console.log('✅ Upload R2 realizado, path:', fileName);
     
-    return publicUrl;
+    return fileName;
   } catch (error) {
     console.error('❌ Erro no upload R2:', error);
     return null;

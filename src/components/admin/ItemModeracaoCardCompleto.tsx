@@ -41,6 +41,7 @@ import { ptBR } from 'date-fns/locale';
 import { useUserCarteira } from '@/hooks/useUserCarteira';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
 import EditarItemModeracao from './EditarItemModeracao';
+import { buildItemImageUrl } from '@/lib/cdn';
 
 interface ItemModeracaoCardCompletoProps {
   item: any;

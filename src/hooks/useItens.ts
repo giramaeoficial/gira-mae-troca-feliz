@@ -198,8 +198,9 @@ export const useItens = () => {
             file: foto
           });
           
-          fotosUrls.push(uploadResult.publicUrl);
-          console.log('Foto uploaded com sucesso:', uploadResult.publicUrl);
+          // Salvar apenas o path no banco (não URL completa)
+          fotosUrls.push(uploadResult.path);
+          console.log('Foto uploaded com sucesso, path:', uploadResult.path);
         } catch (uploadError) {
           console.error('Erro no upload da foto:', uploadError);
           throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
