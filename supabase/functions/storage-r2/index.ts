@@ -1,10 +1,4 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { 
-  S3Client, 
-  PutObjectCommand, 
-  DeleteObjectCommand 
-} from 'https://esm.sh/@aws-sdk/client-s3@3.454.0'
-import { getSignedUrl } from 'https://esm.sh/@aws-sdk/s3-request-presigner@3.454.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,15 +32,6 @@ serve(async (req) => {
       throw new Error('R2 credentials not configured')
     }
 
-    const R2 = new S3Client({
-      region: 'auto',
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    })
-
     // 3. Recebimento dos dados
     const { action, key, bucket, contentType } = await req.json()
     console.log('📦 Request:', { action, bucket, key, contentType })
@@ -71,15 +56,19 @@ serve(async (req) => {
     const cleanedKey = cleanKey(key)
     console.log('🔑 Key limpa:', cleanedKey)
 
-    // 6. Gerar URL de upload
+    // 6. Gerar URL de upload usando AWS Signature V4 manualmente
     if (action === 'upload') {
-      const command = new PutObjectCommand({
-        Bucket: bucket,
-        Key: cleanedKey,
-        ContentType: contentType || 'image/jpeg',
+      const signedUrl = await generatePresignedUrl({
+        accountId,
+        accessKeyId,
+        secretAccessKey,
+        bucket,
+        key: cleanedKey,
+        contentType: contentType || 'image/jpeg',
+        expiresIn: 300,
+        method: 'PUT'
       })
 
-      const signedUrl = await getSignedUrl(R2, command, { expiresIn: 300 })
       console.log('✅ URL assinada gerada para upload')
 
       return new Response(
@@ -98,12 +87,26 @@ serve(async (req) => {
 
     // 7. Deletar arquivo
     if (action === 'delete') {
-      const command = new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: cleanedKey,
+      const endpoint = `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${cleanedKey}`
+      
+      const headers = await signRequest({
+        method: 'DELETE',
+        url: endpoint,
+        accessKeyId,
+        secretAccessKey,
+        region: 'auto',
+        service: 's3'
       })
 
-      await R2.send(command)
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        headers
+      })
+
+      if (!response.ok && response.status !== 404) {
+        throw new Error(`Failed to delete: ${response.status}`)
+      }
+
       console.log('✅ Arquivo deletado:', cleanedKey)
 
       return new Response(
@@ -134,20 +137,188 @@ serve(async (req) => {
 
 /**
  * Remove domínio e devolve só o path relativo
- * Funciona com URLs completas, paths com barra inicial, etc.
  */
 function cleanKey(input: string): string {
   try {
-    // Remove domínio e query params se vier URL completa
     if (input.startsWith('http')) {
       const url = new URL(input)
       return url.pathname.replace(/^\/+/, '')
     }
-
-    // remove possíveis barras iniciais
     return input.replace(/^\/+/, '')
   } catch {
-    // fallback seguro
     return input.replace(/^\/+/, '')
   }
+}
+
+/**
+ * Gera URL pré-assinada para upload no R2 usando AWS Signature V4
+ */
+async function generatePresignedUrl(params: {
+  accountId: string
+  accessKeyId: string
+  secretAccessKey: string
+  bucket: string
+  key: string
+  contentType: string
+  expiresIn: number
+  method: string
+}): Promise<string> {
+  const { accountId, accessKeyId, secretAccessKey, bucket, key, contentType, expiresIn } = params
+  
+  const host = `${accountId}.r2.cloudflarestorage.com`
+  const endpoint = `https://${host}/${bucket}/${key}`
+  
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.substring(0, 8)
+  const region = 'auto'
+  const service = 's3'
+  
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
+  const credential = `${accessKeyId}/${credentialScope}`
+  
+  const queryParams = new URLSearchParams({
+    'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
+    'X-Amz-Credential': credential,
+    'X-Amz-Date': amzDate,
+    'X-Amz-Expires': expiresIn.toString(),
+    'X-Amz-SignedHeaders': 'content-type;host',
+  })
+  
+  // Canonical request
+  const canonicalUri = `/${bucket}/${key}`
+  const canonicalQuerystring = queryParams.toString().split('&').sort().join('&')
+  const canonicalHeaders = `content-type:${contentType}\nhost:${host}\n`
+  const signedHeaders = 'content-type;host'
+  const payloadHash = 'UNSIGNED-PAYLOAD'
+  
+  const canonicalRequest = [
+    'PUT',
+    canonicalUri,
+    canonicalQuerystring,
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join('\n')
+  
+  // String to sign
+  const canonicalRequestHash = await sha256Hex(canonicalRequest)
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    canonicalRequestHash
+  ].join('\n')
+  
+  // Signing key
+  const kDate = await hmacSha256(`AWS4${secretAccessKey}`, dateStamp)
+  const kRegion = await hmacSha256(kDate, region)
+  const kService = await hmacSha256(kRegion, service)
+  const kSigning = await hmacSha256(kService, 'aws4_request')
+  
+  // Signature
+  const signature = await hmacSha256Hex(kSigning, stringToSign)
+  
+  queryParams.set('X-Amz-Signature', signature)
+  
+  return `${endpoint}?${queryParams.toString()}`
+}
+
+/**
+ * Assina requisição para operações diretas (DELETE)
+ */
+async function signRequest(params: {
+  method: string
+  url: string
+  accessKeyId: string
+  secretAccessKey: string
+  region: string
+  service: string
+}): Promise<Headers> {
+  const { method, url, accessKeyId, secretAccessKey, region, service } = params
+  
+  const parsedUrl = new URL(url)
+  const host = parsedUrl.host
+  const path = parsedUrl.pathname
+  
+  const now = new Date()
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '')
+  const dateStamp = amzDate.substring(0, 8)
+  
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`
+  
+  // Canonical request
+  const canonicalHeaders = `host:${host}\nx-amz-date:${amzDate}\n`
+  const signedHeaders = 'host;x-amz-date'
+  const payloadHash = await sha256Hex('')
+  
+  const canonicalRequest = [
+    method,
+    path,
+    '',
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash
+  ].join('\n')
+  
+  // String to sign
+  const canonicalRequestHash = await sha256Hex(canonicalRequest)
+  const stringToSign = [
+    'AWS4-HMAC-SHA256',
+    amzDate,
+    credentialScope,
+    canonicalRequestHash
+  ].join('\n')
+  
+  // Signing key
+  const kDate = await hmacSha256(`AWS4${secretAccessKey}`, dateStamp)
+  const kRegion = await hmacSha256(kDate, region)
+  const kService = await hmacSha256(kRegion, service)
+  const kSigning = await hmacSha256(kService, 'aws4_request')
+  
+  // Signature
+  const signature = await hmacSha256Hex(kSigning, stringToSign)
+  
+  const authHeader = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+  
+  return new Headers({
+    'Host': host,
+    'X-Amz-Date': amzDate,
+    'Authorization': authHeader
+  })
+}
+
+// Crypto helpers using Web Crypto API (Deno compatible)
+async function sha256Hex(data: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const dataBuffer = encoder.encode(data)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer)
+  return arrayBufferToHex(hashBuffer)
+}
+
+async function hmacSha256(key: string | ArrayBuffer, data: string): Promise<ArrayBuffer> {
+  const encoder = new TextEncoder()
+  const keyBuffer = typeof key === 'string' ? encoder.encode(key) : key
+  const dataBuffer = encoder.encode(data)
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBuffer,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  
+  return await crypto.subtle.sign('HMAC', cryptoKey, dataBuffer)
+}
+
+async function hmacSha256Hex(key: ArrayBuffer, data: string): Promise<string> {
+  const result = await hmacSha256(key, data)
+  return arrayBufferToHex(result)
+}
+
+function arrayBufferToHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
 }
