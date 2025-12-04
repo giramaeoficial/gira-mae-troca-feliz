@@ -251,8 +251,9 @@ export const useEditarItemForm = (initialItem: Item | null) => {
 
             console.log('✅ Upload result:', uploadResult);
             
-            fotosFinais.push(uploadResult.publicUrl);
-            console.log(`✅ Imagem ${i + 1} uploaded:`, uploadResult.publicUrl);
+            // Salvar apenas o path no banco (não URL completa)
+            fotosFinais.push(uploadResult.path);
+            console.log(`✅ Imagem ${i + 1} uploaded, path:`, uploadResult.path);
           } catch (uploadError: any) {
             console.error(`❌ Erro no upload da imagem ${i + 1}:`, uploadError);
             throw new Error(`Erro no upload da imagem ${i + 1}: ${uploadError.message}`);

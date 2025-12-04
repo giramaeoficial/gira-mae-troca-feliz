@@ -186,8 +186,9 @@ export const usePublicarItem = () => {
             file: foto
           });
           
-          fotosUrls.push(uploadResult.publicUrl);
-          console.log(`✅ Foto ${i + 1} uploaded:`, uploadResult.publicUrl);
+          // Salvar apenas o path no banco (não URL completa)
+          fotosUrls.push(uploadResult.path);
+          console.log(`✅ Foto ${i + 1} uploaded, path:`, uploadResult.path);
         } catch (uploadError: any) {
           console.error(`❌ Erro no upload da foto ${i + 1}:`, uploadError);
           throw new Error(`Erro no upload da imagem ${i + 1}: ${uploadError.message}`);

@@ -1,7 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-
-// Domínio público do R2 - configurar conforme ambiente
-const R2_PUBLIC_DOMAIN = import.meta.env.VITE_R2_PUBLIC_DOMAIN || 'https://pub-SEU-ID.r2.dev';
+import { buildImageUrl, getCdnForBucket } from '@/lib/cdn';
 
 export type ImageSize = 'thumbnail' | 'medium' | 'full';
 
@@ -18,6 +16,10 @@ export interface UploadResult {
   publicUrl: string;
 }
 
+/**
+ * Faz upload de imagem via Edge Function storage-r2
+ * Retorna o path do arquivo (não a URL completa)
+ */
 export const uploadImage = async ({
   bucket,
   path,
@@ -69,8 +71,8 @@ export const uploadImage = async ({
 
     console.log('✅ Upload R2 realizado com sucesso');
 
-    // Construir URL pública
-    const publicUrl = `${R2_PUBLIC_DOMAIN}/${bucket}/${path}`;
+    // Construir URL pública usando CDN
+    const publicUrl = buildImageUrl(path, bucket);
 
     return {
       path: path,
@@ -78,15 +80,20 @@ export const uploadImage = async ({
       publicUrl
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Erro no upload R2:', error);
     throw error;
   }
 };
 
+/**
+ * Obtém a URL pública de uma imagem usando CDN
+ * - Se pathOrUrl já for URL completa, retorna direto (compatibilidade)
+ * - Se for path, constrói URL usando CDN
+ */
 export const getImageUrl = (
   bucket: string,
-  path: string,
+  pathOrUrl: string,
   size: ImageSize = 'full',
   transform?: {
     width?: number;
@@ -95,11 +102,13 @@ export const getImageUrl = (
     format?: 'webp' | 'jpeg';
   }
 ): string => {
-  // R2 padrão não suporta transformações on-the-fly sem Cloudflare Images
-  // Retorna URL direta
-  return `${R2_PUBLIC_DOMAIN}/${bucket}/${path}`;
+  // Usar helper centralizado que já trata URLs completas vs paths
+  return buildImageUrl(pathOrUrl, bucket);
 };
 
+/**
+ * Deleta uma imagem via Edge Function storage-r2
+ */
 export const deleteImage = async (bucket: string, path: string) => {
   console.log('🗑️ Deletando imagem R2:', { bucket, path });
   
@@ -119,6 +128,9 @@ export const deleteImage = async (bucket: string, path: string) => {
   console.log('✅ Imagem deletada com sucesso');
 };
 
+/**
+ * Gera o path para uma imagem baseado no userId e filename
+ */
 export const generateImagePath = (userId: string, filename: string): string => {
   const timestamp = Date.now();
   const extension = filename.split('.').pop()?.toLowerCase();
