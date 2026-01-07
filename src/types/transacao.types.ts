@@ -40,10 +40,13 @@ export type TipoTransacaoEnum =
   
   // Saída: Taxas e Queimas
   | 'taxa_transferencia'
-  | 'taxa_extensao_validade' // NOVO
+  | 'taxa_extensao_validade'
   | 'taxa_marketplace'
   | 'queima_expiracao'
-  | 'queima_administrativa';
+  | 'queima_administrativa'
+  
+  // Bônus de Jornadas
+  | 'bonus_jornada';
 
 export interface TipoTransacaoConfig {
   tipo: TipoTransacaoEnum;

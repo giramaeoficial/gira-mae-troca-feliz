@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
+import { R2_BUCKETS } from '@/lib/cdn';
 
 type Escola = Tables<'escolas_inep'>;
 
@@ -192,18 +193,15 @@ export const useItens = () => {
           const fileName = generateImagePath(itemData.publicado_por, foto.name);
           console.log('Fazendo upload da foto:', fileName);
           
-          await uploadImage({
-            bucket: 'itens',
+          const uploadResult = await uploadImage({
+            bucket: R2_BUCKETS.itens,
             path: fileName,
             file: foto
           });
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('itens')
-            .getPublicUrl(fileName);
           
-          fotosUrls.push(publicUrl);
-          console.log('Foto uploaded com sucesso:', publicUrl);
+          // Salvar apenas o path no banco (não URL completa)
+          fotosUrls.push(uploadResult.path);
+          console.log('Foto uploaded com sucesso, path:', uploadResult.path);
         } catch (uploadError) {
           console.error('Erro no upload da foto:', uploadError);
           throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);

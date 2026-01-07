@@ -142,7 +142,6 @@ const ItemCardWithActions: React.FC<ItemCardWithActionsProps> = ({ item }) => {
               bucket="itens"
               size="medium"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              placeholder="📷"
               onError={() => console.error('Erro ao carregar item do perfil:', item.id)}
             />
           ) : (

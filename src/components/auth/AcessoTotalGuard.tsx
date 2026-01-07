@@ -1,6 +1,9 @@
 // ================================================================
 // 5. AcessoTotalGuard.tsx - STEP 8+ (acesso completo)
 // ================================================================
+// ATUALIZADO: Removida verificação de missão (2 itens)
+// Usuários são liberados após: termos + endereço + cidade liberada
+// ================================================================
 
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
@@ -25,14 +28,14 @@ const AcessoTotalGuard: React.FC<AcessoTotalGuardProps> = ({ children }) => {
       }
 
       try {
-        // Verificar se é admin
-        const { data: adminCheck, error: adminError } = await supabase
+        // Verificar se é admin (usando maybeSingle para evitar erro quando não encontra)
+        const { data: adminCheck } = await supabase
           .from('admin_users')
           .select('user_id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
-        const isAdmin = !adminError && adminCheck;
+        const isAdmin = !!adminCheck;
 
         // Verificar dados do perfil
         const { data: profile, error: profileError } = await supabase
@@ -56,40 +59,21 @@ const AcessoTotalGuard: React.FC<AcessoTotalGuardProps> = ({ children }) => {
         }
 
         let cidadeLiberada = false;
-        let itensCount = 0;
 
-        // Se não é admin, verificar requisitos completos
-        if (!isAdmin) {
-          // Contar itens publicados
-          const { count, error: itensError } = await supabase
-            .from('itens')
-            .select('*', { count: 'exact', head: true })
-            .eq('publicado_por', user.id)
-            .neq('status', 'removido');
+        // Se não é admin, verificar se cidade está liberada
+        if (!isAdmin && profile.cidade && profile.estado) {
+          const { data: cidadeConfig } = await supabase
+            .from('cidades_config')
+            .select('liberada')
+            .eq('cidade', profile.cidade)
+            .eq('estado', profile.estado)
+            .maybeSingle();
 
-          if (itensError) {
-            console.error('Erro ao contar itens:', itensError);
-          }
-          itensCount = count || 0;
-
-          // Verificar se cidade está liberada
-          if (profile.cidade && profile.estado) {
-            const { data: cidadeConfig, error: cidadeError } = await supabase
-              .from('cidades_config')
-              .select('liberada')
-              .eq('cidade', profile.cidade)
-              .eq('estado', profile.estado)
-              .single();
-
-            if (!cidadeError && cidadeConfig) {
-              cidadeLiberada = cidadeConfig.liberada;
-            }
-          }
+          cidadeLiberada = cidadeConfig?.liberada ?? false;
         }
 
         setUserStatus({
           ...profile,
-          itens_publicados: itensCount,
           cidade_liberada: cidadeLiberada,
           is_admin: isAdmin
         });
@@ -132,17 +116,12 @@ const AcessoTotalGuard: React.FC<AcessoTotalGuardProps> = ({ children }) => {
                             userStatus.cidade &&
                             userStatus.estado;
 
-  const missaoCompleta = userStatus.itens_publicados >= 2;
-
-  // Redirecionar se não atende requisitos
+  // Redirecionar se onboarding incompleto
   if (!onboardingCompleto) {
     return <Navigate to="/onboarding/whatsapp" replace />;
   }
 
-  if (!missaoCompleta) {
-    return <Navigate to="/conceito-comunidade" replace />;
-  }
-
+  // Verificar se cidade está liberada
   if (!userStatus.cidade_liberada) {
     return <Navigate to="/aguardando-liberacao" replace />;
   }

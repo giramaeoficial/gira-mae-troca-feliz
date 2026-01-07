@@ -1,5 +1,9 @@
 project_id = "sjyvqtfpvqavtffexoky"
 
+# Storage R2 function - requires authentication
+[functions.storage-r2]
+verify_jwt = true
+
 # Public sitemap functions - no authentication required
 [functions.sitemap-index]
 verify_jwt = false

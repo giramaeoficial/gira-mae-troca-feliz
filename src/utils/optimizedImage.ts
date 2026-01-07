@@ -2,6 +2,8 @@
  * Utilitário para gerar HTML de imagens otimizadas com srcset
  */
 
+import { buildBlogImageUrl, isFullUrl } from '@/lib/cdn';
+
 export interface ImageVariants {
   small: string;
   medium: string;
@@ -18,14 +20,31 @@ export interface OptimizedImageData {
 }
 
 /**
+ * Constrói URL completa para variante de imagem de blog
+ * Se já for URL completa (dados antigos), retorna direto
+ * Se for path, constrói usando CDN
+ */
+function buildVariantUrl(pathOrUrl: string): string {
+  if (isFullUrl(pathOrUrl)) {
+    return pathOrUrl;
+  }
+  return buildBlogImageUrl(pathOrUrl);
+}
+
+/**
  * Gera atributos HTML para imagem otimizada
  */
 export function generateOptimizedImageAttrs(data: OptimizedImageData) {
   const { variants, alt, width, height } = data;
 
+  // Construir URLs usando CDN para cada variante
+  const smallUrl = buildVariantUrl(variants.small);
+  const mediumUrl = buildVariantUrl(variants.medium);
+  const largeUrl = buildVariantUrl(variants.large);
+
   return {
-    src: variants.large, // Fallback
-    srcSet: `${variants.small} 400w, ${variants.medium} 800w, ${variants.large} 1200w`,
+    src: largeUrl, // Fallback
+    srcSet: `${smallUrl} 400w, ${mediumUrl} 800w, ${largeUrl} 1200w`,
     sizes: '(max-width: 600px) 400px, (max-width: 900px) 800px, 1200px',
     alt,
     width,
@@ -38,12 +57,18 @@ export function generateOptimizedImageAttrs(data: OptimizedImageData) {
 /**
  * Gera markdown para imagem otimizada
  * Formato especial que será parseado pelo MarkdownRenderer
+ * Salva paths (não URLs completas) para permitir migração de CDN
  */
 export function generateOptimizedImageMarkdown(data: OptimizedImageData): string {
-  // Formato: ![alt](large-url "small-url|medium-url|large-url|width|height")
+  // Formato: ![alt](large-path "small-path|medium-path|large-path|width|height")
   const { variants, alt, width, height } = data;
+  
+  // Para exibição no markdown, usar URL completa da variante large
+  const largeUrl = buildVariantUrl(variants.large);
+  
+  // No title, salvar os paths (que serão usados para construir srcset)
   const title = `${variants.small}|${variants.medium}|${variants.large}|${width}|${height}`;
-  return `![${alt}](${variants.large} "${title}")`;
+  return `![${alt}](${largeUrl} "${title}")`;
 }
 
 /**

@@ -1,7 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { getImageUrl, ImageSize } from '@/utils/supabaseStorage';
+import { buildImageUrl, isFullUrl } from '@/lib/cdn';
+
+export type ImageSize = 'thumbnail' | 'medium' | 'full';
 
 interface LazyImageProps {
   src: string;
@@ -12,7 +13,6 @@ interface LazyImageProps {
   skeletonClassName?: string;
   onLoad?: () => void;
   onError?: () => void;
-  placeholder?: string;
   transform?: {
     width?: number;
     height?: number;
@@ -30,7 +30,6 @@ const LazyImage: React.FC<LazyImageProps> = ({
   skeletonClassName,
   onLoad,
   onError,
-  placeholder = "📷",
   transform
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -64,15 +63,17 @@ const LazyImage: React.FC<LazyImageProps> = ({
     };
   }, []);
 
-  // Processar URL da imagem
+  // Processar URL da imagem usando CDN helper
   const getProcessedImageUrl = () => {
-    // Se for uma URL completa (HTTP ou blob), usar diretamente
-    if (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:')) {
+    if (!src) return '';
+    
+    // Se já for URL completa (http, blob, data), usar direto
+    if (isFullUrl(src)) {
       return src;
     }
     
-    // Se for um caminho relativo do Supabase, processar com bucket
-    return getImageUrl(bucket, src, size, transform);
+    // Construir URL usando CDN + path
+    return buildImageUrl(src, bucket);
   };
 
   const imageUrl = getProcessedImageUrl();
@@ -99,8 +100,8 @@ const LazyImage: React.FC<LazyImageProps> = ({
         )}
       >
         <div className="text-center">
-          <span className="text-4xl mb-2 block">📷</span>
-          <span className="text-sm">Imagem não encontrada</span>
+          <span className="text-4xl mb-2 block">⚠️</span>
+          <span className="text-sm">Erro na imagem</span>
         </div>
       </div>
     );
@@ -108,31 +109,20 @@ const LazyImage: React.FC<LazyImageProps> = ({
 
   return (
     <div ref={containerRef} className={cn('relative overflow-hidden', className)}>
-      {/* Skeleton loading - só mostra se não carregou ainda */}
-      {!isLoaded && isInView && (
+      
+      {/* Spinner de Carregamento (Logotipo Girando) */}
+      {!isLoaded && (
         <div 
           className={cn(
-            'absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center',
+            'absolute inset-0 bg-gray-50 flex items-center justify-center',
             skeletonClassName
           )}
         >
-          <div className="text-gray-400 text-sm">
-            {placeholder}
-          </div>
-        </div>
-      )}
-
-      {/* Placeholder inicial antes de entrar em view */}
-      {!isInView && (
-        <div 
-          className={cn(
-            'absolute inset-0 bg-gray-100 flex items-center justify-center',
-            skeletonClassName
-          )}
-        >
-          <div className="text-gray-400 text-2xl">
-            📷
-          </div>
+          <img 
+            src="/giramae_logo.png"
+            alt="Carregando..."
+            className="animate-spin w-12 h-12 object-contain opacity-60"
+          />
         </div>
       )}
 
@@ -143,7 +133,7 @@ const LazyImage: React.FC<LazyImageProps> = ({
           src={imageUrl}
           alt={alt}
           className={cn(
-            'transition-opacity duration-300 w-full h-full object-cover',
+            'transition-opacity duration-500 w-full h-full object-cover absolute inset-0',
             isLoaded ? 'opacity-100' : 'opacity-0'
           )}
           onLoad={handleLoad}

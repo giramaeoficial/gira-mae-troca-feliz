@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from "sonner";
 import { useAtualizarItem, Item } from '@/hooks/useItensOptimized';
@@ -6,8 +5,7 @@ import { useConfigCategorias } from '@/hooks/useConfigCategorias';
 import { useSubcategorias } from '@/hooks/useSubcategorias';
 import { useTiposTamanho } from '@/hooks/useTamanhosPorCategoria';
 import { uploadImage, generateImagePath } from '@/utils/supabaseStorage';
-import { supabase } from '@/integrations/supabase/client';
-
+import { R2_BUCKETS } from '@/lib/cdn';
 interface EditFormData {
   titulo: string;
   descricao: string;
@@ -245,21 +243,18 @@ export const useEditarItemForm = (initialItem: Item | null) => {
           try {
             const fileName = generateImagePath(initialItem?.publicado_por || '', foto.name);
             
+            // Upload retorna publicUrl diretamente (R2)
             const uploadResult = await uploadImage({
-              bucket: 'itens',
+              bucket: R2_BUCKETS.itens,
               path: fileName,
               file: foto
             });
 
             console.log('✅ Upload result:', uploadResult);
-
-            // Gerar URL pública usando supabase client
-            const { data: { publicUrl } } = supabase.storage
-              .from('itens')
-              .getPublicUrl(fileName);
             
-            fotosFinais.push(publicUrl);
-            console.log(`✅ Imagem ${i + 1} uploaded:`, publicUrl);
+            // Salvar apenas o path no banco (não URL completa)
+            fotosFinais.push(uploadResult.path);
+            console.log(`✅ Imagem ${i + 1} uploaded, path:`, uploadResult.path);
           } catch (uploadError: any) {
             console.error(`❌ Erro no upload da imagem ${i + 1}:`, uploadError);
             throw new Error(`Erro no upload da imagem ${i + 1}: ${uploadError.message}`);

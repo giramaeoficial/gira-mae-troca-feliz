@@ -26,6 +26,7 @@ import { useConfigSistema } from '@/hooks/useConfigSistema';
 import { analytics } from '@/lib/analytics';
 import SEOHead from '@/components/seo/SEOHead';
 import { pageTitle } from '@/lib/pageTitle';
+import { useTourTrigger } from '@/modules/onboarding';
 
 const FeedOptimized = () => {
   const navigate = useNavigate();
@@ -36,6 +37,12 @@ const FeedOptimized = () => {
   useEffect(() => {
     analytics.feed.view();
   }, []);
+
+  // ✅ TOUR: Dispara automaticamente na primeira visita
+  useTourTrigger('feed-tour', { 
+    condition: 'first-visit',
+    delay: 1500 
+  });
   
   // ✅ Estados de filtros (incluindo novo filtro de logística)
   const [busca, setBusca] = useState('');
@@ -385,11 +392,12 @@ const FeedOptimized = () => {
       
       <main className="container mx-auto px-4 py-6">
         {/* ✅ FILTROS E BUSCA */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+        <div data-tour="filters-panel" className="bg-white rounded-lg shadow-sm border p-4 mb-6">
           {/* Campo de busca com ícone de filtro */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
+              data-tour="search-input"
               type="text"
               placeholder="Busque por vestido, carrinho, lego..."
               value={busca}
@@ -397,6 +405,7 @@ const FeedOptimized = () => {
               className="pl-10 pr-12 h-12 text-base"
             />
             <button
+              data-tour="expand-filters"
               onClick={toggleFiltrosAvancados}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded"
             >

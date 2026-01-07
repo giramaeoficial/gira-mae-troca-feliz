@@ -1,10 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
+import { buildBlogImageUrl } from '@/lib/cdn';
 
 /**
- * Faz upload de uma imagem para o Supabase Storage
+ * Faz upload de uma imagem para o Cloudflare R2 via Edge Function
  * @param file - Arquivo de imagem
  * @param bucket - Nome do bucket (padrão: 'blog-images')
- * @returns URL pública da imagem ou null em caso de erro
+ * @returns Path da imagem ou null em caso de erro (não URL completa)
  */
 export async function uploadImage(
   file: File,
@@ -14,29 +15,45 @@ export async function uploadImage(
     // Gerar nome único para o arquivo
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `${fileName}`;
 
-    // Upload para o Supabase Storage
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
+    console.log('🔄 Iniciando upload R2:', { bucket, fileName, fileSize: file.size });
 
-    if (error) {
-      console.error('Erro ao fazer upload:', error);
+    // 1. Pedir URL assinada para a Edge Function
+    const { data: funcData, error: funcError } = await supabase.functions.invoke('storage-r2', {
+      body: {
+        action: 'upload',
+        bucket,
+        key: fileName,
+        contentType: file.type
+      }
+    });
+
+    if (funcError || !funcData?.uploadUrl) {
+      console.error('❌ Erro ao obter URL de upload:', funcError);
       return null;
     }
 
-    // Obter URL pública
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(data.path);
+    // 2. Fazer o upload via PUT na URL assinada
+    const uploadResponse = await fetch(funcData.uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type
+      }
+    });
 
-    return urlData.publicUrl;
+    if (!uploadResponse.ok) {
+      console.error('❌ Falha no upload para R2:', uploadResponse.status);
+      return null;
+    }
+
+    // 3. Retornar apenas o path (não URL completa)
+    // Quem consumir vai usar buildBlogImageUrl(path) para construir URL
+    console.log('✅ Upload R2 realizado, path:', fileName);
+    
+    return fileName;
   } catch (error) {
-    console.error('Erro no upload:', error);
+    console.error('❌ Erro no upload R2:', error);
     return null;
   }
 }

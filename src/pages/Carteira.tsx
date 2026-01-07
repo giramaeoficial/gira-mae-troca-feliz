@@ -18,12 +18,19 @@ import { ptBR } from "date-fns/locale";
 import { analytics } from '@/lib/analytics';
 import SEOHead from '@/components/seo/SEOHead';
 import { pageTitle } from '@/lib/pageTitle';
+import { useTourTrigger } from '@/modules/onboarding';
 
 
 const Carteira = () => {
   const { carteira, transacoes, loading, saldo, totalRecebido, totalGasto } = useCarteira();
   const { expiracao } = useGirinhasExpiracaoSegura();
   const { taxaTransferencia, taxaTransacao } = useConfigSistema();
+
+  // ✅ TOUR: Dispara automaticamente na primeira visita
+  useTourTrigger('carteira-tour', { 
+    condition: 'first-visit',
+    delay: 1000 
+  });
 
   // ✅ ANALYTICS: Visualização da carteira
   useEffect(() => {
@@ -74,14 +81,14 @@ const Carteira = () => {
           </div>
 
           {/* Widget de Bônus Diário - Destacado no topo */}
-          <div className="mb-6">
+          <div data-tour="bonus-diario" className="mb-6">
             <BonusDiarioWidget />
           </div>
 
           {/* Widgets superiores */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             {/* Saldo atual com informação de expiração */}
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/10 to-purple-100">
+            <Card data-tour="saldo-display" className="border-0 shadow-lg bg-gradient-to-br from-primary/10 to-purple-100">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   
@@ -157,7 +164,7 @@ const Carteira = () => {
           </div>
 
           {/* Tabs principais */}
-          <Tabs defaultValue="historico" className="space-y-6">
+          <Tabs data-tour="carteira-tabs" defaultValue="historico" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="historico" className="flex items-center gap-2">
                 <History className="w-4 h-4" />

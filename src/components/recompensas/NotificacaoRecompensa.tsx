@@ -1,12 +1,11 @@
-
-import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Trophy, Gift, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sparkles, Trophy, Gift, Star, X } from "lucide-react";
+import { GiraAvatar } from "@/modules/onboarding/components/GiraAvatar";
 
 interface Recompensa {
-  tipo: 'troca' | 'meta' | 'avaliacao' | 'indicacao' | 'cadastro';
+  tipo: 'troca' | 'meta' | 'avaliacao' | 'indicacao' | 'cadastro' | 'jornada';
   valor: number;
   descricao: string;
   meta?: string;
@@ -18,40 +17,63 @@ interface NotificacaoRecompensaProps {
 }
 
 const NotificacaoRecompensa = ({ recompensa, onClose }: NotificacaoRecompensaProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [targetPosition, setTargetPosition] = useState<{ top: number; left: number } | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (recompensa) {
-      setIsOpen(true);
+      // Encontrar elemento do saldo no header
+      const walletElement = document.querySelector('[data-tour="wallet-button"]');
+      
+      if (walletElement) {
+        const rect = walletElement.getBoundingClientRect();
+        setTargetPosition({
+          top: rect.bottom + 12,
+          left: Math.max(16, Math.min(rect.left + rect.width / 2 - 160, window.innerWidth - 336)),
+        });
+        
+        // Adicionar highlight ao elemento do saldo
+        walletElement.classList.add('gira-highlight-pulse');
+      }
+      
+      setIsVisible(true);
       setShowConfetti(true);
       
-      // Remover confetti após animação
       setTimeout(() => setShowConfetti(false), 3000);
     }
   }, [recompensa]);
 
   const handleClose = () => {
-    setIsOpen(false);
+    // Remover highlight do saldo
+    const walletElement = document.querySelector('[data-tour="wallet-button"]');
+    if (walletElement) {
+      walletElement.classList.remove('gira-highlight-pulse');
+    }
+    
+    setIsVisible(false);
     setTimeout(onClose, 300);
   };
 
-  if (!recompensa) return null;
+  if (!recompensa || !isVisible) return null;
 
   const getIcon = () => {
     switch (recompensa.tipo) {
       case 'troca':
-        return <Gift className="h-16 w-16 text-green-500 animate-bounce" />;
+        return <Gift className="h-8 w-8 text-green-500" />;
       case 'meta':
-        return <Trophy className="h-16 w-16 text-yellow-500 animate-pulse" />;
+        return <Trophy className="h-8 w-8 text-yellow-500" />;
       case 'avaliacao':
-        return <Star className="h-16 w-16 text-blue-500 animate-spin" style={{ animationDuration: '3s' }} />;
+        return <Star className="h-8 w-8 text-blue-500" />;
       case 'indicacao':
-        return <Sparkles className="h-16 w-16 text-purple-500 animate-bounce" />;
+        return <Sparkles className="h-8 w-8 text-purple-500" />;
       case 'cadastro':
-        return <Gift className="h-16 w-16 text-pink-500 animate-pulse" />;
+        return <Gift className="h-8 w-8 text-pink-500" />;
+      case 'jornada':
+        return <Trophy className="h-8 w-8 text-pink-500" />;
       default:
-        return <Sparkles className="h-16 w-16 text-primary animate-bounce" />;
+        return <Sparkles className="h-8 w-8 text-primary" />;
     }
   };
 
@@ -60,121 +82,119 @@ const NotificacaoRecompensa = ({ recompensa, onClose }: NotificacaoRecompensaPro
       case 'troca':
         return '🎉 Troca Fantástica!';
       case 'meta':
-        return `🏆 ${recompensa.meta ? recompensa.meta.toUpperCase() : 'CONQUISTA'} Desbloqueada!`;
+        return `🏆 ${recompensa.meta?.toUpperCase() || 'CONQUISTA'}!`;
       case 'avaliacao':
         return '⭐ Você é Incrível!';
       case 'indicacao':
-        return '👥 Embaixadora GiraMãe!';
+        return '👥 Embaixadora!';
       case 'cadastro':
-        return '🎁 Bem-vinda à Família!';
+        return '🎁 Bem-vinda!';
+      case 'jornada':
+        return `${recompensa.meta || '🗺️'} Concluído!`;
       default:
         return '✨ Parabéns!';
     }
   };
 
-  const getCor = () => {
-    switch (recompensa.tipo) {
-      case 'troca':
-        return 'from-green-200 via-green-100 to-emerald-50 border-green-300';
-      case 'meta':
-        return 'from-yellow-200 via-yellow-100 to-amber-50 border-yellow-300';
-      case 'avaliacao':
-        return 'from-blue-200 via-blue-100 to-sky-50 border-blue-300';
-      case 'indicacao':
-        return 'from-purple-200 via-purple-100 to-violet-50 border-purple-300';
-      case 'cadastro':
-        return 'from-pink-200 via-pink-100 to-rose-50 border-pink-300';
-      default:
-        return 'from-gray-200 via-gray-100 to-slate-50 border-gray-300';
-    }
-  };
-
-  const getMensagemMotivacional = () => {
-    switch (recompensa.tipo) {
-      case 'troca':
-        return 'Cada troca fortalece nossa comunidade! Continue espalhando essa energia positiva.';
-      case 'meta':
-        return 'Você é uma verdadeira líder na nossa comunidade! Que exemplo inspirador.';
-      case 'avaliacao':
-        return 'Suas avaliações ajudam outras mães a fazer escolhas melhores. Muito obrigada!';
-      case 'indicacao':
-        return 'Você está construindo uma rede de apoio incrível! Cada nova mãe fortalece nossa comunidade.';
-      case 'cadastro':
-        return 'Você faz parte de algo especial agora. Juntas, criamos um mundo melhor para nossos filhos!';
-      default:
-        return 'Continue sendo essa pessoa incrível!';
-    }
-  };
-
+  // Tooltip posicionado abaixo do saldo
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={`max-w-md bg-gradient-to-br ${getCor()} border-2 shadow-2xl relative overflow-hidden`}>
-        {/* Efeito de confetti/partículas */}
-        {showConfetti && (
-          <div className="absolute inset-0 pointer-events-none">
-            {[...Array(20)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute animate-bounce"
-                style={{
-                  left: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 2}s`,
-                  animationDuration: `${2 + Math.random() * 2}s`
-                }}
-              >
-                ✨
-              </div>
-            ))}
-          </div>
+    <>
+      {/* Overlay escuro */}
+      <div 
+        className="fixed inset-0 bg-black/50 z-[9998] animate-fade-in"
+        onClick={handleClose}
+      />
+      
+      {/* Confetti */}
+      {showConfetti && (
+        <div className="fixed inset-0 pointer-events-none z-[9999]">
+          {[...Array(30)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute text-2xl animate-bounce"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 50}%`,
+                animationDelay: `${Math.random() * 2}s`,
+                animationDuration: `${1 + Math.random() * 2}s`,
+              }}
+            >
+              {['✨', '🎉', '⭐', '💫', '🌟'][Math.floor(Math.random() * 5)]}
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {/* Tooltip apontando para o saldo */}
+      <div
+        ref={tooltipRef}
+        className="fixed z-[10000] w-[320px] animate-scale-in"
+        style={{
+          top: targetPosition?.top ?? '50%',
+          left: targetPosition?.left ?? '50%',
+          transform: targetPosition ? 'none' : 'translate(-50%, -50%)',
+        }}
+      >
+        {/* Seta apontando para cima (para o saldo) */}
+        {targetPosition && (
+          <div 
+            className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gradient-to-br from-pink-100 to-rose-50 rotate-45 border-l border-t border-pink-200"
+          />
         )}
-
-        <DialogHeader className="text-center relative z-10">
-          <DialogTitle className="text-3xl font-bold mb-4">
-            {getTitulo()}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6 text-center relative z-10">
-          <div className="flex justify-center">
-            {getIcon()}
+        
+        <div className="bg-gradient-to-br from-pink-100 via-rose-50 to-fuchsia-50 rounded-2xl shadow-2xl border-2 border-pink-200 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-pink-200/50 to-rose-200/50">
+            <div className="flex items-center gap-2">
+              {getIcon()}
+              <span className="font-bold text-gray-800">{getTitulo()}</span>
+            </div>
+            <button 
+              onClick={handleClose}
+              className="p-1 rounded-full hover:bg-white/50 transition-colors"
+            >
+              <X className="w-4 h-4 text-gray-500" />
+            </button>
           </div>
-
-          <div className="space-y-3">
-            <p className="text-xl font-bold text-gray-800">
+          
+          {/* Body */}
+          <div className="p-4 space-y-4">
+            {/* Gira Avatar celebrando */}
+            <div className="flex justify-center">
+              <div className="w-24 h-24">
+                <GiraAvatar emotion="celebrating" size="lg" />
+              </div>
+            </div>
+            
+            {/* Descrição */}
+            <p className="text-center text-sm text-gray-700 font-medium">
               {recompensa.descricao}
             </p>
             
-            <div className="flex items-center justify-center gap-3">
-              <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-6 py-3 text-xl shadow-lg animate-pulse">
-                +{recompensa.valor} Girinhas
+            {/* Badge de Girinhas */}
+            <div className="flex items-center justify-center gap-2">
+              <Badge className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-2 text-lg shadow-lg animate-pulse">
+                +{recompensa.valor} Girinha{recompensa.valor > 1 ? 's' : ''}
               </Badge>
-              <Sparkles className="h-6 w-6 text-yellow-500 animate-spin" />
+              <Sparkles className="h-5 w-5 text-yellow-500 animate-spin" style={{ animationDuration: '3s' }} />
             </div>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur-sm p-5 rounded-xl shadow-inner border border-white/50">
-            <p className="text-sm font-medium text-gray-700 leading-relaxed">
-              {getMensagemMotivacional()}
+            
+            {/* Mensagem sobre o saldo */}
+            <p className="text-center text-xs text-gray-500">
+              ☝️ Seu saldo foi atualizado acima!
             </p>
+            
+            {/* Botão */}
+            <Button 
+              onClick={handleClose}
+              className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-semibold shadow-lg"
+            >
+              ✨ Continuar
+            </Button>
           </div>
-
-          {recompensa.tipo === 'meta' && (
-            <div className="bg-gradient-to-r from-amber-100 to-yellow-100 p-4 rounded-xl border border-amber-200">
-              <p className="text-sm font-bold text-amber-800">
-                🌟 Você está no caminho certo! Continue trocando para desbloquear mais conquistas.
-              </p>
-            </div>
-          )}
-
-          <Button 
-            onClick={handleClose}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3 text-lg font-semibold shadow-lg transform hover:scale-105 transition-all duration-200"
-          >
-            ✨ Continuar Brilhando ✨
-          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </>
   );
 };
 

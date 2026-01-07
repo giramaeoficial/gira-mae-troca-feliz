@@ -12,6 +12,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { uploadImage } from '@/utils/supabaseStorage';
+import { R2_BUCKETS } from '@/lib/cdn';
 import type { Address } from '@/hooks/useAddress';
 
 const EditarPerfil = () => {
@@ -271,17 +273,15 @@ const EditarPerfil = () => {
     const fileName = `${user?.id}-${Date.now()}.jpg`;
 
     try {
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file);
+      const uploadResult = await uploadImage({
+        bucket: R2_BUCKETS.avatars,
+        path: fileName,
+        file: file
+      });
 
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
+      // Para avatars, retornar a publicUrl pois é usada diretamente no profile
+      // O profile.avatar_url será exibido via buildAvatarUrl no frontend
+      return uploadResult.publicUrl;
     } catch (error) {
       console.error('Erro ao fazer upload do avatar:', error);
       throw error;

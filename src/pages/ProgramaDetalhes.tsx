@@ -11,6 +11,8 @@ import { useProgramaDetalhes } from '@/hooks/parcerias/useProgramaDetalhes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import SEOHead from '@/components/seo/SEOHead';
+import Header from '@/components/shared/Header';
+import Footer from '@/components/shared/Footer';
 
 export default function ProgramaDetalhes() {
   const { organizacao_codigo, programa_codigo } = useParams();
@@ -122,8 +124,10 @@ export default function ProgramaDetalhes() {
         title={`${programa.nome} - ${organizacao.nome} | GiraMãe`}
         description={programa.descricao}
       />
+      <Header />
       
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <main className="min-h-screen pt-16">
+        <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" asChild>
@@ -312,7 +316,10 @@ export default function ProgramaDetalhes() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </div>
+      </main>
+      
+      <Footer />
     </>
   );
 }
