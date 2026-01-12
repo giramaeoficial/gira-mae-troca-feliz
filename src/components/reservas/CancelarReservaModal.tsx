@@ -178,7 +178,7 @@ export const CancelarReservaModal = ({
       <DialogContent className="max-w-sm mx-auto p-0 gap-0">
         <div className="space-y-4 p-4">
           <div className="text-center">
-            <h2 className="text-lg font-semibold text-red-600">🚫 Cancelar Reserva</h2>
+            <DialogTitle className="text-lg font-semibold text-red-600">🚫 Cancelar Reserva</DialogTitle>
             <p className="text-sm text-gray-600 mt-1">
               Por que você está cancelando?
             </p>
