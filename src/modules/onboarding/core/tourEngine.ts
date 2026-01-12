@@ -50,6 +50,12 @@ export class TourEngine {
               }
             },
             {
+              name: 'offset',
+              options: {
+                offset: [0, 12]
+              }
+            },
+            {
               name: 'computeStyles',
               options: {
                 gpuAcceleration: false // Usa top/left ao invés de transform

@@ -34,19 +34,10 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TOOLTIP CENTRALIZADO (quando não tem attachTo / elemento de referência)
-   Shepherd adiciona a classe .shepherd-centered quando attachTo é undefined
+   TOOLTIP CENTRALIZADO
+   Apenas quando explicitamente marcado como centralizado
    ═══════════════════════════════════════════════════════════════════════════ */
 .shepherd-element.shepherd-centered,
-.shepherd-element:not(.shepherd-has-target) {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  margin: 0 !important;
-}
-
-/* Classe customizada para forçar centralização */
 .gira-tour-element.gira-tour-centered {
   position: fixed !important;
   top: 50% !important;
@@ -58,27 +49,13 @@
 /* Mobile: ajusta posicionamento mas mantém próximo ao elemento */
 @media (max-width: 640px) {
   .gira-tour-element {
-    /* Mobile First: ocupar largura segura mas respeitar margens */
+    /* No mobile, permitimos que o Popper posicione, mas limitamos a largura */
     width: calc(100vw - 32px) !important;
     max-width: 380px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    /* Força centralização horizontal no mobile para evitar extravasar */
   }
 
-  /* Se tiver target, Shepherd tenta posicionar absolute. 
-     Vamos forçar fixed bottom no mobile se for muito complexo, 
-     ou permitir que o Popper ajuste mas com limites.
-  */
-
-  .shepherd-element.shepherd-has-target {
-    /* Permitir que o Popper ajuste, apenas limitar largura */
-    max-width: 90vw !important;
-  }
-
-  /* Centralizado (sem target ou forçado) */
+  /* Centralizado explicitamente no mobile */
   .shepherd-element.shepherd-centered,
-  .shepherd-element:not(.shepherd-has-target),
   .gira-tour-element.gira-tour-centered {
     position: fixed !important;
     top: 50% !important;
@@ -90,7 +67,6 @@
 
 /* Seta do tooltip - esconder quando centralizado */
 .shepherd-element.shepherd-centered .shepherd-arrow,
-.shepherd-element:not(.shepherd-has-target) .shepherd-arrow,
 .gira-tour-element.gira-tour-centered .shepherd-arrow {
   display: none !important;
 }
