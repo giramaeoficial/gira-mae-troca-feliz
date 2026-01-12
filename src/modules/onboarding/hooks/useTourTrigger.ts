@@ -5,16 +5,18 @@ import { TriggerCondition } from '../types';
 interface TriggerOptions {
   condition: TriggerCondition;
   delay?: number;
+  ready?: boolean;
 }
 
 export const useTourTrigger = (tourId: string, options: TriggerOptions) => {
   const { startTour, checkTourEligibility, state } = useGiraTour();
+  const isReady = options.ready !== undefined ? options.ready : true;
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
 
-    // Não disparar se já tem tour ativo
-    if (state.isTourActive) return;
+    // Não disparar se já tem tour ativo ou não está pronto
+    if (state.isTourActive || !isReady) return;
 
     if (options.condition === 'first-visit') {
       if (checkTourEligibility(tourId)) {
@@ -30,5 +32,5 @@ export const useTourTrigger = (tourId: string, options: TriggerOptions) => {
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [tourId, options.condition, options.delay, startTour, checkTourEligibility, state.isTourActive]);
+  }, [tourId, options.condition, options.delay, isReady, startTour, checkTourEligibility, state.isTourActive]);
 };

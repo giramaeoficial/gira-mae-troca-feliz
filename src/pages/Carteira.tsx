@@ -29,7 +29,8 @@ const Carteira = () => {
   // ✅ TOUR: Dispara automaticamente na primeira visita
   useTourTrigger('carteira-tour', {
     condition: 'first-visit',
-    delay: 1000
+    delay: 1000,
+    ready: !loading
   });
 
   // ✅ ANALYTICS: Visualização da carteira
@@ -205,8 +206,8 @@ const Carteira = () => {
                           <div className="flex items-center gap-3">
                             {/* ✅ CORREÇÃO 1: Badge usa valor >= 0 */}
                             <div className={`px-2 py-1 rounded-full text-xs font-medium border ${Number(transacao.valor) >= 0
-                                ? 'text-green-600 bg-green-50 border-green-200'
-                                : 'text-red-600 bg-red-50 border-red-200'
+                              ? 'text-green-600 bg-green-50 border-green-200'
+                              : 'text-red-600 bg-red-50 border-red-200'
                               }`}>
                               {transacao.config?.descricao_pt || transacao.descricao || transacao.tipo}
                             </div>
@@ -227,8 +228,8 @@ const Carteira = () => {
                           <div className="text-right">
                             {/* ✅ CORREÇÃO 2: Cor e sinal usam valor >= 0 */}
                             <p className={`font-bold ${Number(transacao.valor) >= 0
-                                ? 'text-green-600'
-                                : 'text-red-600'
+                              ? 'text-green-600'
+                              : 'text-red-600'
                               }`}>
                               {/* ✅ CORREÇÃO 3: Sinal baseado no valor */}
                               {Number(transacao.valor) >= 0 ? '+' : '-'}
