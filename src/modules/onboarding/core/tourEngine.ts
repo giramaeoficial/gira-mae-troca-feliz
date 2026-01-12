@@ -38,7 +38,25 @@ export class TourEngine {
         scrollTo: { behavior: 'smooth', block: 'center' },
         cancelIcon: { enabled: false },
         modalOverlayOpeningPadding: 8,
-        modalOverlayOpeningRadius: 8
+        modalOverlayOpeningRadius: 8,
+        popperOptions: {
+          strategy: 'fixed',
+          modifiers: [
+            {
+              name: 'preventOverflow',
+              options: {
+                altAxis: true,
+                tether: false
+              }
+            },
+            {
+              name: 'computeStyles',
+              options: {
+                gpuAcceleration: false // Usa top/left ao invés de transform
+              }
+            }
+          ]
+        }
       }
     });
 
