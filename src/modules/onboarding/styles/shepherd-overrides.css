@@ -31,6 +31,8 @@
 
 /* Garantir tooltip sempre visível na viewport */
 .shepherd-element {
+  margin: 0 !important;
+  /* Remove margens default do container base */
   max-height: calc(100vh - 40px) !important;
   max-width: calc(100vw - 32px) !important;
 }
