@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { buildAvatarUrl } from '@/lib/cdn';
 import ImageUpload from '@/components/ui/image-upload';
 import { DatePicker } from '@/components/ui/date-picker';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,7 +62,7 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
         .neq('id', profile?.id || '');
 
       if (error) throw error;
-      
+
       setUsernameAvailable(data.length === 0);
     } catch (error) {
       console.error('Erro ao verificar username:', error);
@@ -100,12 +95,12 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="w-20 h-20">
-              <AvatarImage src={profile?.avatar_url} alt={profile?.nome} />
+              <AvatarImage src={buildAvatarUrl(profile?.avatar_url)} alt={profile?.nome} />
               <AvatarFallback className="text-lg">
                 {profile?.nome?.charAt(0) || 'U'}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex-1">
               <ImageUpload
                 value={avatarFiles}
@@ -141,8 +136,8 @@ const DadosPessoaisSection: React.FC<DadosPessoaisSectionProps> = ({
               onChange={(e) => handleUsernameChange(e.target.value)}
               placeholder="meuusername"
               className={
-                usernameAvailable === false ? "border-destructive" : 
-                usernameAvailable === true ? "border-success" : ""
+                usernameAvailable === false ? "border-destructive" :
+                  usernameAvailable === true ? "border-success" : ""
               }
             />
             {checkingUsername && (

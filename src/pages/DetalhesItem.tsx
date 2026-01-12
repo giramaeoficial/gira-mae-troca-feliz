@@ -35,6 +35,7 @@ import { supabase } from '@/integrations/supabase/client';
 import FriendlyError from '@/components/error/FriendlyError';
 import { useReservas } from '@/hooks/useReservas';
 import { useBonificacoes } from '@/hooks/useBonificacoes';
+import { buildAvatarUrl, buildItemImageUrl } from '@/lib/cdn';
 
 interface ItemFeed {
   id: string;
@@ -95,7 +96,7 @@ const DetalhesItem = () => {
 
   const item = useMemo(() => {
     if (!data) return null;
-    
+
     return {
       id: data.id || '',
       titulo: data.titulo || '',
@@ -145,14 +146,14 @@ const DetalhesItem = () => {
 
     try {
       await criarReserva(id);
-      
+
       // ✅ ANALYTICS: Troca completa (bloqueio de Girinhas)
       analytics.items.exchangeComplete(
         id,
         item.id,
         item.valor_girinhas
       );
-      
+
       toast({
         title: "Item reservado!",
         description: "O vendedor foi notificado da sua reserva.",
@@ -241,7 +242,7 @@ const DetalhesItem = () => {
   }
 
   if (error) {
-    return <FriendlyError 
+    return <FriendlyError
       title="Erro ao carregar item"
       message="Não foi possível carregar os detalhes do item. Tente novamente mais tarde."
       onRetry={() => window.location.reload()}
@@ -249,7 +250,7 @@ const DetalhesItem = () => {
   }
 
   if (!item) {
-    return <FriendlyError 
+    return <FriendlyError
       title="Item não encontrado"
       message="O item que você está procurando não foi encontrado ou não está mais disponível."
     />;
@@ -291,10 +292,10 @@ const DetalhesItem = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
-                    <Textarea 
+                    <Textarea
                       placeholder="Descreva o motivo da denúncia..."
-                      value={motivoDenuncia} 
-                      onChange={(e) => setMotivoDenuncia(e.target.value)} 
+                      value={motivoDenuncia}
+                      onChange={(e) => setMotivoDenuncia(e.target.value)}
                     />
                   </div>
                   <Button onClick={handleReportarItem}>Reportar</Button>
@@ -308,10 +309,10 @@ const DetalhesItem = () => {
                 <div className="space-y-4">
                   {item.fotos.map((foto, index) => (
                     <div key={index} className="flex justify-center">
-                      <img 
-                        src={foto} 
-                        alt={`Foto do item ${index + 1}`} 
-                        className="max-h-64 object-contain mx-auto rounded-lg" 
+                      <img
+                        src={buildItemImageUrl(foto)}
+                        alt={`Foto do item ${index + 1}`}
+                        className="max-h-64 object-contain mx-auto rounded-lg"
                       />
                     </div>
                   ))}
@@ -329,7 +330,7 @@ const DetalhesItem = () => {
           <CardFooter className="flex flex-col md:flex-row items-center justify-between py-4">
             <div className="flex items-center space-x-4">
               <Avatar>
-                <AvatarImage src={item.publicado_por_profile?.avatar_url || ''} alt={item.publicado_por_profile?.nome} />
+                <AvatarImage src={buildAvatarUrl(item.publicado_por_profile?.avatar_url)} alt={item.publicado_por_profile?.nome} />
                 <AvatarFallback>{item.publicado_por_profile?.nome?.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">

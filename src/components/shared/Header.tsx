@@ -15,6 +15,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from "@/lib/utils";
+import { buildAvatarUrl } from "@/lib/cdn";
 
 /* ---------------- NAVLINK COMPONENT ------------------ */
 
@@ -120,7 +121,7 @@ const Header = () => {
   };
 
   const desktopNavItems = [
-        { label: 'Meu Perfil', path: '/perfil', icon: User },
+    { label: 'Meu Perfil', path: '/perfil', icon: User },
     { label: 'Carteira', path: '/carteira', icon: Wallet },
     { label: 'Favoritos', path: '/favoritos', icon: Heart },
     { label: 'Seguindo', path: '/maes-seguidas', icon: UserCheck },
@@ -128,7 +129,7 @@ const Header = () => {
     { label: 'Indicações', path: '/indicacoes', icon: Users },
     { label: 'Contato', path: '/contato', icon: Megaphone },
     { label: 'Blog', path: '/blog', icon: Rss },
-    { label: 'Parcerias', path: '/parcerias', icon: HeartHandshake }  ];
+    { label: 'Parcerias', path: '/parcerias', icon: HeartHandshake }];
 
   /* ------------------ HEADER DESLOGADO ------------------ */
 
@@ -160,14 +161,14 @@ const Header = () => {
     <>
       <header className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="w-full max-w-[1400px] mx-auto px-4">
-          
+
           <div className="flex justify-between items-center h-16">
 
             {/* -------------- LOGO -------------- */}
             <Link to="/feed" className="flex items-center gap-2 mr-4">
               <img src="/giramae_logo.png" alt="Logo GiraMãe"
                 className="h-12 w-auto object-contain" />
-              
+
             </Link>
 
             {/* -------------- MENU CENTRAL -------------- */}
@@ -186,7 +187,7 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button data-tour="header-menu" variant="ghost" size="sm" className="flex items-center space-x-2">
                     {profile?.avatar_url ? (
-                      <img src={profile.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full" />
+                      <img src={buildAvatarUrl(profile.avatar_url)} alt="Avatar" className="w-8 h-8 rounded-full" />
                     ) : (
                       <User className="w-5 h-5" />
                     )}
@@ -236,41 +237,41 @@ const Header = () => {
       {/* MOBILE MENU */}
       {mobileMenuOpen && !shouldHideMenus && (
         <div className="md:hidden fixed inset-0 z-50 bg-black/50"
-             onClick={() => setMobileMenuOpen(false)}>
+          onClick={() => setMobileMenuOpen(false)}>
 
           <div className="fixed right-0 top-0 h-full w-64 bg-white shadow-lg"
-               onClick={e => e.stopPropagation()}>
+            onClick={e => e.stopPropagation()}>
 
             <div className="p-4 border-b flex items-center justify-between">
-  {/* ESQUERDA: Avatar + nome + email */}
-  <div className="flex items-center gap-3">
-    
-    {profile?.avatar_url ? (
-      <img
-        src={profile.avatar_url}
-        className="w-12 h-12 rounded-full object-cover"
-      />
-    ) : (
-      <User className="w-12 h-12 p-2 bg-gray-100 rounded-full" />
-    )}
-    
+              {/* ESQUERDA: Avatar + nome + email */}
+              <div className="flex items-center gap-3">
 
-    <div className="flex flex-col">
-      <span className="font-semibold text-sm text-gray-900">
-        {profile?.nome || profile?.username || "Usuário"}
-      </span>
+                {profile?.avatar_url ? (
+                  <img
+                    src={buildAvatarUrl(profile.avatar_url)}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="w-12 h-12 p-2 bg-gray-100 rounded-full" />
+                )}
 
-      <span className="text-xs text-gray-500">
-        {profile?.email}
-      </span>
-    </div>
-  </div>
 
-  {/* DIREITA: Botão de fechar */}
-  {/* <Button variant="ghost" onClick={() => setMobileMenuOpen(false)}>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-sm text-gray-900">
+                    {profile?.nome || profile?.username || "Usuário"}
+                  </span>
+
+                  <span className="text-xs text-gray-500">
+                    {profile?.email}
+                  </span>
+                </div>
+              </div>
+
+              {/* DIREITA: Botão de fechar */}
+              {/* <Button variant="ghost" onClick={() => setMobileMenuOpen(false)}>
     <X className="h-5 w-5 mb-5" />
   </Button> */}
-</div>
+            </div>
 
 
             <nav className="p-4 space-y-2">
@@ -281,11 +282,10 @@ const Header = () => {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 py-2 px-3 rounded-md text-sm ${
-                      location.pathname === item.path
+                    className={`flex items-center gap-3 py-2 px-3 rounded-md text-sm ${location.pathname === item.path
                         ? "bg-primary text-white"
                         : "hover:bg-gray-100"
-                    }`}
+                      }`}
                   >
                     <Icon className="w-4 h-4" />
                     {item.label}

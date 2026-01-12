@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useReservas } from "@/hooks/useReservas";
 import { supabase } from "@/integrations/supabase/client";
+import { buildAvatarUrl, buildItemImageUrl } from "@/lib/cdn";
 
 interface ReservaCardProps {
   reserva: {
@@ -49,10 +50,10 @@ interface ReservaCardProps {
   onVerDetalhes?: (itemId: string) => void;
 }
 
-const ReservaCard = ({ 
-  reserva, 
-  onConfirmarEntrega, 
-  onCancelarReserva, 
+const ReservaCard = ({
+  reserva,
+  onConfirmarEntrega,
+  onCancelarReserva,
   onRefresh,
   onVerDetalhes
 }: ReservaCardProps) => {
@@ -78,7 +79,7 @@ const ReservaCard = ({
             .eq('reserva_id', reserva.id)
             .eq('avaliador_id', user.id)
             .maybeSingle();
-          
+
           setJaAvaliou(!!data);
         } catch (error) {
           console.error('Erro ao verificar avaliação:', error);
@@ -90,7 +91,9 @@ const ReservaCard = ({
   }, [reserva.id, reserva.status, user?.id]);
   const isVendedor = reserva.usuario_item === user?.id;
   const outraPessoa = isReservador ? reserva.profiles_vendedor : reserva.profiles_reservador;
-  const imagemItem = reserva.itens?.fotos?.[0] || "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
+  const imagemItem = reserva.itens?.fotos?.[0]
+    ? buildItemImageUrl(reserva.itens.fotos[0])
+    : "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200";
 
   // ✅ HANDLER WHATSAPP CORRIGIDO COM LIMPEZA DE NÚMERO E REGISTRO DE LOG
   const handleWhatsAppClick = async () => {
@@ -106,7 +109,7 @@ const ReservaCard = ({
     // ✅ LIMPAR E VALIDAR NÚMERO DE TELEFONE
     const rawNumber = outraPessoa.whatsapp;
     const cleanNumber = rawNumber.replace(/\D/g, ''); // Remove tudo que não é dígito
-    
+
     // ✅ VALIDAR SE O NÚMERO É VÁLIDO (pelo menos 10 dígitos)
     if (cleanNumber.length < 10) {
       toast({
@@ -126,10 +129,10 @@ const ReservaCard = ({
     const nomeOutraPessoa = outraPessoa.nome;
     const tituloItem = reserva.itens?.titulo || "item";
     const codigoItem = reserva.itens?.codigo_unico || '';
-    
+
     // ✅ MENSAGEM PERSONALIZADA BASEADA NO PAPEL DO USUÁRIO (incluindo código do item)
     let mensagem = "";
-    
+
     if (isReservador) {
       // Você reservou - vai falar com o vendedor (incluindo código do item)
       mensagem = `Olá ${nomeOutraPessoa}! Sobre o item *${tituloItem}* ${codigoItem ? `(Código: *${codigoItem}*)` : ''} que reservei. Quando podemos combinar a entrega? 😊`;
@@ -137,17 +140,17 @@ const ReservaCard = ({
       // Reservaram seu item - vai falar com o comprador (incluindo código do item)
       mensagem = `Olá ${nomeOutraPessoa}! Sobre o item *${tituloItem}* ${codigoItem ? `(Código: *${codigoItem}*)` : ''} que você reservou. Quando podemos combinar a entrega? 😊`;
     }
-    
+
     // ✅ CONSTRUIR URL DO WHATSAPP (SEM 55 DUPLICADO)
     const whatsappUrl = `https://wa.me/${finalNumber}?text=${encodeURIComponent(mensagem)}`;
-    
+
     console.log('🟡 Abrindo WhatsApp:', {
       numeroOriginal: rawNumber,
       numeroLimpo: cleanNumber,
       numeroFinal: finalNumber,
       url: whatsappUrl
     });
-    
+
     try {
       // ✅ REGISTRAR CONVERSA NO LOG (IGUAL AO FEED)
       await supabase.rpc('registrar_conversa_whatsapp', {
@@ -155,18 +158,18 @@ const ReservaCard = ({
         p_usuario_recebeu: isReservador ? reserva.usuario_item : reserva.usuario_reservou
       });
       console.log('✅ Comunicação WhatsApp registrada no banco');
-      
+
       // ✅ MOSTRAR TOAST DE CONFIRMAÇÃO
       toast({
         title: "Abrindo WhatsApp...",
         description: `Iniciando conversa com ${nomeOutraPessoa}`,
       });
-      
+
     } catch (error) {
       console.error('❌ Erro ao registrar comunicação WhatsApp:', error);
       // Não bloquear a abertura do WhatsApp por erro no log
     }
-    
+
     // ✅ ABRIR WHATSAPP
     window.open(whatsappUrl, '_blank');
   };
@@ -188,7 +191,7 @@ const ReservaCard = ({
           .eq('reserva_id', reserva.id)
           .eq('avaliador_id', user?.id)
           .single();
-        
+
         return !!data;
       } catch (error) {
         if (i === maxTentativas - 1) {
@@ -257,20 +260,20 @@ const ReservaCard = ({
           <div className="flex justify-between items-start">
             <div className="flex gap-3">
               {/* ✅ IMAGEM CLICÁVEL */}
-              <div 
+              <div
                 className="cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={handleVerDetalhes}
               >
-                <img 
-                  src={imagemItem} 
-                  alt={reserva.itens?.titulo || "Item"} 
+                <img
+                  src={imagemItem}
+                  alt={reserva.itens?.titulo || "Item"}
                   className="w-16 h-16 rounded-lg object-cover"
                 />
               </div>
               <div className="flex-grow">
                 {/* ✅ TÍTULO CLICÁVEL COM CÓDIGO DO ITEM */}
                 <div className="flex items-center gap-2">
-                  <h3 
+                  <h3
                     className="font-semibold text-gray-800 line-clamp-1 cursor-pointer hover:text-primary transition-colors"
                     onClick={handleVerDetalhes}
                   >
@@ -297,7 +300,7 @@ const ReservaCard = ({
         <CardContent className="py-3">
           <div className="flex items-center gap-3 mb-3">
             <Avatar className="w-8 h-8">
-              <AvatarImage src={outraPessoa?.avatar_url || undefined} />
+              <AvatarImage src={buildAvatarUrl(outraPessoa?.avatar_url)} />
               <AvatarFallback className="text-xs">
                 {outraPessoa?.nome?.split(' ').map(n => n[0]).join('') || '?'}
               </AvatarFallback>
@@ -322,9 +325,9 @@ const ReservaCard = ({
           <div className="flex gap-2 w-full">
             {/* ✅ BOTÃO VER DETALHES SEMPRE PRESENTE */}
             {onVerDetalhes && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleVerDetalhes}
                 className="shrink-0"
               >
@@ -336,8 +339,8 @@ const ReservaCard = ({
               <>
                 {/* ✅ BOTÃO WHATSAPP CORRIGIDO */}
                 {mostrarWhatsApp && (
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={handleWhatsAppClick}
                     className="flex-1 bg-green-500 hover:bg-green-600 text-white"
                   >
@@ -346,8 +349,8 @@ const ReservaCard = ({
                   </Button>
                 )}
 
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => setShowCodigoModal(true)}
                   className={`${mostrarWhatsApp ? 'shrink-0' : 'flex-1'} bg-blue-600 hover:bg-blue-700`}
                 >
@@ -355,9 +358,9 @@ const ReservaCard = ({
                   {isVendedor ? 'Ver código' : 'Código'}
                 </Button>
 
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={() => setShowCancelarModal(true)}
                   className="shrink-0 border-red-200 text-red-600 hover:bg-red-50"
                 >
@@ -367,8 +370,8 @@ const ReservaCard = ({
             )}
 
             {mostrarBotaoAvaliar && (
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 onClick={() => setShowAvaliacao(true)}
                 className="flex-1 bg-purple-600 hover:bg-purple-700"
               >
