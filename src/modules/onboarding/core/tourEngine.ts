@@ -50,15 +50,15 @@ export class TourEngine {
               }
             },
             {
-              name: 'offset',
+              name: 'flip',
               options: {
-                offset: [0, 12]
+                fallbackPlacements: ['bottom', 'right', 'left', 'top']
               }
             },
             {
-              name: 'computeStyles',
+              name: 'offset',
               options: {
-                gpuAcceleration: false // Usa top/left ao invés de transform
+                offset: [0, 12]
               }
             }
           ]

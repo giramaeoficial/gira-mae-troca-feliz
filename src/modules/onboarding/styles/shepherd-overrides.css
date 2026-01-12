@@ -25,6 +25,8 @@
   overflow: visible !important;
   font-family: inherit;
   z-index: 10000 !important;
+  margin: 0 !important;
+  /* Garante que não haja afastamento indesejado */
 }
 
 /* Garantir tooltip sempre visível na viewport */
