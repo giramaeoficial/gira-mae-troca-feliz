@@ -13,6 +13,7 @@ import {
 import { Heart, MapPin, School, Truck, Home, Clock, Users, Sparkles, CheckCircle, MessageCircle, Car, Info, User, MoreVertical, Flag, ZoomIn, ZoomOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { cn } from '@/lib/utils';
+import { buildItemImageUrl } from '@/lib/cdn';
 import ActionFeedback from '@/components/loading/ActionFeedback';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -379,7 +380,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                     <CarouselItem key={index} className="h-full pl-0">
                       <div className="w-full h-full" onClick={(e) => handleImageClick(e, index)}>
                         <LazyImage
-                          src={foto}
+                          src={buildItemImageUrl(foto)}
                           alt={`${item.titulo} - Foto ${index + 1}`}
                           className={cn(
                             "w-full h-full object-cover",
@@ -402,7 +403,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               </Carousel>
             ) : (
               <LazyImage
-                src={item.fotos?.[0] || '/placeholder-item.jpg'}
+                src={item.fotos?.[0] ? buildItemImageUrl(item.fotos[0]) : '/placeholder-item.jpg'}
                 alt={item.titulo}
                 className={cn(
                   "w-full h-full object-cover",
@@ -799,7 +800,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               }}
             >
               <img
-                src={item.fotos?.[selectedImageIndex] || '/placeholder-item.jpg'}
+                src={item.fotos?.[selectedImageIndex] ? buildItemImageUrl(item.fotos[selectedImageIndex]) : '/placeholder-item.jpg'}
                 alt={`${item.titulo} - Foto ${selectedImageIndex + 1}`}
                 className="max-w-full max-h-[calc(100vh-200px)] w-auto h-auto object-contain"
                 style={{
