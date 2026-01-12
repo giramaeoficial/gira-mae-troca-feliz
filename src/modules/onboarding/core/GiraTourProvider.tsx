@@ -67,7 +67,7 @@ let toursCache: Map<string, TourConfig> = new Map();
 export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const queryClient = useQueryClient();
   const { mostrarRecompensa } = useRecompensas();
-  
+
   const [state, setState] = useState<OnboardingState>({
     completedTours: getPersistedTours(),
     skippedTours: getSkippedTours(),
@@ -104,13 +104,24 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               validRoutes: jornada.rota_destino ? [jornada.rota_destino] : ['/'],
               reward: jornada.recompensa_girinhas,
               allowReplay: false,
-              steps: steps.map(step => ({
-                ...step,
-                attachTo: step.attachTo ? {
-                  element: step.attachTo.element,
-                  on: step.attachTo.on as 'top' | 'bottom' | 'left' | 'right' | 'auto',
-                } : null,
-              })),
+              steps: steps.map((step, index) => {
+                // HACK: Ajuste manual para o último passo do tour da carteira
+                // Força modal centralizado no passo final "Pronto!" para evitar problemas de posicionamento
+                if (jornada.id === 'carteira-tour' && index === steps.length - 1) {
+                  return {
+                    ...step,
+                    attachTo: null
+                  };
+                }
+
+                return {
+                  ...step,
+                  attachTo: step.attachTo ? {
+                    element: step.attachTo.element,
+                    on: step.attachTo.on as 'top' | 'bottom' | 'left' | 'right' | 'auto',
+                  } : null,
+                };
+              }),
             };
             toursCache.set(jornada.id, tourConfig);
           }
@@ -147,10 +158,10 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         // Atualizar estado local se houver diferença
         const localCompleted = getPersistedTours();
-        
+
         if (JSON.stringify(localCompleted.sort()) !== JSON.stringify(completedFromDb.sort())) {
           console.log('[GiraTourProvider] Sincronizando estado local com banco');
-          
+
           persistTours(completedFromDb);
           setState(prev => ({
             ...prev,
@@ -170,7 +181,7 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      
+
       const { data, error } = await supabase.rpc('concluir_jornada', {
         p_user_id: user.id,
         p_jornada_id: jornadaId,
@@ -182,7 +193,7 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       const result = data as unknown as ConcluirJornadaResult | null;
-      
+
       if (result?.sucesso) {
         // Invalidar queries para atualizar o checklist
         queryClient.invalidateQueries({ queryKey: ['jornadas-progresso'] });
@@ -208,14 +219,14 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const startTour = useCallback((tourId: string, isManual: boolean = false) => {
     console.log(`[GiraTourProvider] startTour chamado: ${tourId}, isManual: ${isManual}`);
-    
+
     // Buscar tour do cache (carregado do banco)
     const tourConfig = toursCache.get(tourId);
     if (!tourConfig) {
       console.error(`[GiraTourProvider] Tour ${tourId} não encontrado no cache!`);
       return;
     }
-    
+
     console.log(`[GiraTourProvider] Tour config encontrado:`, tourConfig.name);
 
     // Não iniciar se já tem tour ativo
@@ -244,21 +255,21 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       async () => {
         // onComplete - tour finalizado com sucesso
         console.log(`Tour ${tourId} finished successfully`);
-        
+
         // Concluir jornada no banco, dar recompensa e mostrar celebração
         await concluirJornadaNoBanco(tourId);
-        
+
         setState(prev => {
-          const newCompletedTours = prev.completedTours.includes(tourId) 
-            ? prev.completedTours 
+          const newCompletedTours = prev.completedTours.includes(tourId)
+            ? prev.completedTours
             : [...prev.completedTours, tourId];
-          
+
           // Remover dos pulados se estava lá
           const newSkippedTours = prev.skippedTours.filter(t => t !== tourId);
-          
+
           persistTours(newCompletedTours);
           persistSkippedTours(newSkippedTours);
-          
+
           return {
             ...prev,
             isTourActive: false,
@@ -271,18 +282,18 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       () => {
         // onCancel - tour pulado/cancelado
         console.log(`Tour ${tourId} cancelled/skipped`);
-        
+
         setState(prev => {
           // Adicionar aos pulados (não inicia automaticamente novamente)
           const newSkippedTours = prev.skippedTours.includes(tourId)
             ? prev.skippedTours
             : [...prev.skippedTours, tourId];
-          
+
           persistSkippedTours(newSkippedTours);
-          
-          return { 
-            ...prev, 
-            isTourActive: false, 
+
+          return {
+            ...prev,
+            isTourActive: false,
             currentTourId: null,
             skippedTours: newSkippedTours,
           };
@@ -301,11 +312,11 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (state.completedTours.includes(tourId)) {
       return false;
     }
-    
+
     // Verificar se existe no cache
     const tour = toursCache.get(tourId);
     if (!tour) return false;
-    
+
     return true;
   }, [state.completedTours]);
 

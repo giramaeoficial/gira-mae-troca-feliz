@@ -21,7 +21,7 @@ const getMobilePosition = (originalPosition: string | undefined): string => {
 
 export class TourEngine {
   private tourInstance: any;
-  
+
   constructor() {
     this.tourInstance = null;
   }
@@ -39,20 +39,28 @@ export class TourEngine {
         cancelIcon: { enabled: false },
         modalOverlayOpeningPadding: 8,
         modalOverlayOpeningRadius: 8,
+        // CORREÇÃO: Forçar estratégia fixed para evitar problemas de posicionamento e offset
+        popperOptions: {
+          strategy: 'fixed',
+          modifiers: [
+            { name: 'offset', options: { offset: [0, 12] } },
+            { name: 'preventOverflow', options: { padding: 12 } }
+          ]
+        }
       }
     });
 
     config.steps.forEach((step, index) => {
       const isCentered = !step.attachTo;
-      
+
       const attachTo = step.attachTo ? {
         element: step.attachTo.element,
         on: getMobilePosition(step.attachTo.on),
       } : undefined;
 
       // Classes customizadas - adiciona gira-tour-centered quando não tem attachTo
-      const stepClasses = isCentered 
-        ? 'gira-tour-element gira-tour-centered' 
+      const stepClasses = isCentered
+        ? 'gira-tour-element gira-tour-centered'
         : 'gira-tour-element';
 
       this.tourInstance.addStep({
@@ -68,17 +76,17 @@ export class TourEngine {
           show: () => {
             const currentStepElement = this.tourInstance.getCurrentStep().el;
             const contentElement = currentStepElement.querySelector('.shepherd-content');
-            
+
             // Adicionar classe extra para centralização se não tem attachTo
             if (isCentered) {
               currentStepElement.classList.add('gira-tour-centered');
             }
-            
+
             if (contentElement) {
               contentElement.innerHTML = '';
               const container = document.createElement('div');
               contentElement.appendChild(container);
-              
+
               const root = ReactDOM.createRoot(container);
               root.render(
                 React.createElement(GiraTooltip, {

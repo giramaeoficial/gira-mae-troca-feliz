@@ -58,10 +58,25 @@
 /* Mobile: ajusta posicionamento mas mantém próximo ao elemento */
 @media (max-width: 640px) {
   .gira-tour-element {
-    max-width: calc(100vw - 24px) !important;
+    /* Mobile First: ocupar largura segura mas respeitar margens */
+    width: calc(100vw - 32px) !important;
+    max-width: 380px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important; 
+    /* Força centralização horizontal no mobile para evitar extravasar */
   }
   
-  /* Centralizado no mobile também */
+  /* Se tiver target, Shepherd tenta posicionar absolute. 
+     Vamos forçar fixed bottom no mobile se for muito complexo, 
+     ou permitir que o Popper ajuste mas com limites.
+  */
+  
+  .shepherd-element.shepherd-has-target {
+    /* Tentar manter perto do elemento, mas limitar lateralmente */
+    max-width: 90vw !important;
+  }
+
+  /* Centralizado (sem target ou forçado) */
   .shepherd-element.shepherd-centered,
   .shepherd-element:not(.shepherd-has-target),
   .gira-tour-element.gira-tour-centered {
@@ -70,7 +85,6 @@
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     width: calc(100vw - 32px) !important;
-    max-width: 380px !important;
   }
 }
 
