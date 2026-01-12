@@ -52,7 +52,18 @@ export class TourEngine {
             {
               name: 'flip',
               options: {
-                fallbackPlacements: ['bottom', 'right', 'left', 'top']
+                behavior: 'flip',
+                padding: 8,
+                fallbackPlacements: [
+                  'bottom',
+                  'bottom-start',
+                  'bottom-end',
+                  'top',
+                  'top-start',
+                  'top-end',
+                  'left',
+                  'right'
+                ]
               }
             },
             {
