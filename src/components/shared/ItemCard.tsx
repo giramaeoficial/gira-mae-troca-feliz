@@ -379,13 +379,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                   {item.fotos!.map((foto, index) => (
                     <CarouselItem key={index} className="h-full pl-0">
                       <div className="w-full h-full" onClick={(e) => handleImageClick(e, index)}>
-                        <LazyImage
+                        <img
                           src={buildItemImageUrl(foto)}
                           alt={`${item.titulo} - Foto ${index + 1}`}
                           className={cn(
                             "w-full h-full object-cover",
                             itemIsReservado && "filter grayscale-[20%]"
                           )}
+                          loading="lazy"
                         />
                       </div>
                     </CarouselItem>
