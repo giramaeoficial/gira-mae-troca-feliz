@@ -105,15 +105,6 @@ export const GiraTourProvider: React.FC<{ children: React.ReactNode }> = ({ chil
               reward: jornada.recompensa_girinhas,
               allowReplay: false,
               steps: steps.map((step, index) => {
-                // HACK: Ajuste manual para o último passo do tour da carteira
-                // Força modal centralizado no passo final "Pronto!" para evitar problemas de posicionamento
-                if (jornada.id === 'carteira-tour' && index === steps.length - 1) {
-                  return {
-                    ...step,
-                    attachTo: null
-                  };
-                }
-
                 return {
                   ...step,
                   attachTo: step.attachTo ? {

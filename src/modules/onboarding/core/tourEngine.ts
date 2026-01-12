@@ -38,15 +38,7 @@ export class TourEngine {
         scrollTo: { behavior: 'smooth', block: 'center' },
         cancelIcon: { enabled: false },
         modalOverlayOpeningPadding: 8,
-        modalOverlayOpeningRadius: 8,
-        // CORREÇÃO: Forçar estratégia fixed para evitar problemas de posicionamento e offset
-        popperOptions: {
-          strategy: 'fixed',
-          modifiers: [
-            { name: 'offset', options: { offset: [0, 12] } },
-            { name: 'preventOverflow', options: { padding: 12 } }
-          ]
-        }
+        modalOverlayOpeningRadius: 8
       }
     });
 

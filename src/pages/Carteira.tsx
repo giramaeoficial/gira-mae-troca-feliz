@@ -27,9 +27,9 @@ const Carteira = () => {
   const { taxaTransferencia, taxaTransacao } = useConfigSistema();
 
   // ✅ TOUR: Dispara automaticamente na primeira visita
-  useTourTrigger('carteira-tour', { 
+  useTourTrigger('carteira-tour', {
     condition: 'first-visit',
-    delay: 1000 
+    delay: 1000
   });
 
   // ✅ ANALYTICS: Visualização da carteira
@@ -38,15 +38,15 @@ const Carteira = () => {
   }, []);
 
   // ✅ Performance: Memoizar cálculos que dependem de transacoes
-  const transacoesEsteMes = useMemo(() => 
-    transacoes.filter(t => 
+  const transacoesEsteMes = useMemo(() =>
+    transacoes.filter(t =>
       new Date(t.data_criacao).getMonth() === new Date().getMonth()
     ).length,
     [transacoes]
   );
 
-  const ultimaMovimentacao = useMemo(() => 
-    transacoes.length > 0 
+  const ultimaMovimentacao = useMemo(() =>
+    transacoes.length > 0
       ? format(new Date(transacoes[0].data_criacao), 'dd/MM/yyyy', { locale: ptBR })
       : 'Nenhuma',
     [transacoes]
@@ -73,7 +73,7 @@ const Carteira = () => {
       <main className="flex-grow container mx-auto px-4 py-8 pb-32 md:pb-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+            <h1 data-tour="carteira-titulo" className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
               <Wallet className="w-8 h-8 text-primary" />
               Minha Carteira
             </h1>
@@ -91,9 +91,9 @@ const Carteira = () => {
             <Card data-tour="saldo-display" className="border-0 shadow-lg bg-gradient-to-br from-primary/10 to-purple-100">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                  
-                  <img src="/girinha_sem_fundo.png" alt="Logo GiraMãe" className="h-8 w-auto"/>
-                  
+
+                  <img src="/girinha_sem_fundo.png" alt="Logo GiraMãe" className="h-8 w-auto" />
+
                   Saldo Atual
                 </CardTitle>
               </CardHeader>
@@ -103,7 +103,7 @@ const Carteira = () => {
                     {saldo.toFixed(2)}
                   </p>
                   <p className="text-gray-600">Girinhas com sistema seguro</p>
-                  
+
                   {/* Informação de expiração no saldo */}
                   {expiracao.total_expirando_7_dias > 0 && (
                     <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded-lg">
@@ -198,17 +198,16 @@ const Carteira = () => {
                   ) : (
                     <div className="space-y-3">
                       {transacoes.map((transacao) => (
-                         <div
+                        <div
                           key={transacao.transacao_id}
                           className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             {/* ✅ CORREÇÃO 1: Badge usa valor >= 0 */}
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                              Number(transacao.valor) >= 0
+                            <div className={`px-2 py-1 rounded-full text-xs font-medium border ${Number(transacao.valor) >= 0
                                 ? 'text-green-600 bg-green-50 border-green-200'
                                 : 'text-red-600 bg-red-50 border-red-200'
-                            }`}>
+                              }`}>
                               {transacao.config?.descricao_pt || transacao.descricao || transacao.tipo}
                             </div>
                             <div>
@@ -227,11 +226,10 @@ const Carteira = () => {
                           </div>
                           <div className="text-right">
                             {/* ✅ CORREÇÃO 2: Cor e sinal usam valor >= 0 */}
-                            <p className={`font-bold ${
-                              Number(transacao.valor) >= 0
-                                ? 'text-green-600' 
+                            <p className={`font-bold ${Number(transacao.valor) >= 0
+                                ? 'text-green-600'
                                 : 'text-red-600'
-                            }`}>
+                              }`}>
                               {/* ✅ CORREÇÃO 3: Sinal baseado no valor */}
                               {Number(transacao.valor) >= 0 ? '+' : '-'}
                               {Math.abs(Number(transacao.valor)).toFixed(2)}
@@ -282,7 +280,7 @@ const Carteira = () => {
                     </p>
                   </CardContent>
                 </Card>
-                
+
                 <TransferenciaP2P />
               </div>
             </TabsContent>
