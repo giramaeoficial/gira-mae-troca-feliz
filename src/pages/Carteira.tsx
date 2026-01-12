@@ -175,7 +175,7 @@ const Carteira = () => {
                 <Calendar className="w-4 h-4" />
                 Validades
               </TabsTrigger>
-              <TabsTrigger value="comprar" className="flex items-center gap-2">
+              <TabsTrigger value="comprar" data-tour="btn-comprar-girinhas" className="flex items-center gap-2">
                 <ShoppingCart className="w-4 h-4" />
                 Comprar
               </TabsTrigger>

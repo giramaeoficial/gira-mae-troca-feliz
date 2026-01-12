@@ -42,9 +42,10 @@ const PublicarItem = () => {
                 />
 
                 <div className="pt-4 border-t border-gray-100">
-                  <Button 
-                    type="submit" 
-                    disabled={loading} 
+                  <Button
+                    data-tour="btn-publicar"
+                    type="submit"
+                    disabled={loading}
                     className="w-full h-12 text-base bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg rounded-lg transition-all duration-200"
                   >
                     {loading ? (

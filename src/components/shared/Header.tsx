@@ -214,10 +214,13 @@ const Header = () => {
 
             <div className="md:hidden flex items-center space-x-2">
               {!shouldHideMenus && <SaldoHeader />}
-              {!shouldHideMenus && <NotificationBell />}
+              {!shouldHideMenus && <div data-tour="notifications"><NotificationBell /></div>}
 
               {!shouldHideMenus ? (
-                <Button variant="ghost" size="sm"
+                <Button
+                  data-tour="header-menu"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
 
                   {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -283,8 +286,8 @@ const Header = () => {
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center gap-3 py-2 px-3 rounded-md text-sm ${location.pathname === item.path
-                        ? "bg-primary text-white"
-                        : "hover:bg-gray-100"
+                      ? "bg-primary text-white"
+                      : "hover:bg-gray-100"
                       }`}
                   >
                     <Icon className="w-4 h-4" />
