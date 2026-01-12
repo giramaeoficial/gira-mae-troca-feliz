@@ -40,30 +40,13 @@ export class TourEngine {
         modalOverlayOpeningPadding: 8,
         modalOverlayOpeningRadius: 8,
         popperOptions: {
-          strategy: 'fixed',
+          strategy: 'absolute', // Melhor para elementos dinâmicos
           modifiers: [
-            {
-              name: 'preventOverflow',
-              options: {
-                altAxis: true,
-                tether: false
-              }
-            },
             {
               name: 'flip',
               options: {
-                behavior: 'flip',
                 padding: 8,
-                fallbackPlacements: [
-                  'bottom',
-                  'bottom-start',
-                  'bottom-end',
-                  'top',
-                  'top-start',
-                  'top-end',
-                  'left',
-                  'right'
-                ]
+                fallbackPlacements: ['bottom', 'top', 'left', 'right']
               }
             },
             {
