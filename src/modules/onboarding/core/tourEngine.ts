@@ -68,13 +68,14 @@ export class TourEngine {
 
     config.steps.forEach((step, index) => {
       const isCentered = !step.attachTo;
+      const requiresAction = step.requiresAction === true && step.actionTarget;
 
       const attachTo = step.attachTo ? {
         element: step.attachTo.element,
         on: getMobilePosition(step.attachTo.on),
       } : undefined;
 
-      // Classes customizadas - adiciona gira-tour-centered quando não tem attachTo
+      // Classes customizadas
       const stepClasses = isCentered
         ? 'gira-tour-element gira-tour-centered'
         : 'gira-tour-element';
@@ -93,12 +94,18 @@ export class TourEngine {
             const currentStepElement = this.tourInstance.getCurrentStep().el;
             const contentElement = currentStepElement.querySelector('.shepherd-content');
 
-            // Adicionar classe extra para centralização se não tem attachTo
             if (isCentered) {
               currentStepElement.classList.add('gira-tour-centered');
             }
 
-            if (contentElement) {
+            // Estado para controlar actionPending
+            let actionPending = requiresAction;
+            let actionListener: ((e: Event) => void) | null = null;
+
+            // Função para re-renderizar com novo estado
+            const renderTooltip = () => {
+              if (!contentElement) return;
+
               contentElement.innerHTML = '';
               const container = document.createElement('div');
               contentElement.appendChild(container);
@@ -115,8 +122,52 @@ export class TourEngine {
                   onBack: () => this.tourInstance.back(),
                   onSkip: () => this.tourInstance.cancel(),
                   isCentered: isCentered,
+                  actionPending: actionPending,
                 })
               );
+            };
+
+            // Render inicial
+            renderTooltip();
+
+            // Configurar listener de ação se necessário
+            if (requiresAction && step.actionTarget) {
+              const targetElement = document.querySelector(step.actionTarget);
+
+              if (targetElement) {
+                actionListener = (e: Event) => {
+                  // Remover listener
+                  if (actionListener) {
+                    targetElement.removeEventListener('click', actionListener);
+                  }
+
+                  // Atualizar estado e re-renderizar
+                  actionPending = false;
+                  renderTooltip();
+
+                  //  Avançar após pequeno delay para feedback visual
+                  setTimeout(() => {
+                    this.tourInstance.next();
+                  }, 300);
+                };
+
+                targetElement.addEventListener('click', actionListener);
+
+                // Limpar listener se tour for cancelado
+                const cleanupListener = () => {
+                  if (actionListener && targetElement) {
+                    targetElement.removeEventListener('click', actionListener);
+                  }
+                };
+
+                this.tourInstance.once('cancel', cleanupListener);
+                this.tourInstance.once('complete', cleanupListener);
+              } else {
+                console.warn(`[Tour] Action target not found: ${step.actionTarget}. Falling back to normal navigation.`);
+                // Fallback: se elemento não existe, desabilita requiresAction
+                actionPending = false;
+                renderTooltip();
+              }
             }
           }
         }

@@ -15,6 +15,7 @@ interface GiraTooltipProps {
   onBack: () => void;
   onSkip: () => void;
   isCentered?: boolean;
+  actionPending?: boolean; // Nova prop para indicar que usuário precisa executar ação
 }
 
 export const GiraTooltip: React.FC<GiraTooltipProps> = ({
@@ -27,6 +28,7 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
   onBack,
   onSkip,
   isCentered = false,
+  actionPending = false,
 }) => {
   const isFirst = currentStep === 1;
   const isLast = currentStep === totalSteps;
@@ -53,10 +55,10 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
 
   const handleDragMove = useCallback((clientX: number, clientY: number) => {
     if (!isDragging || isCentered) return;
-    
+
     const deltaX = clientX - dragStartRef.current.x;
     const deltaY = clientY - dragStartRef.current.y;
-    
+
     setOffset({
       x: dragStartRef.current.offsetX + deltaX,
       y: dragStartRef.current.offsetY + deltaY,
@@ -109,20 +111,20 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
   }, [isDragging, handleDragMove, handleDragEnd]);
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={cn(
         "bg-white/95 backdrop-blur-sm p-4 sm:p-6 rounded-2xl max-w-sm relative overflow-hidden select-none shadow-2xl",
         isCentered && "min-w-[300px] sm:min-w-[340px]"
       )}
-      style={{ 
+      style={{
         transform: isCentered ? 'none' : `translate(${offset.x}px, ${offset.y}px)`,
         transition: isDragging ? 'none' : 'transform 0.2s ease-out',
       }}
     >
       {/* Drag handle - esconder quando centralizado */}
       {!isCentered && (
-        <div 
+        <div
           className="absolute top-0 left-0 w-full h-8 bg-pink-500/90 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none rounded-t-2xl"
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
@@ -130,7 +132,7 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
           <GripHorizontal className="w-5 h-5 text-white/70" />
         </div>
       )}
-      
+
       <div className={cn(
         "flex gap-3 sm:gap-4 items-start",
         !isCentered && "pt-6"
@@ -138,7 +140,7 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
         <div className="flex-shrink-0">
           <GiraAvatar emotion={emotion} size={isCentered ? "md" : "sm"} />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <h3 className={cn(
             "font-bold text-gray-800 mb-1 leading-tight",
@@ -159,8 +161,8 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
         <span>Passo {currentStep} de {totalSteps}</span>
         <div className="flex gap-1">
           {Array.from({ length: totalSteps }).map((_, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className={cn(
                 "rounded-full",
                 isCentered ? "h-2 w-2" : "h-1.5 w-1.5",
@@ -171,12 +173,23 @@ export const GiraTooltip: React.FC<GiraTooltipProps> = ({
         </div>
       </div>
 
-      <TourButtons 
-        onNext={onNext} 
-        onBack={onBack} 
+      {/* Mensagem de ação pendente */}
+      {actionPending && (
+        <div className="mt-2 p-2 bg-pink-50 rounded-lg border border-pink-200">
+          <p className="text-xs text-pink-700 flex items-center gap-1">
+            <span className="animate-pulse">●</span>
+            Clique no elemento destacado para continuar
+          </p>
+        </div>
+      )}
+
+      <TourButtons
+        onNext={onNext}
+        onBack={onBack}
         onSkip={onSkip}
         isFirst={isFirst}
         isLast={isLast}
+        actionPending={actionPending}
       />
     </div>
   );

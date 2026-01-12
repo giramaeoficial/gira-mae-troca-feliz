@@ -1,10 +1,10 @@
-export type GiraEmotion = 
-  | 'idle' 
-  | 'waving' 
-  | 'talking' 
-  | 'pointing' 
-  | 'thinking' 
-  | 'celebrating' 
+export type GiraEmotion =
+  | 'idle'
+  | 'waving'
+  | 'talking'
+  | 'pointing'
+  | 'thinking'
+  | 'celebrating'
   | 'thumbsup';
 
 export interface TourStepConfig {
@@ -18,6 +18,8 @@ export interface TourStepConfig {
   } | null;
   highlightClass?: string;
   beforeShow?: () => Promise<void> | void;
+  requiresAction?: boolean; // Se true, bloqueia avan\u00e7o até usu\u00e1rio executar a\u00e7\u00e3o
+  actionTarget?: string; // Seletor CSS do elemento que deve ser clicado
 }
 
 export type TriggerCondition = 'first-visit' | 'manual' | 'event';
