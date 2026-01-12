@@ -40,19 +40,25 @@ export class TourEngine {
         modalOverlayOpeningPadding: 8,
         modalOverlayOpeningRadius: 8,
         popperOptions: {
-          strategy: 'absolute', // Melhor para elementos dinâmicos
+          strategy: 'fixed', // Necessário para posicionar relativo à viewport, ignorando transforms/scrolls
           modifiers: [
-            {
-              name: 'flip',
-              options: {
-                padding: 8,
-                fallbackPlacements: ['bottom', 'top', 'left', 'right']
-              }
-            },
             {
               name: 'offset',
               options: {
-                offset: [0, 8]
+                offset: [0, 12]
+              }
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                padding: 8,
+                boundary: 'viewport' // Garante que tooltip não saia da tela
+              }
+            },
+            {
+              name: 'flip',
+              options: {
+                fallbackPlacements: ['bottom', 'top', 'left', 'right']
               }
             }
           ]
